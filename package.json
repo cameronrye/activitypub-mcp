@@ -1,0 +1,90 @@
+{
+  "name": "activitypub-mcp-server",
+  "version": "1.0.0",
+  "description": "A comprehensive Model Context Protocol server for ActivityPub/Fediverse interactions",
+  "main": "dist/mcp-main.js",
+  "bin": {
+    "activitypub-mcp-server": "dist/mcp-main.js"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "activitypub",
+    "mcp",
+    "fediverse",
+    "llm",
+    "ai",
+    "fedify",
+    "model-context-protocol",
+    "claude",
+    "social-media",
+    "decentralized"
+  ],
+  "author": "ActivityPub MCP Server Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cameronrye/activitypub-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cameronrye/activitypub-mcp/issues"
+  },
+  "homepage": "https://github.com/cameronrye/activitypub-mcp#readme",
+  "dependencies": {
+    "@dotenvx/dotenvx": "^1.50.1",
+    "@fedify/fedify": "^1.8.12",
+    "@hono/node-server": "^1.19.3",
+    "@logtape/logtape": "^0.8.2",
+    "@modelcontextprotocol/sdk": "^1.18.1",
+    "tsx": "^4.20.5",
+    "x-forwarded-fetch": "^0.2.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^24.5.2",
+    "c8": "^10.1.3",
+    "cross-env": "^7.0.3",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.9.2"
+  },
+  "scripts": {
+    "dev": "dotenvx run -- tsx watch ./src/main.ts",
+    "prod": "dotenvx run -- node --import tsx ./src/main.ts",
+    "mcp": "tsx ./src/mcp-main.ts",
+    "mcp:dev": "tsx watch ./src/mcp-main.ts",
+    "test": "tsx ./tests/test-mcp.ts",
+    "test:integration": "tsx ./tests/test-integration.ts",
+    "test:comprehensive": "tsx ./tests/test-comprehensive.ts",
+    "test:errors": "tsx ./tests/test-error-scenarios.ts",
+    "test:federation": "tsx ./tests/test-federation.ts",
+    "test:edge": "tsx ./tests/test-edge-cases.ts",
+    "test:coverage-boost": "tsx ./tests/test-coverage-boost.ts",
+    "test:federation-direct": "tsx ./tests/test-federation-direct.ts",
+    "test:error-paths": "tsx ./tests/test-error-paths.ts",
+    "test:federation-coverage": "tsx ./tests/test-federation-coverage.ts",
+    "test:startup-errors": "tsx ./tests/test-startup-errors.ts",
+    "test:final-coverage": "tsx ./tests/test-final-coverage.ts",
+    "test:all": "run-s test test:integration test:comprehensive test:errors test:federation test:edge test:coverage-boost test:error-paths test:federation-coverage test:final-coverage",
+    "test:coverage": "c8 --reporter=text --reporter=html --reporter=lcov npm run test:all",
+    "coverage": "c8 --reporter=text --reporter=html --reporter=lcov npm run test:all",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "setup": "node scripts/run-platform.js setup",
+    "setup:unix": "bash scripts/setup.sh",
+    "setup:windows": "powershell -ExecutionPolicy Bypass -File scripts/setup.ps1",
+    "install:claude": "node scripts/install.js --client=claude",
+    "install:cursor": "node scripts/install.js --client=cursor",
+    "install:shell": "node scripts/run-platform.js install",
+    "install:shell:unix": "bash scripts/install.sh",
+    "install:shell:windows": "powershell -ExecutionPolicy Bypass -File scripts/install.ps1",
+    "uninstall": "node scripts/install.js uninstall",
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "prepublishOnly": "run-s clean build"
+  }
+}

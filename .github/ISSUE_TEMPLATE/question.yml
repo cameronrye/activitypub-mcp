@@ -1,0 +1,81 @@
+name: Question
+description: Ask a question about the project
+title: "[Question]: "
+labels: ["question", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your question! Please provide as much context as possible.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to know?
+      placeholder: I would like to understand...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Question Category
+      description: What category does your question relate to?
+      options:
+        - Installation & Setup
+        - Configuration
+        - Usage & Examples
+        - ActivityPub Protocol
+        - MCP Integration
+        - Troubleshooting
+        - Development
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Provide any relevant context for your question
+      placeholder: I am trying to...
+
+  - type: textarea
+    id: attempted
+    attributes:
+      label: What I've Tried
+      description: What have you already tried or researched?
+      placeholder: I have already...
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment (if relevant)
+      description: Please provide your environment details if relevant to your question
+      value: |
+        - OS: [e.g. macOS 14.0, Ubuntu 22.04, Windows 11]
+        - Node.js version: [e.g. 20.10.0]
+        - Package version: [e.g. 1.0.0]
+        - MCP Client: [e.g. Claude Desktop, MCP Inspector]
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Information
+      description: Any additional information that might be helpful
+      placeholder: Any other details...
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched existing issues and documentation
+          required: true
+        - label: I have read the README and usage guide
+          required: true

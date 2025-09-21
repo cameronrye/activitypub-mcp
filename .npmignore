@@ -1,0 +1,63 @@
+# Development files
+src/
+tests/
+.github/
+scripts/
+docs/
+
+# Build and development artifacts
+*.log
+*.tgz
+node_modules/
+coverage/
+.nyc_output/
+
+# Environment and configuration
+.env*
+.dotenv*
+keys/
+logs/
+data/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git files
+.git/
+.gitignore
+
+# Development configuration
+tsconfig.json
+biome.json
+.eslintrc*
+.prettierrc*
+
+# Documentation (keep README.md and LICENSE)
+CONTRIBUTING.md
+CHANGELOG.md
+CROSS_PLATFORM.md
+EXAMPLES.md
+USAGE_GUIDE.md
+
+# Test files
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# Temporary files
+tmp/
+temp/
