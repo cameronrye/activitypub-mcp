@@ -1,6 +1,6 @@
-# ActivityPub MCP Server
+# ActivityPub MCP Server - Fediverse Client
 
-A comprehensive **Model Context Protocol (MCP)** server that enables LLMs like Claude to interact with the **ActivityPub/Fediverse** ecosystem through standardized MCP tools, resources, and prompts.
+A comprehensive **Model Context Protocol (MCP)** server that enables LLMs like Claude to **explore and interact with the existing Fediverse** through standardized MCP tools, resources, and prompts.
 
 [![npm version](https://badge.fury.io/js/activitypub-mcp-server.svg)](https://badge.fury.io/js/activitypub-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -9,30 +9,30 @@ A comprehensive **Model Context Protocol (MCP)** server that enables LLMs like C
 ## 🌟 Features
 
 ### Core Capabilities
-- **🔗 ActivityPub Integration**: Full ActivityPub server implementation using [Fedify](https://fedify.dev/)
+- **🌐 Fediverse Client**: Interact with existing ActivityPub servers (Mastodon, Pleroma, Misskey, etc.)
+- **🔍 WebFinger Discovery**: Find and discover actors across the fediverse
 - **🤖 MCP Protocol**: Complete MCP server with resources, tools, and prompts
 - **🧠 LLM-Optimized**: Designed specifically for LLM interaction patterns
 - **📝 TypeScript**: Fully typed with modern TypeScript and ESM
 - **⚡ High Performance**: Efficient resource management and caching
 - **🔒 Secure**: Built-in security features and input validation
 
-### ActivityPub Features
-- ✅ Actor creation and management
-- ✅ Post creation and publishing
-- ✅ Following/unfollowing actors
-- ✅ Likes and reactions
-- ✅ Timeline and outbox access
-- ✅ WebFinger support
-- 🚧 Direct messages (planned)
-- 🚧 Media attachments (planned)
-- 🚧 Search functionality (planned)
+### Fediverse Interaction Features
+- ✅ **Remote Actor Discovery**: Find users on any fediverse instance
+- ✅ **Timeline Fetching**: Get posts from any user's timeline
+- ✅ **Instance Discovery**: Find and explore fediverse instances
+- ✅ **Instance Information**: Get detailed info about any server
+- ✅ **Search Capabilities**: Search for content across instances
+- ✅ **WebFinger Support**: Resolve actor identifiers across the network
+- ✅ **Multi-Platform Support**: Works with Mastodon, Pleroma, Misskey, and more
+- ✅ **Follower/Following Lists**: Access social connections
 
 ### MCP Features
-- **📚 Resources**: Access ActivityPub data (actors, timelines, server info)
-- **🔧 Tools**: Perform ActivityPub actions (post, follow, like)
-- **💬 Prompts**: Templates for common social media interactions
+- **📚 Resources**: Access remote ActivityPub data (actors, timelines, instance info)
+- **🔧 Tools**: Discover and interact with fediverse content
+- **💬 Prompts**: Templates for fediverse exploration and discovery
 - **🔄 Completions**: Context-aware argument completion
-- **🎯 Sampling**: LLM integration for content generation
+- **🎯 Sampling**: LLM integration for content discovery
 - **📊 Monitoring**: Built-in logging and performance metrics
 
 ## 🚀 Quick Start
@@ -116,29 +116,16 @@ cp .env.example .env
 nano .env
 ```
 
-3. **Start the servers**:
+3. **Start the MCP server**:
 
 ```bash
-# Terminal 1: Start ActivityPub server
-npm run dev
-
-# Terminal 2: Start MCP server
+# Start the MCP server (no local ActivityPub server needed)
 npm run mcp
 ```
 
 ### Testing the Setup
 
-1. **Test ActivityPub server**:
-
-```bash
-# Look up an actor
-fedify lookup http://localhost:8000/users/john
-
-# Check server is running
-curl -H "Accept: application/activity+json" http://localhost:8000/users/john
-```
-
-2. **Test MCP server** with MCP Inspector:
+**Test MCP server** with MCP Inspector:
 
 ```bash
 # Install MCP Inspector
@@ -163,10 +150,7 @@ To use this MCP server with Claude Desktop:
   "mcpServers": {
     "activitypub": {
       "command": "npx",
-      "args": ["-y", "activitypub-mcp-server"],
-      "env": {
-        "ACTIVITYPUB_BASE_URL": "http://localhost:8000"
-      }
+      "args": ["-y", "activitypub-mcp-server"]
     }
   }
 }
@@ -188,42 +172,44 @@ For detailed usage instructions, examples, and troubleshooting, see:
 
 ### MCP Resources
 
-Resources provide read-only access to ActivityPub data. All resources return JSON data unless otherwise specified.
+Resources provide read-only access to fediverse data from any ActivityPub server. All resources return JSON data unless otherwise specified.
 
-#### Actor Resource
+#### Remote Actor Resource
 
-Get information about an ActivityPub actor:
+Get information about any actor in the fediverse:
 
 ```uri
-activitypub://actor/{identifier}
+activitypub://remote-actor/{identifier}
 ```
 
 **Parameters:**
-- `identifier` (string): The actor's username/identifier
+- `identifier` (string): The actor's fediverse handle (e.g., user@mastodon.social)
 
 **Example Response:**
 
 ```json
 {
   "@context": ["https://www.w3.org/ns/activitystreams"],
-  "id": "http://localhost:8000/users/alice",
+  "id": "https://mastodon.social/users/alice",
   "type": "Person",
   "preferredUsername": "alice",
   "name": "Alice Smith",
-  "summary": "Software developer passionate about decentralized social networks"
+  "summary": "Software developer passionate about decentralized social networks",
+  "inbox": "https://mastodon.social/users/alice/inbox",
+  "outbox": "https://mastodon.social/users/alice/outbox"
 }
 ```
 
-#### Timeline Resource
+#### Remote Timeline Resource
 
-Access an actor's timeline/outbox:
+Access any actor's timeline/outbox from across the fediverse:
 
 ```uri
-activitypub://timeline/{identifier}
+activitypub://remote-timeline/{identifier}
 ```
 
 **Parameters:**
-- `identifier` (string): The actor's username/identifier
+- `identifier` (string): The actor's fediverse handle (e.g., user@mastodon.social)
 
 **Example Response:**
 
@@ -231,137 +217,191 @@ activitypub://timeline/{identifier}
 {
   "@context": "https://www.w3.org/ns/activitystreams",
   "type": "OrderedCollection",
-  "id": "http://localhost:8000/users/alice/outbox",
-  "totalItems": 5,
+  "id": "https://mastodon.social/users/alice/outbox",
+  "totalItems": 42,
   "orderedItems": [...]
 }
 ```
 
-#### Server Info Resource
+#### Instance Info Resource
 
-Get server information and capabilities:
+Get information about any fediverse instance:
 
 ```uri
-activitypub://server-info
+activitypub://instance-info/{domain}
 ```
+
+**Parameters:**
+- `domain` (string): The instance domain (e.g., mastodon.social)
 
 **Example Response:**
 
 ```json
 {
-  "name": "ActivityPub MCP Server",
-  "version": "1.0.0",
-  "description": "A Model Context Protocol server for ActivityPub interactions",
-  "baseUrl": "http://localhost:8000",
-  "capabilities": ["actor-creation", "post-creation", "following", "likes"],
-  "protocols": ["activitypub", "webfinger"]
+  "domain": "mastodon.social",
+  "software": "mastodon",
+  "version": "4.2.1",
+  "description": "The original server operated by the Mastodon gGmbH non-profit",
+  "registrations": true,
+  "stats": {
+    "user_count": 900000,
+    "status_count": 50000000
+  }
 }
+```
+
+#### Remote Followers/Following Resources
+
+Access follower and following lists from any actor:
+
+```uri
+activitypub://remote-followers/{identifier}
+activitypub://remote-following/{identifier}
 ```
 
 ### MCP Tools
 
-Tools enable LLMs to perform actions on the ActivityPub server. All tools return structured responses with success/error information.
+Tools enable LLMs to discover and interact with the fediverse. All tools return structured responses with success/error information.
 
-#### Create Actor
+#### Discover Actor
 
-Create a new ActivityPub actor/user:
+Discover and get information about any actor in the fediverse:
 
 ```json
 {
-  "name": "create-actor",
+  "name": "discover-actor",
   "arguments": {
-    "identifier": "alice",
-    "name": "Alice Smith",
-    "summary": "Software developer interested in decentralized social networks"
+    "identifier": "user@mastodon.social"
   }
 }
 ```
 
 **Parameters:**
-- `identifier` (string, required): Unique identifier for the actor
-- `name` (string, optional): Display name for the actor
-- `summary` (string, optional): Bio/summary for the actor
+- `identifier` (string, required): Fediverse handle (e.g., user@mastodon.social)
 
-#### Create Post
+#### Fetch Timeline
 
-Create a new ActivityPub post/note:
+Fetch recent posts from any actor's timeline:
 
 ```json
 {
-  "name": "create-post",
+  "name": "fetch-timeline",
   "arguments": {
-    "actor": "alice",
-    "content": "Hello Fediverse! 👋",
-    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+    "identifier": "user@mastodon.social",
+    "limit": 20
   }
 }
 ```
 
 **Parameters:**
-- `actor` (string, required): Actor identifier who is creating the post
-- `content` (string, required): Content of the post
-- `to` (array, optional): Recipients (URIs or 'public')
-- `cc` (array, optional): CC recipients
-- `inReplyTo` (string, optional): URI of post being replied to
+- `identifier` (string, required): Fediverse handle
+- `limit` (number, optional): Number of posts to fetch (1-50, default: 20)
 
-#### Follow Actor
+#### Get Instance Info
 
-Follow another ActivityPub actor:
+Get detailed information about any fediverse instance:
 
 ```json
 {
-  "name": "follow-actor",
+  "name": "get-instance-info",
   "arguments": {
-    "follower": "alice",
-    "target": "https://mastodon.social/users/bob"
+    "domain": "mastodon.social"
   }
 }
 ```
 
 **Parameters:**
-- `follower` (string, required): Actor identifier who is following
-- `target` (string, required): Actor URI or handle to follow
+- `domain` (string, required): Instance domain
 
-#### Like Post
+#### Search Instance
 
-Like an ActivityPub post:
+Search for content on a specific fediverse instance:
 
 ```json
 {
-  "name": "like-post",
+  "name": "search-instance",
   "arguments": {
-    "actor": "alice",
-    "postUri": "https://example.com/posts/123"
+    "domain": "mastodon.social",
+    "query": "typescript",
+    "type": "accounts"
   }
 }
 ```
 
 **Parameters:**
-- `actor` (string, required): Actor identifier who is liking
-- `postUri` (string, required): URI of the post to like
+- `domain` (string, required): Instance domain to search
+- `query` (string, required): Search query
+- `type` (string, optional): Type of content ("accounts", "statuses", "hashtags")
+
+#### Discover Instances
+
+Find popular fediverse instances by category or topic:
+
+```json
+{
+  "name": "discover-instances",
+  "arguments": {
+    "category": "mastodon",
+    "topic": "technology",
+    "size": "medium"
+  }
+}
+```
+
+**Parameters:**
+- `category` (string, optional): Software type ("mastodon", "pleroma", "misskey", etc.)
+- `topic` (string, optional): Topic or interest to search for
+- `size` (string, optional): Instance size ("small", "medium", "large")
+- `region` (string, optional): Geographic region or language
+- `beginnerFriendly` (boolean, optional): Show only beginner-friendly instances
+
+#### Recommend Instances
+
+Get personalized instance recommendations based on interests:
+
+```json
+{
+  "name": "recommend-instances",
+  "arguments": {
+    "interests": ["technology", "programming", "open source"]
+  }
+}
+```
+
+**Parameters:**
+- `interests` (array, required): List of your interests or topics
 
 ### MCP Prompts
 
-#### Compose Post
+#### Explore Fediverse
 ```json
 {
-  "name": "compose-post",
+  "name": "explore-fediverse",
   "arguments": {
-    "topic": "open source software",
-    "tone": "professional",
-    "maxLength": 280
+    "interests": "technology and programming",
+    "instanceType": "mastodon"
   }
 }
 ```
 
-#### Actor Introduction
+#### Compare Instances
 ```json
 {
-  "name": "actor-introduction",
+  "name": "compare-instances",
   "arguments": {
-    "actorName": "Alice",
-    "interests": ["programming", "decentralization", "privacy"],
-    "background": "Full-stack developer with 5 years experience"
+    "instances": "mastodon.social, fosstodon.org, hachyderm.io",
+    "criteria": "community size and focus"
+  }
+}
+```
+
+#### Discover Content
+```json
+{
+  "name": "discover-content",
+  "arguments": {
+    "topic": "artificial intelligence",
+    "contentType": "people"
   }
 }
 ```
@@ -371,44 +411,74 @@ Like an ActivityPub post:
 ### Project Structure
 ```
 activitypub-mcp-server/
-├── main.ts              # ActivityPub server entry point
-├── mcp-main.ts          # MCP server entry point  
-├── mcp-server.ts        # MCP server implementation
-├── federation.ts        # ActivityPub federation setup
-├── logging.ts           # Logging configuration
-├── package.json         # Dependencies and scripts
-└── README.md           # This file
+├── src/                     # Source code
+│   ├── mcp-main.ts          # MCP server entry point
+│   ├── mcp-server.ts        # MCP server implementation
+│   ├── webfinger.ts         # WebFinger discovery client
+│   ├── remote-client.ts     # Remote ActivityPub client
+│   ├── instance-discovery.ts # Instance discovery service
+│   ├── health-check.ts      # Health monitoring
+│   ├── performance-monitor.ts # Performance tracking
+│   ├── config.ts            # Configuration constants
+│   └── logging.ts           # Logging configuration
+├── docs/                    # Documentation
+│   ├── setup/               # Installation & configuration guides
+│   ├── guides/              # User guides & examples
+│   ├── development/         # Development documentation
+│   └── specifications/      # Protocol specifications
+├── scripts/                 # Installation & setup scripts
+├── tests/                   # Test files
+├── dist/                    # Built JavaScript files
+├── package.json             # Dependencies and scripts
+└── README.md               # This file
 ```
 
 ### Technology Stack
-- **[Fedify](https://fedify.dev/)**: ActivityPub server framework
+- **[WebFinger](https://tools.ietf.org/rfc/rfc7033.txt)**: Actor discovery across the fediverse
 - **[MCP SDK](https://github.com/modelcontextprotocol/typescript-sdk)**: Model Context Protocol implementation
-- **[Hono](https://hono.dev/)**: Web framework for HTTP server
+- **[ActivityPub](https://www.w3.org/TR/activitypub/)**: Decentralized social networking protocol
 - **[LogTape](https://logtape.org/)**: Structured logging
 - **TypeScript**: Type-safe development
 
 ### Communication Flow
 ```
-LLM Client ←→ MCP Protocol ←→ MCP Server ←→ ActivityPub Federation ←→ Fediverse
+LLM Client ←→ MCP Protocol ←→ Fediverse Client ←→ Remote ActivityPub Servers
+                                     ↓
+                              WebFinger Discovery
+                                     ↓
+                              Remote Data Fetching
 ```
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+- **[Setup & Installation](docs/setup/)** - Configuration and installation guides
+- **[User Guides](docs/guides/)** - Usage examples and tutorials
+- **[Development](docs/development/)** - Development setup and best practices
+- **[Specifications](docs/specifications/)** - ActivityPub and protocol specifications
+
+See the [Documentation Index](docs/README.md) for a complete overview.
 
 ## 🔧 Development
 
 ### Available Scripts
-- `npm run dev` - Start ActivityPub server in development mode
-- `npm run prod` - Start ActivityPub server in production mode  
 - `npm run mcp` - Start MCP server
 - `npm run mcp:dev` - Start MCP server in watch mode
+- `npm run test` - Run tests
+- `npm run build` - Build TypeScript
 
 ### Environment Variables
 Create a `.env` file:
 ```env
-# Server configuration
-PORT=8000
-HOST=localhost
+# MCP Server configuration
+MCP_SERVER_NAME=activitypub-mcp-server
+MCP_SERVER_VERSION=1.0.0
 
-# ActivityPub configuration  
-ACTIVITYPUB_BASE_URL=http://localhost:8000
+# Rate limiting
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_MAX=100
+RATE_LIMIT_WINDOW=900000
 
 # Logging
 LOG_LEVEL=info
@@ -416,14 +486,14 @@ LOG_LEVEL=info
 
 ### Testing
 ```bash
-# Test ActivityPub functionality
-fedify lookup http://localhost:8000/users/test
-
 # Test MCP server with inspector
 mcp-inspector
 
-# Manual testing with curl
-curl -H "Accept: application/activity+json" http://localhost:8000/users/test
+# Test fediverse interactions
+npm run test
+
+# Manual testing with specific actors
+# Use the discover-actor tool to test WebFinger discovery
 ```
 
 ## 🌐 Cross-Platform Compatibility

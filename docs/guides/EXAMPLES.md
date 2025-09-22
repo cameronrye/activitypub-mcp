@@ -4,15 +4,14 @@ This document provides practical examples of using the ActivityPub MCP Server wi
 
 ## 🚀 Getting Started
 
-### 1. Start the Servers
+### 1. Start the MCP Server
 
 ```bash
-# Terminal 1: Start ActivityPub server
-npm run dev
-
-# Terminal 2: Start MCP server  
+# Start the MCP server (no local ActivityPub server needed)
 npm run mcp
 ```
+
+**Note**: This project operates as a fediverse CLIENT. You don't need to run a local ActivityPub server - the MCP server connects to existing fediverse instances.
 
 ### 2. Connect with MCP Inspector
 

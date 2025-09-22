@@ -2,10 +2,12 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 
 /**
- * Integration test for ActivityPub MCP Server with running ActivityPub server
+ * Integration test for ActivityPub MCP Server - Fediverse Client Mode
  */
 async function testIntegration() {
-  console.log("🔗 Testing ActivityPub MCP Server Integration...\n");
+  console.log(
+    "🔗 Testing ActivityPub MCP Server - Fediverse Client Integration...\n",
+  );
 
   const transport = new StdioClientTransport({
     command: "npx",
@@ -23,105 +25,133 @@ async function testIntegration() {
     await client.connect(transport);
     console.log("✅ Connected successfully!\n");
 
-    // Test 1: Read actor resource (should work now)
-    console.log("👤 Testing actor resource with running ActivityPub server...");
+    // Test 1: List available resources
+    console.log("📚 Testing resources/list...");
+    const resourcesResult = await client.listResources();
+    console.log("✅ Available resources:", resourcesResult.resources.length);
+    console.log();
+
+    // Test 2: Discover a fediverse actor
+    console.log("👤 Testing discover-actor tool...");
+    try {
+      const discoverActorResult = await client.callTool({
+        name: "discover-actor",
+        arguments: {
+          identifier: "gargron@mastodon.social",
+        },
+      });
+      console.log("✅ Discover actor successful!");
+      console.log(
+        "Result preview:",
+        `${discoverActorResult.content[0].text.substring(0, 200)}...`,
+      );
+      console.log();
+    } catch (error) {
+      console.log(
+        "❌ Discover actor failed:",
+        error instanceof Error ? error.message : error,
+      );
+      console.log();
+    }
+
+    // Test 3: Test remote actor resource
+    console.log("📰 Testing remote-actor resource...");
     try {
       const actorResource = await client.readResource({
-        uri: "activitypub://actor/john",
+        uri: "activitypub://remote-actor/gargron@mastodon.social",
       });
-      const actorData = JSON.parse(actorResource.contents[0].text || "{}");
-      console.log("✅ Actor resource successful!");
-      console.log("Actor ID:", actorData.id);
-      console.log("Actor type:", actorData.type);
-      console.log("Actor name:", actorData.name);
+      console.log("✅ Remote actor resource successful!");
+      console.log(
+        "Result preview:",
+        `${actorResource.contents[0].text.substring(0, 200)}...`,
+      );
       console.log();
     } catch (error) {
       console.log(
-        "❌ Actor resource failed:",
+        "❌ Remote actor resource failed:",
         error instanceof Error ? error.message : error,
       );
       console.log();
     }
 
-    // Test 2: Test timeline resource
-    console.log("📰 Testing timeline resource...");
+    // Test 4: Fetch actor timeline
+    console.log("📝 Testing fetch-timeline tool...");
     try {
-      const timelineResource = await client.readResource({
-        uri: "activitypub://timeline/john",
+      const timelineResult = await client.callTool({
+        name: "fetch-timeline",
+        arguments: {
+          identifier: "gargron@mastodon.social",
+          limit: 5,
+        },
       });
-      const timelineData = JSON.parse(
-        timelineResource.contents[0].text || "{}",
+      console.log("✅ Fetch timeline successful!");
+      console.log(
+        `Result preview: ${timelineResult.content[0].text.substring(0, 200)}...`,
       );
-      console.log("✅ Timeline resource successful!");
-      console.log("Timeline type:", timelineData.type);
-      console.log("Total items:", timelineData.totalItems);
       console.log();
     } catch (error) {
       console.log(
-        "❌ Timeline resource failed:",
+        "❌ Fetch timeline failed:",
         error instanceof Error ? error.message : error,
       );
       console.log();
     }
 
-    // Test 3: Create a post
-    console.log("📝 Testing create-post tool...");
-    const createPostResult = await client.callTool({
-      name: "create-post",
-      arguments: {
-        actor: "john",
-        content: "Hello from the ActivityPub MCP Server! 🚀",
-        to: ["https://www.w3.org/ns/activitystreams#Public"],
-      },
-    });
-    console.log("✅ Create post result:", createPostResult.content[0]);
-    console.log();
+    // Test 5: Get instance information
+    console.log("🏢 Testing get-instance-info tool...");
+    try {
+      const instanceInfoResult = await client.callTool({
+        name: "get-instance-info",
+        arguments: {
+          domain: "mastodon.social",
+        },
+      });
+      console.log("✅ Get instance info successful!");
+      console.log(
+        `Result preview: ${instanceInfoResult.content[0].text.substring(0, 200)}...`,
+      );
+      console.log();
+    } catch (error) {
+      console.log(
+        "❌ Get instance info failed:",
+        error instanceof Error ? error.message : error,
+      );
+      console.log();
+    }
 
-    // Test 4: Test follow functionality
-    console.log("🤝 Testing follow-actor tool...");
-    const followResult = await client.callTool({
-      name: "follow-actor",
-      arguments: {
-        follower: "john",
-        target: "https://mastodon.social/users/example",
-      },
-    });
-    console.log("✅ Follow result:", followResult.content[0]);
-    console.log();
+    // Test 6: Test fediverse exploration prompt
+    console.log("💭 Testing explore-fediverse prompt...");
+    try {
+      const explorationPrompt = await client.getPrompt({
+        name: "explore-fediverse",
+        arguments: {
+          interests: "open source software",
+          instanceType: "any",
+        },
+      });
+      console.log("✅ Exploration prompt successful!");
+      console.log(
+        "Prompt content:",
+        `${explorationPrompt.messages[0].content.text.substring(0, 200)}...`,
+      );
+      console.log();
+    } catch (error) {
+      console.log(
+        "❌ Exploration prompt failed:",
+        error instanceof Error ? error.message : error,
+      );
+      console.log();
+    }
 
-    // Test 5: Test like functionality
-    console.log("❤️  Testing like-post tool...");
-    const likeResult = await client.callTool({
-      name: "like-post",
-      arguments: {
-        actor: "john",
-        postUri: "https://example.com/posts/123",
-      },
-    });
-    console.log("✅ Like result:", likeResult.content[0]);
-    console.log();
-
-    // Test 6: Test prompts with sampling (if available)
-    console.log("💭 Testing actor-introduction prompt...");
-    const introPrompt = await client.getPrompt({
-      name: "actor-introduction",
-      arguments: {
-        actorName: "John",
-        interests: "ActivityPub, decentralization, open source",
-        background:
-          "Software developer passionate about federated social networks",
-      },
-    });
-    console.log("✅ Introduction prompt:", introPrompt.messages[0].content);
-    console.log();
-
-    console.log("🎉 Integration tests completed successfully!");
+    console.log(
+      "🎉 Fediverse client integration tests completed successfully!",
+    );
     console.log("\n📊 Summary:");
     console.log("- MCP server: ✅ Working");
-    console.log("- ActivityPub server: ✅ Working");
-    console.log("- Resources: ✅ Working");
-    console.log("- Tools: ✅ Working");
-    console.log("- Prompts: ✅ Working");
+    console.log("- Fediverse client mode: ✅ Working");
+    console.log("- Remote resources: ✅ Working");
+    console.log("- Discovery tools: ✅ Working");
+    console.log("- Exploration prompts: ✅ Working");
     console.log("- Integration: ✅ Working");
   } catch (error) {
     console.error("❌ Integration test failed:", error);

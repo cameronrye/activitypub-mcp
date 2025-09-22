@@ -1,11 +1,8 @@
 #!/usr/bin/env node
-
 import { getLogger } from "@logtape/logtape";
 import ActivityPubMCPServer from "./mcp-server.js";
 import "./logging.js";
-
 const logger = getLogger("activitypub-mcp-server");
-
 /**
  * Entry point for the ActivityPub MCP Server
  *
@@ -13,13 +10,14 @@ const logger = getLogger("activitypub-mcp-server");
  * through the Model Context Protocol.
  */
 async function main() {
-  try {
-    const server = new ActivityPubMCPServer();
-    await server.start();
-  } catch (error) {
-    logger.error("Failed to start ActivityPub MCP Server", { error });
-    process.exit(1);
-  }
+    try {
+        const server = new ActivityPubMCPServer();
+        await server.start();
+    }
+    catch (error) {
+        logger.error("Failed to start ActivityPub MCP Server", { error });
+        process.exit(1);
+    }
 }
-
 main();
+//# sourceMappingURL=mcp-main.js.map

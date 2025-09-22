@@ -118,22 +118,10 @@ function Set-Environment {
     }
 }
 
-# Create directories
+# Create directories (removed - not needed for MCP client)
 function New-Directories {
-    Write-Step "Creating necessary directories..."
-
-    $dirs = @("data", "logs", "keys", "media", "tmp")
-
-    foreach ($dir in $dirs) {
-        if (-not (Test-Path $dir)) {
-            New-Item -ItemType Directory -Path $dir -Force | Out-Null
-            if ($Verbose) {
-                Write-Info "Created directory: $dir"
-            }
-        }
-    }
-
-    Write-Info "Directory structure created"
+    Write-Step "Skipping directory creation - not needed for MCP client mode"
+    Write-Info "This server operates as a fediverse client, not a server"
 }
 
 # Install MCP server

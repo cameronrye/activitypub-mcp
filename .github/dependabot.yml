@@ -1,0 +1,115 @@
+# Dependabot configuration for automated dependency updates
+# See: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # NPM dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "cameronrye"
+    assignees:
+      - "cameronrye"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "automated"
+    # Group related updates together
+    groups:
+      # Group all TypeScript-related dependencies
+      typescript:
+        patterns:
+          - "typescript"
+          - "@types/*"
+          - "tsx"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      # Group testing dependencies
+      testing:
+        patterns:
+          - "*test*"
+          - "*jest*"
+          - "*mocha*"
+          - "*chai*"
+          - "c8"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      # Group linting and formatting tools
+      linting:
+        patterns:
+          - "*lint*"
+          - "*biome*"
+          - "*prettier*"
+          - "*eslint*"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      # Group build tools
+      build-tools:
+        patterns:
+          - "*build*"
+          - "rimraf"
+          - "cross-env"
+          - "npm-run-all"
+        update-types:
+          - "minor"
+          - "patch"
+    
+    # Allow specific dependency types
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    
+    # Ignore specific packages that need manual review
+    ignore:
+      # Major version updates require manual review
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+      
+      # Ignore specific packages that are known to have breaking changes
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "cameronrye"
+    assignees:
+      - "cameronrye"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "github-actions"
+      - "ci"
+      - "automated"
+    
+    # Group GitHub Actions updates
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"

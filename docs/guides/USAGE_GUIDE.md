@@ -40,9 +40,8 @@ git clone https://github.com/cameronrye/activitypub-mcp.git
 cd activitypub-mcp
 npm run setup
 
-# Start servers
-npm run dev    # ActivityPub server
-npm run mcp    # MCP server (in separate terminal)
+# Start MCP server (no local ActivityPub server needed)
+npm run mcp
 ```
 
 **Windows-Specific:**
@@ -55,9 +54,8 @@ npm run setup:windows
 # Or run PowerShell script directly
 .\scripts\setup.ps1
 
-# Start servers
-npm run dev    # ActivityPub server
-npm run mcp    # MCP server (in separate terminal)
+# Start MCP server (no local ActivityPub server needed)
+npm run mcp
 ```
 
 **macOS/Linux-Specific:**
@@ -70,9 +68,8 @@ npm run setup:unix
 # Or run bash script directly
 bash scripts/setup.sh
 
-# Start servers
-npm run dev    # ActivityPub server
-npm run mcp    # MCP server (in separate terminal)
+# Start MCP server (no local ActivityPub server needed)
+npm run mcp
 ```
 
 ### 2. Configuration
@@ -80,17 +77,17 @@ npm run mcp    # MCP server (in separate terminal)
 Edit `.env` file to customize your setup:
 
 ```bash
-# Server Configuration
-ACTIVITYPUB_BASE_URL=http://localhost:8000
+# MCP Server Configuration
 MCP_SERVER_NAME=activitypub-mcp-server
+MCP_SERVER_VERSION=1.0.0
 
 # Security & Performance
 RATE_LIMIT_ENABLED=true
 RATE_LIMIT_MAX=100
-LOG_LEVEL=info
+RATE_LIMIT_WINDOW=900000
 
-# Optional: Enable CORS for web clients
-ENABLE_CORS=true
+# Logging
+LOG_LEVEL=info
 ```
 
 ### 3. Testing Your Setup
@@ -408,10 +405,7 @@ Configuration is added to `claude_desktop_config.json`:
   "mcpServers": {
     "activitypub": {
       "command": "npx",
-      "args": ["-y", "activitypub-mcp-server"],
-      "env": {
-        "ACTIVITYPUB_BASE_URL": "http://localhost:8000"
-      }
+      "args": ["-y", "activitypub-mcp-server"]
     }
   }
 }

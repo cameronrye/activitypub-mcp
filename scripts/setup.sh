@@ -134,22 +134,10 @@ setup_environment() {
     fi
 }
 
-# Create directories
+# Create directories (removed - not needed for MCP client)
 create_directories() {
-    log_step "Creating necessary directories..."
-
-    local dirs=("data" "logs" "keys" "media" "tmp")
-
-    for dir in "${dirs[@]}"; do
-        if [[ ! -d "$dir" ]]; then
-            mkdir -p "$dir"
-            if $VERBOSE; then
-                log_info "Created directory: $dir"
-            fi
-        fi
-    done
-
-    log_info "Directory structure created"
+    log_step "Skipping directory creation - not needed for MCP client mode"
+    log_info "This server operates as a fediverse client, not a server"
 }
 
 # Setup git hooks (if in git repo)

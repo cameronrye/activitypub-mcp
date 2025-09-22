@@ -1,7 +1,7 @@
 {
   "name": "activitypub-mcp-server",
   "version": "1.0.0",
-  "description": "A comprehensive Model Context Protocol server for ActivityPub/Fediverse interactions",
+  "description": "A Model Context Protocol server for exploring and interacting with the existing Fediverse",
   "main": "dist/mcp-main.js",
   "bin": {
     "activitypub-mcp-server": "dist/mcp-main.js"
@@ -34,12 +34,9 @@
   "homepage": "https://github.com/cameronrye/activitypub-mcp#readme",
   "dependencies": {
     "@dotenvx/dotenvx": "^1.50.1",
-    "@fedify/fedify": "^1.8.12",
-    "@hono/node-server": "^1.19.3",
-    "@logtape/logtape": "^0.8.2",
+    "@logtape/logtape": "^1.1.1",
     "@modelcontextprotocol/sdk": "^1.18.1",
     "tsx": "^4.20.5",
-    "x-forwarded-fetch": "^0.2.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -58,17 +55,16 @@
     "mcp:dev": "tsx watch ./src/mcp-main.ts",
     "test": "tsx ./tests/test-mcp.ts",
     "test:integration": "tsx ./tests/test-integration.ts",
-    "test:comprehensive": "tsx ./tests/test-comprehensive.ts",
+    "test:comprehensive": "tsx ./tests/test-client-comprehensive.ts",
     "test:errors": "tsx ./tests/test-error-scenarios.ts",
-    "test:federation": "tsx ./tests/test-federation.ts",
     "test:edge": "tsx ./tests/test-edge-cases.ts",
     "test:coverage-boost": "tsx ./tests/test-coverage-boost.ts",
-    "test:federation-direct": "tsx ./tests/test-federation-direct.ts",
     "test:error-paths": "tsx ./tests/test-error-paths.ts",
-    "test:federation-coverage": "tsx ./tests/test-federation-coverage.ts",
     "test:startup-errors": "tsx ./tests/test-startup-errors.ts",
     "test:final-coverage": "tsx ./tests/test-final-coverage.ts",
-    "test:all": "run-s test test:integration test:comprehensive test:errors test:federation test:edge test:coverage-boost test:error-paths test:federation-coverage test:final-coverage",
+    "test:real-world": "tsx ./tests/test-real-world-scenario.ts",
+    "test:fediverse": "tsx ./tests/test-fediverse-client.ts",
+    "test:all": "run-s test test:integration test:comprehensive test:errors test:edge test:coverage-boost test:error-paths test:final-coverage test:real-world test:fediverse",
     "test:coverage": "c8 --reporter=text --reporter=html --reporter=lcov npm run test:all",
     "coverage": "c8 --reporter=text --reporter=html --reporter=lcov npm run test:all",
     "lint": "biome check .",

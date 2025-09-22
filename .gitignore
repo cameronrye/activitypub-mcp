@@ -78,7 +78,6 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 
 # Gatsby files
 .cache/
@@ -91,7 +90,6 @@ dist
 
 # vuepress v2.x temp and cache directory
 .temp
-.cache
 
 # Docusaurus cache and generated files
 .docusaurus
@@ -118,14 +116,12 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-# Build outputs
+# Build outputs (keep dist/ for npm package)
 build/
-dist/
 lib/
 out/
 
 # Logs
-logs
 *.log
 
 # Temporary files
@@ -152,9 +148,13 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 
-# Test coverage
-coverage/
-.nyc_output/
+# Modern development tools
+.turbo/
+.vercel/
+.netlify/
+.astro/
+
+# Test coverage (duplicate removed - already covered above)
 
 # ActivityPub/Fedify specific
 # Private keys and certificates
@@ -169,8 +169,7 @@ coverage/
 *.sqlite
 *.sqlite3
 
-# ActivityPub instance data
-data/
+# ActivityPub instance data (for servers - not needed for MCP client)
 storage/
 uploads/
 

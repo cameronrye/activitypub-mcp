@@ -33,9 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation**: Extensive documentation and usage guides
 
 ### Dependencies
-- @fedify/fedify: ^1.8.12 - ActivityPub framework
 - @modelcontextprotocol/sdk: ^1.18.1 - MCP protocol implementation
-- @hono/node-server: ^1.19.3 - HTTP server framework
 - @logtape/logtape: ^0.8.2 - Logging framework
 - @dotenvx/dotenvx: ^1.50.1 - Environment configuration
 - tsx: ^4.20.5 - TypeScript execution

@@ -15,9 +15,6 @@ coverage/
 # Environment and configuration
 .env*
 .dotenv*
-keys/
-logs/
-data/
 
 # IDE and editor files
 .vscode/
@@ -59,5 +56,4 @@ USAGE_GUIDE.md
 *.spec.ts
 
 # Temporary files
-tmp/
 temp/
