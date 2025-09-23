@@ -279,7 +279,7 @@ class MCPInstaller {
       this.log("3. The MCP server will start automatically when needed");
       this.log("");
       this.log(
-        "For more information, see: https://github.com/your-org/activitypub-mcp-server",
+        "For more information, see: https://github.com/cameronrye/activitypub-mcp",
       );
     } catch (error) {
       this.log(`Installation failed: ${error.message}`, "error");

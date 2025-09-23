@@ -1,0 +1,39 @@
+# Code Owners for ActivityPub MCP Server
+# This file defines who should be automatically requested for review
+# when changes are made to specific files or directories.
+
+# Global code owners - all files require review from these users
+* @cameronrye
+
+# Source code - core functionality
+/src/ @cameronrye
+
+# Tests - ensure test quality and coverage
+/tests/ @cameronrye
+
+# GitHub workflows and configuration
+/.github/ @cameronrye
+
+# Documentation
+/docs/ @cameronrye
+README.md @cameronrye
+
+# Package configuration - critical for releases
+package.json @cameronrye
+package-lock.json @cameronrye
+tsconfig.json @cameronrye
+
+# Build and development configuration
+biome.json @cameronrye
+.gitignore @cameronrye
+.npmignore @cameronrye
+
+# Environment and configuration files
+.env.example @cameronrye
+.env.production.example @cameronrye
+
+# Installation and setup scripts
+/scripts/ @cameronrye
+
+# License and legal
+LICENSE @cameronrye

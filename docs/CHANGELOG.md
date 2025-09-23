@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Dependencies
 - @modelcontextprotocol/sdk: ^1.18.1 - MCP protocol implementation
-- @logtape/logtape: ^0.8.2 - Logging framework
+- @logtape/logtape: ^1.1.1 - Logging framework
 - @dotenvx/dotenvx: ^1.50.1 - Environment configuration
 - tsx: ^4.20.5 - TypeScript execution
 - zod: ^3.25.76 - Schema validation

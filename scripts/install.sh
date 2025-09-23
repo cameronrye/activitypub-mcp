@@ -349,7 +349,7 @@ install() {
     echo "2. Start the ActivityPub server: npm run dev"
     echo "3. The MCP server will start automatically when needed"
     echo ""
-    log_info "For more information, see: https://github.com/your-org/activitypub-mcp-server"
+    log_info "For more information, see: https://github.com/cameronrye/activitypub-mcp"
 }
 
 # Main execution
