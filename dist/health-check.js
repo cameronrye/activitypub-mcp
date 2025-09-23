@@ -3,7 +3,7 @@
  */
 import { getLogger } from "@logtape/logtape";
 import { performanceMonitor } from "./performance-monitor.js";
-const logger = getLogger("activitypub-mcp-server:health");
+const logger = getLogger("activitypub-mcp:health");
 class HealthChecker {
     healthCheckEnabled;
     version;

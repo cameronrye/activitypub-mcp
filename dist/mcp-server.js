@@ -8,10 +8,10 @@ import { instanceDiscovery } from "./instance-discovery.js";
 import { performanceMonitor } from "./performance-monitor.js";
 import { remoteClient } from "./remote-client.js";
 import { webfingerClient } from "./webfinger.js";
-const logger = getLogger("activitypub-mcp-server");
+const logger = getLogger("activitypub-mcp");
 // Configuration from environment variables
 const CONFIG = {
-    serverName: process.env.MCP_SERVER_NAME || "activitypub-mcp-server",
+    serverName: process.env.MCP_SERVER_NAME || "activitypub-mcp",
     serverVersion: process.env.MCP_SERVER_VERSION || "1.0.0",
     logLevel: process.env.LOG_LEVEL || "info",
     rateLimitEnabled: process.env.RATE_LIMIT_ENABLED === "true",

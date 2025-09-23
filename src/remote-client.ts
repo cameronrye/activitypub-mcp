@@ -3,7 +3,7 @@ import { z } from "zod";
 import { REQUEST_TIMEOUT, USER_AGENT } from "./config.js";
 import { type ActivityPubActor, webfingerClient } from "./webfinger.js";
 
-const logger = getLogger("activitypub-mcp-server");
+const logger = getLogger("activitypub-mcp");
 
 // Domain validation schema
 const DomainSchema = z

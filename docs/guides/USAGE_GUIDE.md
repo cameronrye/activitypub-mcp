@@ -78,7 +78,7 @@ Edit `.env` file to customize your setup:
 
 ```bash
 # MCP Server Configuration
-MCP_SERVER_NAME=activitypub-mcp-server
+MCP_SERVER_NAME=activitypub-mcp
 MCP_SERVER_VERSION=1.0.0
 
 # Security & Performance
@@ -405,7 +405,7 @@ Configuration is added to `claude_desktop_config.json`:
   "mcpServers": {
     "activitypub": {
       "command": "npx",
-      "args": ["-y", "activitypub-mcp-server"]
+      "args": ["-y", "activitypub-mcp"]
     }
   }
 }
@@ -420,7 +420,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 
 const transport = new StdioClientTransport({
   command: "npx",
-  args: ["activitypub-mcp-server"]
+  args: ["activitypub-mcp"]
 });
 
 const client = new Client({

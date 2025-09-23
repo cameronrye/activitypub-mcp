@@ -2,7 +2,7 @@
 import { getLogger } from "@logtape/logtape";
 import ActivityPubMCPServer from "./mcp-server.js";
 import "./logging.js";
-const logger = getLogger("activitypub-mcp-server");
+const logger = getLogger("activitypub-mcp");
 /**
  * Entry point for the ActivityPub MCP Server
  *

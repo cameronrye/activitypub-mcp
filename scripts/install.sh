@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-PACKAGE_NAME="activitypub-mcp-server"
+PACKAGE_NAME="activitypub-mcp"
 SERVER_NAME="activitypub"
 
 # Colors for output

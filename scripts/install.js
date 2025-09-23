@@ -12,7 +12,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-const PACKAGE_NAME = "activitypub-mcp-server";
+const PACKAGE_NAME = "activitypub-mcp";
 const SERVER_NAME = "activitypub";
 
 // Configuration paths for different MCP clients

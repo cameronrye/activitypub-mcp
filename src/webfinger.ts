@@ -2,7 +2,7 @@ import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import { REQUEST_TIMEOUT, USER_AGENT } from "./config.js";
 
-const logger = getLogger("activitypub-mcp-server");
+const logger = getLogger("activitypub-mcp");
 
 // Actor identifier validation schema
 const ActorIdentifierSchema = z

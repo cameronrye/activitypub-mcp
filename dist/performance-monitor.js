@@ -2,7 +2,7 @@
  * Performance monitoring and metrics collection for ActivityPub MCP Server
  */
 import { getLogger } from "@logtape/logtape";
-const logger = getLogger("activitypub-mcp-server:performance");
+const logger = getLogger("activitypub-mcp:performance");
 class PerformanceMonitor {
     metrics;
     requestHistory = [];

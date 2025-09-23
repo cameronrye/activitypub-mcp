@@ -1,10 +1,10 @@
 {
-  "name": "activitypub-mcp-server",
+  "name": "activitypub-mcp",
   "version": "1.0.0",
   "description": "A Model Context Protocol server for exploring and interacting with the existing Fediverse",
   "main": "dist/mcp-main.js",
   "bin": {
-    "activitypub-mcp-server": "dist/mcp-main.js"
+    "activitypub-mcp": "dist/mcp-main.js"
   },
   "type": "module",
   "engines": {

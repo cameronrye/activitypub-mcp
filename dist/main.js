@@ -1,6 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import "./logging.js";
-const logger = getLogger("activitypub-mcp-server");
+const logger = getLogger("activitypub-mcp");
 logger.info("🌐 ActivityPub MCP Server - Fediverse Client Mode");
 logger.info("This server operates as a fediverse CLIENT, not a server.");
 logger.info("It helps you interact with EXISTING ActivityPub servers across the fediverse.");

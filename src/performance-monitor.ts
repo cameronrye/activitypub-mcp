@@ -4,7 +4,7 @@
 
 import { getLogger } from "@logtape/logtape";
 
-const logger = getLogger("activitypub-mcp-server:performance");
+const logger = getLogger("activitypub-mcp:performance");
 
 export interface PerformanceMetrics {
   requestCount: number;

@@ -11,7 +11,7 @@ await configure({
     filters: {},
     loggers: [
         {
-            category: "activitypub-mcp-server",
+            category: "activitypub-mcp",
             lowestLevel: logLevel,
             sinks: ["console"],
         },

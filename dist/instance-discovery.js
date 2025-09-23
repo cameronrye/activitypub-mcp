@@ -1,6 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
-const logger = getLogger("activitypub-mcp-server");
+const logger = getLogger("activitypub-mcp");
 // Popular fediverse instances by category
 const POPULAR_INSTANCES = {
     mastodon: [

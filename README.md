@@ -2,7 +2,7 @@
 
 A comprehensive **Model Context Protocol (MCP)** server that enables LLMs like Claude to **explore and interact with the existing Fediverse** through standardized MCP tools, resources, and prompts.
 
-[![npm version](https://badge.fury.io/js/activitypub-mcp-server.svg)](https://badge.fury.io/js/activitypub-mcp-server)
+[![npm version](https://badge.fury.io/js/activitypub-mcp.svg)](https://badge.fury.io/js/activitypub-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
@@ -54,7 +54,7 @@ For the fastest setup, use our automated installation script:
 #### Universal (All Platforms)
 ```bash
 # Install directly with npx (recommended)
-npx activitypub-mcp-server install
+npx activitypub-mcp install
 
 # Or clone and run setup
 git clone https://github.com/cameronrye/activitypub-mcp.git
@@ -150,7 +150,7 @@ To use this MCP server with Claude Desktop:
   "mcpServers": {
     "activitypub": {
       "command": "npx",
-      "args": ["-y", "activitypub-mcp-server"]
+      "args": ["-y", "activitypub-mcp"]
     }
   }
 }
@@ -410,7 +410,7 @@ Get personalized instance recommendations based on interests:
 
 ### Project Structure
 ```
-activitypub-mcp-server/
+activitypub-mcp/
 ├── src/                     # Source code
 │   ├── mcp-main.ts          # MCP server entry point
 │   ├── mcp-server.ts        # MCP server implementation
@@ -472,7 +472,7 @@ See the [Documentation Index](docs/README.md) for a complete overview.
 Create a `.env` file:
 ```env
 # MCP Server configuration
-MCP_SERVER_NAME=activitypub-mcp-server
+MCP_SERVER_NAME=activitypub-mcp
 MCP_SERVER_VERSION=1.0.0
 
 # Rate limiting
