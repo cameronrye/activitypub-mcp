@@ -35,7 +35,7 @@ jobs:
       run: npm run lint
     
     - name: Run formatting check
-      run: npm run format -- --check
+      run: npm run format:check
     
     - name: Build project
       run: npm run build
@@ -77,7 +77,7 @@ jobs:
       run: npm run lint
     
     - name: Check formatting
-      run: npm run format -- --check
+      run: npm run format:check
 
   build:
     name: Build Check
