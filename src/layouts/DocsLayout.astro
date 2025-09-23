@@ -1,5 +1,5 @@
 ---
-import BaseLayout from './BaseLayout.astro';
+import BaseLayout from "./BaseLayout.astro";
 
 export interface Props {
   title?: string;
@@ -12,7 +12,10 @@ export interface Props {
 
 const { title, description, frontmatter } = Astro.props;
 const pageTitle = title || frontmatter?.title || "Documentation";
-const pageDescription = description || frontmatter?.description || "ActivityPub MCP Server Documentation";
+const pageDescription =
+  description ||
+  frontmatter?.description ||
+  "ActivityPub MCP Server Documentation";
 
 // Navigation structure for docs
 const docsNav = [
@@ -21,40 +24,62 @@ const docsNav = [
     items: [
       { title: "Overview", href: "/docs/" },
       { title: "Configuration Guide", href: "/docs/setup/config-guide/" },
-      { title: "Cross-Platform Setup", href: "/docs/setup/cross-platform/" }
-    ]
+      { title: "Cross-Platform Setup", href: "/docs/setup/cross-platform/" },
+    ],
   },
   {
-    title: "User Guides", 
+    title: "User Guides",
     items: [
       { title: "Usage Guide", href: "/docs/guides/usage-guide/" },
       { title: "Examples", href: "/docs/guides/examples/" },
-      { title: "Real-World Scenarios", href: "/docs/guides/real-world-test-scenario/" }
-    ]
+      {
+        title: "Real-World Scenarios",
+        href: "/docs/guides/real-world-test-scenario/",
+      },
+    ],
   },
   {
     title: "Development",
     items: [
-      { title: "Dependency Management", href: "/docs/development/dependency-management/" },
-      { title: "Performance Monitoring", href: "/docs/development/performance-monitoring/" },
-      { title: "Security Audit", href: "/docs/development/security-audit-checklist/" }
-    ]
+      {
+        title: "Dependency Management",
+        href: "/docs/development/dependency-management/",
+      },
+      {
+        title: "Performance Monitoring",
+        href: "/docs/development/performance-monitoring/",
+      },
+      {
+        title: "Security Audit",
+        href: "/docs/development/security-audit-checklist/",
+      },
+    ],
   },
   {
     title: "Specifications",
     items: [
-      { title: "ActivityPub Guide", href: "/docs/specifications/activitypub-llm-specification-guide/" },
-      { title: "ActivityStreams Vocabulary", href: "/docs/specifications/activitystreams-vocabulary-llm-specification-guide/" },
-      { title: "Fedify CLI", href: "/docs/specifications/fedify-cli-llm-specification-guide/" },
-      { title: "WebFinger Guide", href: "/docs/specifications/webfinger-llm-specification-guide/" }
-    ]
+      {
+        title: "ActivityPub Guide",
+        href: "/docs/specifications/activitypub-llm-specification-guide/",
+      },
+      {
+        title: "ActivityStreams Vocabulary",
+        href: "/docs/specifications/activitystreams-vocabulary-llm-specification-guide/",
+      },
+      {
+        title: "Fedify CLI",
+        href: "/docs/specifications/fedify-cli-llm-specification-guide/",
+      },
+      {
+        title: "WebFinger Guide",
+        href: "/docs/specifications/webfinger-llm-specification-guide/",
+      },
+    ],
   },
   {
     title: "Project Info",
-    items: [
-      { title: "Changelog", href: "/docs/changelog/" }
-    ]
-  }
+    items: [{ title: "Changelog", href: "/docs/changelog/" }],
+  },
 ];
 
 // Get current path for active navigation
