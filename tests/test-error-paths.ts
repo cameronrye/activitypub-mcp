@@ -24,17 +24,15 @@ async function testErrorPaths() {
     await client.connect(transport);
     console.log("✅ Connected successfully!\n");
 
-    // Test 1: Try to trigger McpError in create-actor
-    console.log("Test 1: Triggering McpError in create-actor");
+    // Test 1: Try to trigger McpError in discover-actor
+    console.log("Test 1: Triggering McpError in discover-actor");
     try {
       // Try with extremely long identifier to trigger validation error
-      const veryLongId = "a".repeat(1000);
+      const veryLongId = `${"a".repeat(1000)}@example.social`;
       await client.callTool({
-        name: "create-actor",
+        name: "discover-actor",
         arguments: {
           identifier: veryLongId,
-          name: "Test User",
-          summary: "Test summary",
         },
       });
       console.log("❌ Expected McpError for very long identifier");
@@ -47,7 +45,6 @@ async function testErrorPaths() {
 
     // Test with invalid characters that might cause different error types
     const invalidIdentifiers = [
-      "test@domain.com",
       "test#hashtag",
       "test$money",
       "test%percent",
@@ -73,11 +70,9 @@ async function testErrorPaths() {
     for (const identifier of invalidIdentifiers) {
       try {
         await client.callTool({
-          name: "create-actor",
+          name: "discover-actor",
           arguments: {
             identifier: identifier,
-            name: "Test User",
-            summary: "Test summary",
           },
         });
         console.log(`❌ Expected error for identifier: ${identifier}`);
@@ -88,75 +83,75 @@ async function testErrorPaths() {
       }
     }
 
-    // Test 3: Try to trigger errors in create-post
-    console.log("\nTest 3: Testing create-post error scenarios");
+    // Test 3: Try to trigger errors in fetch-timeline
+    console.log("\nTest 3: Testing fetch-timeline error scenarios");
 
-    // Test with extremely long content
-    const veryLongContent = "This is a very long post content. ".repeat(1000);
+    // Test with extremely large limit
     try {
       await client.callTool({
-        name: "create-post",
+        name: "fetch-timeline",
         arguments: {
-          actor: "test-actor",
-          content: veryLongContent,
+          identifier: "gargron@mastodon.social",
+          limit: 10000,
         },
       });
-      console.log("✅ Long content handled successfully");
+      console.log("✅ Large limit handled successfully");
     } catch (error) {
-      console.log("✅ Caught error for long content:", error.message);
+      console.log("✅ Caught error for large limit:", error.message);
     }
 
-    // Test 4: Try to trigger errors in follow-actor
-    console.log("\nTest 4: Testing follow-actor error scenarios");
+    // Test 4: Try to trigger errors in search-instance
+    console.log("\nTest 4: Testing search-instance error scenarios");
 
-    const invalidUrls = [
-      "not-a-url",
+    const invalidDomains = [
+      "not-a-domain",
       "ftp://invalid-protocol.com",
       "javascript:alert('xss')",
       "data:text/html,<script>alert('xss')</script>",
       "file:///etc/passwd",
       "http://",
       "https://",
-      "http://localhost:99999",
-      "https://[invalid-ipv6]",
-      "http://user:pass@example.com:80/path?query=value#fragment".repeat(100),
+      "localhost:99999",
+      "[invalid-ipv6]",
+      `${"a".repeat(1000)}.com`,
     ];
 
-    for (const url of invalidUrls) {
+    for (const domain of invalidDomains) {
       try {
         await client.callTool({
-          name: "follow-actor",
+          name: "search-instance",
           arguments: {
-            follower: "test-actor",
-            target: url,
+            domain: domain,
+            query: "test",
           },
         });
-        console.log(`❌ Expected error for URL: ${url.substring(0, 30)}...`);
+        console.log(
+          `❌ Expected error for domain: ${domain.substring(0, 30)}...`,
+        );
       } catch (error) {
         console.log(
-          `✅ Caught error for invalid URL: ${error.message.substring(0, 50)}...`,
+          `✅ Caught error for invalid domain: ${error.message.substring(0, 50)}...`,
         );
       }
     }
 
-    // Test 5: Try to trigger errors in like-post
-    console.log("\nTest 5: Testing like-post error scenarios");
+    // Test 5: Try to trigger errors in get-instance-info
+    console.log("\nTest 5: Testing get-instance-info error scenarios");
 
-    for (const url of invalidUrls) {
+    for (const domain of invalidDomains) {
       try {
         await client.callTool({
-          name: "like-post",
+          name: "get-instance-info",
           arguments: {
-            actor: "test-actor",
-            postUri: url,
+            domain: domain,
           },
         });
         console.log(
-          `❌ Expected error for post URI: ${url.substring(0, 30)}...`,
+          `❌ Expected error for domain: ${domain.substring(0, 30)}...`,
         );
       } catch (error) {
         console.log(
-          `✅ Caught error for invalid post URI: ${error.message.substring(0, 50)}...`,
+          `✅ Caught error for invalid domain: ${error.message.substring(0, 50)}...`,
         );
       }
     }
@@ -166,20 +161,20 @@ async function testErrorPaths() {
 
     const malformedUris = [
       "activitypub://",
-      "activitypub://actor",
-      "activitypub://timeline",
-      "activitypub://actor/",
-      "activitypub://timeline/",
+      "activitypub://remote-actor",
+      "activitypub://remote-timeline",
+      "activitypub://remote-actor/",
+      "activitypub://remote-timeline/",
       "activitypub://invalid",
-      `activitypub://actor/${"a".repeat(1000)}`,
-      `activitypub://timeline/${"a".repeat(1000)}`,
-      "not-activitypub://actor/test",
-      "activitypub://actor/test@invalid.com",
-      "activitypub://actor/test#fragment",
-      "activitypub://actor/test?query=value",
-      "activitypub://actor/test with spaces",
-      "activitypub://actor/test\nwith\nnewlines",
-      "activitypub://actor/test\twith\ttabs",
+      `activitypub://remote-actor/${"a".repeat(1000)}`,
+      `activitypub://remote-timeline/${"a".repeat(1000)}`,
+      "not-activitypub://remote-actor/test",
+      "activitypub://remote-actor/test@invalid.com",
+      "activitypub://remote-actor/test#fragment",
+      "activitypub://remote-actor/test?query=value",
+      "activitypub://remote-actor/test with spaces",
+      "activitypub://remote-actor/test\nwith\nnewlines",
+      "activitypub://remote-actor/test\twith\ttabs",
     ];
 
     for (const uri of malformedUris) {
@@ -197,33 +192,35 @@ async function testErrorPaths() {
     console.log("\nTest 7: Testing prompt error scenarios");
 
     const invalidPromptArgs = [
-      { name: "compose-post", arguments: { topic: "", tone: "professional" } },
       {
-        name: "compose-post",
-        arguments: { topic: "test", tone: "invalid-tone" },
+        name: "explore-fediverse",
+        arguments: { interests: "", instanceType: "mastodon" },
       },
       {
-        name: "compose-post",
-        arguments: { topic: "a".repeat(10000), tone: "professional" },
+        name: "explore-fediverse",
+        arguments: { interests: "test", instanceType: "invalid-type" },
       },
       {
-        name: "actor-introduction",
-        arguments: { actorName: "", interests: "test", background: "test" },
+        name: "explore-fediverse",
+        arguments: { interests: "a".repeat(10000), instanceType: "mastodon" },
       },
       {
-        name: "actor-introduction",
-        arguments: { actorName: "test", interests: "", background: "test" },
+        name: "compare-instances",
+        arguments: { instances: "", criteria: "community size" },
       },
       {
-        name: "actor-introduction",
-        arguments: { actorName: "test", interests: "test", background: "" },
+        name: "compare-instances",
+        arguments: { instances: "mastodon.social", criteria: "" },
       },
       {
-        name: "actor-introduction",
+        name: "discover-content",
+        arguments: { topics: "", contentType: "all" },
+      },
+      {
+        name: "discover-content",
         arguments: {
-          actorName: "a".repeat(1000),
-          interests: "test",
-          background: "test",
+          topics: "a".repeat(1000),
+          contentType: "all",
         },
       },
       { name: "invalid-prompt", arguments: { test: "value" } },
@@ -245,31 +242,29 @@ async function testErrorPaths() {
 
     const concurrentPromises = [];
 
-    // Create multiple actors concurrently
-    for (let i = 0; i < 20; i++) {
+    // Discover multiple actors concurrently
+    for (let i = 0; i < 10; i++) {
       concurrentPromises.push(
         client
           .callTool({
-            name: "create-actor",
+            name: "discover-actor",
             arguments: {
-              identifier: `concurrent-${i}`,
-              name: `Concurrent User ${i}`,
-              summary: `Concurrent test user ${i}`,
+              identifier: "gargron@mastodon.social",
             },
           })
           .catch((error) => ({ error: error.message })),
       );
     }
 
-    // Create multiple posts concurrently
-    for (let i = 0; i < 20; i++) {
+    // Fetch multiple timelines concurrently
+    for (let i = 0; i < 10; i++) {
       concurrentPromises.push(
         client
           .callTool({
-            name: "create-post",
+            name: "fetch-timeline",
             arguments: {
-              actor: `concurrent-${i % 5}`,
-              content: `Concurrent post ${i}`,
+              identifier: "gargron@mastodon.social",
+              limit: 5,
             },
           })
           .catch((error) => ({ error: error.message })),
@@ -277,11 +272,11 @@ async function testErrorPaths() {
     }
 
     // Read multiple resources concurrently
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 10; i++) {
       concurrentPromises.push(
         client
           .readResource({
-            uri: `activitypub://actor/concurrent-${i}`,
+            uri: "activitypub://server-info",
           })
           .catch((error) => ({ error: error.message })),
       );

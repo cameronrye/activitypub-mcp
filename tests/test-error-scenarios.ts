@@ -24,20 +24,22 @@ async function testErrorScenarios() {
     await client.connect(transport);
     console.log("✅ Connected successfully!\n");
 
-    // Test error scenarios for create-actor tool
-    console.log("🔧 Testing create-actor error scenarios...");
+    // Test error scenarios for discover-actor tool
+    console.log("🔧 Testing discover-actor error scenarios...");
 
     // Test 1: Empty identifier
     try {
-      await client.callTool({
-        name: "create-actor",
+      const result = await client.callTool({
+        name: "discover-actor",
         arguments: {
           identifier: "",
-          name: "Test User",
-          summary: "A test user",
         },
       });
-      console.log("❌ Expected error for empty identifier");
+      if (result.isError || result.content[0].text?.includes("MCP error")) {
+        console.log("✅ Correctly caught empty identifier error");
+      } else {
+        console.log("❌ Expected error for empty identifier");
+      }
     } catch (error) {
       console.log("✅ Correctly caught empty identifier error");
     }
@@ -45,10 +47,9 @@ async function testErrorScenarios() {
     // Test 2: Missing required fields
     try {
       await client.callTool({
-        name: "create-actor",
+        name: "discover-actor",
         arguments: {
-          identifier: "test-user",
-          // Missing name and summary
+          // Missing identifier
         },
       });
       console.log("❌ Expected error for missing fields");
@@ -58,129 +59,149 @@ async function testErrorScenarios() {
 
     // Test 3: Invalid identifier format
     try {
-      await client.callTool({
-        name: "create-actor",
+      const result = await client.callTool({
+        name: "discover-actor",
         arguments: {
-          identifier: "invalid@identifier!",
-          name: "Test User",
-          summary: "A test user",
+          identifier: "invalid-format",
         },
       });
-      console.log("❌ Expected error for invalid identifier");
+      if (result.isError || result.content[0].text?.includes("MCP error")) {
+        console.log("✅ Correctly caught invalid identifier error");
+      } else {
+        console.log("❌ Expected error for invalid identifier");
+      }
     } catch (error) {
       console.log("✅ Correctly caught invalid identifier error");
     }
 
-    // Test error scenarios for create-post tool
-    console.log("\n📝 Testing create-post error scenarios...");
+    // Test error scenarios for fetch-timeline tool
+    console.log("\n📝 Testing fetch-timeline error scenarios...");
 
-    // Test 4: Empty actor
+    // Test 4: Empty identifier
     try {
-      await client.callTool({
-        name: "create-post",
+      const result = await client.callTool({
+        name: "fetch-timeline",
         arguments: {
-          actor: "",
-          content: "Test content",
+          identifier: "",
+          limit: 10,
         },
       });
-      console.log("❌ Expected error for empty actor");
+      if (result.isError || result.content[0].text?.includes("MCP error")) {
+        console.log("✅ Correctly caught empty identifier error");
+      } else {
+        console.log("❌ Expected error for empty identifier");
+      }
     } catch (error) {
-      console.log("✅ Correctly caught empty actor error");
+      console.log("✅ Correctly caught empty identifier error");
     }
 
-    // Test 5: Empty content
+    // Test 5: Invalid limit
     try {
       await client.callTool({
-        name: "create-post",
+        name: "fetch-timeline",
         arguments: {
-          actor: "test-actor",
-          content: "",
+          identifier: "gargron@mastodon.social",
+          limit: -1,
         },
       });
-      console.log("❌ Expected error for empty content");
+      console.log("❌ Expected error for invalid limit");
     } catch (error) {
-      console.log("✅ Correctly caught empty content error");
+      console.log("✅ Correctly caught invalid limit error");
     }
 
-    // Test error scenarios for follow-actor tool
-    console.log("\n🤝 Testing follow-actor error scenarios...");
+    // Test error scenarios for search-instance tool
+    console.log("\n🔍 Testing search-instance error scenarios...");
 
-    // Test 6: Invalid target URL
+    // Test 6: Invalid domain
     try {
-      await client.callTool({
-        name: "follow-actor",
+      const result = await client.callTool({
+        name: "search-instance",
         arguments: {
-          actor: "test-actor",
-          target: "not-a-valid-url",
+          domain: "invalid-domain",
+          query: "test",
         },
       });
-      console.log("❌ Expected error for invalid URL");
+      if (result.isError || result.content[0].text?.includes("MCP error")) {
+        console.log("✅ Correctly caught invalid domain error");
+      } else {
+        console.log("❌ Expected error for invalid domain");
+      }
     } catch (error) {
-      console.log("✅ Correctly caught invalid URL error");
+      console.log("✅ Correctly caught invalid domain error");
     }
 
-    // Test 7: Empty actor for follow
+    // Test 7: Empty query
     try {
-      await client.callTool({
-        name: "follow-actor",
+      const result = await client.callTool({
+        name: "search-instance",
         arguments: {
-          actor: "",
-          target: "https://mastodon.social/users/example",
+          domain: "mastodon.social",
+          query: "",
         },
       });
-      console.log("❌ Expected error for empty actor");
+      if (result.isError || result.content[0].text?.includes("MCP error")) {
+        console.log("✅ Correctly caught empty query error");
+      } else {
+        console.log("❌ Expected error for empty query");
+      }
     } catch (error) {
-      console.log("✅ Correctly caught empty actor error");
+      console.log("✅ Correctly caught empty query error");
     }
 
-    // Test error scenarios for like-post tool
-    console.log("\n❤️ Testing like-post error scenarios...");
+    // Test error scenarios for get-instance-info tool
+    console.log("\n🏢 Testing get-instance-info error scenarios...");
 
-    // Test 8: Invalid post URL
+    // Test 8: Invalid domain format
     try {
-      await client.callTool({
-        name: "like-post",
+      const result = await client.callTool({
+        name: "get-instance-info",
         arguments: {
-          actor: "test-actor",
-          postUrl: "invalid-url",
+          domain: "invalid-domain-format",
         },
       });
-      console.log("❌ Expected error for invalid post URL");
+      if (result.isError || result.content[0].text?.includes("MCP error")) {
+        console.log("✅ Correctly caught invalid domain format error");
+      } else {
+        console.log("❌ Expected error for invalid domain format");
+      }
     } catch (error) {
-      console.log("✅ Correctly caught invalid post URL error");
+      console.log("✅ Correctly caught invalid domain format error");
     }
 
-    // Test 9: Empty actor for like
+    // Test 9: Empty domain
     try {
-      await client.callTool({
-        name: "like-post",
+      const result = await client.callTool({
+        name: "get-instance-info",
         arguments: {
-          actor: "",
-          postUrl: "https://example.com/posts/123",
+          domain: "",
         },
       });
-      console.log("❌ Expected error for empty actor");
+      if (result.isError || result.content[0].text?.includes("MCP error")) {
+        console.log("✅ Correctly caught empty domain error");
+      } else {
+        console.log("❌ Expected error for empty domain");
+      }
     } catch (error) {
-      console.log("✅ Correctly caught empty actor error");
+      console.log("✅ Correctly caught empty domain error");
     }
 
     // Test resource error scenarios
     console.log("\n📚 Testing resource error scenarios...");
 
-    // Test 10: Invalid actor resource
+    // Test 10: Invalid remote actor resource
     try {
       await client.readResource({
-        uri: "activitypub://actor/invalid-actor-with-special-chars@#$",
+        uri: "activitypub://remote-actor/invalid-format",
       });
-      console.log("❌ Expected error for invalid actor resource");
+      console.log("❌ Expected error for invalid remote actor resource");
     } catch (error) {
-      console.log("✅ Correctly caught invalid actor resource error");
+      console.log("✅ Correctly caught invalid remote actor resource error");
     }
 
     // Test 11: Malformed timeline resource
     try {
       await client.readResource({
-        uri: "activitypub://timeline/",
+        uri: "activitypub://remote-timeline/",
       });
       console.log("❌ Expected error for malformed timeline resource");
     } catch (error) {
@@ -190,23 +211,24 @@ async function testErrorScenarios() {
     // Test prompt error scenarios
     console.log("\n💭 Testing prompt error scenarios...");
 
-    // Test 12: Empty topic for compose-post prompt
+    // Test 12: Empty interests for explore-fediverse prompt
     try {
       await client.getPrompt({
-        name: "compose-post",
+        name: "explore-fediverse",
         arguments: {
-          topic: "",
+          interests: "",
+          instanceType: "mastodon",
         },
       });
-      console.log("❌ Expected error for empty topic");
+      console.log("❌ Expected error for empty interests");
     } catch (error) {
-      console.log("✅ Correctly caught empty topic error");
+      console.log("✅ Correctly caught empty interests error");
     }
 
-    // Test 13: Missing arguments for actor-introduction prompt
+    // Test 13: Missing arguments for compare-instances prompt
     try {
       await client.getPrompt({
-        name: "actor-introduction",
+        name: "compare-instances",
         arguments: {},
       });
       console.log("❌ Expected error for missing arguments");

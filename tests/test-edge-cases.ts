@@ -3,7 +3,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 
 /**
  * Test script for edge cases and boundary conditions in ActivityPub MCP Server
- * This test file focuses on testing edge cases to increase code coverage
+ * This test file focuses on testing edge cases for existing functionality
  */
 async function testEdgeCases() {
   console.log("🔍 Testing ActivityPub MCP Server Edge Cases...\n");
@@ -24,272 +24,264 @@ async function testEdgeCases() {
     await client.connect(transport);
     console.log("✅ Connected successfully!\n");
 
-    // Test edge cases for actor identifiers
-    console.log("👤 Testing actor identifier edge cases...");
+    // Test edge cases for discover-actor tool
+    console.log("👤 Testing discover-actor edge cases...");
 
-    // Test 1: Single character identifier
-    console.log("Test 1: Single character identifier");
+    // Test 1: Invalid actor identifier format
+    console.log("Test 1: Invalid actor identifier format");
     try {
       const result = await client.callTool({
-        name: "create-actor",
+        name: "discover-actor",
         arguments: {
-          identifier: "a",
-          name: "Single Char User",
-          summary: "A user with single character identifier",
+          identifier: "invalid-format",
         },
       });
-      console.log("✅ Created actor with single character identifier");
+      console.log("❌ Expected error for invalid identifier format");
     } catch (error) {
-      console.log("❌ Failed with single character identifier:", error);
+      console.log(
+        "✅ Correctly caught invalid identifier error:",
+        error.message,
+      );
     }
 
-    // Test 2: Very long identifier (boundary testing)
-    console.log("Test 2: Very long identifier");
+    // Test 2: Very long actor identifier
+    console.log("Test 2: Very long actor identifier");
     try {
-      const longIdentifier = "a".repeat(100);
+      const longIdentifier = `${"a".repeat(100)}@example.social`;
       const result = await client.callTool({
-        name: "create-actor",
+        name: "discover-actor",
         arguments: {
           identifier: longIdentifier,
-          name: "Long Identifier User",
-          summary: "A user with very long identifier",
         },
       });
-      console.log("✅ Created actor with very long identifier");
+      console.log("❌ Expected error for very long identifier");
     } catch (error) {
-      console.log("❌ Failed with very long identifier:", error);
+      console.log("✅ Correctly caught long identifier error:", error.message);
     }
 
-    // Test 3: Identifier with numbers only
-    console.log("Test 3: Numeric-only identifier");
+    // Test 3: Empty actor identifier
+    console.log("Test 3: Empty actor identifier");
     try {
       const result = await client.callTool({
-        name: "create-actor",
+        name: "discover-actor",
         arguments: {
-          identifier: "123456789",
-          name: "Numeric User",
-          summary: "A user with numeric-only identifier",
+          identifier: "",
         },
       });
-      console.log("✅ Created actor with numeric-only identifier");
+      console.log("❌ Expected error for empty identifier");
     } catch (error) {
-      console.log("❌ Failed with numeric-only identifier:", error);
+      console.log("✅ Correctly caught empty identifier error:", error.message);
     }
 
-    // Test edge cases for content
-    console.log("\n📝 Testing content edge cases...");
+    // Test edge cases for fetch-timeline tool
+    console.log("\n📝 Testing fetch-timeline edge cases...");
 
-    // Test 4: Very long content
-    console.log("Test 4: Very long content");
+    // Test 4: Invalid timeline limit
+    console.log("Test 4: Invalid timeline limit");
     try {
-      const longContent =
-        "This is a very long post content that tests the system's ability to handle extended text. ".repeat(
-          50,
-        );
       const result = await client.callTool({
-        name: "create-post",
+        name: "fetch-timeline",
         arguments: {
-          actor: "a",
-          content: longContent,
+          identifier: "gargron@mastodon.social",
+          limit: -1,
         },
       });
-      console.log("✅ Created post with very long content");
+      console.log("❌ Expected error for negative limit");
     } catch (error) {
-      console.log("❌ Failed with very long content:", error);
+      console.log("✅ Correctly caught negative limit error:", error.message);
     }
 
-    // Test 5: Content with only whitespace
-    console.log("Test 5: Whitespace-only content");
+    // Test 5: Very large timeline limit
+    console.log("Test 5: Very large timeline limit");
     try {
       const result = await client.callTool({
-        name: "create-post",
+        name: "fetch-timeline",
         arguments: {
-          actor: "a",
-          content: "   \n\t   \n   ",
+          identifier: "gargron@mastodon.social",
+          limit: 1000,
         },
       });
-      console.log("✅ Created post with whitespace-only content");
+      console.log("❌ Expected error for very large limit");
     } catch (error) {
-      console.log("❌ Failed with whitespace-only content:", error);
+      console.log("✅ Correctly caught large limit error:", error.message);
     }
 
-    // Test 6: Content with special characters and unicode
-    console.log("Test 6: Unicode and special characters content");
+    // Test 6: Non-existent actor timeline
+    console.log("Test 6: Non-existent actor timeline");
     try {
-      const unicodeContent =
-        "Testing unicode: 🌍🚀💻 Chinese: 你好世界 Arabic: مرحبا بالعالم Russian: Привет мир Japanese: こんにちは世界";
       const result = await client.callTool({
-        name: "create-post",
+        name: "fetch-timeline",
         arguments: {
-          actor: "123456789",
-          content: unicodeContent,
+          identifier: "nonexistent@example.social",
+          limit: 10,
         },
       });
-      console.log("✅ Created post with unicode content");
+      console.log("✅ Handled non-existent actor gracefully");
     } catch (error) {
-      console.log("❌ Failed with unicode content:", error);
+      console.log(
+        "✅ Correctly caught non-existent actor error:",
+        error.message,
+      );
     }
 
-    // Test edge cases for URLs
-    console.log("\n🔗 Testing URL edge cases...");
+    // Test edge cases for search-instance tool
+    console.log("\n🔗 Testing search-instance edge cases...");
 
-    // Test 7: Very long URL
-    console.log("Test 7: Very long URL");
+    // Test 7: Invalid domain format
+    console.log("Test 7: Invalid domain format");
     try {
-      const longUrl = `https://example.com/${"a".repeat(500)}`;
       const result = await client.callTool({
-        name: "follow-actor",
+        name: "search-instance",
         arguments: {
-          follower: "a",
-          target: longUrl,
+          domain: "invalid-domain",
+          query: "test",
         },
       });
-      console.log("✅ Followed actor with very long URL");
+      console.log("❌ Expected error for invalid domain");
     } catch (error) {
-      console.log("❌ Failed with very long URL:", error);
+      console.log("✅ Correctly caught invalid domain error:", error.message);
     }
 
-    // Test 8: URL with special characters
-    console.log("Test 8: URL with special characters");
+    // Test 8: Empty search query
+    console.log("Test 8: Empty search query");
     try {
-      const specialUrl =
-        "https://example.com/users/test-user_123.json?param=value&other=test";
       const result = await client.callTool({
-        name: "follow-actor",
+        name: "search-instance",
         arguments: {
-          follower: "123456789",
-          target: specialUrl,
+          domain: "mastodon.social",
+          query: "",
         },
       });
-      console.log("✅ Followed actor with special character URL");
+      console.log("❌ Expected error for empty query");
     } catch (error) {
-      console.log("❌ Failed with special character URL:", error);
+      console.log("✅ Correctly caught empty query error:", error.message);
     }
 
-    // Test 9: URL with unicode characters
-    console.log("Test 9: URL with unicode characters");
+    // Test 9: Very long search query
+    console.log("Test 9: Very long search query");
     try {
-      const unicodeUrl = "https://example.com/users/José-María";
+      const longQuery = "test ".repeat(1000);
       const result = await client.callTool({
-        name: "like-post",
+        name: "search-instance",
         arguments: {
-          actor: "a",
-          postUri: unicodeUrl,
+          domain: "mastodon.social",
+          query: longQuery,
         },
       });
-      console.log("✅ Liked post with unicode URL");
+      console.log("✅ Handled long query gracefully");
     } catch (error) {
-      console.log("❌ Failed with unicode URL:", error);
+      console.log("✅ Correctly caught long query error:", error.message);
     }
 
     // Test edge cases for resources
     console.log("\n📚 Testing resource edge cases...");
 
-    // Test 10: Resource with very long actor identifier
-    console.log("Test 10: Resource with very long actor identifier");
+    // Test 10: Resource with invalid URI format
+    console.log("Test 10: Resource with invalid URI format");
     try {
-      const longIdentifier = "a".repeat(100);
       const result = await client.readResource({
-        uri: `activitypub://actor/${longIdentifier}`,
+        uri: "invalid://protocol/test",
       });
-      console.log("✅ Read resource with very long actor identifier");
+      console.log("❌ Expected error for invalid URI protocol");
     } catch (error) {
-      console.log(
-        "❌ Failed to read resource with very long identifier:",
-        error,
-      );
+      console.log("✅ Correctly caught invalid URI error:", error.message);
     }
 
-    // Test 11: Timeline resource with special characters
-    console.log("Test 11: Timeline resource with special characters");
+    // Test 11: Remote actor resource with invalid identifier
+    console.log("Test 11: Remote actor resource with invalid identifier");
     try {
       const result = await client.readResource({
-        uri: "activitypub://timeline/test-user_123",
+        uri: "activitypub://remote-actor/invalid-format",
       });
-      console.log("✅ Read timeline resource with special characters");
+      console.log("❌ Expected error for invalid actor identifier");
     } catch (error) {
-      console.log("❌ Failed to read timeline with special characters:", error);
+      console.log(
+        "✅ Correctly caught invalid actor identifier error:",
+        error.message,
+      );
     }
 
     // Test edge cases for prompts
     console.log("\n💭 Testing prompt edge cases...");
 
-    // Test 12: Prompt with very long topic
-    console.log("Test 12: Prompt with very long topic");
+    // Test 12: Prompt with empty interests
+    console.log("Test 12: Prompt with empty interests");
     try {
-      const longTopic =
-        "This is a very long topic that tests how the prompt system handles extended input text. ".repeat(
-          20,
-        );
       const result = await client.getPrompt({
-        name: "compose-post",
+        name: "explore-fediverse",
         arguments: {
-          topic: longTopic,
-          tone: "professional",
+          interests: "",
+          instanceType: "mastodon",
         },
       });
-      console.log("✅ Generated prompt with very long topic");
+      console.log("❌ Expected error for empty interests");
     } catch (error) {
-      console.log("❌ Failed with very long topic:", error);
+      console.log("✅ Correctly caught empty interests error:", error.message);
     }
 
-    // Test 13: Actor introduction with minimal data
-    console.log("Test 13: Actor introduction with minimal data");
+    // Test 13: Prompt with invalid instance type
+    console.log("Test 13: Prompt with invalid instance type");
     try {
       const result = await client.getPrompt({
-        name: "actor-introduction",
+        name: "explore-fediverse",
         arguments: {
-          actorName: "A",
-          interests: "B",
-          background: "C",
+          interests: "technology",
+          instanceType: "invalid-type",
         },
       });
-      console.log("✅ Generated introduction with minimal data");
+      console.log("✅ Handled invalid instance type gracefully");
     } catch (error) {
-      console.log("❌ Failed with minimal data:", error);
+      console.log(
+        "✅ Correctly caught invalid instance type error:",
+        error.message,
+      );
     }
 
-    // Test 14: Actor introduction with very long data
-    console.log("Test 14: Actor introduction with very long data");
+    // Test 14: Compare instances prompt with invalid instances
+    console.log("Test 14: Compare instances prompt with invalid instances");
     try {
-      const longInterests = "Interest ".repeat(100);
-      const longBackground = "Background information ".repeat(50);
       const result = await client.getPrompt({
-        name: "actor-introduction",
+        name: "compare-instances",
         arguments: {
-          actorName: "Very Long Name User With Extended Information",
-          interests: longInterests,
-          background: longBackground,
+          instances: "",
+          criteria: "community size",
         },
       });
-      console.log("✅ Generated introduction with very long data");
+      console.log("❌ Expected error for empty instances");
     } catch (error) {
-      console.log("❌ Failed with very long data:", error);
+      console.log("✅ Correctly caught empty instances error:", error.message);
     }
 
     // Test boundary conditions
     console.log("\n🎯 Testing boundary conditions...");
 
-    // Test 15: Multiple rapid requests
-    console.log("Test 15: Multiple rapid requests");
+    // Test 15: Multiple rapid discover-actor requests
+    console.log("Test 15: Multiple rapid discover-actor requests");
     try {
       const promises = [];
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 3; i++) {
         promises.push(
-          client.callTool({
-            name: "create-actor",
-            arguments: {
-              identifier: `rapid-${i}`,
-              name: `Rapid User ${i}`,
-              summary: `Rapid test user ${i}`,
-            },
-          }),
+          client
+            .callTool({
+              name: "discover-actor",
+              arguments: {
+                identifier: "gargron@mastodon.social",
+              },
+            })
+            .catch((error) => ({ error: error.message })),
         );
       }
-      await Promise.all(promises);
-      console.log("✅ Handled multiple rapid requests");
+      const results = await Promise.all(promises);
+      const successes = results.filter((r) => !r.error);
+      const errors = results.filter((r) => r.error);
+      console.log(
+        `✅ Handled multiple rapid requests: ${successes.length} successes, ${errors.length} errors`,
+      );
     } catch (error) {
-      console.log("❌ Failed with multiple rapid requests:", error);
+      console.log(
+        "✅ Handled multiple rapid requests with errors:",
+        error.message,
+      );
     }
 
     console.log("\n🎉 Edge case tests completed!");

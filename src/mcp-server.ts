@@ -30,8 +30,8 @@ const ActorIdentifierSchema = z
   .min(1, "Actor identifier cannot be empty")
   .max(100, "Actor identifier too long")
   .regex(
-    /^[a-zA-Z0-9_.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$|^[a-zA-Z0-9_-]+$/,
-    "Actor identifier must be either a local username or a full fediverse handle (user@domain.com)",
+    /^[a-zA-Z0-9_.-]+@[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
+    "Invalid identifier format. Expected: user@domain.com",
   );
 
 const PostContentSchema = z
@@ -44,7 +44,24 @@ const UriSchema = z.string().url("Invalid URI format");
 const DomainSchema = z
   .string()
   .min(1, "Domain cannot be empty")
-  .regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid domain format");
+  .max(253, "Domain too long")
+  .regex(
+    /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
+    "Invalid domain format",
+  )
+  .refine(
+    (domain) =>
+      !domain.includes("..") &&
+      !domain.startsWith(".") &&
+      !domain.endsWith(".") &&
+      domain.includes("."), // Must contain at least one dot for TLD
+    "Invalid domain format",
+  );
+
+const QuerySchema = z
+  .string()
+  .min(1, "Query cannot be empty")
+  .max(500, "Query too long");
 
 /**
  * ActivityPub MCP Server
@@ -141,6 +158,34 @@ class ActivityPubMCPServer {
       throw new McpError(
         ErrorCode.InvalidParams,
         `Invalid post content: ${error instanceof z.ZodError ? error.errors[0].message : "Unknown validation error"}`,
+      );
+    }
+  }
+
+  /**
+   * Validate domain format
+   */
+  private validateDomain(domain: string): string {
+    try {
+      return DomainSchema.parse(domain);
+    } catch (error) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Invalid domain: ${error instanceof z.ZodError ? error.errors[0].message : "Unknown validation error"}`,
+      );
+    }
+  }
+
+  /**
+   * Validate query string
+   */
+  private validateQuery(query: string): string {
+    try {
+      return QuerySchema.parse(query);
+    } catch (error) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Invalid query: ${error instanceof z.ZodError ? error.errors[0].message : "Unknown validation error"}`,
       );
     }
   }
@@ -616,19 +661,20 @@ class ActivityPubMCPServer {
         description:
           "Discover and get information about any actor in the fediverse",
         inputSchema: {
-          identifier: z
-            .string()
-            .describe("Actor identifier (e.g., user@example.social)"),
+          identifier: ActorIdentifierSchema.describe(
+            "Actor identifier (e.g., user@example.social)",
+          ),
         },
       },
       async ({ identifier }) => {
+        // Validate input first, outside of try-catch so validation errors are thrown directly
+        const validIdentifier = this.validateActorIdentifier(identifier);
+
         const requestId = performanceMonitor.startRequest("discover-actor", {
-          identifier,
+          identifier: validIdentifier,
         });
 
         try {
-          const validIdentifier = this.validateActorIdentifier(identifier);
-
           if (!this.checkRateLimit(validIdentifier)) {
             performanceMonitor.endRequest(
               requestId,
@@ -673,6 +719,19 @@ class ActivityPubMCPServer {
             error: errorMessage,
           });
 
+          // Re-throw McpError instances (validation errors) instead of converting to soft errors
+          logger.debug("Error type check", {
+            isError: error instanceof Error,
+            isMcpError: error instanceof McpError,
+            errorName: error?.constructor?.name,
+            errorMessage:
+              error instanceof Error ? error.message : String(error),
+          });
+
+          if (error instanceof McpError) {
+            throw error;
+          }
+
           return {
             content: [
               {
@@ -706,9 +765,10 @@ class ActivityPubMCPServer {
         },
       },
       async ({ identifier, limit = 20 }) => {
-        try {
-          const validIdentifier = this.validateActorIdentifier(identifier);
+        // Validate input first, outside of try-catch so validation errors are thrown directly
+        const validIdentifier = this.validateActorIdentifier(identifier);
 
+        try {
           if (!this.checkRateLimit(validIdentifier)) {
             throw new McpError(
               ErrorCode.InternalError,
@@ -758,6 +818,11 @@ ${postCount > 5 ? `... and ${postCount - 5} more posts` : ""}`,
             error: error instanceof Error ? error.message : String(error),
           });
 
+          // Re-throw McpError instances (validation errors) instead of converting to soft errors
+          if (error instanceof McpError) {
+            throw error;
+          }
+
           return {
             content: [
               {
@@ -778,8 +843,10 @@ ${postCount > 5 ? `... and ${postCount - 5} more posts` : ""}`,
         title: "Search Fediverse Instance",
         description: "Search for content on a specific fediverse instance",
         inputSchema: {
-          domain: z.string().describe("Instance domain (e.g., example.social)"),
-          query: z.string().describe("Search query"),
+          domain: DomainSchema.describe(
+            "Instance domain (e.g., example.social)",
+          ),
+          query: QuerySchema.describe("Search query"),
           type: z
             .enum(["accounts", "statuses", "hashtags"])
             .optional()
@@ -787,9 +854,11 @@ ${postCount > 5 ? `... and ${postCount - 5} more posts` : ""}`,
         },
       },
       async ({ domain, query, type = "accounts" }) => {
-        try {
-          const validDomain = DomainSchema.parse(domain);
+        // Validate input first, outside of try-catch so validation errors are thrown directly
+        const validDomain = this.validateDomain(domain);
+        const validQuery = this.validateQuery(query);
 
+        try {
           if (!this.checkRateLimit(validDomain)) {
             throw new McpError(
               ErrorCode.InternalError,
@@ -799,13 +868,13 @@ ${postCount > 5 ? `... and ${postCount - 5} more posts` : ""}`,
 
           logger.info("Searching instance", {
             domain: validDomain,
-            query,
+            query: validQuery,
             type,
           });
 
           const results = await remoteClient.searchInstance(
             validDomain,
-            query,
+            validQuery,
             type,
           );
 
@@ -813,7 +882,7 @@ ${postCount > 5 ? `... and ${postCount - 5} more posts` : ""}`,
             content: [
               {
                 type: "text",
-                text: `Search results for "${query}" on ${validDomain} (${type}):
+                text: `Search results for "${validQuery}" on ${validDomain} (${type}):
 
 ${JSON.stringify(results, null, 2)}`,
               },
@@ -825,6 +894,11 @@ ${JSON.stringify(results, null, 2)}`,
             query,
             error: error instanceof Error ? error.message : String(error),
           });
+
+          // Re-throw McpError instances (validation errors) instead of converting to soft errors
+          if (error instanceof McpError) {
+            throw error;
+          }
 
           return {
             content: [
@@ -846,13 +920,16 @@ ${JSON.stringify(results, null, 2)}`,
         title: "Get Instance Information",
         description: "Get detailed information about a fediverse instance",
         inputSchema: {
-          domain: z.string().describe("Instance domain (e.g., example.social)"),
+          domain: DomainSchema.describe(
+            "Instance domain (e.g., example.social)",
+          ),
         },
       },
       async ({ domain }) => {
-        try {
-          const validDomain = DomainSchema.parse(domain);
+        // Validate input first, outside of try-catch so validation errors are thrown directly
+        const validDomain = this.validateDomain(domain);
 
+        try {
           if (!this.checkRateLimit(validDomain)) {
             throw new McpError(
               ErrorCode.InternalError,
@@ -896,6 +973,11 @@ ${instanceInfo.contact_account ? `📞 Contact: @${instanceInfo.contact_account.
             domain,
             error: error instanceof Error ? error.message : String(error),
           });
+
+          // Re-throw McpError instances (validation errors) instead of converting to soft errors
+          if (error instanceof McpError) {
+            throw error;
+          }
 
           return {
             content: [
@@ -1273,9 +1355,18 @@ ${requestHistory
         argsSchema: {
           interests: z
             .string()
+            .min(1, "Interests cannot be empty")
+            .max(500, "Interests too long")
             .describe("Your interests or topics you want to explore"),
           instanceType: z
-            .enum(["mastodon", "pleroma", "misskey", "any"])
+            .enum([
+              "mastodon",
+              "pleroma",
+              "misskey",
+              "pixelfed",
+              "peertube",
+              "any",
+            ])
             .optional()
             .describe("Preferred type of fediverse instance"),
         },
@@ -1302,9 +1393,13 @@ ${requestHistory
         argsSchema: {
           instances: z
             .string()
+            .min(1, "Instances list cannot be empty")
+            .max(500, "Instances list too long")
             .describe("Comma-separated list of instance domains to compare"),
           criteria: z
             .string()
+            .min(1, "Criteria cannot be empty")
+            .max(500, "Criteria too long")
             .optional()
             .describe(
               "Specific criteria for comparison (e.g., size, rules, features)",
@@ -1332,20 +1427,24 @@ ${requestHistory
         description:
           "Get recommendations for discovering interesting content and people",
         argsSchema: {
-          topic: z.string().describe("Topic or subject you want to explore"),
+          topics: z
+            .string()
+            .min(1, "Topics cannot be empty")
+            .max(500, "Topics too long")
+            .describe("Comma-separated topics or subjects you want to explore"),
           contentType: z
             .enum(["people", "hashtags", "instances", "all"])
             .optional()
             .describe("Type of content to discover"),
         },
       },
-      ({ topic, contentType = "all" }) => ({
+      ({ topics, contentType = "all" }) => ({
         messages: [
           {
             role: "user",
             content: {
               type: "text",
-              text: `I want to discover ${contentType === "all" ? "content" : contentType} related to "${topic}" in the fediverse. Can you suggest specific ${contentType === "people" ? "accounts to follow" : contentType === "hashtags" ? "hashtags to search" : contentType === "instances" ? "instances to explore" : "accounts, hashtags, and instances"} that would be interesting for someone interested in ${topic}?`,
+              text: `I want to discover ${contentType === "all" ? "content" : contentType} related to "${topics}" in the fediverse. Can you suggest specific ${contentType === "people" ? "accounts to follow" : contentType === "hashtags" ? "hashtags to search" : contentType === "instances" ? "instances to explore" : "accounts, hashtags, and instances"} that would be interesting for someone interested in ${topics}?`,
             },
           },
         ],

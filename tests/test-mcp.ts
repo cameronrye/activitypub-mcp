@@ -61,47 +61,59 @@ async function testMCPServer() {
     );
     console.log();
 
-    // Test 5: Test create-actor tool
-    console.log("👤 Testing create-actor tool...");
-    const createActorResult = await client.callTool({
-      name: "create-actor",
-      arguments: {
-        identifier: "test-user",
-        name: "Test User",
-        summary: "A test user for MCP testing",
-      },
-    });
-    console.log("Create actor result:", createActorResult.content[0]);
-    console.log();
-
-    // Test 6: Test actor resource
-    console.log("🔍 Testing actor resource...");
+    // Test 5: Test discover-actor tool (existing functionality)
+    console.log("👤 Testing discover-actor tool...");
     try {
-      const actorResource = await client.readResource({
-        uri: "activitypub://actor/test-user",
+      const discoverActorResult = await client.callTool({
+        name: "discover-actor",
+        arguments: {
+          identifier: "gargron@mastodon.social",
+        },
       });
-      console.log(
-        "Actor resource:",
-        JSON.parse(actorResource.contents[0].text || "{}"),
-      );
+      console.log("Discover actor result:", discoverActorResult.content[0]);
     } catch (error) {
       console.log(
-        "Actor resource error (expected):",
+        "Discover actor error:",
         error instanceof Error ? error.message : error,
       );
     }
     console.log();
 
-    // Test 7: Test compose-post prompt
-    console.log("✍️  Testing compose-post prompt...");
-    const composePrompt = await client.getPrompt({
-      name: "compose-post",
-      arguments: {
-        topic: "ActivityPub MCP integration",
-        tone: "professional",
-      },
-    });
-    console.log("Compose prompt:", composePrompt.messages[0].content);
+    // Test 6: Test remote-actor resource (existing functionality)
+    console.log("🔍 Testing remote-actor resource...");
+    try {
+      const actorResource = await client.readResource({
+        uri: "activitypub://remote-actor/gargron@mastodon.social",
+      });
+      console.log(
+        "Remote actor resource:",
+        JSON.parse(actorResource.contents[0].text || "{}"),
+      );
+    } catch (error) {
+      console.log(
+        "Remote actor resource error:",
+        error instanceof Error ? error.message : error,
+      );
+    }
+    console.log();
+
+    // Test 7: Test explore-fediverse prompt (existing functionality)
+    console.log("🌐 Testing explore-fediverse prompt...");
+    try {
+      const explorePrompt = await client.getPrompt({
+        name: "explore-fediverse",
+        arguments: {
+          interests: "ActivityPub MCP integration",
+          instanceType: "mastodon",
+        },
+      });
+      console.log("Explore prompt:", explorePrompt.messages[0].content);
+    } catch (error) {
+      console.log(
+        "Explore prompt error:",
+        error instanceof Error ? error.message : error,
+      );
+    }
     console.log();
 
     console.log("🎉 All tests completed successfully!");

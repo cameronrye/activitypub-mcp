@@ -24,93 +24,95 @@ async function testCoverageBoost() {
     await client.connect(transport);
     console.log("✅ Connected successfully!\n");
 
-    // Test error paths in follow-actor tool
-    console.log("🔧 Testing follow-actor error paths...");
+    // Test error paths in discover-instances tool
+    console.log("🔧 Testing discover-instances error paths...");
 
-    // Test 1: Force error in follow-actor by throwing exception
-    console.log("Test 1: Testing follow-actor error handling");
+    // Test 1: Force error in discover-instances with invalid criteria
+    console.log("Test 1: Testing discover-instances error handling");
     try {
-      // This should trigger the error path in follow-actor
       const result = await client.callTool({
-        name: "follow-actor",
+        name: "discover-instances",
         arguments: {
-          follower: "test-actor",
-          target: "https://mastodon.social/users/example",
+          criteria: "invalid-criteria",
+          limit: 5,
         },
       });
-      console.log("✅ Follow-actor completed (may have triggered error path)");
+      console.log(
+        "✅ Discover-instances completed (may have triggered error path)",
+      );
     } catch (error) {
-      console.log("✅ Follow-actor error path tested:", error);
+      console.log("✅ Discover-instances error path tested:", error);
     }
 
-    // Test error paths in like-post tool
-    console.log("\n❤️ Testing like-post error paths...");
+    // Test error paths in recommend-instances tool
+    console.log("\n🏢 Testing recommend-instances error paths...");
 
-    // Test 2: Force error in like-post
-    console.log("Test 2: Testing like-post error handling");
+    // Test 2: Force error in recommend-instances
+    console.log("Test 2: Testing recommend-instances error handling");
     try {
       const result = await client.callTool({
-        name: "like-post",
+        name: "recommend-instances",
         arguments: {
-          actor: "test-actor",
-          postUri: "https://example.com/posts/123",
+          interests: "",
+          language: "invalid-language",
         },
       });
-      console.log("✅ Like-post completed (may have triggered error path)");
+      console.log(
+        "✅ Recommend-instances completed (may have triggered error path)",
+      );
     } catch (error) {
-      console.log("✅ Like-post error path tested:", error);
+      console.log("✅ Recommend-instances error path tested:", error);
     }
 
     // Test various prompt scenarios to increase coverage
     console.log("\n💭 Testing prompt variations...");
 
-    // Test 3: Different tone options for compose-post
-    const tones = ["casual", "professional", "humorous", "informative"];
-    for (const tone of tones) {
-      console.log(`Test 3.${tones.indexOf(tone) + 1}: Testing ${tone} tone`);
+    // Test 3: Different instance types for explore-fediverse
+    const instanceTypes = ["mastodon", "pleroma", "pixelfed", "peertube"];
+    for (const instanceType of instanceTypes) {
+      console.log(
+        `Test 3.${instanceTypes.indexOf(instanceType) + 1}: Testing ${instanceType} instance type`,
+      );
       try {
         const result = await client.getPrompt({
-          name: "compose-post",
+          name: "explore-fediverse",
           arguments: {
-            topic: `Test topic for ${tone} tone`,
-            tone: tone,
+            interests: `Test interests for ${instanceType}`,
+            instanceType: instanceType,
           },
         });
-        console.log(`✅ Generated ${tone} prompt`);
+        console.log(`✅ Generated ${instanceType} prompt`);
       } catch (error) {
-        console.log(`❌ Failed with ${tone} tone:`, error);
+        console.log(`❌ Failed with ${instanceType} instance type:`, error);
       }
     }
 
-    // Test 4: Actor introduction with various combinations
-    console.log("\nTest 4: Testing actor introduction variations");
-    const introTests = [
+    // Test 4: Compare instances with various combinations
+    console.log("\nTest 4: Testing compare-instances variations");
+    const compareTests = [
       {
-        actorName: "TestUser1",
-        interests: "coding",
-        background: "developer",
+        instances: "mastodon.social, pixelfed.social",
+        criteria: "community size",
       },
       {
-        actorName: "TestUser2",
-        interests: "music, art, technology",
-        background: "Creative professional with tech background",
+        instances: "lemmy.ml, kbin.social",
+        criteria: "moderation policies",
       },
       {
-        actorName: "TestUser3",
-        interests: "",
-        background: "",
+        instances: "peertube.tv",
+        criteria: "features",
       },
     ];
 
-    for (const intro of introTests) {
+    for (const compare of compareTests) {
       try {
         const result = await client.getPrompt({
-          name: "actor-introduction",
-          arguments: intro,
+          name: "compare-instances",
+          arguments: compare,
         });
-        console.log(`✅ Generated introduction for ${intro.actorName}`);
+        console.log(`✅ Generated comparison for ${compare.instances}`);
       } catch (error) {
-        console.log(`❌ Failed introduction for ${intro.actorName}:`, error);
+        console.log(`❌ Failed comparison for ${compare.instances}:`, error);
       }
     }
 
@@ -119,13 +121,13 @@ async function testCoverageBoost() {
 
     // Test 5: Various invalid resource URIs
     const invalidUris = [
-      "activitypub://actor/",
-      "activitypub://timeline/",
+      "activitypub://remote-actor/",
+      "activitypub://remote-timeline/",
       "activitypub://invalid-resource/test",
       "invalid://protocol/test",
-      "activitypub://actor/test@invalid",
-      "activitypub://actor/test#invalid",
-      "activitypub://actor/test?invalid",
+      "activitypub://remote-actor/test@invalid",
+      "activitypub://instance-info/",
+      "activitypub://remote-followers/invalid-format",
     ];
 
     for (const uri of invalidUris) {
@@ -143,15 +145,15 @@ async function testCoverageBoost() {
     // Test tool validation edge cases
     console.log("\n🔧 Testing tool validation edge cases...");
 
-    // Test 6: Create actor with various invalid inputs
+    // Test 6: Discover actor with various invalid inputs
     const invalidActorInputs = [
-      { identifier: null, name: "Test", summary: "Test" },
-      { identifier: undefined, name: "Test", summary: "Test" },
-      { identifier: "test", name: null, summary: "Test" },
-      { identifier: "test", name: "Test", summary: null },
-      { identifier: 123, name: "Test", summary: "Test" },
-      { identifier: "test", name: 123, summary: "Test" },
-      { identifier: "test", name: "Test", summary: 123 },
+      { identifier: null },
+      { identifier: undefined },
+      { identifier: "" },
+      { identifier: 123 },
+      { identifier: "invalid-format" },
+      { identifier: "@invalid" },
+      { identifier: "invalid@" },
     ];
 
     for (const input of invalidActorInputs) {
@@ -160,7 +162,7 @@ async function testCoverageBoost() {
       );
       try {
         const result = await client.callTool({
-          name: "create-actor",
+          name: "discover-actor",
           arguments: input,
         });
         console.log("❌ Expected error for invalid input");
@@ -169,23 +171,25 @@ async function testCoverageBoost() {
       }
     }
 
-    // Test 7: Create post with various invalid inputs
-    const invalidPostInputs = [
-      { actor: null, content: "Test content" },
-      { actor: undefined, content: "Test content" },
-      { actor: "test", content: null },
-      { actor: "test", content: undefined },
-      { actor: 123, content: "Test content" },
-      { actor: "test", content: 123 },
+    // Test 7: Search instance with various invalid inputs
+    const invalidSearchInputs = [
+      { domain: null, query: "test" },
+      { domain: undefined, query: "test" },
+      { domain: "mastodon.social", query: null },
+      { domain: "mastodon.social", query: undefined },
+      { domain: 123, query: "test" },
+      { domain: "mastodon.social", query: 123 },
+      { domain: "", query: "test" },
+      { domain: "mastodon.social", query: "" },
     ];
 
-    for (const input of invalidPostInputs) {
+    for (const input of invalidSearchInputs) {
       console.log(
-        `Test 7.${invalidPostInputs.indexOf(input) + 1}: Testing invalid post input`,
+        `Test 7.${invalidSearchInputs.indexOf(input) + 1}: Testing invalid search input`,
       );
       try {
         const result = await client.callTool({
-          name: "create-post",
+          name: "search-instance",
           arguments: input,
         });
         console.log("❌ Expected error for invalid input");
@@ -194,88 +198,64 @@ async function testCoverageBoost() {
       }
     }
 
-    // Test 8: Follow actor with various invalid inputs
-    const invalidFollowInputs = [
-      { follower: null, target: "https://example.com" },
-      { follower: undefined, target: "https://example.com" },
-      { follower: "test", target: null },
-      { follower: "test", target: undefined },
-      { follower: 123, target: "https://example.com" },
-      { follower: "test", target: 123 },
+    // Test 8: Health check with various invalid inputs
+    const invalidHealthInputs = [
+      { detailed: "not-boolean" },
+      { detailed: 123 },
+      { detailed: null },
+      { detailed: undefined },
     ];
 
-    for (const input of invalidFollowInputs) {
+    for (const input of invalidHealthInputs) {
       console.log(
-        `Test 8.${invalidFollowInputs.indexOf(input) + 1}: Testing invalid follow input`,
+        `Test 8.${invalidHealthInputs.indexOf(input) + 1}: Testing invalid health check input`,
       );
       try {
         const result = await client.callTool({
-          name: "follow-actor",
+          name: "health-check",
           arguments: input,
         });
-        console.log("❌ Expected error for invalid input");
+        console.log("✅ Health check handled invalid input gracefully");
       } catch (error) {
         console.log("✅ Correctly caught error for invalid input");
       }
     }
 
-    // Test 9: Like post with various invalid inputs
-    const invalidLikeInputs = [
-      { actor: null, postUri: "https://example.com/posts/1" },
-      { actor: undefined, postUri: "https://example.com/posts/1" },
-      { actor: "test", postUri: null },
-      { actor: "test", postUri: undefined },
-      { actor: 123, postUri: "https://example.com/posts/1" },
-      { actor: "test", postUri: 123 },
-    ];
-
-    for (const input of invalidLikeInputs) {
-      console.log(
-        `Test 9.${invalidLikeInputs.indexOf(input) + 1}: Testing invalid like input`,
-      );
-      try {
-        const result = await client.callTool({
-          name: "like-post",
-          arguments: input,
-        });
-        console.log("❌ Expected error for invalid input");
-      } catch (error) {
-        console.log("✅ Correctly caught error for invalid input");
-      }
-    }
-
-    // Test 10: Prompt with various invalid inputs
+    // Test 9: Prompt with various invalid inputs
     const invalidPromptInputs = [
       {
-        name: "compose-post",
-        arguments: { topic: null, tone: "professional" },
+        name: "explore-fediverse",
+        arguments: { interests: null, instanceType: "mastodon" },
       },
       {
-        name: "compose-post",
-        arguments: { topic: undefined, tone: "professional" },
-      },
-      { name: "compose-post", arguments: { topic: "test", tone: null } },
-      {
-        name: "compose-post",
-        arguments: { topic: "test", tone: "invalid-tone" },
+        name: "explore-fediverse",
+        arguments: { interests: undefined, instanceType: "mastodon" },
       },
       {
-        name: "actor-introduction",
-        arguments: { actorName: null, interests: "test", background: "test" },
+        name: "explore-fediverse",
+        arguments: { interests: "test", instanceType: null },
       },
       {
-        name: "actor-introduction",
-        arguments: { actorName: "test", interests: null, background: "test" },
+        name: "explore-fediverse",
+        arguments: { interests: "test", instanceType: "invalid-type" },
       },
       {
-        name: "actor-introduction",
-        arguments: { actorName: "test", interests: "test", background: null },
+        name: "compare-instances",
+        arguments: { instances: null, criteria: "community size" },
+      },
+      {
+        name: "compare-instances",
+        arguments: { instances: "mastodon.social", criteria: null },
+      },
+      {
+        name: "discover-content",
+        arguments: { topics: null, contentType: "all" },
       },
     ];
 
     for (const input of invalidPromptInputs) {
       console.log(
-        `Test 10.${invalidPromptInputs.indexOf(input) + 1}: Testing invalid prompt input`,
+        `Test 9.${invalidPromptInputs.indexOf(input) + 1}: Testing invalid prompt input`,
       );
       try {
         const result = await client.getPrompt(input);

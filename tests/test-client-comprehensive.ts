@@ -154,18 +154,36 @@ class FediverseClientTestSuite {
   }
 
   async testDiscoverActorToolInvalid(): Promise<void> {
-    const result = await this.client.callTool({
-      name: "discover-actor",
-      arguments: {
-        identifier: "invalid-identifier-format",
-      },
-    });
+    try {
+      const result = await this.client.callTool({
+        name: "discover-actor",
+        arguments: {
+          identifier: "invalid-identifier-format",
+        },
+      });
 
-    if (!result.isError) {
-      throw new Error("Expected error for invalid identifier");
+      if (!result.isError) {
+        throw new Error("Expected error for invalid identifier");
+      }
+
+      console.log(`   Expected error: ${result.content[0].text}`);
+    } catch (error) {
+      // This is expected - the MCP server should reject invalid identifiers
+      // Check if it's the expected validation error
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (
+        errorMessage.includes("Invalid identifier format") ||
+        errorMessage.includes("Invalid arguments for tool discover-actor")
+      ) {
+        console.log(
+          `   Expected validation error caught: ${errorMessage.split("\n")[0]}`,
+        );
+        return; // Test passes
+      }
+      // If it's a different error, re-throw it
+      throw error;
     }
-
-    console.log(`   Expected error: ${result.content[0].text}`);
   }
 
   async testFetchTimelineTool(): Promise<void> {

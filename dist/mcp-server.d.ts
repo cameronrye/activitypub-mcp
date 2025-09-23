@@ -26,6 +26,14 @@ declare class ActivityPubMCPServer {
      */
     private validatePostContent;
     /**
+     * Validate domain format
+     */
+    private validateDomain;
+    /**
+     * Validate query string
+     */
+    private validateQuery;
+    /**
      * Validate URI format
      */
     private validateUri;
