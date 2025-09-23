@@ -1,0 +1,98 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const title = "ActivityPub MCP Server";
+const description =
+  "A comprehensive Model Context Protocol server that enables LLMs like Claude to explore and interact with the existing Fediverse through standardized MCP tools, resources, and prompts.";
+
+// Get the base URL for proper path resolution
+const baseURL = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="hero-section">
+    <div class="hero-content">
+      <h1 class="hero-title">
+        Connect LLMs to the <span class="text-primary">Fediverse</span>
+      </h1>
+      <p class="hero-description">
+        A comprehensive <strong>Model Context Protocol (MCP)</strong> server that enables LLMs like Claude to <strong>explore and interact with the existing Fediverse</strong> through standardized MCP tools, resources, and prompts.
+      </p>
+      <div class="hero-actions">
+        <a href="#quick-start" class="btn btn-primary btn-lg">Get Started</a>
+        <a href={`${baseURL}docs/`} class="btn btn-outline btn-lg">Documentation</a>
+        <a href="https://github.com/cameronrye/activitypub-mcp" class="btn btn-secondary btn-lg" target="_blank" rel="noopener">
+          View on GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <section class="features-section" id="quick-start">
+    <div class="container">
+      <h2>Key Features</h2>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <h3>Fediverse Client</h3>
+          <p>Interact with existing ActivityPub servers like Mastodon, Pleroma, and Misskey without running your own server.</p>
+        </div>
+        
+        <div class="feature-card">
+          <h3>WebFinger Discovery</h3>
+          <p>Find and discover actors across the fediverse using standardized WebFinger protocols.</p>
+        </div>
+        
+        <div class="feature-card">
+          <h3>MCP Protocol</h3>
+          <p>Complete MCP server with resources, tools, and prompts designed specifically for LLM interaction patterns.</p>
+        </div>
+        
+        <div class="feature-card">
+          <h3>LLM-Optimized</h3>
+          <p>Built from the ground up for seamless integration with Large Language Models like Claude.</p>
+        </div>
+        
+        <div class="feature-card">
+          <h3>TypeScript</h3>
+          <p>Fully typed with modern TypeScript and ESM for excellent developer experience and reliability.</p>
+        </div>
+        
+        <div class="feature-card">
+          <h3>High Performance</h3>
+          <p>Efficient resource management, caching, and built-in performance monitoring.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="installation-section">
+    <div class="container">
+      <h2>Quick Installation</h2>
+      
+      <p>Install directly with npx:</p>
+      <pre><code>npx activitypub-mcp install</code></pre>
+      
+      <p>For Claude Desktop integration, add this to your config:</p>
+      <pre><code>{`{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"]
+    }
+  }
+}`}</code></pre>
+      
+      <div class="next-steps">
+        <h3>Next Steps</h3>
+        <ul>
+          <li><a href={`${baseURL}docs/`}>Read the Documentation</a></li>
+          <li><a href={`${baseURL}docs/guides/basic-usage/`}>View Examples</a></li>
+          <li><a href="https://github.com/cameronrye/activitypub-mcp">Explore the Code</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

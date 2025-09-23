@@ -1,0 +1,327 @@
+---
+// Search component using Pagefind
+---
+
+<div class="search-container">
+  <input 
+    type="search" 
+    id="search-input" 
+    placeholder="Search documentation..." 
+    class="search-input"
+    autocomplete="off"
+  >
+  <div id="search-results" class="search-results">
+    <div id="search-loading" class="search-loading" style="display: none;">
+      Searching...
+    </div>
+    <div id="search-content"></div>
+  </div>
+</div>
+
+<style>
+  .search-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    transition: all var(--transition-fast);
+  }
+  
+  .search-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  .search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: var(--z-dropdown);
+    display: none;
+    margin-top: var(--space-1);
+  }
+  
+  .search-results.show {
+    display: block;
+  }
+  
+  .search-loading {
+    padding: var(--space-4);
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+  }
+  
+  .search-result {
+    display: block;
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border-primary);
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: background-color var(--transition-fast);
+  }
+  
+  .search-result:hover,
+  .search-result.active {
+    background-color: var(--bg-secondary);
+  }
+  
+  .search-result:last-child {
+    border-bottom: none;
+  }
+  
+  .result-title {
+    font-weight: var(--font-medium);
+    margin-bottom: var(--space-1);
+    color: var(--text-primary);
+  }
+  
+  .result-excerpt {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    line-height: var(--leading-snug);
+  }
+  
+  .result-excerpt mark {
+    background-color: rgba(59, 130, 246, 0.2);
+    color: var(--color-primary);
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-sm);
+  }
+  
+  .no-results {
+    padding: var(--space-4);
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+  }
+</style>
+
+<script>
+  // Pagefind search implementation
+  class PagefindSearch {
+    constructor() {
+      this.searchInput = document.getElementById('search-input');
+      this.searchResults = document.getElementById('search-results');
+      this.searchContent = document.getElementById('search-content');
+      this.searchLoading = document.getElementById('search-loading');
+      this.pagefind = null;
+      this.debounceTimer = null;
+      this.currentQuery = '';
+      
+      this.init();
+    }
+    
+    async init() {
+      if (!this.searchInput || !this.searchResults) return;
+      
+      // Load Pagefind
+      try {
+        // @ts-ignore
+        this.pagefind = await import('/pagefind/pagefind.js');
+      } catch (error) {
+        console.warn('Pagefind not available:', error);
+        // Fallback to simple search
+        this.initFallbackSearch();
+        return;
+      }
+      
+      // Bind events
+      this.searchInput.addEventListener('input', this.handleInput.bind(this));
+      this.searchInput.addEventListener('focus', this.handleFocus.bind(this));
+      this.searchInput.addEventListener('keydown', this.handleKeyDown.bind(this));
+      document.addEventListener('click', this.handleDocumentClick.bind(this));
+    }
+    
+    handleInput(event) {
+      const query = event.target.value.trim();
+      
+      // Clear previous timer
+      if (this.debounceTimer) {
+        clearTimeout(this.debounceTimer);
+      }
+      
+      // Debounce search
+      this.debounceTimer = setTimeout(() => {
+        if (query.length >= 2) {
+          this.performSearch(query);
+        } else {
+          this.hideResults();
+        }
+      }, 300);
+    }
+    
+    handleFocus(event) {
+      const query = event.target.value.trim();
+      if (query.length >= 2 && this.currentQuery === query) {
+        this.showResults();
+      }
+    }
+    
+    handleKeyDown(event) {
+      const results = this.searchResults.querySelectorAll('.search-result');
+      const activeResult = this.searchResults.querySelector('.search-result.active');
+      
+      switch (event.key) {
+        case 'ArrowDown':
+          event.preventDefault();
+          if (activeResult) {
+            const next = activeResult.nextElementSibling;
+            if (next && next.classList.contains('search-result')) {
+              activeResult.classList.remove('active');
+              next.classList.add('active');
+            }
+          } else if (results.length > 0) {
+            results[0].classList.add('active');
+          }
+          break;
+          
+        case 'ArrowUp':
+          event.preventDefault();
+          if (activeResult) {
+            const prev = activeResult.previousElementSibling;
+            if (prev && prev.classList.contains('search-result')) {
+              activeResult.classList.remove('active');
+              prev.classList.add('active');
+            }
+          }
+          break;
+          
+        case 'Enter':
+          event.preventDefault();
+          if (activeResult) {
+            window.location.href = activeResult.href;
+          }
+          break;
+          
+        case 'Escape':
+          this.hideResults();
+          this.searchInput.blur();
+          break;
+      }
+    }
+    
+    handleDocumentClick(event) {
+      if (!this.searchInput.contains(event.target) && !this.searchResults.contains(event.target)) {
+        this.hideResults();
+      }
+    }
+    
+    async performSearch(query) {
+      if (!this.pagefind) return;
+      
+      this.currentQuery = query;
+      this.showLoading();
+      
+      try {
+        const search = await this.pagefind.search(query);
+        const results = await Promise.all(
+          search.results.slice(0, 10).map(result => result.data())
+        );
+        
+        this.displayResults(results, query);
+      } catch (error) {
+        console.error('Search error:', error);
+        this.displayError();
+      }
+    }
+    
+    displayResults(results, query) {
+      this.hideLoading();
+      
+      if (results.length === 0) {
+        this.searchContent.innerHTML = '<div class="no-results">No results found</div>';
+      } else {
+        this.searchContent.innerHTML = results.map(result => {
+          const excerpt = this.createExcerpt(result.excerpt, query);
+          return `
+            <a href="${result.url}" class="search-result">
+              <div class="result-title">${this.highlightQuery(result.meta.title || 'Untitled', query)}</div>
+              <div class="result-excerpt">${excerpt}</div>
+            </a>
+          `;
+        }).join('');
+      }
+      
+      this.showResults();
+    }
+    
+    displayError() {
+      this.hideLoading();
+      this.searchContent.innerHTML = '<div class="no-results">Search error occurred</div>';
+      this.showResults();
+    }
+    
+    createExcerpt(excerpt, query, maxLength = 150) {
+      if (!excerpt) return '';
+      
+      let text = excerpt;
+      if (text.length > maxLength) {
+        text = text.substring(0, maxLength) + '...';
+      }
+      
+      return this.highlightQuery(text, query);
+    }
+    
+    highlightQuery(text, query) {
+      if (!text || !query) return text;
+      
+      const regex = new RegExp(`(${this.escapeRegex(query)})`, 'gi');
+      return text.replace(regex, '<mark>$1</mark>');
+    }
+    
+    escapeRegex(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    
+    showResults() {
+      this.searchResults.classList.add('show');
+    }
+    
+    hideResults() {
+      this.searchResults.classList.remove('show');
+      // Remove active states
+      const activeResults = this.searchResults.querySelectorAll('.search-result.active');
+      activeResults.forEach(result => result.classList.remove('active'));
+    }
+    
+    showLoading() {
+      this.searchLoading.style.display = 'block';
+      this.searchContent.innerHTML = '';
+      this.showResults();
+    }
+    
+    hideLoading() {
+      this.searchLoading.style.display = 'none';
+    }
+
+    initFallbackSearch() {
+      // Simple fallback search without Pagefind
+      console.log('Using fallback search');
+    }
+  }
+  
+  // Initialize search when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => new PagefindSearch());
+  } else {
+    new PagefindSearch();
+  }
+</script>

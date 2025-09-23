@@ -1,0 +1,290 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+const title = "Documentation - ActivityPub MCP Server";
+const description =
+  "Complete documentation for the ActivityPub MCP Server - setup, configuration, usage examples, and API reference.";
+
+// Get the base URL for proper path resolution
+const baseURL = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="docs-page">
+    <div class="container">
+      <div class="docs-header">
+        <h1>ActivityPub MCP Server Documentation</h1>
+        <p class="docs-description">
+          Complete guide to setting up and using the ActivityPub MCP Server to connect LLMs with the Fediverse.
+        </p>
+      </div>
+
+      <div class="docs-grid">
+        <div class="docs-section">
+          <h2>🚀 Getting Started</h2>
+          <p>Quick setup and installation guide to get you up and running.</p>
+          <div class="docs-links">
+            <a href={`${baseURL}docs/setup/`} class="docs-link">
+              <h3>Installation & Setup</h3>
+              <p>Install the server and configure it for your environment</p>
+            </a>
+            <a href={`${baseURL}docs/setup/`} class="docs-link">
+              <h3>Claude Desktop Integration</h3>
+              <p>Connect the server with Claude Desktop for seamless AI interaction</p>
+            </a>
+            <a href={`${baseURL}docs/setup/`} class="docs-link">
+              <h3>Configuration Options</h3>
+              <p>Customize server behavior and connection settings</p>
+            </a>
+          </div>
+        </div>
+
+        <div class="docs-section">
+          <h2>📖 Usage Guides</h2>
+          <p>Learn how to use the server's features and capabilities.</p>
+          <div class="docs-links">
+            <a href={`${baseURL}docs/guides/basic-usage/`} class="docs-link">
+              <h3>Basic Usage</h3>
+              <p>Essential commands and workflows for everyday use</p>
+            </a>
+            <a href={`${baseURL}docs/guides/basic-usage/`} class="docs-link">
+              <h3>Fediverse Exploration</h3>
+              <p>Discover actors, instances, and content across the fediverse</p>
+            </a>
+            <a href={`${baseURL}docs/guides/basic-usage/`} class="docs-link">
+              <h3>Practical Examples</h3>
+              <p>Real-world scenarios and use cases with step-by-step instructions</p>
+            </a>
+          </div>
+        </div>
+
+        <div class="docs-section">
+          <h2>🔧 API Reference</h2>
+          <p>Detailed technical documentation for developers and advanced users.</p>
+          <div class="docs-links">
+            <a href={`${baseURL}docs/api/tools/`} class="docs-link">
+              <h3>MCP Tools</h3>
+              <p>Complete reference for all available MCP tools and their parameters</p>
+            </a>
+            <a href={`${baseURL}docs/api/tools/`} class="docs-link">
+              <h3>MCP Resources</h3>
+              <p>Documentation for resources exposed by the server</p>
+            </a>
+            <a href={`${baseURL}docs/api/tools/`} class="docs-link">
+              <h3>MCP Prompts</h3>
+              <p>Pre-built prompts for common ActivityPub operations</p>
+            </a>
+          </div>
+        </div>
+
+        <div class="docs-section">
+          <h2>🌐 ActivityPub & Fediverse</h2>
+          <p>Understanding the protocols and standards this server implements.</p>
+          <div class="docs-links">
+            <a href={`${baseURL}docs/specifications/activitypub-llm-specification-guide/`} class="docs-link">
+              <h3>ActivityPub Protocol</h3>
+              <p>How the server implements ActivityPub for fediverse interaction</p>
+            </a>
+            <a href={`${baseURL}docs/specifications/webfinger-llm-specification-guide/`} class="docs-link">
+              <h3>WebFinger Discovery</h3>
+              <p>Actor discovery and resolution across federated networks</p>
+            </a>
+            <a href={`${baseURL}docs/specifications/activitypub-llm-specification-guide/`} class="docs-link">
+              <h3>Model Context Protocol</h3>
+              <p>Understanding MCP and how it enables LLM integration</p>
+            </a>
+          </div>
+        </div>
+
+        <div class="docs-section">
+          <h2>🛠️ Development</h2>
+          <p>Resources for developers wanting to contribute or extend the server.</p>
+          <div class="docs-links">
+            <a href="https://github.com/cameronrye/activitypub-mcp/blob/master/CONTRIBUTING.md" class="docs-link" target="_blank" rel="noopener">
+              <h3>Contributing Guide</h3>
+              <p>How to contribute code, documentation, or bug reports</p>
+            </a>
+            <a href={`${baseURL}docs/development/performance-monitoring/`} class="docs-link">
+              <h3>Architecture Overview</h3>
+              <p>Technical architecture and design decisions</p>
+            </a>
+            <a href="https://github.com/cameronrye/activitypub-mcp#testing" class="docs-link" target="_blank" rel="noopener">
+              <h3>Testing & Debugging</h3>
+              <p>Running tests and debugging common issues</p>
+            </a>
+          </div>
+        </div>
+
+        <div class="docs-section">
+          <h2>❓ Help & Support</h2>
+          <p>Get help when you need it and find answers to common questions.</p>
+          <div class="docs-links">
+            <a href="https://github.com/cameronrye/activitypub-mcp/issues" class="docs-link" target="_blank" rel="noopener">
+              <h3>Troubleshooting</h3>
+              <p>Common issues and their solutions</p>
+            </a>
+            <a href="https://github.com/cameronrye/activitypub-mcp#faq" class="docs-link" target="_blank" rel="noopener">
+              <h3>Frequently Asked Questions</h3>
+              <p>Answers to the most common questions</p>
+            </a>
+            <a href="https://github.com/cameronrye/activitypub-mcp/discussions" class="docs-link" target="_blank" rel="noopener">
+              <h3>Community Discussions</h3>
+              <p>Join the community and get help from other users</p>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="docs-footer">
+        <div class="quick-start-box">
+          <h3>Quick Start</h3>
+          <p>Get up and running in under 5 minutes:</p>
+          <pre><code>npx activitypub-mcp install</code></pre>
+          <p>Then add to your Claude Desktop configuration and start exploring the fediverse!</p>
+          <a href={`${baseURL}docs/setup/`} class="btn btn-primary">Start Setup Guide</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .docs-page {
+    padding: var(--space-16) 0;
+  }
+
+  .docs-header {
+    text-align: center;
+    margin-bottom: var(--space-16);
+  }
+
+  .docs-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .docs-description {
+    font-size: var(--text-xl);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .docs-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-12);
+    margin-bottom: var(--space-16);
+  }
+
+  @media (min-width: 768px) {
+    .docs-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .docs-section {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-8);
+    border: 1px solid var(--border-primary);
+  }
+
+  .docs-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .docs-section > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-6);
+    line-height: var(--leading-relaxed);
+  }
+
+  .docs-links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .docs-link {
+    display: block;
+    padding: var(--space-4);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .docs-link:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  .docs-link h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .docs-link p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+
+  .docs-footer {
+    border-top: 1px solid var(--border-primary);
+    padding-top: var(--space-12);
+  }
+
+  .quick-start-box {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+    color: var(--text-inverse);
+    padding: var(--space-8);
+    border-radius: var(--radius-lg);
+    text-align: center;
+  }
+
+  .quick-start-box h3 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    margin-bottom: var(--space-4);
+  }
+
+  .quick-start-box p {
+    margin-bottom: var(--space-4);
+    opacity: 0.9;
+  }
+
+  .quick-start-box pre {
+    background: rgba(0, 0, 0, 0.2);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    margin: var(--space-4) 0;
+    font-family: var(--font-family-mono);
+  }
+
+  .quick-start-box .btn {
+    background: var(--color-white);
+    color: var(--color-primary);
+    border: none;
+    margin-top: var(--space-4);
+  }
+
+  .quick-start-box .btn:hover {
+    background: var(--color-gray-100);
+    transform: translateY(-1px);
+  }
+</style>

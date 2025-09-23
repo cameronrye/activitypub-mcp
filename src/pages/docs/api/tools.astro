@@ -1,0 +1,573 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+
+const title = "MCP Tools Reference - ActivityPub MCP Server";
+const description =
+  "Complete reference documentation for all MCP tools provided by the ActivityPub MCP Server.";
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="tools-page">
+    <div class="container">
+      <div class="tools-header">
+        <h1>MCP Tools Reference</h1>
+        <p class="tools-description">
+          Complete reference for all Model Context Protocol tools provided by the ActivityPub MCP Server. These tools enable LLMs to interact with the fediverse.
+        </p>
+      </div>
+
+      <div class="tools-content">
+        <section class="tools-section">
+          <h2>🔍 Discovery Tools</h2>
+          <p>Tools for discovering actors, instances, and content across the fediverse.</p>
+
+          <div class="tool-reference">
+            <h3><code>discover-actor</code></h3>
+            <p>Discover and get detailed information about fediverse actors (users).</p>
+            
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>identifier</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Actor identifier in WebFinger format (@user@domain) or ActivityPub URL</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># WebFinger format
+discover-actor @mastodon@mastodon.social
+
+# ActivityPub URL
+discover-actor https://mastodon.social/users/mastodon
+
+# Profile URL
+discover-actor https://mastodon.social/@mastodon</code></pre>
+              </div>
+
+              <div class="response">
+                <h4>Response</h4>
+                <p>Returns an ActivityPub Actor object with:</p>
+                <ul>
+                  <li>Actor ID and type</li>
+                  <li>Display name and username</li>
+                  <li>Profile information (bio, avatar, etc.)</li>
+                  <li>Public key for verification</li>
+                  <li>Endpoints (inbox, outbox, followers, etc.)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>discover-instances</code></h3>
+            <p>Find fediverse instances by category, topic, or search criteria.</p>
+            
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>query</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Search term or category (e.g., "technology", "art", "gaming")</td>
+                    </tr>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Maximum number of results to return (default: 20, max: 100)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Find technology-focused instances
+discover-instances technology
+
+# Find art communities
+discover-instances art
+
+# Get popular instances (no query)
+discover-instances</code></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tools-section">
+          <h2>📊 Information Tools</h2>
+          <p>Tools for getting information about instances, timelines, and content.</p>
+
+          <div class="tool-reference">
+            <h3><code>get-instance-info</code></h3>
+            <p>Get detailed information about a fediverse instance.</p>
+            
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>domain</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Instance domain name (e.g., "mastodon.social")</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Get info about Mastodon.social
+get-instance-info mastodon.social
+
+# Check a smaller instance
+get-instance-info fosstodon.org</code></pre>
+              </div>
+
+              <div class="response">
+                <h4>Response</h4>
+                <p>Returns instance metadata including:</p>
+                <ul>
+                  <li>Instance name and description</li>
+                  <li>Software version and type</li>
+                  <li>User and post statistics</li>
+                  <li>Instance rules and policies</li>
+                  <li>Contact information</li>
+                  <li>Supported features</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>fetch-timeline</code></h3>
+            <p>Fetch recent posts from an actor's public timeline.</p>
+            
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>actor_url</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>ActivityPub URL of the actor</td>
+                    </tr>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of posts to fetch (default: 20, max: 50)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Get recent posts from an actor
+fetch-timeline https://mastodon.social/users/mastodon
+
+# Limit to 10 posts
+fetch-timeline https://fosstodon.org/users/admin 10</code></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tools-section">
+          <h2>🔧 Utility Tools</h2>
+          <p>Additional tools for server management and debugging.</p>
+
+          <div class="tool-reference">
+            <h3><code>health-check</code></h3>
+            <p>Check the health and status of the MCP server.</p>
+            
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <p>No parameters required.</p>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Check server health
+health-check</code></pre>
+              </div>
+
+              <div class="response">
+                <h4>Response</h4>
+                <p>Returns server status including:</p>
+                <ul>
+                  <li>Server uptime</li>
+                  <li>Memory usage</li>
+                  <li>Cache statistics</li>
+                  <li>Recent error counts</li>
+                  <li>Performance metrics</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>clear-cache</code></h3>
+            <p>Clear the server's internal cache to force fresh data retrieval.</p>
+            
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>cache_type</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Type of cache to clear: "actors", "instances", "timelines", or "all"</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Clear all caches
+clear-cache
+
+# Clear only actor cache
+clear-cache actors
+
+# Clear instance information cache
+clear-cache instances</code></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tools-section">
+          <h2>⚠️ Error Handling</h2>
+          <p>All tools follow consistent error handling patterns:</p>
+
+          <div class="error-info">
+            <div class="error-type">
+              <h3>Validation Errors</h3>
+              <p>Returned when parameters are invalid or missing:</p>
+              <pre><code>{`{
+  "error": "Invalid parameter",
+  "message": "Actor identifier must be in @user@domain format or valid URL",
+  "code": "INVALID_PARAMETER"
+}`}</code></pre>
+            </div>
+
+            <div class="error-type">
+              <h3>Network Errors</h3>
+              <p>Returned when external services are unreachable:</p>
+              <pre><code>{`{
+  "error": "Network error",
+  "message": "Failed to connect to instance: connection timeout",
+  "code": "NETWORK_ERROR"
+}`}</code></pre>
+            </div>
+
+            <div class="error-type">
+              <h3>Not Found Errors</h3>
+              <p>Returned when requested resources don't exist:</p>
+              <pre><code>{`{
+  "error": "Not found",
+  "message": "Actor not found or not accessible",
+  "code": "NOT_FOUND"
+}`}</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="tools-section">
+          <h2>🔗 Related Documentation</h2>
+          <div class="related-links">
+            <a href="/docs/api/resources/" class="related-link">
+              <h3>MCP Resources</h3>
+              <p>Learn about the resources exposed by the server</p>
+            </a>
+            <a href="/docs/guides/basic-usage/" class="related-link">
+              <h3>Basic Usage Guide</h3>
+              <p>See these tools in action with practical examples</p>
+            </a>
+            <a href="/docs/troubleshooting/" class="related-link">
+              <h3>Troubleshooting</h3>
+              <p>Solutions for common tool-related issues</p>
+            </a>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .tools-page {
+    padding: var(--space-16) 0;
+  }
+
+  .tools-header {
+    text-align: center;
+    margin-bottom: var(--space-16);
+  }
+
+  .tools-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .tools-description {
+    font-size: var(--text-xl);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .tools-content {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .tools-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .tools-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .tools-section > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-8);
+    line-height: var(--leading-relaxed);
+  }
+
+  .tool-reference {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-8);
+    margin-bottom: var(--space-8);
+  }
+
+  .tool-reference h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .tool-reference h3 code {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-family: var(--font-family-mono);
+  }
+
+  .tool-reference > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-6);
+    line-height: var(--leading-relaxed);
+  }
+
+  .tool-details {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .parameters h4,
+  .examples h4,
+  .response h4 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .parameters table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .parameters th,
+  .parameters td {
+    padding: var(--space-3);
+    text-align: left;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .parameters th {
+    background: var(--color-gray-100);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+  }
+
+  .parameters td {
+    color: var(--text-secondary);
+  }
+
+  .parameters code {
+    background: var(--color-gray-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+  }
+
+  .examples pre,
+  .error-type pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    font-family: var(--font-family-mono);
+    overflow-x: auto;
+    margin: var(--space-3) 0;
+  }
+
+  .response ul {
+    padding-left: var(--space-6);
+  }
+
+  .response li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+    line-height: var(--leading-relaxed);
+  }
+
+  .error-info {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .error-type {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border-left: 4px solid var(--color-error);
+  }
+
+  .error-type h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-error);
+    margin-bottom: var(--space-3);
+  }
+
+  .error-type p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+    line-height: var(--leading-relaxed);
+  }
+
+  .related-links {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .related-links {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .related-link {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .related-link:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .related-link h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .related-link p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

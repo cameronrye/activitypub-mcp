@@ -116,10 +116,11 @@ out
 .yarn/install-state.gz
 .pnp.*
 
-# Build outputs (keep dist/ for npm package)
+# Build outputs
 build/
 lib/
 out/
+dist/
 
 # Logs
 *.log
@@ -185,3 +186,33 @@ test-output/
 # Backup files
 *.bak
 *.backup
+
+# Additional TypeScript/Node.js files
+*.tsbuildinfo.tmp
+.tscache/
+
+# Additional coverage files (c8 coverage tool)
+.c8_output/
+coverage-final.json
+coverage.json
+
+# Additional IDE/Editor files
+*.code-workspace
+.history/
+.vscode-test-web/
+
+# Additional OS files (Windows)
+desktop.ini
+$RECYCLE.BIN/
+
+# Additional temporary files
+.tmp.*
+.temp.*
+
+# Lock files (keep package-lock.json but ignore others)
+yarn.lock
+pnpm-lock.yaml
+
+# Additional Astro files
+.astro/
+dist-astro/

@@ -1,0 +1,157 @@
+---
+import SimpleSearch from "../components/SimpleSearch.astro";
+import "../styles/main.css";
+
+export interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  canonical?: string;
+}
+
+const {
+  title = "ActivityPub MCP Server",
+  description = "A comprehensive Model Context Protocol server that enables LLMs like Claude to explore and interact with the existing Fediverse through standardized MCP tools, resources, and prompts.",
+  image = "/og-image.png",
+  canonical,
+} = Astro.props;
+
+const canonicalURL = canonical || new URL(Astro.url.pathname, Astro.site);
+const socialImage = new URL(image, Astro.site);
+
+// Get the base URL for proper path resolution
+const baseURL = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title}</title>
+  <meta name="description" content={description}>
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href={canonicalURL}>
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content={canonicalURL}>
+  <meta property="og:title" content={title}>
+  <meta property="og:description" content={description}>
+  <meta property="og:image" content={socialImage}>
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content={canonicalURL}>
+  <meta property="twitter:title" content={title}>
+  <meta property="twitter:description" content={description}>
+  <meta property="twitter:image" content={socialImage}>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Styles are imported in the frontmatter -->
+</head>
+<body>
+  <div class="site-wrapper">
+    <header class="site-header">
+      <nav class="navbar">
+        <div class="container">
+          <div class="navbar-brand">
+            <a href={baseURL} class="brand-link">
+              <span class="brand-text">ActivityPub MCP</span>
+            </a>
+          </div>
+
+          <div class="navbar-menu">
+            <div class="navbar-nav">
+              <a href={baseURL} class="nav-link">Home</a>
+              <a href={`${baseURL}docs/`} class="nav-link">Documentation</a>
+              <a href={`${baseURL}docs/guides/basic-usage/`} class="nav-link">Guides</a>
+              <a href={`${baseURL}docs/api/tools/`} class="nav-link">API Reference</a>
+              <a href="https://github.com/cameronrye/activitypub-mcp" class="nav-link" target="_blank" rel="noopener">
+                GitHub
+              </a>
+            </div>
+            
+            <div class="navbar-search">
+              <SimpleSearch />
+            </div>
+            
+            <button class="navbar-toggle" aria-label="Toggle navigation">
+              <span></span>
+              <span></span>
+              <span></span>
+            </button>
+          </div>
+        </div>
+      </nav>
+    </header>
+    
+    <main class="site-main">
+      <slot />
+    </main>
+    
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-section">
+            <h3>ActivityPub MCP Server</h3>
+            <p>Connect LLMs to the Fediverse through the Model Context Protocol.</p>
+            <div class="footer-links">
+              <a href="https://github.com/cameronrye/activitypub-mcp" target="_blank" rel="noopener">GitHub</a>
+              <a href="https://www.npmjs.com/package/activitypub-mcp-server" target="_blank" rel="noopener">npm</a>
+            </div>
+          </div>
+          
+          <div class="footer-section">
+            <h4>Documentation</h4>
+            <ul>
+              <li><a href={`${baseURL}docs/`}>Getting Started</a></li>
+              <li><a href={`${baseURL}docs/guides/basic-usage/`}>Usage Guide</a></li>
+              <li><a href={`${baseURL}docs/api/tools/`}>API Reference</a></li>
+            </ul>
+          </div>
+          
+          <div class="footer-section">
+            <h4>Community</h4>
+            <ul>
+              <li><a href="https://github.com/cameronrye/activitypub-mcp/issues" target="_blank" rel="noopener">Issues</a></li>
+              <li><a href="https://github.com/cameronrye/activitypub-mcp/discussions" target="_blank" rel="noopener">Discussions</a></li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="footer-bottom">
+          <p>&copy; 2024 ActivityPub MCP Server Contributors. Licensed under MIT.</p>
+        </div>
+      </div>
+    </footer>
+  </div>
+  
+  <!-- Scripts -->
+  <script src={`${baseURL}scripts/main.js`} is:inline></script>
+</body>
+</html>
+
+<style>
+  /* Global styles will be moved to external CSS files */
+  .site-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .site-main {
+    flex: 1;
+  }
+</style>
