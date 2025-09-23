@@ -12,11 +12,11 @@ export const SITE = {
   // Social links
   social: {
     github: "https://github.com/cameronrye/activitypub-mcp",
-    npm: "https://www.npmjs.com/package/activitypub-mcp-server",
+    npm: "https://www.npmjs.com/package/activitypub-mcp",
   },
 
   // Package info
-  npm_package: "activitypub-mcp-server",
+  npm_package: "activitypub-mcp",
 
   // Navigation
   nav: [

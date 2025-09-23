@@ -81,7 +81,7 @@ body:
           "mcpServers": {
             "activitypub": {
               "command": "npx",
-              "args": ["-y", "activitypub-mcp-server"]
+              "args": ["-y", "activitypub-mcp"]
             }
           }
         }
