@@ -1,0 +1,424 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+const title = "Installation & Setup - ActivityPub MCP Server";
+const description = "Complete installation and setup guide for the ActivityPub MCP Server. Get up and running in minutes.";
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="setup-page">
+    <div class="container">
+      <div class="setup-header">
+        <h1>Installation & Setup</h1>
+        <p class="setup-description">
+          Get the ActivityPub MCP Server up and running in your environment. This guide covers installation, configuration, and initial setup.
+        </p>
+      </div>
+
+      <div class="setup-content">
+        <section class="setup-section">
+          <h2>📋 Prerequisites</h2>
+          <div class="prerequisites-grid">
+            <div class="prerequisite-item">
+              <h3>Node.js 18+</h3>
+              <p>The server requires Node.js version 18 or higher.</p>
+              <a href="https://nodejs.org/" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Download Node.js</a>
+            </div>
+            <div class="prerequisite-item">
+              <h3>Claude Desktop (Optional)</h3>
+              <p>For the best experience, install Claude Desktop for seamless AI integration.</p>
+              <a href="https://claude.ai/download" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Download Claude</a>
+            </div>
+            <div class="prerequisite-item">
+              <h3>MCP Inspector (Optional)</h3>
+              <p>Useful for testing and debugging MCP connections.</p>
+              <code>npm install -g @modelcontextprotocol/inspector</code>
+            </div>
+          </div>
+        </section>
+
+        <section class="setup-section">
+          <h2>🚀 Quick Installation</h2>
+          <p>The fastest way to get started is using npx:</p>
+          
+          <div class="code-block">
+            <h3>Install and Configure</h3>
+            <pre><code>npx activitypub-mcp install</code></pre>
+            <p>This command will:</p>
+            <ul>
+              <li>Install the latest version of the server</li>
+              <li>Detect your MCP client (Claude Desktop, Cursor, etc.)</li>
+              <li>Automatically configure the client</li>
+              <li>Verify the installation</li>
+            </ul>
+          </div>
+
+          <div class="code-block">
+            <h3>Manual Configuration</h3>
+            <p>If you prefer manual setup, add this to your Claude Desktop configuration:</p>
+            <pre><code>{`{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}`}</code></pre>
+          </div>
+        </section>
+
+        <section class="setup-section">
+          <h2>⚙️ Configuration Options</h2>
+          <p>Customize the server behavior with environment variables:</p>
+          
+          <div class="config-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Default</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>LOG_LEVEL</code></td>
+                  <td><code>info</code></td>
+                  <td>Logging level: debug, info, warning, error, fatal</td>
+                </tr>
+                <tr>
+                  <td><code>USER_AGENT</code></td>
+                  <td><code>ActivityPub-MCP-Server/1.0</code></td>
+                  <td>Custom User-Agent for HTTP requests</td>
+                </tr>
+                <tr>
+                  <td><code>REQUEST_TIMEOUT</code></td>
+                  <td><code>30000</code></td>
+                  <td>HTTP request timeout in milliseconds</td>
+                </tr>
+                <tr>
+                  <td><code>CACHE_TTL</code></td>
+                  <td><code>300</code></td>
+                  <td>Cache time-to-live in seconds</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="setup-section">
+          <h2>🔍 Verification</h2>
+          <p>Verify your installation is working correctly:</p>
+          
+          <div class="verification-steps">
+            <div class="step">
+              <h3>Step 1: Test MCP Connection</h3>
+              <p>Use the MCP Inspector to test the connection:</p>
+              <pre><code>npx @modelcontextprotocol/inspector</code></pre>
+              <p>Connect to: <code>npx activitypub-mcp</code></p>
+            </div>
+
+            <div class="step">
+              <h3>Step 2: Test Basic Functionality</h3>
+              <p>Try discovering a fediverse actor:</p>
+              <pre><code># In MCP Inspector or Claude Desktop
+discover-actor @mastodon@mastodon.social</code></pre>
+            </div>
+
+            <div class="step">
+              <h3>Step 3: Check Server Info</h3>
+              <p>Verify the server is providing information:</p>
+              <pre><code># Request the server-info resource
+activitypub://server-info</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="setup-section">
+          <h2>🛠️ Advanced Setup</h2>
+          
+          <div class="advanced-options">
+            <div class="option">
+              <h3>Development Setup</h3>
+              <p>For development or local testing:</p>
+              <pre><code>git clone https://github.com/cameronrye/activitypub-mcp.git
+cd activitypub-mcp
+npm install
+npm run build
+npm run mcp</code></pre>
+            </div>
+
+            <div class="option">
+              <h3>Docker Setup</h3>
+              <p>Run the server in a container:</p>
+              <pre><code>docker run -p 8080:8080 \
+  -e LOG_LEVEL=debug \
+  activitypub-mcp-server</code></pre>
+            </div>
+
+            <div class="option">
+              <h3>Custom Installation Path</h3>
+              <p>Install to a specific location:</p>
+              <pre><code>npm install -g activitypub-mcp-server
+activitypub-mcp-server</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="setup-section">
+          <h2>🔗 Next Steps</h2>
+          <div class="next-steps">
+            <a href="/docs/setup/claude-desktop/" class="next-step-card">
+              <h3>Claude Desktop Integration</h3>
+              <p>Set up seamless integration with Claude Desktop for the best AI experience.</p>
+            </a>
+            <a href="/docs/guides/basic-usage/" class="next-step-card">
+              <h3>Basic Usage Guide</h3>
+              <p>Learn the essential commands and workflows for everyday use.</p>
+            </a>
+            <a href="/docs/guides/examples/" class="next-step-card">
+              <h3>Practical Examples</h3>
+              <p>See real-world examples and use cases to get you started.</p>
+            </a>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .setup-page {
+    padding: var(--space-16) 0;
+  }
+
+  .setup-header {
+    text-align: center;
+    margin-bottom: var(--space-16);
+  }
+
+  .setup-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .setup-description {
+    font-size: var(--text-xl);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .setup-content {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .setup-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .setup-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .prerequisites-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+    margin-top: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .prerequisites-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .prerequisite-item {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .prerequisite-item h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .prerequisite-item p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+    line-height: var(--leading-relaxed);
+  }
+
+  .code-block {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    margin: var(--space-6) 0;
+  }
+
+  .code-block h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .code-block pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    font-family: var(--font-family-mono);
+    margin: var(--space-4) 0;
+  }
+
+  .code-block ul {
+    margin-top: var(--space-4);
+    padding-left: var(--space-6);
+  }
+
+  .code-block li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+  }
+
+  .config-table {
+    overflow-x: auto;
+    margin: var(--space-6) 0;
+  }
+
+  .config-table table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .config-table th,
+  .config-table td {
+    padding: var(--space-4);
+    text-align: left;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .config-table th {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    font-weight: var(--font-medium);
+  }
+
+  .config-table code {
+    background: var(--color-gray-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+  }
+
+  .verification-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .step {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border-left: 4px solid var(--color-primary);
+  }
+
+  .step h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .advanced-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .advanced-options {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .option {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .option h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .next-steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .next-steps {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .next-step-card {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .next-step-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .next-step-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .next-step-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

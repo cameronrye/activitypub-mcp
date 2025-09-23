@@ -1,0 +1,524 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+const title = "Basic Usage Guide - ActivityPub MCP Server";
+const description = "Learn the essential commands and workflows for using the ActivityPub MCP Server with LLMs like Claude.";
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="usage-page">
+    <div class="container">
+      <div class="usage-header">
+        <h1>Basic Usage Guide</h1>
+        <p class="usage-description">
+          Learn the essential commands and workflows for using the ActivityPub MCP Server to explore and interact with the fediverse through LLMs.
+        </p>
+      </div>
+
+      <div class="usage-content">
+        <section class="usage-section">
+          <h2>🎯 Core Concepts</h2>
+          <div class="concepts-grid">
+            <div class="concept-card">
+              <h3>Fediverse Client</h3>
+              <p>This server acts as a <strong>client</strong> to existing fediverse servers. You don't need to run your own ActivityPub server - it connects to existing instances like Mastodon, Pleroma, and Misskey.</p>
+            </div>
+            <div class="concept-card">
+              <h3>MCP Tools</h3>
+              <p>The server provides <strong>tools</strong> that LLMs can call to perform actions like discovering actors, fetching timelines, and exploring instances.</p>
+            </div>
+            <div class="concept-card">
+              <h3>MCP Resources</h3>
+              <p>The server exposes <strong>resources</strong> that provide information about the server itself, discovered actors, and cached data.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="usage-section">
+          <h2>🔧 Essential Tools</h2>
+          <p>Here are the most important tools you'll use regularly:</p>
+
+          <div class="tool-list">
+            <div class="tool-item">
+              <h3><code>discover-actor</code></h3>
+              <p>Find and get information about fediverse actors (users).</p>
+              <div class="tool-example">
+                <h4>Example:</h4>
+                <pre><code>discover-actor @mastodon@mastodon.social</code></pre>
+                <p>Returns detailed information about the @mastodon account on mastodon.social</p>
+              </div>
+            </div>
+
+            <div class="tool-item">
+              <h3><code>fetch-timeline</code></h3>
+              <p>Get recent posts from an actor's timeline.</p>
+              <div class="tool-example">
+                <h4>Example:</h4>
+                <pre><code>fetch-timeline https://mastodon.social/users/mastodon</code></pre>
+                <p>Retrieves the latest posts from the specified actor</p>
+              </div>
+            </div>
+
+            <div class="tool-item">
+              <h3><code>get-instance-info</code></h3>
+              <p>Get information about a fediverse instance.</p>
+              <div class="tool-example">
+                <h4>Example:</h4>
+                <pre><code>get-instance-info mastodon.social</code></pre>
+                <p>Returns instance metadata, rules, and statistics</p>
+              </div>
+            </div>
+
+            <div class="tool-item">
+              <h3><code>discover-instances</code></h3>
+              <p>Find fediverse instances by category or search term.</p>
+              <div class="tool-example">
+                <h4>Example:</h4>
+                <pre><code>discover-instances technology</code></pre>
+                <p>Finds instances focused on technology topics</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="usage-section">
+          <h2>📚 Common Workflows</h2>
+          
+          <div class="workflow-list">
+            <div class="workflow">
+              <h3>🔍 Exploring a New Instance</h3>
+              <ol>
+                <li>Get instance information: <code>get-instance-info example.social</code></li>
+                <li>Discover popular actors: <code>discover-actor @admin@example.social</code></li>
+                <li>Check recent activity: <code>fetch-timeline https://example.social/users/admin</code></li>
+              </ol>
+            </div>
+
+            <div class="workflow">
+              <h3>👤 Following an Actor's Activity</h3>
+              <ol>
+                <li>Discover the actor: <code>discover-actor @username@instance.com</code></li>
+                <li>Get their recent posts: <code>fetch-timeline [actor-url-from-step-1]</code></li>
+                <li>Check their followers/following (if public)</li>
+              </ol>
+            </div>
+
+            <div class="workflow">
+              <h3>🌐 Finding Communities</h3>
+              <ol>
+                <li>Search for instances: <code>discover-instances [topic]</code></li>
+                <li>Check instance info for each result</li>
+                <li>Explore popular actors on interesting instances</li>
+              </ol>
+            </div>
+          </div>
+        </section>
+
+        <section class="usage-section">
+          <h2>💡 Tips & Best Practices</h2>
+          
+          <div class="tips-grid">
+            <div class="tip-card">
+              <h3>🎯 Actor Identifiers</h3>
+              <p>You can use different formats to identify actors:</p>
+              <ul>
+                <li><code>@username@instance.com</code> - WebFinger format</li>
+                <li><code>https://instance.com/users/username</code> - Direct URL</li>
+                <li><code>https://instance.com/@username</code> - Profile URL</li>
+              </ul>
+            </div>
+
+            <div class="tip-card">
+              <h3>⚡ Performance</h3>
+              <p>The server caches responses to improve performance:</p>
+              <ul>
+                <li>Actor information is cached for 5 minutes</li>
+                <li>Instance info is cached for 1 hour</li>
+                <li>Timeline data is cached for 2 minutes</li>
+              </ul>
+            </div>
+
+            <div class="tip-card">
+              <h3>🔒 Privacy</h3>
+              <p>Respect privacy and instance rules:</p>
+              <ul>
+                <li>Only access public information</li>
+                <li>Follow instance rate limits</li>
+                <li>Respect user privacy settings</li>
+              </ul>
+            </div>
+
+            <div class="tip-card">
+              <h3>🐛 Troubleshooting</h3>
+              <p>If something doesn't work:</p>
+              <ul>
+                <li>Check the actor/instance URL format</li>
+                <li>Verify the instance is accessible</li>
+                <li>Try a different actor or instance</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="usage-section">
+          <h2>🚀 Advanced Usage</h2>
+          
+          <div class="advanced-usage">
+            <div class="advanced-item">
+              <h3>Combining Tools</h3>
+              <p>Use multiple tools together for comprehensive exploration:</p>
+              <pre><code># First discover instances in a topic
+discover-instances "open source"
+
+# Then explore each instance
+get-instance-info fosstodon.org
+
+# Find interesting actors
+discover-actor @admin@fosstodon.org
+
+# Check their activity
+fetch-timeline https://fosstodon.org/users/admin</code></pre>
+            </div>
+
+            <div class="advanced-item">
+              <h3>Using with Claude Desktop</h3>
+              <p>Ask Claude to help you explore:</p>
+              <blockquote>
+                "Help me find interesting technology-focused Mastodon instances and show me what kind of content is popular there."
+              </blockquote>
+              <p>Claude will use the MCP tools to discover instances, check their info, and explore popular content.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="usage-section">
+          <h2>🔗 Next Steps</h2>
+          <div class="next-steps">
+            <a href="/docs/guides/examples/" class="next-step-card">
+              <h3>Practical Examples</h3>
+              <p>See detailed examples and real-world use cases.</p>
+            </a>
+            <a href="/docs/api/tools/" class="next-step-card">
+              <h3>Complete Tool Reference</h3>
+              <p>Detailed documentation for all available tools.</p>
+            </a>
+            <a href="/docs/troubleshooting/" class="next-step-card">
+              <h3>Troubleshooting Guide</h3>
+              <p>Solutions for common issues and problems.</p>
+            </a>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .usage-page {
+    padding: var(--space-16) 0;
+  }
+
+  .usage-header {
+    text-align: center;
+    margin-bottom: var(--space-16);
+  }
+
+  .usage-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .usage-description {
+    font-size: var(--text-xl);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .usage-content {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .usage-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .usage-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .concepts-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .concepts-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .concept-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .concept-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .concept-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+  }
+
+  .tool-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .tool-item {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border-left: 4px solid var(--color-primary);
+  }
+
+  .tool-item h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .tool-item h3 code {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+  }
+
+  .tool-item > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+    line-height: var(--leading-relaxed);
+  }
+
+  .tool-example {
+    background: var(--bg-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .tool-example h4 {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .tool-example pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    margin: var(--space-2) 0;
+    overflow-x: auto;
+  }
+
+  .tool-example p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    margin: 0;
+  }
+
+  .workflow-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .workflow {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .workflow h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .workflow ol {
+    padding-left: var(--space-6);
+  }
+
+  .workflow li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .workflow code {
+    background: var(--color-gray-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+  }
+
+  .tips-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .tips-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .tip-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .tip-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .tip-card p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+    line-height: var(--leading-relaxed);
+  }
+
+  .tip-card ul {
+    padding-left: var(--space-6);
+  }
+
+  .tip-card li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+    line-height: var(--leading-relaxed);
+  }
+
+  .tip-card code {
+    background: var(--color-gray-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+  }
+
+  .advanced-usage {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .advanced-item {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .advanced-item h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .advanced-item pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    font-family: var(--font-family-mono);
+    margin: var(--space-4) 0;
+    overflow-x: auto;
+  }
+
+  .advanced-item blockquote {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    margin: var(--space-4) 0;
+    font-style: italic;
+    border-left: 4px solid var(--color-primary-dark);
+  }
+
+  .next-steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .next-steps {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .next-step-card {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .next-step-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .next-step-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .next-step-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>
