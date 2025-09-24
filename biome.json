@@ -11,7 +11,8 @@
       "!**/README.md",
       "!**/docs/**/*.md",
       "!**/.github/**/*.md"
-    ]
+    ],
+    "ignoreUnknown": true
   },
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "formatter": {
