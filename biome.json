@@ -31,8 +31,9 @@
       "!**/.gitattributes",
       "!**/.gitignore",
       "!**/.npmignore",
-      "!**/CODEOWNERS",
-      "ignoreUnknown": true
+      "!**/CODEOWNERS"
+    ],
+    "ignoreUnknown": true
   },
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "formatter": {
