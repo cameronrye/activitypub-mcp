@@ -885,7 +885,11 @@ p {
 }
 
 .installation-step {
-  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 100%
+  );
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-xl);
   padding: var(--space-8);
@@ -894,7 +898,7 @@ p {
 }
 
 .installation-step::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -985,7 +989,7 @@ p {
 }
 
 .copy-button.copied .copy-text::after {
-  content: 'ied';
+  content: "ied";
 }
 
 /* Next Steps */
@@ -1035,7 +1039,11 @@ p {
 }
 
 .next-step-card {
-  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 100%
+  );
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
@@ -1048,7 +1056,7 @@ p {
 }
 
 .next-step-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;

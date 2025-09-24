@@ -1,11 +1,11 @@
 ---
 // Social media links component
 export interface Props {
-  variant?: 'header' | 'footer';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "header" | "footer";
+  size?: "sm" | "md" | "lg";
 }
 
-const { variant = 'header', size = 'md' } = Astro.props;
+const { variant = "header", size = "md" } = Astro.props;
 ---
 
 <div class={`social-links social-links--${variant} social-links--${size}`}>
