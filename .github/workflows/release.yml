@@ -5,6 +5,12 @@ on:
     tags:
       - 'v*'
 
+# Add permissions for GitHub token
+permissions:
+  contents: write
+  packages: write
+  pull-requests: read
+
 jobs:
   test:
     name: Test before release
