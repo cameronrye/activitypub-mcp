@@ -1,12 +1,10 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-
-const title = "Documentation - ActivityPub MCP Server";
-const description =
+const _title = "Documentation - ActivityPub MCP Server";
+const _description =
   "Complete documentation for the ActivityPub MCP Server - setup, configuration, usage examples, and API reference.";
 
 // Get the base URL for proper path resolution
-const baseURL = import.meta.env.BASE_URL.endsWith("/")
+const _baseURL = import.meta.env.BASE_URL.endsWith("/")
   ? import.meta.env.BASE_URL
   : `${import.meta.env.BASE_URL}/`;
 ---

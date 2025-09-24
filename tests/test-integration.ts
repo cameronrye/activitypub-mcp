@@ -5,9 +5,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
  * Integration test for ActivityPub MCP Server - Fediverse Client Mode
  */
 async function testIntegration() {
-  console.log(
-    "🔗 Testing ActivityPub MCP Server - Fediverse Client Integration...\n",
-  );
+  console.log("🔗 Testing ActivityPub MCP Server - Fediverse Client Integration...\n");
 
   const transport = new StdioClientTransport({
     command: "npx",
@@ -41,16 +39,10 @@ async function testIntegration() {
         },
       });
       console.log("✅ Discover actor successful!");
-      console.log(
-        "Result preview:",
-        `${discoverActorResult.content[0].text.substring(0, 200)}...`,
-      );
+      console.log("Result preview:", `${discoverActorResult.content[0].text.substring(0, 200)}...`);
       console.log();
     } catch (error) {
-      console.log(
-        "❌ Discover actor failed:",
-        error instanceof Error ? error.message : error,
-      );
+      console.log("❌ Discover actor failed:", error instanceof Error ? error.message : error);
       console.log();
     }
 
@@ -61,10 +53,7 @@ async function testIntegration() {
         uri: "activitypub://remote-actor/gargron@mastodon.social",
       });
       console.log("✅ Remote actor resource successful!");
-      console.log(
-        "Result preview:",
-        `${actorResource.contents[0].text.substring(0, 200)}...`,
-      );
+      console.log("Result preview:", `${actorResource.contents[0].text.substring(0, 200)}...`);
       console.log();
     } catch (error) {
       console.log(
@@ -85,15 +74,10 @@ async function testIntegration() {
         },
       });
       console.log("✅ Fetch timeline successful!");
-      console.log(
-        `Result preview: ${timelineResult.content[0].text.substring(0, 200)}...`,
-      );
+      console.log(`Result preview: ${timelineResult.content[0].text.substring(0, 200)}...`);
       console.log();
     } catch (error) {
-      console.log(
-        "❌ Fetch timeline failed:",
-        error instanceof Error ? error.message : error,
-      );
+      console.log("❌ Fetch timeline failed:", error instanceof Error ? error.message : error);
       console.log();
     }
 
@@ -107,15 +91,10 @@ async function testIntegration() {
         },
       });
       console.log("✅ Get instance info successful!");
-      console.log(
-        `Result preview: ${instanceInfoResult.content[0].text.substring(0, 200)}...`,
-      );
+      console.log(`Result preview: ${instanceInfoResult.content[0].text.substring(0, 200)}...`);
       console.log();
     } catch (error) {
-      console.log(
-        "❌ Get instance info failed:",
-        error instanceof Error ? error.message : error,
-      );
+      console.log("❌ Get instance info failed:", error instanceof Error ? error.message : error);
       console.log();
     }
 
@@ -136,16 +115,11 @@ async function testIntegration() {
       );
       console.log();
     } catch (error) {
-      console.log(
-        "❌ Exploration prompt failed:",
-        error instanceof Error ? error.message : error,
-      );
+      console.log("❌ Exploration prompt failed:", error instanceof Error ? error.message : error);
       console.log();
     }
 
-    console.log(
-      "🎉 Fediverse client integration tests completed successfully!",
-    );
+    console.log("🎉 Fediverse client integration tests completed successfully!");
     console.log("\n📊 Summary:");
     console.log("- MCP server: ✅ Working");
     console.log("- Fediverse client mode: ✅ Working");

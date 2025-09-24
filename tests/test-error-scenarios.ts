@@ -40,7 +40,7 @@ async function testErrorScenarios() {
       } else {
         console.log("❌ Expected error for empty identifier");
       }
-    } catch (error) {
+    } catch (_error) {
       console.log("✅ Correctly caught empty identifier error");
     }
 
@@ -53,7 +53,7 @@ async function testErrorScenarios() {
         },
       });
       console.log("❌ Expected error for missing fields");
-    } catch (error) {
+    } catch (_error) {
       console.log("✅ Correctly caught missing fields error");
     }
 
@@ -70,7 +70,7 @@ async function testErrorScenarios() {
       } else {
         console.log("❌ Expected error for invalid identifier");
       }
-    } catch (error) {
+    } catch (_error) {
       console.log("✅ Correctly caught invalid identifier error");
     }
 
@@ -91,7 +91,7 @@ async function testErrorScenarios() {
       } else {
         console.log("❌ Expected error for empty identifier");
       }
-    } catch (error) {
+    } catch (_error) {
       console.log("✅ Correctly caught empty identifier error");
     }
 
@@ -105,7 +105,7 @@ async function testErrorScenarios() {
         },
       });
       console.log("❌ Expected error for invalid limit");
-    } catch (error) {
+    } catch (_error) {
       console.log("✅ Correctly caught invalid limit error");
     }
 
@@ -126,7 +126,7 @@ async function testErrorScenarios() {
       } else {
         console.log("❌ Expected error for invalid domain");
       }
-    } catch (error) {
+    } catch (_error) {
       console.log("✅ Correctly caught invalid domain error");
     }
 
@@ -144,7 +144,7 @@ async function testErrorScenarios() {
       } else {
         console.log("❌ Expected error for empty query");
       }
-    } catch (error) {
+    } catch (_error) {
       console.log("✅ Correctly caught empty query error");
     }
 
@@ -164,7 +164,7 @@ async function testErrorScenarios() {
       } else {
         console.log("❌ Expected error for invalid domain format");
       }
-    } catch (error) {
+    } catch (_error) {
       console.log("✅ Correctly caught invalid domain format error");
     }
 
@@ -181,7 +181,7 @@ async function testErrorScenarios() {
       } else {
         console.log("❌ Expected error for empty domain");
       }
-    } catch (error) {
+    } catch (_error) {
       console.log("✅ Correctly caught empty domain error");
     }
 
@@ -194,7 +194,7 @@ async function testErrorScenarios() {
         uri: "activitypub://remote-actor/invalid-format",
       });
       console.log("❌ Expected error for invalid remote actor resource");
-    } catch (error) {
+    } catch (_error) {
       console.log("✅ Correctly caught invalid remote actor resource error");
     }
 
@@ -204,7 +204,7 @@ async function testErrorScenarios() {
         uri: "activitypub://remote-timeline/",
       });
       console.log("❌ Expected error for malformed timeline resource");
-    } catch (error) {
+    } catch (_error) {
       console.log("✅ Correctly caught malformed timeline resource error");
     }
 
@@ -221,7 +221,7 @@ async function testErrorScenarios() {
         },
       });
       console.log("❌ Expected error for empty interests");
-    } catch (error) {
+    } catch (_error) {
       console.log("✅ Correctly caught empty interests error");
     }
 
@@ -232,7 +232,7 @@ async function testErrorScenarios() {
         arguments: {},
       });
       console.log("❌ Expected error for missing arguments");
-    } catch (error) {
+    } catch (_error) {
       console.log("✅ Correctly caught missing arguments error");
     }
 

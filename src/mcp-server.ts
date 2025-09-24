@@ -1,8 +1,5 @@
 import { getLogger } from "@logtape/logtape";
-import {
-  McpServer,
-  ResourceTemplate,
-} from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
@@ -10,7 +7,6 @@ import { healthChecker } from "./health-check.js";
 import { instanceDiscovery } from "./instance-discovery.js";
 import { performanceMonitor } from "./performance-monitor.js";
 import { remoteClient } from "./remote-client.js";
-import { webfingerClient } from "./webfinger.js";
 
 const logger = getLogger("activitypub-mcp");
 
@@ -20,8 +16,8 @@ const CONFIG = {
   serverVersion: process.env.MCP_SERVER_VERSION || "1.0.0",
   logLevel: process.env.LOG_LEVEL || "info",
   rateLimitEnabled: process.env.RATE_LIMIT_ENABLED === "true",
-  rateLimitMax: Number.parseInt(process.env.RATE_LIMIT_MAX || "100"),
-  rateLimitWindow: Number.parseInt(process.env.RATE_LIMIT_WINDOW || "900000"),
+  rateLimitMax: Number.parseInt(process.env.RATE_LIMIT_MAX || "100", 10),
+  rateLimitWindow: Number.parseInt(process.env.RATE_LIMIT_WINDOW || "900000", 10),
 };
 
 // Input validation schemas
@@ -34,12 +30,12 @@ const ActorIdentifierSchema = z
     "Invalid identifier format. Expected: user@domain.com",
   );
 
-const PostContentSchema = z
+const _PostContentSchema = z
   .string()
   .min(1, "Post content cannot be empty")
   .max(5000, "Post content too long");
 
-const UriSchema = z.string().url("Invalid URI format");
+const _UriSchema = z.string().url("Invalid URI format");
 
 const DomainSchema = z
   .string()
@@ -58,10 +54,7 @@ const DomainSchema = z
     "Invalid domain format",
   );
 
-const QuerySchema = z
-  .string()
-  .min(1, "Query cannot be empty")
-  .max(500, "Query too long");
+const QuerySchema = z.string().min(1, "Query cannot be empty").max(500, "Query too long");
 
 /**
  * ActivityPub MCP Server
@@ -72,8 +65,7 @@ const QuerySchema = z
  */
 class ActivityPubMCPServer {
   private mcpServer: McpServer;
-  private requestCounts: Map<string, { count: number; resetTime: number }> =
-    new Map();
+  private requestCounts: Map<string, { count: number; resetTime: number }> = new Map();
 
   constructor() {
     this.mcpServer = new McpServer({
@@ -149,20 +141,6 @@ class ActivityPubMCPServer {
   }
 
   /**
-   * Validate post content
-   */
-  private validatePostContent(content: string): string {
-    try {
-      return PostContentSchema.parse(content);
-    } catch (error) {
-      throw new McpError(
-        ErrorCode.InvalidParams,
-        `Invalid post content: ${error instanceof z.ZodError ? error.errors[0].message : "Unknown validation error"}`,
-      );
-    }
-  }
-
-  /**
    * Validate domain format
    */
   private validateDomain(domain: string): string {
@@ -187,17 +165,6 @@ class ActivityPubMCPServer {
         ErrorCode.InvalidParams,
         `Invalid query: ${error instanceof z.ZodError ? error.errors[0].message : "Unknown validation error"}`,
       );
-    }
-  }
-
-  /**
-   * Validate URI format
-   */
-  private validateUri(uri: string): string {
-    try {
-      return UriSchema.parse(uri);
-    } catch (error) {
-      throw new McpError(ErrorCode.InvalidParams, `Invalid URI format: ${uri}`);
     }
   }
 
@@ -249,11 +216,7 @@ class ActivityPubMCPServer {
               "health-check",
               "performance-metrics",
             ],
-            prompts: [
-              "explore-fediverse",
-              "compare-instances",
-              "discover-content",
-            ],
+            prompts: ["explore-fediverse", "compare-instances", "discover-content"],
           },
           configuration: {
             rateLimitEnabled: CONFIG.rateLimitEnabled,
@@ -286,8 +249,7 @@ class ActivityPubMCPServer {
             {
               uri: "activitypub://remote-actor/{identifier}",
               name: "remote-actor",
-              description:
-                "Retrieve actor information from any fediverse server",
+              description: "Retrieve actor information from any fediverse server",
               mimeType: "application/json",
             },
           ],
@@ -302,9 +264,7 @@ class ActivityPubMCPServer {
       async (uri, { identifier }) => {
         try {
           // Validate input
-          const identifierStr = Array.isArray(identifier)
-            ? identifier[0]
-            : identifier;
+          const identifierStr = Array.isArray(identifier) ? identifier[0] : identifier;
           const validIdentifier = this.validateActorIdentifier(identifierStr);
 
           // Check rate limit
@@ -319,8 +279,7 @@ class ActivityPubMCPServer {
             identifier: validIdentifier,
           });
 
-          const actorData =
-            await remoteClient.fetchRemoteActor(validIdentifier);
+          const actorData = await remoteClient.fetchRemoteActor(validIdentifier);
 
           return {
             contents: [
@@ -358,8 +317,7 @@ class ActivityPubMCPServer {
             {
               uri: "activitypub://remote-timeline/{identifier}",
               name: "remote-timeline",
-              description:
-                "Retrieve actor's timeline/outbox from any fediverse server",
+              description: "Retrieve actor's timeline/outbox from any fediverse server",
               mimeType: "application/json",
             },
           ],
@@ -374,9 +332,7 @@ class ActivityPubMCPServer {
       async (uri, { identifier }) => {
         try {
           // Validate input
-          const identifierStr = Array.isArray(identifier)
-            ? identifier[0]
-            : identifier;
+          const identifierStr = Array.isArray(identifier) ? identifier[0] : identifier;
           const validIdentifier = this.validateActorIdentifier(identifierStr);
 
           // Check rate limit
@@ -391,10 +347,7 @@ class ActivityPubMCPServer {
             identifier: validIdentifier,
           });
 
-          const timelineData = await remoteClient.fetchActorOutbox(
-            validIdentifier,
-            20,
-          );
+          const timelineData = await remoteClient.fetchActorOutbox(validIdentifier, 20);
 
           // Ensure the timeline data has the expected structure
           const normalizedTimeline = {
@@ -447,8 +400,7 @@ class ActivityPubMCPServer {
       }),
       {
         title: "Fediverse Instance Information",
-        description:
-          "Get information about any fediverse instance (e.g., example.social)",
+        description: "Get information about any fediverse instance (e.g., example.social)",
         mimeType: "application/json",
       },
       async (uri, { domain }) => {
@@ -472,9 +424,7 @@ class ActivityPubMCPServer {
           // Transform to the format expected by tests
           const normalizedInstanceInfo = {
             ...instanceInfo,
-            title:
-              instanceInfo.description ||
-              `${instanceInfo.software || "Unknown"} instance`,
+            title: instanceInfo.description || `${instanceInfo.software || "Unknown"} instance`,
             uri: `https://${validDomain}`,
           };
 
@@ -514,8 +464,7 @@ class ActivityPubMCPServer {
             {
               uri: "activitypub://remote-followers/{identifier}",
               name: "remote-followers",
-              description:
-                "Retrieve followers of an actor from any fediverse server",
+              description: "Retrieve followers of an actor from any fediverse server",
               mimeType: "application/json",
             },
           ],
@@ -528,9 +477,7 @@ class ActivityPubMCPServer {
       },
       async (uri, { identifier }) => {
         try {
-          const identifierStr = Array.isArray(identifier)
-            ? identifier[0]
-            : identifier;
+          const identifierStr = Array.isArray(identifier) ? identifier[0] : identifier;
           const validIdentifier = this.validateActorIdentifier(identifierStr);
 
           if (!this.checkRateLimit(validIdentifier)) {
@@ -544,10 +491,7 @@ class ActivityPubMCPServer {
             identifier: validIdentifier,
           });
 
-          const followersData = await remoteClient.fetchActorFollowers(
-            validIdentifier,
-            20,
-          );
+          const followersData = await remoteClient.fetchActorFollowers(validIdentifier, 20);
 
           return {
             contents: [
@@ -585,8 +529,7 @@ class ActivityPubMCPServer {
             {
               uri: "activitypub://remote-following/{identifier}",
               name: "remote-following",
-              description:
-                "Retrieve who an actor is following from any fediverse server",
+              description: "Retrieve who an actor is following from any fediverse server",
               mimeType: "application/json",
             },
           ],
@@ -594,15 +537,12 @@ class ActivityPubMCPServer {
       }),
       {
         title: "Remote Actor Following",
-        description:
-          "Retrieve who an actor is following from any fediverse server",
+        description: "Retrieve who an actor is following from any fediverse server",
         mimeType: "application/json",
       },
       async (uri, { identifier }) => {
         try {
-          const identifierStr = Array.isArray(identifier)
-            ? identifier[0]
-            : identifier;
+          const identifierStr = Array.isArray(identifier) ? identifier[0] : identifier;
           const validIdentifier = this.validateActorIdentifier(identifierStr);
 
           if (!this.checkRateLimit(validIdentifier)) {
@@ -616,10 +556,7 @@ class ActivityPubMCPServer {
             identifier: validIdentifier,
           });
 
-          const followingData = await remoteClient.fetchActorFollowing(
-            validIdentifier,
-            20,
-          );
+          const followingData = await remoteClient.fetchActorFollowing(validIdentifier, 20);
 
           return {
             contents: [
@@ -658,8 +595,7 @@ class ActivityPubMCPServer {
       "discover-actor",
       {
         title: "Discover Fediverse Actor",
-        description:
-          "Discover and get information about any actor in the fediverse",
+        description: "Discover and get information about any actor in the fediverse",
         inputSchema: {
           identifier: ActorIdentifierSchema.describe(
             "Actor identifier (e.g., user@example.social)",
@@ -676,11 +612,7 @@ class ActivityPubMCPServer {
 
         try {
           if (!this.checkRateLimit(validIdentifier)) {
-            performanceMonitor.endRequest(
-              requestId,
-              false,
-              "Rate limit exceeded",
-            );
+            performanceMonitor.endRequest(requestId, false, "Rate limit exceeded");
             throw new McpError(
               ErrorCode.InternalError,
               "Rate limit exceeded. Please try again later.",
@@ -710,8 +642,7 @@ class ActivityPubMCPServer {
             ],
           };
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
           performanceMonitor.endRequest(requestId, false, errorMessage);
 
           logger.error("Failed to discover actor", {
@@ -724,8 +655,7 @@ class ActivityPubMCPServer {
             isError: error instanceof Error,
             isMcpError: error instanceof McpError,
             errorName: error?.constructor?.name,
-            errorMessage:
-              error instanceof Error ? error.message : String(error),
+            errorMessage: error instanceof Error ? error.message : String(error),
           });
 
           if (error instanceof McpError) {
@@ -750,12 +680,9 @@ class ActivityPubMCPServer {
       "fetch-timeline",
       {
         title: "Fetch Actor Timeline",
-        description:
-          "Fetch recent posts from any actor's timeline in the fediverse",
+        description: "Fetch recent posts from any actor's timeline in the fediverse",
         inputSchema: {
-          identifier: z
-            .string()
-            .describe("Actor identifier (e.g., user@example.social)"),
+          identifier: z.string().describe("Actor identifier (e.g., user@example.social)"),
           limit: z
             .number()
             .min(1)
@@ -781,10 +708,7 @@ class ActivityPubMCPServer {
             limit,
           });
 
-          const timeline = await remoteClient.fetchActorOutbox(
-            validIdentifier,
-            limit,
-          );
+          const timeline = await remoteClient.fetchActorOutbox(validIdentifier, limit);
 
           const posts = timeline.orderedItems || timeline.items || [];
           const postCount = posts.length;
@@ -843,9 +767,7 @@ ${postCount > 5 ? `... and ${postCount - 5} more posts` : ""}`,
         title: "Search Fediverse Instance",
         description: "Search for content on a specific fediverse instance",
         inputSchema: {
-          domain: DomainSchema.describe(
-            "Instance domain (e.g., example.social)",
-          ),
+          domain: DomainSchema.describe("Instance domain (e.g., example.social)"),
           query: QuerySchema.describe("Search query"),
           type: z
             .enum(["accounts", "statuses", "hashtags"])
@@ -872,11 +794,7 @@ ${postCount > 5 ? `... and ${postCount - 5} more posts` : ""}`,
             type,
           });
 
-          const results = await remoteClient.searchInstance(
-            validDomain,
-            validQuery,
-            type,
-          );
+          const results = await remoteClient.searchInstance(validDomain, validQuery, type);
 
           return {
             content: [
@@ -920,9 +838,7 @@ ${JSON.stringify(results, null, 2)}`,
         title: "Get Instance Information",
         description: "Get detailed information about a fediverse instance",
         inputSchema: {
-          domain: DomainSchema.describe(
-            "Instance domain (e.g., example.social)",
-          ),
+          domain: DomainSchema.describe("Instance domain (e.g., example.social)"),
         },
       },
       async ({ domain }) => {
@@ -997,33 +913,18 @@ ${instanceInfo.contact_account ? `📞 Contact: @${instanceInfo.contact_account.
       "discover-instances",
       {
         title: "Discover Fediverse Instances",
-        description:
-          "Discover popular fediverse instances by category, topic, or size",
+        description: "Discover popular fediverse instances by category, topic, or size",
         inputSchema: {
           category: z
-            .enum([
-              "mastodon",
-              "pleroma",
-              "misskey",
-              "peertube",
-              "pixelfed",
-              "lemmy",
-              "all",
-            ])
+            .enum(["mastodon", "pleroma", "misskey", "peertube", "pixelfed", "lemmy", "all"])
             .optional()
             .describe("Type of fediverse software"),
-          topic: z
-            .string()
-            .optional()
-            .describe("Topic or interest to search for"),
+          topic: z.string().optional().describe("Topic or interest to search for"),
           size: z
             .enum(["small", "medium", "large"])
             .optional()
             .describe("Instance size preference"),
-          region: z
-            .string()
-            .optional()
-            .describe("Geographic region or language"),
+          region: z.string().optional().describe("Geographic region or language"),
           beginnerFriendly: z
             .boolean()
             .optional()
@@ -1108,20 +1009,16 @@ ${limitedInstances.length < instances.length ? `\n... and ${instances.length - l
       "recommend-instances",
       {
         title: "Get Instance Recommendations",
-        description:
-          "Get personalized fediverse instance recommendations based on interests",
+        description: "Get personalized fediverse instance recommendations based on interests",
         inputSchema: {
-          interests: z
-            .array(z.string())
-            .describe("List of your interests or topics"),
+          interests: z.array(z.string()).describe("List of your interests or topics"),
         },
       },
       async ({ interests }) => {
         try {
           logger.info("Getting instance recommendations", { interests });
 
-          const recommendations =
-            instanceDiscovery.getInstanceRecommendations(interests);
+          const recommendations = instanceDiscovery.getInstanceRecommendations(interests);
 
           return {
             content: [
@@ -1190,8 +1087,7 @@ ${recommendations
         });
 
         try {
-          const healthStatus =
-            await healthChecker.performHealthCheck(includeMetrics);
+          const healthStatus = await healthChecker.performHealthCheck(includeMetrics);
           performanceMonitor.endRequest(requestId, true);
 
           return {
@@ -1227,8 +1123,7 @@ ${
             ],
           };
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
           performanceMonitor.endRequest(requestId, false, errorMessage);
 
           return {
@@ -1249,27 +1144,20 @@ ${
       "performance-metrics",
       {
         title: "Performance Metrics",
-        description:
-          "Get detailed performance metrics for the ActivityPub MCP server",
+        description: "Get detailed performance metrics for the ActivityPub MCP server",
         inputSchema: {
           operation: z
             .string()
             .optional()
-            .describe(
-              "Specific operation to get metrics for (e.g., 'discover-actor')",
-            ),
+            .describe("Specific operation to get metrics for (e.g., 'discover-actor')"),
         },
       },
       async ({ operation }) => {
-        const requestId = performanceMonitor.startRequest(
-          "performance-metrics",
-          { operation },
-        );
+        const requestId = performanceMonitor.startRequest("performance-metrics", { operation });
 
         try {
           if (operation) {
-            const operationMetrics =
-              performanceMonitor.getOperationMetrics(operation);
+            const operationMetrics = performanceMonitor.getOperationMetrics(operation);
             performanceMonitor.endRequest(requestId, true);
 
             return {
@@ -1314,17 +1202,13 @@ ${
 
 **Recent Requests** (last 10):
 ${requestHistory
-  .map(
-    (req) =>
-      `• ${req.operation}: ${req.duration}ms ${req.success ? "✅" : "❌"}`,
-  )
+  .map((req) => `• ${req.operation}: ${req.duration}ms ${req.success ? "✅" : "❌"}`)
   .join("\n")}`,
               },
             ],
           };
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
           performanceMonitor.endRequest(requestId, false, errorMessage);
 
           return {
@@ -1350,8 +1234,7 @@ ${requestHistory
       "explore-fediverse",
       {
         title: "Explore the Fediverse",
-        description:
-          "Get guidance on exploring and discovering content in the fediverse",
+        description: "Get guidance on exploring and discovering content in the fediverse",
         argsSchema: {
           interests: z
             .string()
@@ -1359,14 +1242,7 @@ ${requestHistory
             .max(500, "Interests too long")
             .describe("Your interests or topics you want to explore"),
           instanceType: z
-            .enum([
-              "mastodon",
-              "pleroma",
-              "misskey",
-              "pixelfed",
-              "peertube",
-              "any",
-            ])
+            .enum(["mastodon", "pleroma", "misskey", "pixelfed", "peertube", "any"])
             .optional()
             .describe("Preferred type of fediverse instance"),
         },
@@ -1401,9 +1277,7 @@ ${requestHistory
             .min(1, "Criteria cannot be empty")
             .max(500, "Criteria too long")
             .optional()
-            .describe(
-              "Specific criteria for comparison (e.g., size, rules, features)",
-            ),
+            .describe("Specific criteria for comparison (e.g., size, rules, features)"),
         },
       },
       ({ instances, criteria }) => ({
@@ -1424,8 +1298,7 @@ ${requestHistory
       "discover-content",
       {
         title: "Discover Fediverse Content",
-        description:
-          "Get recommendations for discovering interesting content and people",
+        description: "Get recommendations for discovering interesting content and people",
         argsSchema: {
           topics: z
             .string()
