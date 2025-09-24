@@ -1,0 +1,282 @@
+---
+// Theme toggle component for light/dark/system theme switching
+---
+
+<div class="theme-toggle">
+  <button 
+    id="theme-toggle-btn" 
+    class="theme-toggle-btn" 
+    aria-label="Toggle theme"
+    title="Toggle theme"
+  >
+    <svg class="theme-icon sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+    <svg class="theme-icon moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+    </svg>
+    <svg class="theme-icon system-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+      <line x1="8" y1="21" x2="16" y2="21"></line>
+      <line x1="12" y1="17" x2="12" y2="21"></line>
+    </svg>
+  </button>
+  
+  <div class="theme-dropdown" id="theme-dropdown">
+    <button class="theme-option" data-theme="light">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </svg>
+      Light
+    </button>
+    <button class="theme-option" data-theme="dark">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      </svg>
+      Dark
+    </button>
+    <button class="theme-option" data-theme="system">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+        <line x1="8" y1="21" x2="16" y2="21"></line>
+        <line x1="12" y1="17" x2="12" y2="21"></line>
+      </svg>
+      System
+    </button>
+  </div>
+</div>
+
+<style>
+  .theme-toggle {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .theme-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+  }
+  
+  .theme-toggle-btn:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .theme-icon {
+    position: absolute;
+    transition: all var(--transition-fast);
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  
+  .theme-icon.active {
+    opacity: 1;
+    transform: scale(1);
+  }
+  
+  .theme-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-2);
+    min-width: 120px;
+    z-index: var(--z-dropdown);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all var(--transition-fast);
+  }
+  
+  .theme-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  
+  .theme-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
+  }
+  
+  .theme-option:hover {
+    background-color: var(--bg-secondary);
+    color: var(--color-primary);
+  }
+  
+  .theme-option.active {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+  }
+  
+  .theme-option svg {
+    flex-shrink: 0;
+  }
+</style>
+
+<script>
+  class ThemeToggle {
+    constructor() {
+      this.toggleBtn = document.getElementById('theme-toggle-btn');
+      this.dropdown = document.getElementById('theme-dropdown');
+      this.themeOptions = document.querySelectorAll('.theme-option');
+      this.currentTheme = this.getStoredTheme() || 'system';
+      
+      this.init();
+    }
+    
+    init() {
+      if (!this.toggleBtn || !this.dropdown) return;
+      
+      // Set initial theme
+      this.applyTheme(this.currentTheme);
+      this.updateUI();
+      
+      // Bind events
+      this.toggleBtn.addEventListener('click', this.toggleDropdown.bind(this));
+      document.addEventListener('click', this.handleDocumentClick.bind(this));
+      
+      this.themeOptions.forEach(option => {
+        option.addEventListener('click', this.handleThemeChange.bind(this));
+      });
+      
+      // Listen for system theme changes
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+          if (this.currentTheme === 'system') {
+            this.applyTheme('system');
+          }
+        });
+      }
+    }
+    
+    toggleDropdown(event) {
+      event.stopPropagation();
+      this.dropdown.classList.toggle('show');
+    }
+    
+    handleDocumentClick(event) {
+      if (!this.toggleBtn.contains(event.target) && !this.dropdown.contains(event.target)) {
+        this.dropdown.classList.remove('show');
+      }
+    }
+    
+    handleThemeChange(event) {
+      const theme = event.currentTarget.dataset.theme;
+      this.currentTheme = theme;
+      this.applyTheme(theme);
+      this.updateUI();
+      this.storeTheme(theme);
+      this.dropdown.classList.remove('show');
+    }
+    
+    applyTheme(theme) {
+      const html = document.documentElement;
+      
+      // Remove existing theme classes
+      html.classList.remove('theme-light', 'theme-dark', 'theme-system');
+      
+      if (theme === 'light') {
+        html.classList.add('theme-light');
+        html.setAttribute('data-theme', 'light');
+      } else if (theme === 'dark') {
+        html.classList.add('theme-dark');
+        html.setAttribute('data-theme', 'dark');
+      } else {
+        html.classList.add('theme-system');
+        html.setAttribute('data-theme', 'system');
+      }
+    }
+    
+    updateUI() {
+      // Update active icon
+      const icons = this.toggleBtn.querySelectorAll('.theme-icon');
+      icons.forEach(icon => icon.classList.remove('active'));
+
+      // Map theme names to actual icon class names
+      const iconMap = {
+        'light': 'sun-icon',
+        'dark': 'moon-icon',
+        'system': 'system-icon'
+      };
+
+      const iconClass = iconMap[this.currentTheme];
+      if (iconClass) {
+        const activeIcon = this.toggleBtn.querySelector(`.${iconClass}`);
+        if (activeIcon) {
+          activeIcon.classList.add('active');
+        }
+      }
+
+      // Update active option
+      this.themeOptions.forEach(option => {
+        option.classList.toggle('active', option.dataset.theme === this.currentTheme);
+      });
+    }
+    
+    getStoredTheme() {
+      try {
+        return localStorage.getItem('theme');
+      } catch {
+        return null;
+      }
+    }
+    
+    storeTheme(theme) {
+      try {
+        localStorage.setItem('theme', theme);
+      } catch {
+        // Ignore storage errors
+      }
+    }
+  }
+  
+  // Initialize theme toggle when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => new ThemeToggle());
+  } else {
+    new ThemeToggle();
+  }
+</script>

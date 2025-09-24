@@ -1,5 +1,7 @@
 ---
-import SimpleSearch from "../components/SimpleSearch.astro";
+import Search from "../components/Search.astro";
+import ThemeToggle from "../components/ThemeToggle.astro";
+import SocialLinks from "../components/SocialLinks.astro";
 import "../styles/main.css";
 
 export interface Props {
@@ -58,7 +60,26 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  
+
+  <!-- Theme initialization script (prevent FOUC) -->
+  <script is:inline>
+    (function() {
+      const theme = localStorage.getItem('theme') || 'system';
+      const html = document.documentElement;
+
+      if (theme === 'dark') {
+        html.setAttribute('data-theme', 'dark');
+        html.classList.add('theme-dark');
+      } else if (theme === 'light') {
+        html.setAttribute('data-theme', 'light');
+        html.classList.add('theme-light');
+      } else {
+        html.setAttribute('data-theme', 'system');
+        html.classList.add('theme-system');
+      }
+    })();
+  </script>
+
   <!-- Styles are imported in the frontmatter -->
 </head>
 <body>
@@ -78,15 +99,22 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
               <a href={`${baseURL}docs/`} class="nav-link">Documentation</a>
               <a href={`${baseURL}docs/guides/basic-usage/`} class="nav-link">Guides</a>
               <a href={`${baseURL}docs/api/tools/`} class="nav-link">API Reference</a>
-              <a href="https://github.com/cameronrye/activitypub-mcp" class="nav-link" target="_blank" rel="noopener">
-                GitHub
-              </a>
             </div>
-            
-            <div class="navbar-search">
-              <SimpleSearch />
+
+            <div class="navbar-actions">
+              <div class="navbar-search">
+                <Search />
+              </div>
+
+              <div class="navbar-social">
+                <SocialLinks variant="header" size="sm" />
+              </div>
+
+              <div class="navbar-theme">
+                <ThemeToggle />
+              </div>
             </div>
-            
+
             <button class="navbar-toggle" aria-label="Toggle navigation">
               <span></span>
               <span></span>
@@ -97,7 +125,7 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
       </nav>
     </header>
     
-    <main class="site-main">
+    <main class="site-main" data-pagefind-body>
       <slot />
     </main>
     
@@ -107,9 +135,8 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
           <div class="footer-section">
             <h3>ActivityPub MCP Server</h3>
             <p>Connect LLMs to the Fediverse through the Model Context Protocol.</p>
-            <div class="footer-links">
-              <a href="https://github.com/cameronrye/activitypub-mcp" target="_blank" rel="noopener">GitHub</a>
-              <a href="https://www.npmjs.com/package/activitypub-mcp" target="_blank" rel="noopener">npm</a>
+            <div class="footer-social">
+              <SocialLinks variant="footer" size="md" />
             </div>
           </div>
           
@@ -132,7 +159,7 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
         </div>
         
         <div class="footer-bottom">
-          <p>&copy; 2024 ActivityPub MCP Server Contributors. Licensed under MIT.</p>
+          <p>&copy; 2025 ActivityPub MCP Server Contributors. Licensed under MIT.</p>
         </div>
       </div>
     </footer>

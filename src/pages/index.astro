@@ -68,15 +68,34 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
     </div>
   </section>
 
-  <section class="installation-section">
+  <section class="installation-section" id="quick-start">
     <div class="container">
       <h2>Quick Installation</h2>
-      
-      <p>Install directly with npx:</p>
-      <pre><code>npx activitypub-mcp install</code></pre>
-      
-      <p>For Claude Desktop integration, add this to your config:</p>
-      <pre><code>{`{
+
+      <div class="installation-steps">
+        <div class="installation-step">
+          <h3>1. Install with NPX</h3>
+          <p>Get started instantly with a single command:</p>
+          <div class="code-block">
+            <pre><code>npx activitypub-mcp install</code></pre>
+            <button class="copy-button" data-copy="npx activitypub-mcp install" aria-label="Copy command">
+              <svg class="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                <polyline points="20,6 9,17 4,12"></polyline>
+              </svg>
+              <span class="copy-text">Copy</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="installation-step">
+          <h3>2. Configure Claude Desktop</h3>
+          <p>Add this configuration to your Claude Desktop settings:</p>
+          <div class="code-block">
+            <pre><code>{`{
   "mcpServers": {
     "activitypub": {
       "command": "npx",
@@ -84,15 +103,114 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
     }
   }
 }`}</code></pre>
-      
+            <button class="copy-button" data-copy={`{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"]
+    }
+  }
+}`} aria-label="Copy configuration">
+              <svg class="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                <polyline points="20,6 9,17 4,12"></polyline>
+              </svg>
+              <span class="copy-text">Copy</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div class="next-steps">
         <h3>Next Steps</h3>
-        <ul>
-          <li><a href={`${baseURL}docs/`}>Read the Documentation</a></li>
-          <li><a href={`${baseURL}docs/guides/basic-usage/`}>View Examples</a></li>
-          <li><a href="https://github.com/cameronrye/activitypub-mcp">Explore the Code</a></li>
-        </ul>
+        <div class="next-steps-grid">
+          <a href={`${baseURL}docs/`} class="next-step-card">
+            <div class="step-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+              </svg>
+            </div>
+            <h4>Read the Documentation</h4>
+            <p>Learn about all features and configuration options</p>
+          </a>
+
+          <a href={`${baseURL}docs/guides/basic-usage/`} class="next-step-card">
+            <div class="step-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"></polygon>
+              </svg>
+            </div>
+            <h4>View Examples</h4>
+            <p>See practical examples and usage patterns</p>
+          </a>
+
+          <a href="https://github.com/cameronrye/activitypub-mcp" class="next-step-card" target="_blank" rel="noopener">
+            <div class="step-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+              </svg>
+            </div>
+            <h4>Explore the Code</h4>
+            <p>Browse the source code and contribute</p>
+          </a>
+        </div>
       </div>
     </div>
   </section>
 </BaseLayout>
+
+<script>
+  // Copy button functionality
+  document.addEventListener('DOMContentLoaded', () => {
+    const copyButtons = document.querySelectorAll('.copy-button');
+
+    copyButtons.forEach(button => {
+      button.addEventListener('click', async () => {
+        const textToCopy = button.dataset.copy;
+        const copyText = button.querySelector('.copy-text');
+
+        try {
+          await navigator.clipboard.writeText(textToCopy);
+
+          // Visual feedback
+          button.classList.add('copied');
+          copyText.textContent = 'Cop';
+
+          // Reset after 2 seconds
+          setTimeout(() => {
+            button.classList.remove('copied');
+            copyText.textContent = 'Copy';
+          }, 2000);
+
+        } catch (err) {
+          console.error('Failed to copy text: ', err);
+
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = textToCopy;
+          document.body.appendChild(textArea);
+          textArea.select();
+
+          try {
+            document.execCommand('copy');
+            button.classList.add('copied');
+            copyText.textContent = 'Cop';
+
+            setTimeout(() => {
+              button.classList.remove('copied');
+              copyText.textContent = 'Copy';
+            }, 2000);
+          } catch (fallbackErr) {
+            console.error('Fallback copy failed: ', fallbackErr);
+          }
+
+          document.body.removeChild(textArea);
+        }
+      });
+    });
+  });
+</script>

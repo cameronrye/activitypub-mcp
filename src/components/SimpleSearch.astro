@@ -3,13 +3,19 @@
 ---
 
 <div class="search-container">
-  <input 
-    type="search" 
-    id="search-input" 
-    placeholder="Search documentation..." 
+  <input
+    type="search"
+    id="search-input"
+    placeholder="Search documentation..."
     class="search-input"
     autocomplete="off"
   >
+  <button type="button" class="search-button" aria-label="Search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"></circle>
+      <path d="m21 21-4.35-4.35"></path>
+    </svg>
+  </button>
   <div id="search-results" class="search-results">
     <div id="search-content"></div>
   </div>
@@ -20,11 +26,13 @@
     position: relative;
     width: 100%;
     max-width: 400px;
+    display: flex;
+    align-items: center;
   }
-  
+
   .search-input {
     width: 100%;
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-3) var(--space-12) var(--space-3) var(--space-4);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-md);
     background-color: var(--bg-secondary);
@@ -32,11 +40,39 @@
     font-size: var(--text-sm);
     transition: all var(--transition-fast);
   }
-  
+
   .search-input:focus {
     outline: none;
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .search-button {
+    position: absolute;
+    right: var(--space-2);
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: var(--space-2);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .search-button:hover {
+    color: var(--color-primary);
+    background-color: rgba(37, 99, 235, 0.1);
+  }
+
+  .search-button:focus {
+    outline: none;
+    color: var(--color-primary);
+    background-color: rgba(37, 99, 235, 0.1);
   }
   
   .search-results {
@@ -44,56 +80,113 @@
     top: 100%;
     left: 0;
     right: 0;
-    background-color: var(--bg-primary);
+    background: linear-gradient(
+      135deg,
+      var(--bg-primary) 0%,
+      var(--bg-secondary) 100%
+    );
     border: 1px solid var(--border-primary);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
     max-height: 400px;
     overflow-y: auto;
     z-index: var(--z-dropdown);
     display: none;
-    margin-top: var(--space-1);
+    margin-top: var(--space-2);
+    backdrop-filter: blur(12px);
   }
-  
+
   .search-results.show {
     display: block;
+    animation: searchDropdownFadeIn 0.2s ease-out;
   }
-  
+
+  @keyframes searchDropdownFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .search-result {
     display: block;
     padding: var(--space-4);
     border-bottom: 1px solid var(--border-primary);
     color: var(--text-primary);
     text-decoration: none;
-    transition: background-color var(--transition-fast);
+    transition: all var(--transition-fast);
+    border-radius: var(--radius-md);
+    margin: var(--space-1);
   }
-  
+
   .search-result:hover,
   .search-result.active {
-    background-color: var(--bg-secondary);
+    background: linear-gradient(
+      135deg,
+      var(--color-primary) 0%,
+      var(--color-primary-light) 100%
+    );
+    color: var(--color-white);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    border-color: transparent;
   }
-  
+
+  .search-result:hover .result-title,
+  .search-result.active .result-title {
+    color: var(--color-white);
+  }
+
+  .search-result:hover .result-excerpt,
+  .search-result.active .result-excerpt {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
   .search-result:last-child {
     border-bottom: none;
   }
   
   .result-title {
-    font-weight: var(--font-medium);
-    margin-bottom: var(--space-1);
+    font-weight: var(--font-semibold);
+    margin-bottom: var(--space-2);
+    font-size: var(--text-base);
+    line-height: var(--leading-tight);
     color: var(--text-primary);
   }
-  
+
   .result-excerpt {
     font-size: var(--text-sm);
     color: var(--text-secondary);
-    line-height: var(--leading-snug);
+    line-height: var(--leading-relaxed);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
-  
+
+  .result-excerpt mark {
+    background-color: rgba(59, 130, 246, 0.3);
+    color: var(--color-primary);
+    padding: 1px 4px;
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-medium);
+  }
+
+  .search-result:hover .result-excerpt mark,
+  .search-result.active .result-excerpt mark {
+    background-color: rgba(255, 255, 255, 0.3);
+    color: var(--color-white);
+  }
+
   .no-results {
-    padding: var(--space-4);
+    padding: var(--space-6);
     text-align: center;
     color: var(--text-secondary);
-    font-size: var(--text-sm);
+    font-style: italic;
   }
 </style>
 
@@ -106,28 +199,57 @@
       this.searchContent = document.getElementById('search-content');
       this.debounceTimer = null;
       
-      // Simple search data - in a real implementation this would be generated
-      this.searchData = [
-        {
-          title: "Getting Started",
-          url: "/docs/",
-          excerpt: "Welcome to the comprehensive documentation for the ActivityPub MCP Server."
-        },
-        {
-          title: "Usage Guide",
-          url: "/docs/guides/usage-guide/",
-          excerpt: "This comprehensive guide covers everything you need to know about using the ActivityPub MCP Server effectively."
-        },
-        {
-          title: "Examples",
-          url: "/docs/guides/examples/",
-          excerpt: "Practical examples and use cases for the ActivityPub MCP Server."
-        }
-      ];
+      // Load search data from generated file or use fallback
+      this.searchData = [];
+      this.loadSearchData();
       
       this.init();
     }
-    
+
+    async loadSearchData() {
+      try {
+        const baseURL = document.querySelector('base')?.href || window.location.origin + '/activitypub-mcp/';
+        const searchDataUrl = new URL('search.json', baseURL).href;
+        const response = await fetch(searchDataUrl);
+
+        if (response.ok) {
+          this.searchData = await response.json();
+        } else {
+          throw new Error('Failed to load search data');
+        }
+      } catch (error) {
+        console.warn('Could not load search data, using fallback:', error);
+        // Fallback search data
+        this.searchData = [
+          {
+            title: "Getting Started",
+            url: "/activitypub-mcp/",
+            excerpt: "Welcome to the ActivityPub MCP Server - a comprehensive Model Context Protocol server for the Fediverse."
+          },
+          {
+            title: "Documentation",
+            url: "/activitypub-mcp/docs/",
+            excerpt: "Complete documentation for the ActivityPub MCP Server including setup, configuration, and usage guides."
+          },
+          {
+            title: "Installation",
+            url: "/activitypub-mcp/#installation",
+            excerpt: "Learn how to install and configure the ActivityPub MCP Server in your environment."
+          },
+          {
+            title: "Features",
+            url: "/activitypub-mcp/#features",
+            excerpt: "Explore the powerful features of the ActivityPub MCP Server for Fediverse integration."
+          },
+          {
+            title: "Quick Start",
+            url: "/activitypub-mcp/#quick-start",
+            excerpt: "Get up and running quickly with the ActivityPub MCP Server."
+          }
+        ];
+      }
+    }
+
     init() {
       if (!this.searchInput || !this.searchResults) return;
       
@@ -223,15 +345,38 @@
       if (results.length === 0) {
         this.searchContent.innerHTML = '<div class="no-results">No results found</div>';
       } else {
-        this.searchContent.innerHTML = results.map(result => `
-          <a href="${result.url}" class="search-result">
-            <div class="result-title">${this.highlightQuery(result.title, query)}</div>
-            <div class="result-excerpt">${this.highlightQuery(result.excerpt, query)}</div>
-          </a>
-        `).join('');
+        // Filter out results with potentially broken URLs
+        const validResults = results.filter(result => this.isValidUrl(result.url));
+
+        if (validResults.length === 0) {
+          this.searchContent.innerHTML = '<div class="no-results">No valid results found</div>';
+        } else {
+          this.searchContent.innerHTML = validResults.map(result => `
+            <a href="${result.url}" class="search-result">
+              <div class="result-title">${this.highlightQuery(result.title, query)}</div>
+              <div class="result-excerpt">${this.highlightQuery(result.excerpt, query)}</div>
+            </a>
+          `).join('');
+        }
       }
-      
+
       this.showResults();
+    }
+
+    isValidUrl(url) {
+      // Basic URL validation - check if it's a valid relative or absolute URL
+      if (!url || typeof url !== 'string') return false;
+
+      // Allow relative URLs starting with /
+      if (url.startsWith('/')) return true;
+
+      // Allow absolute URLs
+      try {
+        new URL(url);
+        return true;
+      } catch {
+        return false;
+      }
     }
     
     highlightQuery(text, query) {

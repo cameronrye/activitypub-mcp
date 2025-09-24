@@ -123,6 +123,7 @@
       this.searchContent = document.getElementById('search-content');
       this.searchLoading = document.getElementById('search-loading');
       this.pagefind = null;
+      this.fallbackData = [];
       this.debounceTimer = null;
       this.currentQuery = '';
       
@@ -131,18 +132,23 @@
     
     async init() {
       if (!this.searchInput || !this.searchResults) return;
-      
+
       // Load Pagefind
       try {
+        const currentPath = window.location.pathname;
+        const basePath = currentPath.includes('/activitypub-mcp/') ? '/activitypub-mcp/' : '/';
+        const pagefindPath = `${basePath}pagefind/pagefind.js`;
+
         // @ts-ignore
-        this.pagefind = await import('/pagefind/pagefind.js');
+        const pagefindModule = await import(pagefindPath);
+        this.pagefind = pagefindModule;
       } catch (error) {
         console.warn('Pagefind not available:', error);
         // Fallback to simple search
-        this.initFallbackSearch();
+        await this.initFallbackSearch();
         return;
       }
-      
+
       // Bind events
       this.searchInput.addEventListener('input', this.handleInput.bind(this));
       this.searchInput.addEventListener('focus', this.handleFocus.bind(this));
@@ -312,9 +318,50 @@
       this.searchLoading.style.display = 'none';
     }
 
-    initFallbackSearch() {
+    async initFallbackSearch() {
       // Simple fallback search without Pagefind
       console.log('Using fallback search');
+
+      // Load search data for fallback
+      try {
+        const currentPath = window.location.pathname;
+        const basePath = currentPath.includes('/activitypub-mcp/') ? '/activitypub-mcp/' : '/';
+        const searchDataPath = `${basePath}search.json`;
+
+        const response = await fetch(searchDataPath);
+        if (response.ok) {
+          this.fallbackData = await response.json();
+        }
+      } catch (error) {
+        console.warn('Could not load fallback search data:', error);
+        this.fallbackData = [];
+      }
+
+      // Override performSearch to use fallback data
+      this.performSearch = this.performFallbackSearch.bind(this);
+    }
+
+    performFallbackSearch(query) {
+      if (!this.fallbackData || this.fallbackData.length === 0) {
+        this.displayResults([], query);
+        return;
+      }
+
+      const queryLower = query.toLowerCase();
+      const results = this.fallbackData.filter(item =>
+        item.title.toLowerCase().includes(queryLower) ||
+        item.excerpt.toLowerCase().includes(queryLower) ||
+        (item.content && item.content.toLowerCase().includes(queryLower))
+      ).slice(0, 10); // Limit to 10 results
+
+      // Convert to Pagefind-like format
+      const formattedResults = results.map(item => ({
+        url: item.url,
+        meta: { title: item.title },
+        excerpt: item.excerpt
+      }));
+
+      this.displayResults(formattedResults, query);
     }
   }
   
