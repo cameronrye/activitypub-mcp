@@ -1,5 +1,4 @@
 import { getLogger } from "@logtape/logtape";
-import { z } from "zod";
 
 const logger = getLogger("activitypub-mcp");
 

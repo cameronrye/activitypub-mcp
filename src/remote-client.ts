@@ -23,7 +23,7 @@ const DomainSchema = z
   );
 
 // URL validation schema
-const UrlSchema = z
+const _UrlSchema = z
   .string()
   .url("Invalid URL format")
   .refine((url) => {

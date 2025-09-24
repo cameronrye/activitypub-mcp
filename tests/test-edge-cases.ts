@@ -30,7 +30,7 @@ async function testEdgeCases() {
     // Test 1: Invalid actor identifier format
     console.log("Test 1: Invalid actor identifier format");
     try {
-      const result = await client.callTool({
+      const _result = await client.callTool({
         name: "discover-actor",
         arguments: {
           identifier: "invalid-format",
@@ -48,7 +48,7 @@ async function testEdgeCases() {
     console.log("Test 2: Very long actor identifier");
     try {
       const longIdentifier = `${"a".repeat(100)}@example.social`;
-      const result = await client.callTool({
+      const _result = await client.callTool({
         name: "discover-actor",
         arguments: {
           identifier: longIdentifier,
@@ -62,7 +62,7 @@ async function testEdgeCases() {
     // Test 3: Empty actor identifier
     console.log("Test 3: Empty actor identifier");
     try {
-      const result = await client.callTool({
+      const _result = await client.callTool({
         name: "discover-actor",
         arguments: {
           identifier: "",
@@ -79,7 +79,7 @@ async function testEdgeCases() {
     // Test 4: Invalid timeline limit
     console.log("Test 4: Invalid timeline limit");
     try {
-      const result = await client.callTool({
+      const _result = await client.callTool({
         name: "fetch-timeline",
         arguments: {
           identifier: "gargron@mastodon.social",
@@ -94,7 +94,7 @@ async function testEdgeCases() {
     // Test 5: Very large timeline limit
     console.log("Test 5: Very large timeline limit");
     try {
-      const result = await client.callTool({
+      const _result = await client.callTool({
         name: "fetch-timeline",
         arguments: {
           identifier: "gargron@mastodon.social",
@@ -109,7 +109,7 @@ async function testEdgeCases() {
     // Test 6: Non-existent actor timeline
     console.log("Test 6: Non-existent actor timeline");
     try {
-      const result = await client.callTool({
+      const _result = await client.callTool({
         name: "fetch-timeline",
         arguments: {
           identifier: "nonexistent@example.social",
@@ -130,7 +130,7 @@ async function testEdgeCases() {
     // Test 7: Invalid domain format
     console.log("Test 7: Invalid domain format");
     try {
-      const result = await client.callTool({
+      const _result = await client.callTool({
         name: "search-instance",
         arguments: {
           domain: "invalid-domain",
@@ -145,7 +145,7 @@ async function testEdgeCases() {
     // Test 8: Empty search query
     console.log("Test 8: Empty search query");
     try {
-      const result = await client.callTool({
+      const _result = await client.callTool({
         name: "search-instance",
         arguments: {
           domain: "mastodon.social",
@@ -161,7 +161,7 @@ async function testEdgeCases() {
     console.log("Test 9: Very long search query");
     try {
       const longQuery = "test ".repeat(1000);
-      const result = await client.callTool({
+      const _result = await client.callTool({
         name: "search-instance",
         arguments: {
           domain: "mastodon.social",
@@ -179,7 +179,7 @@ async function testEdgeCases() {
     // Test 10: Resource with invalid URI format
     console.log("Test 10: Resource with invalid URI format");
     try {
-      const result = await client.readResource({
+      const _result = await client.readResource({
         uri: "invalid://protocol/test",
       });
       console.log("❌ Expected error for invalid URI protocol");
@@ -190,7 +190,7 @@ async function testEdgeCases() {
     // Test 11: Remote actor resource with invalid identifier
     console.log("Test 11: Remote actor resource with invalid identifier");
     try {
-      const result = await client.readResource({
+      const _result = await client.readResource({
         uri: "activitypub://remote-actor/invalid-format",
       });
       console.log("❌ Expected error for invalid actor identifier");
@@ -207,7 +207,7 @@ async function testEdgeCases() {
     // Test 12: Prompt with empty interests
     console.log("Test 12: Prompt with empty interests");
     try {
-      const result = await client.getPrompt({
+      const _result = await client.getPrompt({
         name: "explore-fediverse",
         arguments: {
           interests: "",
@@ -222,7 +222,7 @@ async function testEdgeCases() {
     // Test 13: Prompt with invalid instance type
     console.log("Test 13: Prompt with invalid instance type");
     try {
-      const result = await client.getPrompt({
+      const _result = await client.getPrompt({
         name: "explore-fediverse",
         arguments: {
           interests: "technology",
@@ -240,7 +240,7 @@ async function testEdgeCases() {
     // Test 14: Compare instances prompt with invalid instances
     console.log("Test 14: Compare instances prompt with invalid instances");
     try {
-      const result = await client.getPrompt({
+      const _result = await client.getPrompt({
         name: "compare-instances",
         arguments: {
           instances: "",

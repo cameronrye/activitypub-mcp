@@ -48,7 +48,7 @@ async function testFinalCoverage() {
 
     for (const scenario of actorScenarios) {
       try {
-        const result = await client.callTool({
+        const _result = await client.callTool({
           name: "discover-actor",
           arguments: {
             identifier: scenario.id,
@@ -83,7 +83,7 @@ async function testFinalCoverage() {
 
     for (const scenario of timelineScenarios) {
       try {
-        const result = await client.callTool({
+        const _result = await client.callTool({
           name: "fetch-timeline",
           arguments: {
             identifier: scenario.actor,
@@ -121,7 +121,7 @@ async function testFinalCoverage() {
 
     for (const scenario of instanceScenarios) {
       try {
-        const result = await client.callTool({
+        const _result = await client.callTool({
           name: "discover-instances",
           arguments: {
             criteria: scenario.criteria,
@@ -159,7 +159,7 @@ async function testFinalCoverage() {
 
     for (const scenario of recommendationScenarios) {
       try {
-        const result = await client.callTool({
+        const _result = await client.callTool({
           name: "recommend-instances",
           arguments: {
             interests: scenario.interests,
@@ -197,7 +197,7 @@ async function testFinalCoverage() {
 
     for (const scenario of searchScenarios) {
       try {
-        const result = await client.callTool({
+        const _result = await client.callTool({
           name: "search-instance",
           arguments: {
             domain: scenario.domain,
@@ -223,7 +223,7 @@ async function testFinalCoverage() {
 
     for (const scenario of infoScenarios) {
       try {
-        const result = await client.callTool({
+        const _result = await client.callTool({
           name: "get-instance-info",
           arguments: {
             domain: scenario.domain,
@@ -252,7 +252,7 @@ async function testFinalCoverage() {
           scenario.detailed !== undefined
             ? { detailed: scenario.detailed }
             : {};
-        const result = await client.callTool({
+        const _result = await client.callTool({
           name: "health-check",
           arguments: args,
         });
@@ -278,7 +278,7 @@ async function testFinalCoverage() {
         const args = scenario.operation
           ? { operation: scenario.operation }
           : {};
-        const result = await client.callTool({
+        const _result = await client.callTool({
           name: "performance-metrics",
           arguments: args,
         });
@@ -323,7 +323,7 @@ async function testFinalCoverage() {
 
     for (const scenario of resourceScenarios) {
       try {
-        const result = await client.readResource({
+        const _result = await client.readResource({
           uri: scenario.uri,
         });
         // For invalid resources, we expect an error, so success here is unexpected
@@ -382,7 +382,7 @@ async function testFinalCoverage() {
 
     for (const scenario of promptScenarios) {
       try {
-        const result = await client.getPrompt({
+        const _result = await client.getPrompt({
           name: scenario.name,
           arguments: scenario.arguments,
         });

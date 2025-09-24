@@ -10,7 +10,6 @@ import { healthChecker } from "./health-check.js";
 import { instanceDiscovery } from "./instance-discovery.js";
 import { performanceMonitor } from "./performance-monitor.js";
 import { remoteClient } from "./remote-client.js";
-import { webfingerClient } from "./webfinger.js";
 
 const logger = getLogger("activitypub-mcp");
 
@@ -20,8 +19,11 @@ const CONFIG = {
   serverVersion: process.env.MCP_SERVER_VERSION || "1.0.0",
   logLevel: process.env.LOG_LEVEL || "info",
   rateLimitEnabled: process.env.RATE_LIMIT_ENABLED === "true",
-  rateLimitMax: Number.parseInt(process.env.RATE_LIMIT_MAX || "100"),
-  rateLimitWindow: Number.parseInt(process.env.RATE_LIMIT_WINDOW || "900000"),
+  rateLimitMax: Number.parseInt(process.env.RATE_LIMIT_MAX || "100", 10),
+  rateLimitWindow: Number.parseInt(
+    process.env.RATE_LIMIT_WINDOW || "900000",
+    10,
+  ),
 };
 
 // Input validation schemas
@@ -34,12 +36,12 @@ const ActorIdentifierSchema = z
     "Invalid identifier format. Expected: user@domain.com",
   );
 
-const PostContentSchema = z
+const _PostContentSchema = z
   .string()
   .min(1, "Post content cannot be empty")
   .max(5000, "Post content too long");
 
-const UriSchema = z.string().url("Invalid URI format");
+const _UriSchema = z.string().url("Invalid URI format");
 
 const DomainSchema = z
   .string()
@@ -149,20 +151,6 @@ class ActivityPubMCPServer {
   }
 
   /**
-   * Validate post content
-   */
-  private validatePostContent(content: string): string {
-    try {
-      return PostContentSchema.parse(content);
-    } catch (error) {
-      throw new McpError(
-        ErrorCode.InvalidParams,
-        `Invalid post content: ${error instanceof z.ZodError ? error.errors[0].message : "Unknown validation error"}`,
-      );
-    }
-  }
-
-  /**
    * Validate domain format
    */
   private validateDomain(domain: string): string {
@@ -187,17 +175,6 @@ class ActivityPubMCPServer {
         ErrorCode.InvalidParams,
         `Invalid query: ${error instanceof z.ZodError ? error.errors[0].message : "Unknown validation error"}`,
       );
-    }
-  }
-
-  /**
-   * Validate URI format
-   */
-  private validateUri(uri: string): string {
-    try {
-      return UriSchema.parse(uri);
-    } catch (error) {
-      throw new McpError(ErrorCode.InvalidParams, `Invalid URI format: ${uri}`);
     }
   }
 

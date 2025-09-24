@@ -6,6 +6,7 @@ export interface Props {
 }
 
 const { variant = "header", size = "md" } = Astro.props;
+// Variables used in template literal for CSS classes below
 ---
 
 <div class={`social-links social-links--${variant} social-links--${size}`}>

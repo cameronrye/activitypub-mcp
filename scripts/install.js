@@ -83,7 +83,7 @@ class MCPInstaller {
     try {
       execSync("node --version", { stdio: "pipe" });
       this.log("Node.js is installed");
-    } catch (error) {
+    } catch (_error) {
       throw new Error(
         "Node.js is not installed. Please install Node.js 18+ first.",
       );
@@ -92,7 +92,7 @@ class MCPInstaller {
     try {
       execSync("npm --version", { stdio: "pipe" });
       this.log("npm is installed");
-    } catch (error) {
+    } catch (_error) {
       throw new Error("npm is not installed. Please install npm first.");
     }
   }
@@ -100,7 +100,7 @@ class MCPInstaller {
   async ensureDirectoryExists(dirPath) {
     try {
       await fs.access(dirPath);
-    } catch (error) {
+    } catch (_error) {
       if (this.verbose) {
         this.log(`Creating directory: ${dirPath}`);
       }
@@ -191,7 +191,7 @@ class MCPInstaller {
         stdio: this.verbose ? "inherit" : "pipe",
       });
       this.log("Package installed successfully!");
-    } catch (error) {
+    } catch (_error) {
       this.log(
         "Global installation failed, package will be installed on first use via npx",
         "warn",
@@ -247,7 +247,7 @@ class MCPInstaller {
       try {
         execSync(`npm uninstall -g ${PACKAGE_NAME}`, { stdio: "pipe" });
         this.log("Global package uninstalled");
-      } catch (error) {
+      } catch (_error) {
         this.log(
           "Global package was not installed or could not be removed",
           "warn",

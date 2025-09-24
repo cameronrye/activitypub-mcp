@@ -30,7 +30,7 @@ async function testCoverageBoost() {
     // Test 1: Force error in discover-instances with invalid criteria
     console.log("Test 1: Testing discover-instances error handling");
     try {
-      const result = await client.callTool({
+      const _result = await client.callTool({
         name: "discover-instances",
         arguments: {
           criteria: "invalid-criteria",
@@ -50,7 +50,7 @@ async function testCoverageBoost() {
     // Test 2: Force error in recommend-instances
     console.log("Test 2: Testing recommend-instances error handling");
     try {
-      const result = await client.callTool({
+      const _result = await client.callTool({
         name: "recommend-instances",
         arguments: {
           interests: "",
@@ -74,7 +74,7 @@ async function testCoverageBoost() {
         `Test 3.${instanceTypes.indexOf(instanceType) + 1}: Testing ${instanceType} instance type`,
       );
       try {
-        const result = await client.getPrompt({
+        const _result = await client.getPrompt({
           name: "explore-fediverse",
           arguments: {
             interests: `Test interests for ${instanceType}`,
@@ -106,7 +106,7 @@ async function testCoverageBoost() {
 
     for (const compare of compareTests) {
       try {
-        const result = await client.getPrompt({
+        const _result = await client.getPrompt({
           name: "compare-instances",
           arguments: compare,
         });
@@ -135,9 +135,9 @@ async function testCoverageBoost() {
         `Test 5.${invalidUris.indexOf(uri) + 1}: Testing invalid URI: ${uri}`,
       );
       try {
-        const result = await client.readResource({ uri });
+        const _result = await client.readResource({ uri });
         console.log(`❌ Expected error for invalid URI: ${uri}`);
-      } catch (error) {
+      } catch (_error) {
         console.log(`✅ Correctly caught error for invalid URI: ${uri}`);
       }
     }
@@ -161,12 +161,12 @@ async function testCoverageBoost() {
         `Test 6.${invalidActorInputs.indexOf(input) + 1}: Testing invalid actor input`,
       );
       try {
-        const result = await client.callTool({
+        const _result = await client.callTool({
           name: "discover-actor",
           arguments: input,
         });
         console.log("❌ Expected error for invalid input");
-      } catch (error) {
+      } catch (_error) {
         console.log("✅ Correctly caught error for invalid input");
       }
     }
@@ -188,12 +188,12 @@ async function testCoverageBoost() {
         `Test 7.${invalidSearchInputs.indexOf(input) + 1}: Testing invalid search input`,
       );
       try {
-        const result = await client.callTool({
+        const _result = await client.callTool({
           name: "search-instance",
           arguments: input,
         });
         console.log("❌ Expected error for invalid input");
-      } catch (error) {
+      } catch (_error) {
         console.log("✅ Correctly caught error for invalid input");
       }
     }
@@ -211,12 +211,12 @@ async function testCoverageBoost() {
         `Test 8.${invalidHealthInputs.indexOf(input) + 1}: Testing invalid health check input`,
       );
       try {
-        const result = await client.callTool({
+        const _result = await client.callTool({
           name: "health-check",
           arguments: input,
         });
         console.log("✅ Health check handled invalid input gracefully");
-      } catch (error) {
+      } catch (_error) {
         console.log("✅ Correctly caught error for invalid input");
       }
     }
@@ -258,9 +258,9 @@ async function testCoverageBoost() {
         `Test 9.${invalidPromptInputs.indexOf(input) + 1}: Testing invalid prompt input`,
       );
       try {
-        const result = await client.getPrompt(input);
+        const _result = await client.getPrompt(input);
         console.log("❌ Expected error for invalid prompt input");
-      } catch (error) {
+      } catch (_error) {
         console.log("✅ Correctly caught error for invalid prompt input");
       }
     }

@@ -1,6 +1,4 @@
 ---
-import BaseLayout from "./BaseLayout.astro";
-
 export interface Props {
   title?: string;
   description?: string;
@@ -11,14 +9,14 @@ export interface Props {
 }
 
 const { title, description, frontmatter } = Astro.props;
-const pageTitle = title || frontmatter?.title || "Documentation";
-const pageDescription =
+const _pageTitle = title || frontmatter?.title || "Documentation";
+const _pageDescription =
   description ||
   frontmatter?.description ||
   "ActivityPub MCP Server Documentation";
 
 // Navigation structure for docs
-const docsNav = [
+const _docsNav = [
   {
     title: "Getting Started",
     items: [
@@ -83,7 +81,7 @@ const docsNav = [
 ];
 
 // Get current path for active navigation
-const currentPath = Astro.url.pathname;
+const _currentPath = Astro.url.pathname;
 ---
 
 <BaseLayout title={pageTitle} description={pageDescription}>

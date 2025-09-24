@@ -166,7 +166,7 @@ class ComprehensiveTestSuite {
       throw new Error(`Tool returned error: ${result.content[0].text}`);
     }
 
-    const responseText = result.content[0].text;
+    const _responseText = result.content[0].text;
     console.log("   Discovered instances successfully");
   }
 
