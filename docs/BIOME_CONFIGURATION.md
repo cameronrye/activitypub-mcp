@@ -14,8 +14,8 @@ Biome is our code formatter and linter. The configuration is stored in `biome.js
 ```json
 {
   "files": {
-    "includes": ["src/**/*.ts"],  // ❌ Should be "include"
-    "ignores": ["dist/**"]        // ❌ Should be "ignore"
+    "include": ["src/**/*.ts"],   // ❌ Should be "includes"
+    "ignore": ["dist/**"]         // ❌ Should use negated patterns
   }
 }
 ```
@@ -24,8 +24,10 @@ Biome is our code formatter and linter. The configuration is stored in `biome.js
 ```json
 {
   "files": {
-    "include": ["src/**/*.ts"],   // ✅ Correct
-    "ignore": ["dist/**"]         // ✅ Correct
+    "includes": [                 // ✅ Correct (plural)
+      "src/**/*.ts",
+      "!dist/**"                  // ✅ Use negated patterns for ignoring
+    ]
   }
 }
 ```
@@ -59,8 +61,7 @@ Our `biome.json` follows this structure:
 {
   "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
   "files": {
-    "include": [/* file patterns */],
-    "ignore": [/* ignore patterns */],
+    "includes": [/* file patterns with negated patterns for ignoring */],
     "ignoreUnknown": true
   },
   "formatter": {
@@ -112,8 +113,8 @@ npm run format:check
 ### Configuration Errors
 
 If you see errors like:
-- `Found an unknown key 'includes'` → Use `include` instead
-- `Found an unknown key 'ignores'` → Use `ignore` instead
+- `Found an unknown key 'include'` → Use `includes` instead (plural)
+- `Found an unknown key 'ignore'` → Use negated patterns in `includes` instead
 - `Found an unknown key 'organizeImports'` → Remove this property (not supported)
 
 ### Schema Validation

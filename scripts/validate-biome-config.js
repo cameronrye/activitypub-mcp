@@ -19,12 +19,12 @@ const EXPECTED_SCHEMA = {
   files: {
     required: false,
     properties: {
-      include: { type: "array", required: false },
-      ignore: { type: "array", required: false },
+      includes: { type: "array", required: false },
       ignoreUnknown: { type: "boolean", required: false },
       maxSize: { type: "number", required: false },
+      experimentalScannerIgnores: { type: "array", required: false },
     },
-    invalidProperties: ["includes", "ignores"], // Common mistakes
+    invalidProperties: ["include", "ignore", "ignores"], // Common mistakes
   },
   formatter: {
     required: false,
@@ -91,11 +91,14 @@ function validateBiomeConfig() {
   }
 
   // Validate that we're using correct property names
-  if (config.files?.includes) {
-    errors.push('Use "include" instead of "includes" in files section');
+  if (config.files?.include) {
+    errors.push('Use "includes" instead of "include" in files section');
+  }
+  if (config.files?.ignore) {
+    errors.push('Use negated patterns in "includes" instead of separate "ignore" section');
   }
   if (config.files?.ignores) {
-    errors.push('Use "ignore" instead of "ignores" in files section');
+    errors.push('Use negated patterns in "includes" instead of "ignores" section');
   }
 
   // Report results
