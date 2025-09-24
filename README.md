@@ -2,6 +2,8 @@
 
 A comprehensive **Model Context Protocol (MCP)** server that enables LLMs like Claude to **explore and interact with the existing Fediverse** through standardized MCP tools, resources, and prompts.
 
+<!-- Trigger CI -->
+
 [![npm version](https://badge.fury.io/js/activitypub-mcp.svg)](https://badge.fury.io/js/activitypub-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
