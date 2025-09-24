@@ -1,7 +1,7 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
   "files": {
-    "includes": [
+    "include": [
       "src/**/*.ts",
       "src/**/*.js",
       "src/**/*.astro",
@@ -12,30 +12,34 @@
       "*.ts",
       "*.js",
       "*.json",
-      "*.mjs",
-      "!**/dist",
-      "!**/node_modules",
-      "!**/*.log",
-      "!**/coverage",
-      "!**/.astro",
-      "!**/README.md",
-      "!**/docs/**/*.md",
-      "!**/.github/**/*.md",
-      "!**/*.yml",
-      "!**/*.yaml",
-      "!**/*.sh",
-      "!**/*.ps1",
-      "!**/*.scss",
-      "!**/.env*",
-      "!**/LICENSE",
-      "!**/.gitattributes",
-      "!**/.gitignore",
-      "!**/.npmignore",
-      "!**/CODEOWNERS"
+      "*.mjs"
+    ],
+    "ignore": [
+      "**/dist",
+      "**/node_modules",
+      "**/*.log",
+      "**/coverage",
+      "**/.astro",
+      "**/README.md",
+      "**/docs/**/*.md",
+      "**/.github/**/*.md",
+      "**/*.yml",
+      "**/*.yaml",
+      "**/*.sh",
+      "**/*.ps1",
+      "**/*.scss",
+      "**/.env*",
+      "**/LICENSE",
+      "**/.gitattributes",
+      "**/.gitignore",
+      "**/.npmignore",
+      "**/CODEOWNERS"
     ],
     "ignoreUnknown": true
   },
-  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "organizeImports": {
+    "enabled": true
+  },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -49,9 +53,6 @@
       "recommended": true,
       "correctness": {
         "noUnusedVariables": "off"
-      },
-      "style": {
-        "noDescendingSpecificity": "off"
       }
     }
   }

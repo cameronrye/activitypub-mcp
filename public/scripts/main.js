@@ -7,18 +7,32 @@
 
     if (!toggle || !nav) return;
 
-    toggle.addEventListener("click", () => {
-      nav.classList.toggle("show");
-      toggle.classList.toggle("active");
+    // Initialize aria-expanded attribute
+    toggle.setAttribute("aria-expanded", "false");
 
-      // Update aria-expanded
-      const expanded = toggle.getAttribute("aria-expanded") === "true";
-      toggle.setAttribute("aria-expanded", !expanded);
+    toggle.addEventListener("click", (event) => {
+      event.stopPropagation(); // Prevent event bubbling
+
+      const isExpanded = nav.classList.contains("show");
+
+      if (isExpanded) {
+        nav.classList.remove("show");
+        toggle.classList.remove("active");
+        toggle.setAttribute("aria-expanded", "false");
+      } else {
+        nav.classList.add("show");
+        toggle.classList.add("active");
+        toggle.setAttribute("aria-expanded", "true");
+      }
     });
 
     // Close mobile nav when clicking outside
     document.addEventListener("click", (event) => {
-      if (!toggle.contains(event.target) && !nav.contains(event.target)) {
+      const isClickInsideNav = nav.contains(event.target);
+      const isClickOnToggle = toggle.contains(event.target);
+      const isNavVisible = nav.classList.contains("show");
+
+      if (isNavVisible && !isClickInsideNav && !isClickOnToggle) {
         nav.classList.remove("show");
         toggle.classList.remove("active");
         toggle.setAttribute("aria-expanded", "false");
@@ -27,7 +41,29 @@
 
     // Close mobile nav on escape key
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && nav.classList.contains("show")) {
+        nav.classList.remove("show");
+        toggle.classList.remove("active");
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.focus(); // Return focus to toggle button for accessibility
+      }
+    });
+
+    // Close mobile nav when clicking on navigation links
+    const navLinks = nav.querySelectorAll(".nav-link");
+    for (const link of navLinks) {
+      link.addEventListener("click", () => {
+        if (nav.classList.contains("show")) {
+          nav.classList.remove("show");
+          toggle.classList.remove("active");
+          toggle.setAttribute("aria-expanded", "false");
+        }
+      });
+    }
+
+    // Close mobile nav when resizing to desktop view
+    window.addEventListener("resize", () => {
+      if (window.innerWidth >= 768 && nav.classList.contains("show")) {
         nav.classList.remove("show");
         toggle.classList.remove("active");
         toggle.setAttribute("aria-expanded", "false");

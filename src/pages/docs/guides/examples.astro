@@ -1,0 +1,469 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+
+const title = "Practical Examples - ActivityPub MCP Server";
+const description =
+  "Real-world examples and use cases for the ActivityPub MCP Server with step-by-step instructions and expected outputs.";
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="examples-page">
+    <div class="container">
+      <div class="examples-header">
+        <h1>Practical Examples</h1>
+        <p class="examples-description">
+          Real-world scenarios and use cases for the ActivityPub MCP Server. These examples show complete workflows with step-by-step instructions and expected outputs.
+        </p>
+      </div>
+
+      <div class="examples-content">
+        <section class="examples-section">
+          <h2>🔍 Example 1: Discovering Technology Communities</h2>
+          <div class="example-scenario">
+            <h3>Scenario</h3>
+            <p>You want to find active technology communities in the fediverse and see what topics are being discussed.</p>
+            
+            <h3>Step-by-Step Process</h3>
+            <div class="example-steps">
+              <div class="step">
+                <h4>Step 1: Find Technology-Focused Instances</h4>
+                <pre><code>discover-instances technology</code></pre>
+                <div class="step-result">
+                  <h5>Expected Output:</h5>
+                  <pre><code>{`{
+  "instances": [
+    {
+      "domain": "fosstodon.org",
+      "name": "Fosstodon",
+      "description": "A community for anyone interested in technology",
+      "users": 15420,
+      "posts": 892341
+    },
+    {
+      "domain": "hachyderm.io",
+      "name": "Hachyderm",
+      "description": "A safe space for tech workers and enthusiasts",
+      "users": 8932,
+      "posts": 445123
+    }
+  ]
+}`}</code></pre>
+                </div>
+              </div>
+
+              <div class="step">
+                <h4>Step 2: Get Detailed Instance Information</h4>
+                <pre><code>get-instance-info fosstodon.org</code></pre>
+                <div class="step-result">
+                  <h5>Expected Output:</h5>
+                  <pre><code>{`{
+  "domain": "fosstodon.org",
+  "title": "Fosstodon",
+  "description": "Fosstodon is an English speaking Mastodon instance...",
+  "version": "4.2.1",
+  "languages": ["en"],
+  "rules": [
+    "Be respectful",
+    "No harassment or hate speech",
+    "Keep content appropriate"
+  ],
+  "stats": {
+    "user_count": 15420,
+    "status_count": 892341,
+    "domain_count": 8932
+  }
+}`}</code></pre>
+                </div>
+              </div>
+
+              <div class="step">
+                <h4>Step 3: Find Popular Actors</h4>
+                <pre><code>discover-actor @kev@fosstodon.org</code></pre>
+                <div class="step-result">
+                  <h5>Expected Output:</h5>
+                  <pre><code>{`{
+  "id": "https://fosstodon.org/users/kev",
+  "type": "Person",
+  "preferredUsername": "kev",
+  "name": "Kev Quirk",
+  "summary": "Founder of Fosstodon. Privacy advocate...",
+  "url": "https://fosstodon.org/@kev",
+  "followers": 4521,
+  "following": 892,
+  "posts": 3421
+}`}</code></pre>
+                </div>
+              </div>
+
+              <div class="step">
+                <h4>Step 4: Check Recent Activity</h4>
+                <pre><code>fetch-timeline https://fosstodon.org/users/kev</code></pre>
+                <div class="step-result">
+                  <h5>Expected Output:</h5>
+                  <pre><code>{`{
+  "posts": [
+    {
+      "id": "https://fosstodon.org/users/kev/statuses/111234567",
+      "content": "Just published a new blog post about privacy...",
+      "published": "2025-01-15T10:30:00Z",
+      "replies": 12,
+      "boosts": 45,
+      "likes": 89
+    }
+  ]
+}`}</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="examples-section">
+          <h2>👥 Example 2: Following a Conversation Thread</h2>
+          <div class="example-scenario">
+            <h3>Scenario</h3>
+            <p>You found an interesting post and want to follow the entire conversation thread to understand the discussion.</p>
+            
+            <h3>Step-by-Step Process</h3>
+            <div class="example-steps">
+              <div class="step">
+                <h4>Step 1: Get the Original Post</h4>
+                <pre><code>fetch-post https://mastodon.social/@gargron/111234567890</code></pre>
+                <div class="step-explanation">
+                  <p>This retrieves the original post with its content, metadata, and reply information.</p>
+                </div>
+              </div>
+
+              <div class="step">
+                <h4>Step 2: Fetch Reply Thread</h4>
+                <pre><code>fetch-replies https://mastodon.social/@gargron/111234567890</code></pre>
+                <div class="step-explanation">
+                  <p>Gets all replies to the post, showing the conversation flow.</p>
+                </div>
+              </div>
+
+              <div class="step">
+                <h4>Step 3: Explore Participants</h4>
+                <pre><code>discover-actor @participant@instance.social</code></pre>
+                <div class="step-explanation">
+                  <p>Learn more about active participants in the conversation.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="examples-section">
+          <h2>🌐 Example 3: Cross-Instance Content Discovery</h2>
+          <div class="example-scenario">
+            <h3>Scenario</h3>
+            <p>You want to discover content about a specific topic across multiple fediverse instances.</p>
+            
+            <h3>Step-by-Step Process</h3>
+            <div class="example-steps">
+              <div class="step">
+                <h4>Step 1: Find Relevant Instances</h4>
+                <pre><code>discover-instances "climate change"</code></pre>
+              </div>
+
+              <div class="step">
+                <h4>Step 2: Search Each Instance</h4>
+                <pre><code>search-content "renewable energy" climate.social</code></pre>
+              </div>
+
+              <div class="step">
+                <h4>Step 3: Follow Interesting Actors</h4>
+                <pre><code>discover-actor @scientist@climate.social</code></pre>
+              </div>
+
+              <div class="step">
+                <h4>Step 4: Monitor Their Activity</h4>
+                <pre><code>fetch-timeline https://climate.social/users/scientist</code></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="examples-section">
+          <h2>🤖 Example 4: Using with Claude Desktop</h2>
+          <div class="example-scenario">
+            <h3>Natural Language Queries</h3>
+            <p>Examples of how to ask Claude to use the MCP tools naturally:</p>
+            
+            <div class="claude-examples">
+              <div class="claude-example">
+                <h4>Query:</h4>
+                <blockquote>
+                  "Help me find interesting open source projects being discussed on Mastodon. Show me what people are saying about them."
+                </blockquote>
+                <h4>Claude's Approach:</h4>
+                <ol>
+                  <li>Use <code>discover-instances</code> to find tech-focused instances</li>
+                  <li>Use <code>get-instance-info</code> to learn about each instance</li>
+                  <li>Use <code>discover-actor</code> to find developers and maintainers</li>
+                  <li>Use <code>fetch-timeline</code> to see recent discussions</li>
+                  <li>Summarize findings and highlight interesting projects</li>
+                </ol>
+              </div>
+
+              <div class="claude-example">
+                <h4>Query:</h4>
+                <blockquote>
+                  "I'm interested in privacy and security topics. Can you find some experts in the fediverse and show me their recent thoughts?"
+                </blockquote>
+                <h4>Claude's Approach:</h4>
+                <ol>
+                  <li>Search for privacy/security focused instances</li>
+                  <li>Identify prominent actors in those communities</li>
+                  <li>Fetch their recent posts and analyze themes</li>
+                  <li>Provide a summary of current privacy/security discussions</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="examples-section">
+          <h2>📊 Example 5: Instance Analysis and Comparison</h2>
+          <div class="example-scenario">
+            <h3>Scenario</h3>
+            <p>You want to compare different instances to decide which community might be the best fit for your interests.</p>
+            
+            <h3>Comparison Workflow</h3>
+            <div class="example-steps">
+              <div class="step">
+                <h4>Step 1: Gather Instance Data</h4>
+                <pre><code># Compare multiple instances
+get-instance-info mastodon.social
+get-instance-info fosstodon.org  
+get-instance-info hachyderm.io</code></pre>
+              </div>
+
+              <div class="step">
+                <h4>Step 2: Analyze Community Activity</h4>
+                <pre><code># Check popular actors on each instance
+discover-actor @admin@mastodon.social
+discover-actor @kev@fosstodon.org
+discover-actor @admin@hachyderm.io</code></pre>
+              </div>
+
+              <div class="step">
+                <h4>Step 3: Sample Content</h4>
+                <pre><code># Get recent posts to understand community tone
+fetch-timeline https://mastodon.social/users/admin
+fetch-timeline https://fosstodon.org/users/kev
+fetch-timeline https://hachyderm.io/users/admin</code></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="examples-section">
+          <h2>🔗 Next Steps</h2>
+          <div class="next-steps">
+            <a href="/docs/guides/basic-usage/" class="next-step-card">
+              <h3>← Back to Basic Usage</h3>
+              <p>Review the fundamental concepts and tools.</p>
+            </a>
+            <a href="/docs/api/tools/" class="next-step-card">
+              <h3>Complete Tool Reference</h3>
+              <p>Detailed documentation for all available tools.</p>
+            </a>
+            <a href="/docs/troubleshooting/" class="next-step-card">
+              <h3>Troubleshooting Guide</h3>
+              <p>Solutions for common issues and problems.</p>
+            </a>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .examples-page {
+    padding: var(--space-8) 0;
+  }
+
+  .examples-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  .examples-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .examples-description {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .examples-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .examples-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-4);
+    border-bottom: 2px solid var(--border-primary);
+  }
+
+  .example-scenario {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-8);
+  }
+
+  .example-scenario h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .example-steps {
+    margin-top: var(--space-6);
+  }
+
+  .step {
+    margin-bottom: var(--space-8);
+    padding: var(--space-6);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-md);
+  }
+
+  .step h4 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .step pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    margin: var(--space-3) 0;
+    overflow-x: auto;
+  }
+
+  .step code {
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    color: var(--text-code);
+  }
+
+  .step-result {
+    margin-top: var(--space-4);
+    padding: var(--space-4);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+  }
+
+  .step-result h5 {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+  }
+
+  .step-explanation {
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    background: var(--bg-info);
+    border-left: 3px solid var(--color-info);
+    border-radius: var(--radius-sm);
+  }
+
+  .step-explanation p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    margin: 0;
+  }
+
+  .claude-examples {
+    margin-top: var(--space-6);
+  }
+
+  .claude-example {
+    margin-bottom: var(--space-8);
+    padding: var(--space-6);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-md);
+  }
+
+  .claude-example h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .claude-example blockquote {
+    background: var(--bg-secondary);
+    border-left: 3px solid var(--color-primary);
+    padding: var(--space-4);
+    margin: var(--space-3) 0;
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+
+  .claude-example ol {
+    margin-top: var(--space-3);
+    padding-left: var(--space-6);
+  }
+
+  .claude-example li {
+    margin-bottom: var(--space-2);
+    color: var(--text-secondary);
+  }
+
+  .next-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+    margin-top: var(--space-8);
+  }
+
+  .next-step-card {
+    display: block;
+    padding: var(--space-6);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .next-step-card:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+  }
+
+  .next-step-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .next-step-card p {
+    color: var(--text-secondary);
+    margin: 0;
+  }
+</style>

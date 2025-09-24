@@ -1,0 +1,559 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+const title = "Troubleshooting Guide - ActivityPub MCP Server";
+const description =
+  "Solutions for common issues and problems when using the ActivityPub MCP Server with LLMs.";
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="troubleshooting-page">
+    <div class="container">
+      <div class="troubleshooting-header">
+        <h1>Troubleshooting Guide</h1>
+        <p class="troubleshooting-description">
+          Common issues and their solutions when using the ActivityPub MCP Server. Find quick fixes for the most frequent problems.
+        </p>
+      </div>
+
+      <div class="troubleshooting-content">
+        <section class="troubleshooting-section">
+          <h2>🔧 Connection Issues</h2>
+          
+          <div class="issue-list">
+            <div class="issue-item">
+              <h3>Server Not Responding</h3>
+              <div class="issue-details">
+                <h4>Symptoms:</h4>
+                <ul>
+                  <li>Tools timeout or return no response</li>
+                  <li>Error: "Failed to connect to MCP server"</li>
+                  <li>Claude reports server is unavailable</li>
+                </ul>
+                
+                <h4>Solutions:</h4>
+                <ol>
+                  <li><strong>Check server status:</strong>
+                    <pre><code>npm run status</code></pre>
+                  </li>
+                  <li><strong>Restart the server:</strong>
+                    <pre><code>npm run restart</code></pre>
+                  </li>
+                  <li><strong>Verify configuration:</strong>
+                    <pre><code>npm run config:check</code></pre>
+                  </li>
+                  <li><strong>Check logs for errors:</strong>
+                    <pre><code>npm run logs</code></pre>
+                  </li>
+                </ol>
+              </div>
+            </div>
+
+            <div class="issue-item">
+              <h3>Network Connectivity Problems</h3>
+              <div class="issue-details">
+                <h4>Symptoms:</h4>
+                <ul>
+                  <li>Error: "Network request failed"</li>
+                  <li>Timeouts when fetching from instances</li>
+                  <li>Intermittent connection issues</li>
+                </ul>
+                
+                <h4>Solutions:</h4>
+                <ol>
+                  <li><strong>Check internet connection</strong></li>
+                  <li><strong>Test instance accessibility:</strong>
+                    <pre><code>curl -I https://mastodon.social</code></pre>
+                  </li>
+                  <li><strong>Configure proxy if needed:</strong>
+                    <pre><code>export HTTP_PROXY=http://proxy:8080
+export HTTPS_PROXY=http://proxy:8080</code></pre>
+                  </li>
+                  <li><strong>Increase timeout settings in config</strong></li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="troubleshooting-section">
+          <h2>🚫 Access and Permission Issues</h2>
+          
+          <div class="issue-list">
+            <div class="issue-item">
+              <h3>Actor Not Found</h3>
+              <div class="issue-details">
+                <h4>Symptoms:</h4>
+                <ul>
+                  <li>Error: "Actor not found"</li>
+                  <li>Error: "Failed to resolve actor"</li>
+                  <li>Empty results when searching for known actors</li>
+                </ul>
+                
+                <h4>Solutions:</h4>
+                <ol>
+                  <li><strong>Verify actor format:</strong>
+                    <pre><code># Correct formats:
+@username@instance.com
+https://instance.com/users/username
+https://instance.com/@username</code></pre>
+                  </li>
+                  <li><strong>Check if actor exists:</strong>
+                    <pre><code>curl https://instance.com/.well-known/webfinger?resource=acct:username@instance.com</code></pre>
+                  </li>
+                  <li><strong>Try alternative discovery methods</strong></li>
+                  <li><strong>Clear cache and retry:</strong>
+                    <pre><code>clear-cache actors</code></pre>
+                  </li>
+                </ol>
+              </div>
+            </div>
+
+            <div class="issue-item">
+              <h3>Rate Limiting</h3>
+              <div class="issue-details">
+                <h4>Symptoms:</h4>
+                <ul>
+                  <li>Error: "Rate limit exceeded"</li>
+                  <li>HTTP 429 responses</li>
+                  <li>Requests being throttled</li>
+                </ul>
+                
+                <h4>Solutions:</h4>
+                <ol>
+                  <li><strong>Wait before retrying (usually 15 minutes)</strong></li>
+                  <li><strong>Reduce request frequency</strong></li>
+                  <li><strong>Use different instances to distribute load</strong></li>
+                  <li><strong>Check rate limit headers:</strong>
+                    <pre><code>curl -I https://instance.com/api/v1/accounts/lookup</code></pre>
+                  </li>
+                </ol>
+              </div>
+            </div>
+
+            <div class="issue-item">
+              <h3>Private Content Access</h3>
+              <div class="issue-details">
+                <h4>Symptoms:</h4>
+                <ul>
+                  <li>Error: "Access denied"</li>
+                  <li>Empty timelines for known active accounts</li>
+                  <li>Missing posts or limited content</li>
+                </ul>
+                
+                <h4>Solutions:</h4>
+                <ol>
+                  <li><strong>Respect privacy settings - this is expected behavior</strong></li>
+                  <li><strong>Try public instances and accounts</strong></li>
+                  <li><strong>Use accounts with public timelines</strong></li>
+                  <li><strong>Check instance privacy policies</strong></li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="troubleshooting-section">
+          <h2>⚙️ Configuration Issues</h2>
+          
+          <div class="issue-list">
+            <div class="issue-item">
+              <h3>Invalid Configuration</h3>
+              <div class="issue-details">
+                <h4>Symptoms:</h4>
+                <ul>
+                  <li>Server fails to start</li>
+                  <li>Error: "Invalid configuration"</li>
+                  <li>Missing required settings</li>
+                </ul>
+                
+                <h4>Solutions:</h4>
+                <ol>
+                  <li><strong>Validate configuration file:</strong>
+                    <pre><code>npm run config:validate</code></pre>
+                  </li>
+                  <li><strong>Reset to default configuration:</strong>
+                    <pre><code>npm run config:reset</code></pre>
+                  </li>
+                  <li><strong>Check required environment variables</strong></li>
+                  <li><strong>Review configuration documentation</strong></li>
+                </ol>
+              </div>
+            </div>
+
+            <div class="issue-item">
+              <h3>Claude Desktop Integration</h3>
+              <div class="issue-details">
+                <h4>Symptoms:</h4>
+                <ul>
+                  <li>Tools not appearing in Claude</li>
+                  <li>Error: "MCP server not found"</li>
+                  <li>Connection refused errors</li>
+                </ul>
+                
+                <h4>Solutions:</h4>
+                <ol>
+                  <li><strong>Check Claude Desktop configuration:</strong>
+                    <pre><code># macOS
+~/Library/Application Support/Claude/claude_desktop_config.json
+
+# Windows  
+%APPDATA%\Claude\claude_desktop_config.json</code></pre>
+                  </li>
+                  <li><strong>Verify server path in config</strong></li>
+                  <li><strong>Restart Claude Desktop</strong></li>
+                  <li><strong>Check server logs for connection attempts</strong></li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="troubleshooting-section">
+          <h2>📊 Performance Issues</h2>
+          
+          <div class="issue-list">
+            <div class="issue-item">
+              <h3>Slow Response Times</h3>
+              <div class="issue-details">
+                <h4>Symptoms:</h4>
+                <ul>
+                  <li>Tools take a long time to respond</li>
+                  <li>Timeouts on large requests</li>
+                  <li>High memory usage</li>
+                </ul>
+                
+                <h4>Solutions:</h4>
+                <ol>
+                  <li><strong>Clear cache:</strong>
+                    <pre><code>clear-cache all</code></pre>
+                  </li>
+                  <li><strong>Reduce request size (limit results)</strong></li>
+                  <li><strong>Use more specific queries</strong></li>
+                  <li><strong>Monitor system resources</strong></li>
+                </ol>
+              </div>
+            </div>
+
+            <div class="issue-item">
+              <h3>Memory Issues</h3>
+              <div class="issue-details">
+                <h4>Symptoms:</h4>
+                <ul>
+                  <li>Server crashes with out-of-memory errors</li>
+                  <li>Gradual performance degradation</li>
+                  <li>High memory usage</li>
+                </ul>
+                
+                <h4>Solutions:</h4>
+                <ol>
+                  <li><strong>Restart server regularly</strong></li>
+                  <li><strong>Reduce cache size in configuration</strong></li>
+                  <li><strong>Limit concurrent requests</strong></li>
+                  <li><strong>Monitor memory usage</strong></li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="troubleshooting-section">
+          <h2>🔍 Debugging Tips</h2>
+          
+          <div class="debug-tips">
+            <div class="tip-card">
+              <h3>Enable Verbose Logging</h3>
+              <pre><code>export DEBUG=activitypub-mcp:*
+npm start</code></pre>
+              <p>This will show detailed logs for all operations.</p>
+            </div>
+
+            <div class="tip-card">
+              <h3>Test Individual Components</h3>
+              <pre><code># Test WebFinger resolution
+curl "https://instance.com/.well-known/webfinger?resource=acct:user@instance.com"
+
+# Test ActivityPub endpoint
+curl -H "Accept: application/activity+json" "https://instance.com/users/username"</code></pre>
+            </div>
+
+            <div class="tip-card">
+              <h3>Check Instance Health</h3>
+              <pre><code># Check if instance is up
+curl -I https://instance.com
+
+# Check API availability  
+curl https://instance.com/api/v1/instance</code></pre>
+            </div>
+
+            <div class="tip-card">
+              <h3>Monitor Network Traffic</h3>
+              <p>Use browser developer tools or network monitoring tools to see actual HTTP requests and responses.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="troubleshooting-section">
+          <h2>🆘 Getting Help</h2>
+          
+          <div class="help-resources">
+            <div class="help-card">
+              <h3>📋 Before Reporting Issues</h3>
+              <ul>
+                <li>Check this troubleshooting guide</li>
+                <li>Review the basic usage guide</li>
+                <li>Test with known working instances (mastodon.social)</li>
+                <li>Collect relevant logs and error messages</li>
+                <li>Note your environment (OS, Node.js version, etc.)</li>
+              </ul>
+            </div>
+
+            <div class="help-card">
+              <h3>🐛 Reporting Bugs</h3>
+              <p>If you've found a bug, please report it on GitHub:</p>
+              <a href="https://github.com/cameronrye/activitypub-mcp/issues" target="_blank" rel="noopener" class="help-link">
+                Report an Issue
+              </a>
+              <p>Include:</p>
+              <ul>
+                <li>Steps to reproduce the issue</li>
+                <li>Expected vs actual behavior</li>
+                <li>Error messages and logs</li>
+                <li>System information</li>
+              </ul>
+            </div>
+
+            <div class="help-card">
+              <h3>💬 Community Support</h3>
+              <p>Join the discussion for help and tips:</p>
+              <a href="https://github.com/cameronrye/activitypub-mcp/discussions" target="_blank" rel="noopener" class="help-link">
+                GitHub Discussions
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section class="troubleshooting-section">
+          <h2>🔗 Related Resources</h2>
+          <div class="next-steps">
+            <a href="/docs/guides/basic-usage/" class="next-step-card">
+              <h3>Basic Usage Guide</h3>
+              <p>Learn the fundamental concepts and workflows.</p>
+            </a>
+            <a href="/docs/guides/examples/" class="next-step-card">
+              <h3>Practical Examples</h3>
+              <p>See real-world examples and use cases.</p>
+            </a>
+            <a href="/docs/api/tools/" class="next-step-card">
+              <h3>Complete Tool Reference</h3>
+              <p>Detailed documentation for all available tools.</p>
+            </a>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .troubleshooting-page {
+    padding: var(--space-8) 0;
+  }
+
+  .troubleshooting-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  .troubleshooting-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .troubleshooting-description {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .troubleshooting-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .troubleshooting-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-4);
+    border-bottom: 2px solid var(--border-primary);
+  }
+
+  .issue-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .issue-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-8);
+  }
+
+  .issue-item h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .issue-details h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin: var(--space-4) 0 var(--space-2) 0;
+  }
+
+  .issue-details ul,
+  .issue-details ol {
+    margin-bottom: var(--space-4);
+    padding-left: var(--space-6);
+  }
+
+  .issue-details li {
+    margin-bottom: var(--space-2);
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+  }
+
+  .issue-details pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    margin: var(--space-3) 0;
+    overflow-x: auto;
+  }
+
+  .issue-details code {
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    color: var(--text-code);
+  }
+
+  .debug-tips {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .tip-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+  }
+
+  .tip-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .tip-card p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+  }
+
+  .help-resources {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .help-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+  }
+
+  .help-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .help-card p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+  }
+
+  .help-card ul {
+    margin-bottom: var(--space-4);
+    padding-left: var(--space-6);
+  }
+
+  .help-card li {
+    margin-bottom: var(--space-2);
+    color: var(--text-secondary);
+  }
+
+  .help-link {
+    display: inline-block;
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    font-weight: var(--font-medium);
+    transition: background-color 0.2s ease;
+  }
+
+  .help-link:hover {
+    background: var(--color-primary-dark);
+  }
+
+  .next-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+    margin-top: var(--space-8);
+  }
+
+  .next-step-card {
+    display: block;
+    padding: var(--space-6);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .next-step-card:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+  }
+
+  .next-step-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .next-step-card p {
+    color: var(--text-secondary);
+    margin: 0;
+  }
+</style>
