@@ -139,10 +139,8 @@ class RealWorldScenarioTest {
       this.metrics.failedOperations++;
       this.updateResponseTimeMetrics(duration);
 
-      const errorType =
-        error instanceof Error ? error.constructor.name : "Unknown";
-      this.metrics.errorBreakdown[errorType] =
-        (this.metrics.errorBreakdown[errorType] || 0) + 1;
+      const errorType = error instanceof Error ? error.constructor.name : "Unknown";
+      this.metrics.errorBreakdown[errorType] = (this.metrics.errorBreakdown[errorType] || 0) + 1;
 
       console.log(
         `❌ ${operationName} failed in ${duration}ms: ${error instanceof Error ? error.message : error}`,
@@ -156,22 +154,14 @@ class RealWorldScenarioTest {
   }
 
   private updateResponseTimeMetrics(duration: number): void {
-    this.metrics.minResponseTime = Math.min(
-      this.metrics.minResponseTime,
-      duration,
-    );
-    this.metrics.maxResponseTime = Math.max(
-      this.metrics.maxResponseTime,
-      duration,
-    );
+    this.metrics.minResponseTime = Math.min(this.metrics.minResponseTime, duration);
+    this.metrics.maxResponseTime = Math.max(this.metrics.maxResponseTime, duration);
     this.metrics.averageResponseTime =
       this.responseTimes.reduce((a, b) => a + b, 0) / this.responseTimes.length;
   }
 
   async run(): Promise<void> {
-    console.log(
-      "🌐 STARTING COMPREHENSIVE REAL-WORLD FEDIVERSE EXPLORATION SCENARIO",
-    );
+    console.log("🌐 STARTING COMPREHENSIVE REAL-WORLD FEDIVERSE EXPLORATION SCENARIO");
     console.log("=".repeat(80));
 
     const overallStartTime = Date.now();
@@ -250,15 +240,13 @@ class RealWorldScenarioTest {
 
     // Get detailed info for specific instances
     for (const instance of this.instancesToExplore) {
-      await this.executeTimedOperation(
-        `Get Instance Info: ${instance.domain}`,
-        () =>
-          this.client.callTool({
-            name: "get-instance-info",
-            arguments: {
-              domain: instance.domain,
-            },
-          }),
+      await this.executeTimedOperation(`Get Instance Info: ${instance.domain}`, () =>
+        this.client.callTool({
+          name: "get-instance-info",
+          arguments: {
+            domain: instance.domain,
+          },
+        }),
       );
     }
   }
@@ -314,52 +302,44 @@ class RealWorldScenarioTest {
 
     // Test remote actor resources
     for (const actor of this.actorsToDiscover) {
-      await this.executeTimedOperation(
-        `Read Remote Actor Resource: ${actor.name}`,
-        () =>
-          this.client.readResource({
-            uri: `activitypub://remote-actor/${actor.identifier}`,
-          }),
+      await this.executeTimedOperation(`Read Remote Actor Resource: ${actor.name}`, () =>
+        this.client.readResource({
+          uri: `activitypub://remote-actor/${actor.identifier}`,
+        }),
       );
     }
 
     // Test instance info resources
     for (const instance of this.instancesToExplore) {
-      await this.executeTimedOperation(
-        `Read Instance Info Resource: ${instance.domain}`,
-        () =>
-          this.client.readResource({
-            uri: `activitypub://instance-info/${instance.domain}`,
-          }),
+      await this.executeTimedOperation(`Read Instance Info Resource: ${instance.domain}`, () =>
+        this.client.readResource({
+          uri: `activitypub://instance-info/${instance.domain}`,
+        }),
       );
     }
   }
 
   private async testPrompts(): Promise<void> {
     // Test explore-fediverse prompt
-    await this.executeTimedOperation(
-      "Generate Fediverse Exploration Prompt",
-      () =>
-        this.client.getPrompt({
-          name: "explore-fediverse",
-          arguments: {
-            interests: "decentralized social media and ActivityPub",
-            instanceType: "mastodon",
-          },
-        }),
+    await this.executeTimedOperation("Generate Fediverse Exploration Prompt", () =>
+      this.client.getPrompt({
+        name: "explore-fediverse",
+        arguments: {
+          interests: "decentralized social media and ActivityPub",
+          instanceType: "mastodon",
+        },
+      }),
     );
 
     // Test compare-instances prompt
-    await this.executeTimedOperation(
-      "Generate Instance Comparison Prompt",
-      () =>
-        this.client.getPrompt({
-          name: "compare-instances",
-          arguments: {
-            instances: "mastodon.social, fosstodon.org",
-            criteria: "community focus and moderation policies",
-          },
-        }),
+    await this.executeTimedOperation("Generate Instance Comparison Prompt", () =>
+      this.client.getPrompt({
+        name: "compare-instances",
+        arguments: {
+          instances: "mastodon.social, fosstodon.org",
+          criteria: "community focus and moderation policies",
+        },
+      }),
     );
 
     // Test discover-content prompt
@@ -408,9 +388,7 @@ class RealWorldScenarioTest {
     const successes = results.filter((r) => r.success).length;
     const failures = results.filter((r) => !r.success).length;
 
-    console.log(
-      `✅ Concurrent operations completed: ${successes} successes, ${failures} failures`,
-    );
+    console.log(`✅ Concurrent operations completed: ${successes} successes, ${failures} failures`);
   }
 
   private printFinalReport(): void {
@@ -431,9 +409,7 @@ class RealWorldScenarioTest {
     console.log(
       `Success Rate: ${((this.metrics.successfulOperations / this.metrics.totalOperations) * 100).toFixed(2)}%`,
     );
-    console.log(
-      `Average Response Time: ${this.metrics.averageResponseTime.toFixed(2)}ms`,
-    );
+    console.log(`Average Response Time: ${this.metrics.averageResponseTime.toFixed(2)}ms`);
     console.log(`95th Percentile Response Time: ${p95ResponseTime}ms`);
     console.log(
       `Min Response Time: ${this.metrics.minResponseTime === Number.MAX_VALUE ? 0 : this.metrics.minResponseTime}ms`,
@@ -442,17 +418,13 @@ class RealWorldScenarioTest {
 
     if (Object.keys(this.metrics.errorBreakdown).length > 0) {
       console.log("\nError Breakdown:");
-      for (const [errorType, count] of Object.entries(
-        this.metrics.errorBreakdown,
-      )) {
+      for (const [errorType, count] of Object.entries(this.metrics.errorBreakdown)) {
         console.log(`  ${errorType}: ${count}`);
       }
     }
     console.log("=".repeat(50));
 
-    console.log(
-      "\n✅ Real-world fediverse exploration scenario completed successfully!",
-    );
+    console.log("\n✅ Real-world fediverse exploration scenario completed successfully!");
   }
 }
 

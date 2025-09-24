@@ -15,10 +15,7 @@ const DomainSchema = z
     "Invalid domain format",
   )
   .refine(
-    (domain) =>
-      !domain.includes("..") &&
-      !domain.startsWith(".") &&
-      !domain.endsWith("."),
+    (domain) => !domain.includes("..") && !domain.startsWith(".") && !domain.endsWith("."),
     "Invalid domain format",
   );
 
@@ -37,16 +34,9 @@ const _UrlSchema = z
 
 // ActivityPub Collection schema
 const ActivityPubCollectionSchema = z.object({
-  "@context": z
-    .union([z.string(), z.array(z.union([z.string(), z.object({})]))])
-    .optional(),
+  "@context": z.union([z.string(), z.array(z.union([z.string(), z.object({})]))]).optional(),
   id: z.string(),
-  type: z.enum([
-    "Collection",
-    "OrderedCollection",
-    "CollectionPage",
-    "OrderedCollectionPage",
-  ]),
+  type: z.enum(["Collection", "OrderedCollection", "CollectionPage", "OrderedCollectionPage"]),
   totalItems: z.number().optional(),
   first: z.union([z.string(), z.object({})]).optional(),
   last: z.union([z.string(), z.object({})]).optional(),
@@ -154,10 +144,7 @@ export class RemoteActivityPubClient {
   /**
    * Fetch actor's outbox (timeline/posts)
    */
-  async fetchActorOutbox(
-    identifier: string,
-    limit = 20,
-  ): Promise<ActivityPubCollection> {
+  async fetchActorOutbox(identifier: string, limit = 20): Promise<ActivityPubCollection> {
     const actor = await this.fetchRemoteActor(identifier);
 
     if (!actor.outbox) {
@@ -191,10 +178,7 @@ export class RemoteActivityPubClient {
   /**
    * Fetch actor's followers
    */
-  async fetchActorFollowers(
-    identifier: string,
-    limit = 20,
-  ): Promise<ActivityPubCollection> {
+  async fetchActorFollowers(identifier: string, limit = 20): Promise<ActivityPubCollection> {
     const actor = await this.fetchRemoteActor(identifier);
 
     if (!actor.followers) {
@@ -228,10 +212,7 @@ export class RemoteActivityPubClient {
   /**
    * Fetch actor's following
    */
-  async fetchActorFollowing(
-    identifier: string,
-    limit = 20,
-  ): Promise<ActivityPubCollection> {
+  async fetchActorFollowing(identifier: string, limit = 20): Promise<ActivityPubCollection> {
     const actor = await this.fetchRemoteActor(identifier);
 
     if (!actor.following) {
@@ -309,11 +290,7 @@ export class RemoteActivityPubClient {
           const data = await response.json();
 
           // Transform different API responses to our schema
-          const instanceInfo = this.transformInstanceInfo(
-            domain,
-            data,
-            endpoint,
-          );
+          const instanceInfo = this.transformInstanceInfo(domain, data, endpoint);
           return InstanceInfoSchema.parse(instanceInfo);
         }
       } catch (error) {
@@ -378,9 +355,7 @@ export class RemoteActivityPubClient {
             url,
             error: lastError.message,
           });
-          await new Promise((resolve) =>
-            setTimeout(resolve, this.retryDelay * attempt),
-          );
+          await new Promise((resolve) => setTimeout(resolve, this.retryDelay * attempt));
         }
       }
     }
@@ -391,10 +366,7 @@ export class RemoteActivityPubClient {
   /**
    * Fetch with timeout
    */
-  private async fetchWithTimeout(
-    url: string,
-    options: RequestInit,
-  ): Promise<Response> {
+  private async fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
@@ -436,27 +408,16 @@ export class RemoteActivityPubClient {
       return {
         ...base,
         software:
-          typeof dataObj.version === "string" &&
-          dataObj.version.includes("Pleroma")
+          typeof dataObj.version === "string" && dataObj.version.includes("Pleroma")
             ? "pleroma"
             : "mastodon",
-        version:
-          typeof dataObj.version === "string" ? dataObj.version : undefined,
-        description:
-          typeof dataObj.description === "string"
-            ? dataObj.description
-            : undefined,
-        languages: Array.isArray(dataObj.languages)
-          ? (dataObj.languages as string[])
-          : undefined,
+        version: typeof dataObj.version === "string" ? dataObj.version : undefined,
+        description: typeof dataObj.description === "string" ? dataObj.description : undefined,
+        languages: Array.isArray(dataObj.languages) ? (dataObj.languages as string[]) : undefined,
         registrations:
-          typeof dataObj.registrations === "boolean"
-            ? dataObj.registrations
-            : undefined,
+          typeof dataObj.registrations === "boolean" ? dataObj.registrations : undefined,
         approval_required:
-          typeof dataObj.approval_required === "boolean"
-            ? dataObj.approval_required
-            : undefined,
+          typeof dataObj.approval_required === "boolean" ? dataObj.approval_required : undefined,
         contact_account:
           typeof dataObj.contact_account === "object"
             ? (dataObj.contact_account as {
@@ -481,12 +442,8 @@ export class RemoteActivityPubClient {
       return {
         ...base,
         software: "misskey",
-        version:
-          typeof dataObj.version === "string" ? dataObj.version : undefined,
-        description:
-          typeof dataObj.description === "string"
-            ? dataObj.description
-            : undefined,
+        version: typeof dataObj.version === "string" ? dataObj.version : undefined,
+        description: typeof dataObj.description === "string" ? dataObj.description : undefined,
       };
     }
 
@@ -504,12 +461,9 @@ export class RemoteActivityPubClient {
       return {
         ...base,
         software: typeof software.name === "string" ? software.name : undefined,
-        version:
-          typeof software.version === "string" ? software.version : undefined,
+        version: typeof software.version === "string" ? software.version : undefined,
         description:
-          typeof metadata.nodeDescription === "string"
-            ? metadata.nodeDescription
-            : undefined,
+          typeof metadata.nodeDescription === "string" ? metadata.nodeDescription : undefined,
       };
     }
 

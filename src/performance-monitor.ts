@@ -93,9 +93,7 @@ class PerformanceMonitor {
   endRequest(requestId: string, success: boolean, error?: string): void {
     if (!this.metricsEnabled || !requestId) return;
 
-    const request = this.requestHistory.find(
-      (r) => requestId.includes(r.operation) && !r.endTime,
-    );
+    const request = this.requestHistory.find((r) => requestId.includes(r.operation) && !r.endTime);
 
     if (request) {
       request.endTime = Date.now();
@@ -209,8 +207,7 @@ class PerformanceMonitor {
     const successCount = operationRequests.filter((r) => r.success).length;
     const errorCount = operationRequests.length - successCount;
     const averageResponseTime =
-      operationRequests.reduce((sum, r) => sum + (r.duration || 0), 0) /
-      operationRequests.length;
+      operationRequests.reduce((sum, r) => sum + (r.duration || 0), 0) / operationRequests.length;
 
     return {
       count: operationRequests.length,
@@ -234,10 +231,7 @@ class PerformanceMonitor {
    * Start periodic metrics collection
    */
   private startMetricsCollection(): void {
-    const interval = Number.parseInt(
-      process.env.METRICS_INTERVAL || "60000",
-      10,
-    );
+    const interval = Number.parseInt(process.env.METRICS_INTERVAL || "60000", 10);
 
     this.metricsInterval = setInterval(() => {
       this.updateSystemMetrics();
@@ -255,10 +249,7 @@ class PerformanceMonitor {
       requests: {
         total: metrics.requestCount,
         errors: metrics.errorCount,
-        errorRate:
-          metrics.requestCount > 0
-            ? (metrics.errorCount / metrics.requestCount) * 100
-            : 0,
+        errorRate: metrics.requestCount > 0 ? (metrics.errorCount / metrics.requestCount) * 100 : 0,
       },
       responseTime: {
         average: Math.round(metrics.averageResponseTime),
@@ -285,9 +276,7 @@ class PerformanceMonitor {
     const metrics = this.getMetrics();
     const checks = {
       memoryUsage: metrics.memoryUsage.heapUsed < 500 * 1024 * 1024, // < 500MB
-      errorRate:
-        metrics.requestCount === 0 ||
-        metrics.errorCount / metrics.requestCount < 0.1, // < 10%
+      errorRate: metrics.requestCount === 0 || metrics.errorCount / metrics.requestCount < 0.1, // < 10%
       responseTime: metrics.averageResponseTime < 5000, // < 5s
     };
 

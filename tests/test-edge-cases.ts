@@ -38,10 +38,7 @@ async function testEdgeCases() {
       });
       console.log("❌ Expected error for invalid identifier format");
     } catch (error) {
-      console.log(
-        "✅ Correctly caught invalid identifier error:",
-        error.message,
-      );
+      console.log("✅ Correctly caught invalid identifier error:", error.message);
     }
 
     // Test 2: Very long actor identifier
@@ -118,10 +115,7 @@ async function testEdgeCases() {
       });
       console.log("✅ Handled non-existent actor gracefully");
     } catch (error) {
-      console.log(
-        "✅ Correctly caught non-existent actor error:",
-        error.message,
-      );
+      console.log("✅ Correctly caught non-existent actor error:", error.message);
     }
 
     // Test edge cases for search-instance tool
@@ -195,10 +189,7 @@ async function testEdgeCases() {
       });
       console.log("❌ Expected error for invalid actor identifier");
     } catch (error) {
-      console.log(
-        "✅ Correctly caught invalid actor identifier error:",
-        error.message,
-      );
+      console.log("✅ Correctly caught invalid actor identifier error:", error.message);
     }
 
     // Test edge cases for prompts
@@ -231,10 +222,7 @@ async function testEdgeCases() {
       });
       console.log("✅ Handled invalid instance type gracefully");
     } catch (error) {
-      console.log(
-        "✅ Correctly caught invalid instance type error:",
-        error.message,
-      );
+      console.log("✅ Correctly caught invalid instance type error:", error.message);
     }
 
     // Test 14: Compare instances prompt with invalid instances
@@ -278,10 +266,7 @@ async function testEdgeCases() {
         `✅ Handled multiple rapid requests: ${successes.length} successes, ${errors.length} errors`,
       );
     } catch (error) {
-      console.log(
-        "✅ Handled multiple rapid requests with errors:",
-        error.message,
-      );
+      console.log("✅ Handled multiple rapid requests with errors:", error.message);
     }
 
     console.log("\n🎉 Edge case tests completed!");

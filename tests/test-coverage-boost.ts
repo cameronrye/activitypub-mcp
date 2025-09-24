@@ -37,9 +37,7 @@ async function testCoverageBoost() {
           limit: 5,
         },
       });
-      console.log(
-        "✅ Discover-instances completed (may have triggered error path)",
-      );
+      console.log("✅ Discover-instances completed (may have triggered error path)");
     } catch (error) {
       console.log("✅ Discover-instances error path tested:", error);
     }
@@ -57,9 +55,7 @@ async function testCoverageBoost() {
           language: "invalid-language",
         },
       });
-      console.log(
-        "✅ Recommend-instances completed (may have triggered error path)",
-      );
+      console.log("✅ Recommend-instances completed (may have triggered error path)");
     } catch (error) {
       console.log("✅ Recommend-instances error path tested:", error);
     }
@@ -131,9 +127,7 @@ async function testCoverageBoost() {
     ];
 
     for (const uri of invalidUris) {
-      console.log(
-        `Test 5.${invalidUris.indexOf(uri) + 1}: Testing invalid URI: ${uri}`,
-      );
+      console.log(`Test 5.${invalidUris.indexOf(uri) + 1}: Testing invalid URI: ${uri}`);
       try {
         const _result = await client.readResource({ uri });
         console.log(`❌ Expected error for invalid URI: ${uri}`);
@@ -157,9 +151,7 @@ async function testCoverageBoost() {
     ];
 
     for (const input of invalidActorInputs) {
-      console.log(
-        `Test 6.${invalidActorInputs.indexOf(input) + 1}: Testing invalid actor input`,
-      );
+      console.log(`Test 6.${invalidActorInputs.indexOf(input) + 1}: Testing invalid actor input`);
       try {
         const _result = await client.callTool({
           name: "discover-actor",
@@ -184,9 +176,7 @@ async function testCoverageBoost() {
     ];
 
     for (const input of invalidSearchInputs) {
-      console.log(
-        `Test 7.${invalidSearchInputs.indexOf(input) + 1}: Testing invalid search input`,
-      );
+      console.log(`Test 7.${invalidSearchInputs.indexOf(input) + 1}: Testing invalid search input`);
       try {
         const _result = await client.callTool({
           name: "search-instance",
@@ -254,9 +244,7 @@ async function testCoverageBoost() {
     ];
 
     for (const input of invalidPromptInputs) {
-      console.log(
-        `Test 9.${invalidPromptInputs.indexOf(input) + 1}: Testing invalid prompt input`,
-      );
+      console.log(`Test 9.${invalidPromptInputs.indexOf(input) + 1}: Testing invalid prompt input`);
       try {
         const _result = await client.getPrompt(input);
         console.log("❌ Expected error for invalid prompt input");

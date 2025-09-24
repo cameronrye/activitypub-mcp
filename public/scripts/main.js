@@ -50,8 +50,7 @@
         if (target) {
           event.preventDefault();
 
-          const headerHeight =
-            document.querySelector(".site-header")?.offsetHeight || 0;
+          const headerHeight = document.querySelector(".site-header")?.offsetHeight || 0;
           const targetPosition = target.offsetTop - headerHeight - 20;
 
           window.scrollTo({

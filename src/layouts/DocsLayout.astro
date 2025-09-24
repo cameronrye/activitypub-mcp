@@ -11,9 +11,7 @@ export interface Props {
 const { title, description, frontmatter } = Astro.props;
 const _pageTitle = title || frontmatter?.title || "Documentation";
 const _pageDescription =
-  description ||
-  frontmatter?.description ||
-  "ActivityPub MCP Server Documentation";
+  description || frontmatter?.description || "ActivityPub MCP Server Documentation";
 
 // Navigation structure for docs
 const _docsNav = [

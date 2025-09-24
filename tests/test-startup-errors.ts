@@ -10,9 +10,7 @@ async function testStartupErrors() {
 
   try {
     // Import the server class directly to test instantiation
-    const { default: ActivityPubMCPServer } = await import(
-      "../src/mcp-server.js"
-    );
+    const { default: ActivityPubMCPServer } = await import("../src/mcp-server.js");
     const server = new ActivityPubMCPServer();
     console.log("✅ Server instantiated successfully");
 

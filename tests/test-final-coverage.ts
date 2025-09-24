@@ -92,9 +92,7 @@ async function testFinalCoverage() {
         });
         console.log(`✅ Fetched timeline: ${scenario.description}`);
       } catch (error) {
-        console.log(
-          `❌ Failed timeline fetch ${scenario.description}: ${error.message}`,
-        );
+        console.log(`❌ Failed timeline fetch ${scenario.description}: ${error.message}`);
       }
     }
 
@@ -130,9 +128,7 @@ async function testFinalCoverage() {
         });
         console.log(`✅ Discovered instances: ${scenario.description}`);
       } catch (error) {
-        console.log(
-          `❌ Failed instance discovery ${scenario.description}: ${error.message}`,
-        );
+        console.log(`❌ Failed instance discovery ${scenario.description}: ${error.message}`);
       }
     }
 
@@ -168,9 +164,7 @@ async function testFinalCoverage() {
         });
         console.log(`✅ Got recommendations: ${scenario.description}`);
       } catch (error) {
-        console.log(
-          `❌ Failed recommendations ${scenario.description}: ${error.message}`,
-        );
+        console.log(`❌ Failed recommendations ${scenario.description}: ${error.message}`);
       }
     }
 
@@ -206,9 +200,7 @@ async function testFinalCoverage() {
         });
         console.log(`✅ Search completed: ${scenario.description}`);
       } catch (error) {
-        console.log(
-          `❌ Search failed ${scenario.description}: ${error.message}`,
-        );
+        console.log(`❌ Search failed ${scenario.description}: ${error.message}`);
       }
     }
 
@@ -231,9 +223,7 @@ async function testFinalCoverage() {
         });
         console.log(`✅ Got instance info: ${scenario.description}`);
       } catch (error) {
-        console.log(
-          `❌ Failed instance info ${scenario.description}: ${error.message}`,
-        );
+        console.log(`❌ Failed instance info ${scenario.description}: ${error.message}`);
       }
     }
 
@@ -248,19 +238,14 @@ async function testFinalCoverage() {
 
     for (const scenario of healthScenarios) {
       try {
-        const args =
-          scenario.detailed !== undefined
-            ? { detailed: scenario.detailed }
-            : {};
+        const args = scenario.detailed !== undefined ? { detailed: scenario.detailed } : {};
         const _result = await client.callTool({
           name: "health-check",
           arguments: args,
         });
         console.log(`✅ Health check completed: ${scenario.description}`);
       } catch (error) {
-        console.log(
-          `❌ Health check failed ${scenario.description}: ${error.message}`,
-        );
+        console.log(`❌ Health check failed ${scenario.description}: ${error.message}`);
       }
     }
 
@@ -275,18 +260,14 @@ async function testFinalCoverage() {
 
     for (const scenario of metricsScenarios) {
       try {
-        const args = scenario.operation
-          ? { operation: scenario.operation }
-          : {};
+        const args = scenario.operation ? { operation: scenario.operation } : {};
         const _result = await client.callTool({
           name: "performance-metrics",
           arguments: args,
         });
         console.log(`✅ Performance metrics: ${scenario.description}`);
       } catch (error) {
-        console.log(
-          `❌ Performance metrics failed ${scenario.description}: ${error.message}`,
-        );
+        console.log(`❌ Performance metrics failed ${scenario.description}: ${error.message}`);
       }
     }
 
@@ -328,22 +309,16 @@ async function testFinalCoverage() {
         });
         // For invalid resources, we expect an error, so success here is unexpected
         if (scenario.description === "Invalid resource") {
-          console.log(
-            `❌ Resource read unexpectedly succeeded: ${scenario.description}`,
-          );
+          console.log(`❌ Resource read unexpectedly succeeded: ${scenario.description}`);
         } else {
           console.log(`✅ Resource read: ${scenario.description}`);
         }
       } catch (error) {
         // For invalid resources, errors are expected
         if (scenario.description === "Invalid resource") {
-          console.log(
-            `✅ Resource correctly rejected: ${scenario.description}`,
-          );
+          console.log(`✅ Resource correctly rejected: ${scenario.description}`);
         } else {
-          console.log(
-            `❌ Resource read failed ${scenario.description}: ${error.message}`,
-          );
+          console.log(`❌ Resource read failed ${scenario.description}: ${error.message}`);
         }
       }
     }
@@ -388,9 +363,7 @@ async function testFinalCoverage() {
         });
         // For invalid prompts, we expect an error, so success here is unexpected
         if (scenario.description === "Invalid prompt") {
-          console.log(
-            `❌ Prompt unexpectedly succeeded: ${scenario.description}`,
-          );
+          console.log(`❌ Prompt unexpectedly succeeded: ${scenario.description}`);
         } else {
           console.log(`✅ Prompt generated: ${scenario.description}`);
         }
@@ -399,9 +372,7 @@ async function testFinalCoverage() {
         if (scenario.description === "Invalid prompt") {
           console.log(`✅ Prompt correctly rejected: ${scenario.description}`);
         } else {
-          console.log(
-            `❌ Prompt failed ${scenario.description}: ${error.message}`,
-          );
+          console.log(`❌ Prompt failed ${scenario.description}: ${error.message}`);
         }
       }
     }

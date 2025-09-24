@@ -71,12 +71,8 @@ class HealthChecker {
 
     // Determine overall status
     const checkStatuses = Object.values(checks).map((check) => check.status);
-    const failedChecks = checkStatuses.filter(
-      (status) => status === "fail",
-    ).length;
-    const warnChecks = checkStatuses.filter(
-      (status) => status === "warn",
-    ).length;
+    const failedChecks = checkStatuses.filter((status) => status === "fail").length;
+    const warnChecks = checkStatuses.filter((status) => status === "warn").length;
 
     let overallStatus: "healthy" | "degraded" | "unhealthy";
     if (failedChecks > 0) {
@@ -113,9 +109,7 @@ class HealthChecker {
           p99ResponseTime: perfMetrics.p99ResponseTime,
         },
         system: {
-          memoryUsageMB: Math.round(
-            perfMetrics.memoryUsage.heapUsed / 1024 / 1024,
-          ),
+          memoryUsageMB: Math.round(perfMetrics.memoryUsage.heapUsed / 1024 / 1024),
           cpuUsage: perfMetrics.cpuUsage.user + perfMetrics.cpuUsage.system,
           uptime: perfMetrics.uptime,
         },
@@ -136,9 +130,7 @@ class HealthChecker {
   /**
    * Check memory usage
    */
-  private async checkMemoryUsage(
-    checks: HealthCheckResult["checks"],
-  ): Promise<void> {
+  private async checkMemoryUsage(checks: HealthCheckResult["checks"]): Promise<void> {
     const startTime = Date.now();
 
     try {
@@ -183,9 +175,7 @@ class HealthChecker {
   /**
    * Check disk space (basic check)
    */
-  private async checkDiskSpace(
-    checks: HealthCheckResult["checks"],
-  ): Promise<void> {
+  private async checkDiskSpace(checks: HealthCheckResult["checks"]): Promise<void> {
     const startTime = Date.now();
 
     try {
@@ -211,9 +201,7 @@ class HealthChecker {
   /**
    * Check required environment variables
    */
-  private async checkEnvironmentVariables(
-    checks: HealthCheckResult["checks"],
-  ): Promise<void> {
+  private async checkEnvironmentVariables(checks: HealthCheckResult["checks"]): Promise<void> {
     const startTime = Date.now();
 
     const requiredVars = ["NODE_ENV"];
@@ -238,9 +226,7 @@ class HealthChecker {
   /**
    * Check network connectivity
    */
-  private async checkNetworkConnectivity(
-    checks: HealthCheckResult["checks"],
-  ): Promise<void> {
+  private async checkNetworkConnectivity(checks: HealthCheckResult["checks"]): Promise<void> {
     const startTime = Date.now();
 
     try {
@@ -248,13 +234,10 @@ class HealthChecker {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-      const response = await fetch(
-        "https://mastodon.social/.well-known/nodeinfo",
-        {
-          method: "HEAD",
-          signal: controller.signal,
-        },
-      );
+      const response = await fetch("https://mastodon.social/.well-known/nodeinfo", {
+        method: "HEAD",
+        signal: controller.signal,
+      });
 
       clearTimeout(timeoutId);
 
@@ -283,9 +266,7 @@ class HealthChecker {
   /**
    * Check MCP server status
    */
-  private async checkMCPServerStatus(
-    checks: HealthCheckResult["checks"],
-  ): Promise<void> {
+  private async checkMCPServerStatus(checks: HealthCheckResult["checks"]): Promise<void> {
     const startTime = Date.now();
 
     try {
@@ -308,9 +289,7 @@ class HealthChecker {
   /**
    * Check rate limiting functionality
    */
-  private async checkRateLimiting(
-    checks: HealthCheckResult["checks"],
-  ): Promise<void> {
+  private async checkRateLimiting(checks: HealthCheckResult["checks"]): Promise<void> {
     const startTime = Date.now();
 
     try {
@@ -318,9 +297,7 @@ class HealthChecker {
 
       checks.rateLimiting = {
         status: "pass",
-        message: rateLimitEnabled
-          ? "Rate limiting enabled"
-          : "Rate limiting disabled",
+        message: rateLimitEnabled ? "Rate limiting enabled" : "Rate limiting disabled",
         duration: Date.now() - startTime,
         metadata: { enabled: rateLimitEnabled },
       };

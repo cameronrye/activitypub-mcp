@@ -3,8 +3,7 @@ import { configure, getConsoleSink } from "@logtape/logtape";
 
 // Get log level from environment variable, default to 'info' for production
 const logLevel =
-  (process.env.LOG_LEVEL as "debug" | "info" | "warning" | "error" | "fatal") ||
-  "info";
+  (process.env.LOG_LEVEL as "debug" | "info" | "warning" | "error" | "fatal") || "info";
 
 await configure({
   contextLocalStorage: new AsyncLocalStorage(),
