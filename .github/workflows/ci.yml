@@ -30,9 +30,19 @@ jobs:
     
     - name: Install dependencies
       run: npm ci
-    
+
+    - name: Set UTF-8 encoding (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        chcp 65001
+        $env:PYTHONIOENCODING="utf-8"
+        $env:NODE_OPTIONS="--max-old-space-size=4096"
+      shell: powershell
+
     - name: Run linting
       run: npm run lint
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
     
     - name: Run formatting check
       run: npm run format:check

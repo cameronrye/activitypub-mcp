@@ -6,7 +6,10 @@
       "node_modules/**",
       "*.log",
       "coverage/**",
-      ".astro/**"
+      ".astro/**",
+      "README.md",
+      "docs/**/*.md",
+      ".github/**/*.md"
     ]
   },
   "organizeImports": {
