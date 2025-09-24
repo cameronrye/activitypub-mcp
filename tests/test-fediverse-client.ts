@@ -89,10 +89,7 @@ async function testFediverseClient() {
         },
       });
       console.log("✅ Successfully discovered actor");
-      console.log(
-        "📊 Result preview:",
-        `${actorResult.content[0].text.substring(0, 300)}...\n`,
-      );
+      console.log("📊 Result preview:", `${actorResult.content[0].text.substring(0, 300)}...\n`);
     } catch (error) {
       console.log("❌ Failed to discover actor:", error);
     }

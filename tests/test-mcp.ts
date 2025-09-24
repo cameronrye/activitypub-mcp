@@ -55,10 +55,7 @@ async function testMCPServer() {
     const serverInfo = await client.readResource({
       uri: "activitypub://server-info",
     });
-    console.log(
-      "Server info:",
-      JSON.parse(serverInfo.contents[0].text || "{}"),
-    );
+    console.log("Server info:", JSON.parse(serverInfo.contents[0].text || "{}"));
     console.log();
 
     // Test 5: Test discover-actor tool (existing functionality)
@@ -72,10 +69,7 @@ async function testMCPServer() {
       });
       console.log("Discover actor result:", discoverActorResult.content[0]);
     } catch (error) {
-      console.log(
-        "Discover actor error:",
-        error instanceof Error ? error.message : error,
-      );
+      console.log("Discover actor error:", error instanceof Error ? error.message : error);
     }
     console.log();
 
@@ -85,15 +79,9 @@ async function testMCPServer() {
       const actorResource = await client.readResource({
         uri: "activitypub://remote-actor/gargron@mastodon.social",
       });
-      console.log(
-        "Remote actor resource:",
-        JSON.parse(actorResource.contents[0].text || "{}"),
-      );
+      console.log("Remote actor resource:", JSON.parse(actorResource.contents[0].text || "{}"));
     } catch (error) {
-      console.log(
-        "Remote actor resource error:",
-        error instanceof Error ? error.message : error,
-      );
+      console.log("Remote actor resource error:", error instanceof Error ? error.message : error);
     }
     console.log();
 
@@ -109,10 +97,7 @@ async function testMCPServer() {
       });
       console.log("Explore prompt:", explorePrompt.messages[0].content);
     } catch (error) {
-      console.log(
-        "Explore prompt error:",
-        error instanceof Error ? error.message : error,
-      );
+      console.log("Explore prompt error:", error instanceof Error ? error.message : error);
     }
     console.log();
 

@@ -54,9 +54,7 @@ function createExcerpt(content, maxLength = 200) {
   const truncated = content.substring(0, maxLength);
   const lastSpace = truncated.lastIndexOf(" ");
 
-  return lastSpace > 0
-    ? `${truncated.substring(0, lastSpace)}...`
-    : `${truncated}...`;
+  return lastSpace > 0 ? `${truncated.substring(0, lastSpace)}...` : `${truncated}...`;
 }
 
 // Function to scan HTML files and generate search data
@@ -117,9 +115,7 @@ function generateSearchData() {
     console.log(`Generated search data with ${searchData.length} pages`);
     console.log(`Search data written to: ${searchDataPath}`);
   } else {
-    console.error(
-      'Dist directory not found. Please run "npm run build:site" first.',
-    );
+    console.error('Dist directory not found. Please run "npm run build:site" first.');
   }
 }
 

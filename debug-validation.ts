@@ -55,13 +55,9 @@ async function debugValidation() {
       } catch (error) {
         // Exception was thrown - this is what we expect for validation errors
         if (error.message.includes("MCP error -32602")) {
-          console.log(
-            `  ✅ Rejected (expected): ${error.message.substring(0, 100)}...`,
-          );
+          console.log(`  ✅ Rejected (expected): ${error.message.substring(0, 100)}...`);
         } else {
-          console.log(
-            `  ❌ Unexpected error: ${error.message.substring(0, 100)}...`,
-          );
+          console.log(`  ❌ Unexpected error: ${error.message.substring(0, 100)}...`);
         }
       }
       console.log();
@@ -84,9 +80,7 @@ async function debugValidation() {
             domain: testCase.input,
           },
         });
-        console.log(
-          `  ✅ Accepted: ${result.content[0].text?.substring(0, 100)}...`,
-        );
+        console.log(`  ✅ Accepted: ${result.content[0].text?.substring(0, 100)}...`);
       } catch (error) {
         console.log(`  ❌ Rejected: ${error.message}`);
       }

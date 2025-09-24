@@ -3,7 +3,7 @@
     "strict": true,
     "contexts": [
       "test (18.x, ubuntu-latest)",
-      "test (20.x, ubuntu-latest)", 
+      "test (20.x, ubuntu-latest)",
       "test (22.x, ubuntu-latest)",
       "lint / Lint and Format Check",
       "build / Build Check",

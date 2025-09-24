@@ -2,7 +2,17 @@
   "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
   "files": {
     "includes": [
-      "**",
+      "src/**/*.ts",
+      "src/**/*.js",
+      "src/**/*.astro",
+      "tests/**/*.ts",
+      "scripts/**/*.js",
+      "public/**/*.js",
+      "assets/**/*.js",
+      "*.ts",
+      "*.js",
+      "*.json",
+      "*.mjs",
       "!**/dist",
       "!**/node_modules",
       "!**/*.log",
@@ -10,19 +20,38 @@
       "!**/.astro",
       "!**/README.md",
       "!**/docs/**/*.md",
-      "!**/.github/**/*.md"
-    ]
+      "!**/.github/**/*.md",
+      "!**/*.yml",
+      "!**/*.yaml",
+      "!**/*.sh",
+      "!**/*.ps1",
+      "!**/*.scss",
+      "!**/.env*",
+      "!**/LICENSE",
+      "!**/.gitattributes",
+      "!**/.gitignore",
+      "!**/.npmignore",
+      "!**/CODEOWNERS",
+      "ignoreUnknown": true
   },
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "indentWidth": 2
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 100
   },
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "off"
+      },
+      "style": {
+        "noDescendingSpecificity": "off"
+      }
     }
   }
 }
