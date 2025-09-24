@@ -35,9 +35,7 @@ export type WebFingerResponse = z.infer<typeof WebFingerResponseSchema>;
 
 // ActivityPub actor schema
 const ActivityPubActorSchema = z.object({
-  "@context": z
-    .union([z.string(), z.array(z.union([z.string(), z.object({})]))])
-    .optional(),
+  "@context": z.union([z.string(), z.array(z.union([z.string(), z.object({})]))]).optional(),
   id: z.string(),
   type: z.string(),
   preferredUsername: z.string().optional(),
@@ -81,14 +79,8 @@ export type ActivityPubActor = z.infer<typeof ActivityPubActorSchema>;
  * WebFinger client for discovering ActivityPub actors across the fediverse
  */
 export class WebFingerClient {
-  private cache = new Map<
-    string,
-    { data: WebFingerResponse; timestamp: number }
-  >();
-  private actorCache = new Map<
-    string,
-    { data: ActivityPubActor; timestamp: number }
-  >();
+  private cache = new Map<string, { data: WebFingerResponse; timestamp: number }>();
+  private actorCache = new Map<string, { data: ActivityPubActor; timestamp: number }>();
   private readonly cacheTimeout = 5 * 60 * 1000; // 5 minutes
   private readonly requestTimeout = REQUEST_TIMEOUT;
 
@@ -110,15 +102,12 @@ export class WebFingerClient {
     }
 
     // Perform WebFinger discovery
-    const webfingerResponse =
-      await this.performWebFingerLookup(normalizedIdentifier);
+    const webfingerResponse = await this.performWebFingerLookup(normalizedIdentifier);
 
     // Extract ActivityPub actor URL
     const actorUrl = this.extractActivityPubUrl(webfingerResponse);
     if (!actorUrl) {
-      throw new Error(
-        `No ActivityPub actor URL found for ${normalizedIdentifier}`,
-      );
+      throw new Error(`No ActivityPub actor URL found for ${normalizedIdentifier}`);
     }
 
     // Fetch the actor
@@ -136,9 +125,7 @@ export class WebFingerClient {
   /**
    * Perform WebFinger lookup
    */
-  private async performWebFingerLookup(
-    identifier: string,
-  ): Promise<WebFingerResponse> {
+  private async performWebFingerLookup(identifier: string): Promise<WebFingerResponse> {
     // Check cache first
     const cached = this.cache.get(identifier);
     if (cached && !this.isExpired(cached.timestamp)) {
@@ -160,10 +147,7 @@ export class WebFingerClient {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(
-        () => controller.abort(),
-        this.requestTimeout,
-      );
+      const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
       const response = await fetch(webfingerUrl, {
         method: "GET",
@@ -177,9 +161,7 @@ export class WebFingerClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(
-          `WebFinger lookup failed: ${response.status} ${response.statusText}`,
-        );
+        throw new Error(`WebFinger lookup failed: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -203,15 +185,12 @@ export class WebFingerClient {
   /**
    * Extract ActivityPub actor URL from WebFinger response
    */
-  private extractActivityPubUrl(
-    webfingerResponse: WebFingerResponse,
-  ): string | null {
+  private extractActivityPubUrl(webfingerResponse: WebFingerResponse): string | null {
     const activityPubLink = webfingerResponse.links.find(
       (link) =>
         link.rel === "self" &&
         (link.type === "application/activity+json" ||
-          link.type ===
-            'application/ld+json; profile="https://www.w3.org/ns/activitystreams"'),
+          link.type === 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"'),
     );
 
     return activityPubLink?.href || null;
@@ -225,10 +204,7 @@ export class WebFingerClient {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(
-        () => controller.abort(),
-        this.requestTimeout,
-      );
+      const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
       const response = await fetch(actorUrl, {
         method: "GET",
@@ -243,9 +219,7 @@ export class WebFingerClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to fetch actor: ${response.status} ${response.statusText}`,
-        );
+        throw new Error(`Failed to fetch actor: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();

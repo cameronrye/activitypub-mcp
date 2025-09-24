@@ -47,8 +47,7 @@
   function buildSearchIndex() {
     searchIndex = searchData.map((item, index) => ({
       ...item,
-      searchText:
-        `${item.title} ${item.content} ${item.tags || ""}`.toLowerCase(),
+      searchText: `${item.title} ${item.content} ${item.tags || ""}`.toLowerCase(),
       index: index,
     }));
   }
@@ -75,10 +74,7 @@
 
   // Handle document click to hide results
   function handleDocumentClick(event) {
-    if (
-      !searchInput.contains(event.target) &&
-      !searchResults.contains(event.target)
-    ) {
+    if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) {
       hideResults();
     }
   }
@@ -210,10 +206,7 @@
     const queryIndex = content.toLowerCase().indexOf(query.toLowerCase());
 
     if (queryIndex === -1) {
-      return (
-        content.substring(0, maxLength) +
-        (content.length > maxLength ? "..." : "")
-      );
+      return content.substring(0, maxLength) + (content.length > maxLength ? "..." : "");
     }
 
     const start = Math.max(0, queryIndex - 50);
@@ -250,9 +243,7 @@
   function hideResults() {
     searchResults.classList.remove("show");
     // Remove active states
-    const activeResults = searchResults.querySelectorAll(
-      ".search-result.active",
-    );
+    const activeResults = searchResults.querySelectorAll(".search-result.active");
     for (const result of activeResults) {
       result.classList.remove("active");
     }

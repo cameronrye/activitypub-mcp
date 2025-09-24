@@ -39,11 +39,16 @@ jobs:
         $env:NODE_OPTIONS="--max-old-space-size=4096"
       shell: powershell
 
+    - name: Auto-fix linting issues
+      run: npm run lint:fix
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
+
     - name: Run linting
       run: npm run lint
       env:
         NODE_OPTIONS: --max-old-space-size=4096
-    
+
     - name: Run formatting check
       run: npm run format:check
     
@@ -83,9 +88,12 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
+    - name: Auto-fix linting issues
+      run: npm run lint:fix
+
     - name: Run Biome linting
       run: npm run lint
-    
+
     - name: Check formatting
       run: npm run format:check
 

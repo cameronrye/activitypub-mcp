@@ -45,8 +45,7 @@ class FediverseClientTestSuite {
       console.log(`✅ ${name} passed (${duration}ms)`);
     } catch (error) {
       const duration = Date.now() - startTime;
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       this.results.push({ name, passed: false, error: errorMessage, duration });
       console.log(`❌ ${name} failed: ${errorMessage} (${duration}ms)`);
     }
@@ -60,11 +59,7 @@ class FediverseClientTestSuite {
       throw new Error("No resources returned");
     }
 
-    const expectedResources = [
-      "remote-actor",
-      "remote-timeline",
-      "instance-info",
-    ];
+    const expectedResources = ["remote-actor", "remote-timeline", "instance-info"];
     for (const expectedResource of expectedResources) {
       const found = result.resources.some((r) => r.name === expectedResource);
       if (!found) {
@@ -108,11 +103,7 @@ class FediverseClientTestSuite {
       throw new Error("No prompts returned");
     }
 
-    const expectedPrompts = [
-      "explore-fediverse",
-      "compare-instances",
-      "discover-content",
-    ];
+    const expectedPrompts = ["explore-fediverse", "compare-instances", "discover-content"];
     for (const expectedPrompt of expectedPrompts) {
       const found = result.prompts.some((p) => p.name === expectedPrompt);
       if (!found) {
@@ -170,15 +161,12 @@ class FediverseClientTestSuite {
     } catch (error) {
       // This is expected - the MCP server should reject invalid identifiers
       // Check if it's the expected validation error
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       if (
         errorMessage.includes("Invalid identifier format") ||
         errorMessage.includes("Invalid arguments for tool discover-actor")
       ) {
-        console.log(
-          `   Expected validation error caught: ${errorMessage.split("\n")[0]}`,
-        );
+        console.log(`   Expected validation error caught: ${errorMessage.split("\n")[0]}`);
         return; // Test passes
       }
       // If it's a different error, re-throw it
@@ -260,9 +248,7 @@ class FediverseClientTestSuite {
       throw new Error("Invalid actor resource data");
     }
 
-    console.log(
-      `   Actor resource: ${actorData.preferredUsername || actorData.name}`,
-    );
+    console.log(`   Actor resource: ${actorData.preferredUsername || actorData.name}`);
   }
 
   async testRemoteTimelineResource(): Promise<void> {
@@ -280,9 +266,7 @@ class FediverseClientTestSuite {
       throw new Error("Invalid timeline resource data");
     }
 
-    console.log(
-      `   Timeline resource: ${timelineData.orderedItems.length} items`,
-    );
+    console.log(`   Timeline resource: ${timelineData.orderedItems.length} items`);
   }
 
   async testInstanceInfoResource(): Promise<void> {
@@ -321,15 +305,11 @@ class FediverseClientTestSuite {
       throw new Error("Invalid prompt message structure");
     }
 
-    console.log(
-      `   Prompt generated: ${message.content.text.length} characters`,
-    );
+    console.log(`   Prompt generated: ${message.content.text.length} characters`);
   }
 
   async run(): Promise<void> {
-    console.log(
-      "🌐 Starting ActivityPub MCP Server - Fediverse Client Test Suite\n",
-    );
+    console.log("🌐 Starting ActivityPub MCP Server - Fediverse Client Test Suite\n");
 
     try {
       await this.client.connect(this.transport);
@@ -341,29 +321,17 @@ class FediverseClientTestSuite {
       await this.runTest("List Prompts", () => this.testListPrompts());
 
       // Test fediverse client tools
-      await this.runTest("Discover Actor Tool", () =>
-        this.testDiscoverActorTool(),
-      );
+      await this.runTest("Discover Actor Tool", () => this.testDiscoverActorTool());
       await this.runTest("Discover Actor Tool (Invalid)", () =>
         this.testDiscoverActorToolInvalid(),
       );
-      await this.runTest("Fetch Timeline Tool", () =>
-        this.testFetchTimelineTool(),
-      );
-      await this.runTest("Get Instance Info Tool", () =>
-        this.testGetInstanceInfoTool(),
-      );
+      await this.runTest("Fetch Timeline Tool", () => this.testFetchTimelineTool());
+      await this.runTest("Get Instance Info Tool", () => this.testGetInstanceInfoTool());
 
       // Test MCP resources
-      await this.runTest("Remote Actor Resource", () =>
-        this.testRemoteActorResource(),
-      );
-      await this.runTest("Remote Timeline Resource", () =>
-        this.testRemoteTimelineResource(),
-      );
-      await this.runTest("Instance Info Resource", () =>
-        this.testInstanceInfoResource(),
-      );
+      await this.runTest("Remote Actor Resource", () => this.testRemoteActorResource());
+      await this.runTest("Remote Timeline Resource", () => this.testRemoteTimelineResource());
+      await this.runTest("Instance Info Resource", () => this.testInstanceInfoResource());
 
       // Test prompts
       await this.runTest("Fediverse Exploration Prompt", () =>

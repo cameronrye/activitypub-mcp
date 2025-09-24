@@ -1,29 +1,58 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.8.3/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
   "files": {
-    "ignore": [
-      "dist/**",
-      "node_modules/**",
-      "*.log",
-      "coverage/**",
-      ".astro/**",
-      "README.md",
-      "docs/**/*.md",
-      ".github/**/*.md"
-    ]
+    "includes": [
+      "src/**/*.ts",
+      "src/**/*.js",
+      "src/**/*.astro",
+      "tests/**/*.ts",
+      "scripts/**/*.js",
+      "public/**/*.js",
+      "assets/**/*.js",
+      "*.ts",
+      "*.js",
+      "*.json",
+      "*.mjs",
+      "!**/dist",
+      "!**/node_modules",
+      "!**/*.log",
+      "!**/coverage",
+      "!**/.astro",
+      "!**/README.md",
+      "!**/docs/**/*.md",
+      "!**/.github/**/*.md",
+      "!**/*.yml",
+      "!**/*.yaml",
+      "!**/*.sh",
+      "!**/*.ps1",
+      "!**/*.scss",
+      "!**/.env*",
+      "!**/LICENSE",
+      "!**/.gitattributes",
+      "!**/.gitignore",
+      "!**/.npmignore",
+      "!**/CODEOWNERS"
+    ],
+    "ignoreUnknown": true
   },
-  "organizeImports": {
-    "enabled": true
-  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "indentWidth": 2
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 100
   },
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "off"
+      },
+      "style": {
+        "noDescendingSpecificity": "off"
+      }
     }
   }
 }

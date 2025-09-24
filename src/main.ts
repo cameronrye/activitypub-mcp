@@ -5,9 +5,7 @@ const logger = getLogger("activitypub-mcp");
 
 logger.info("🌐 ActivityPub MCP Server - Fediverse Client Mode");
 logger.info("This server operates as a fediverse CLIENT, not a server.");
-logger.info(
-  "It helps you interact with EXISTING ActivityPub servers across the fediverse.",
-);
+logger.info("It helps you interact with EXISTING ActivityPub servers across the fediverse.");
 logger.info("To use this server:");
 logger.info("1. Start the MCP server: npm run mcp");
 logger.info("2. Connect with Claude Desktop or MCP Inspector");

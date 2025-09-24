@@ -77,9 +77,7 @@ async function testErrorPaths() {
         });
         console.log(`❌ Expected error for identifier: ${identifier}`);
       } catch (error) {
-        console.log(
-          `✅ Caught error for ${identifier}: ${error.message.substring(0, 50)}...`,
-        );
+        console.log(`✅ Caught error for ${identifier}: ${error.message.substring(0, 50)}...`);
       }
     }
 
@@ -125,13 +123,9 @@ async function testErrorPaths() {
             query: "test",
           },
         });
-        console.log(
-          `❌ Expected error for domain: ${domain.substring(0, 30)}...`,
-        );
+        console.log(`❌ Expected error for domain: ${domain.substring(0, 30)}...`);
       } catch (error) {
-        console.log(
-          `✅ Caught error for invalid domain: ${error.message.substring(0, 50)}...`,
-        );
+        console.log(`✅ Caught error for invalid domain: ${error.message.substring(0, 50)}...`);
       }
     }
 
@@ -146,13 +140,9 @@ async function testErrorPaths() {
             domain: domain,
           },
         });
-        console.log(
-          `❌ Expected error for domain: ${domain.substring(0, 30)}...`,
-        );
+        console.log(`❌ Expected error for domain: ${domain.substring(0, 30)}...`);
       } catch (error) {
-        console.log(
-          `✅ Caught error for invalid domain: ${error.message.substring(0, 50)}...`,
-        );
+        console.log(`✅ Caught error for invalid domain: ${error.message.substring(0, 50)}...`);
       }
     }
 
@@ -182,9 +172,7 @@ async function testErrorPaths() {
         await client.readResource({ uri });
         console.log(`❌ Expected error for URI: ${uri.substring(0, 40)}...`);
       } catch (error) {
-        console.log(
-          `✅ Caught error for malformed URI: ${error.message.substring(0, 50)}...`,
-        );
+        console.log(`✅ Caught error for malformed URI: ${error.message.substring(0, 50)}...`);
       }
     }
 

@@ -1,5 +1,4 @@
 import { getLogger } from "@logtape/logtape";
-import { z } from "zod";
 
 const logger = getLogger("activitypub-mcp");
 
@@ -147,13 +146,11 @@ export class InstanceDiscoveryService {
    */
   getPopularInstances(software?: string): FediverseInstance[] {
     if (software && software in POPULAR_INSTANCES) {
-      return POPULAR_INSTANCES[software as keyof typeof POPULAR_INSTANCES].map(
-        (instance) => ({
-          ...instance,
-          software,
-          category: software,
-        }),
-      );
+      return POPULAR_INSTANCES[software as keyof typeof POPULAR_INSTANCES].map((instance) => ({
+        ...instance,
+        software,
+        category: software,
+      }));
     }
 
     // Return all instances if no specific software requested
@@ -223,9 +220,7 @@ export class InstanceDiscoveryService {
     ];
 
     const allInstances = this.getPopularInstances();
-    return allInstances.filter((instance) =>
-      beginnerFriendly.includes(instance.domain),
-    );
+    return allInstances.filter((instance) => beginnerFriendly.includes(instance.domain));
   }
 
   /**
@@ -243,12 +238,9 @@ export class InstanceDiscoveryService {
       return (
         domain.includes(regionLower) ||
         description.includes(regionLower) ||
-        (regionLower === "japan" &&
-          (domain.includes(".jp") || description.includes("japanese"))) ||
-        (regionLower === "germany" &&
-          (domain.includes(".de") || description.includes("german"))) ||
-        (regionLower === "france" &&
-          (domain.includes(".fr") || description.includes("french")))
+        (regionLower === "japan" && (domain.includes(".jp") || description.includes("japanese"))) ||
+        (regionLower === "germany" && (domain.includes(".de") || description.includes("german"))) ||
+        (regionLower === "france" && (domain.includes(".fr") || description.includes("french")))
       );
     });
   }
@@ -267,10 +259,7 @@ export class InstanceDiscoveryService {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(
-        () => controller.abort(),
-        this.requestTimeout,
-      );
+      const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
       // Try to fetch the instance's nodeinfo or API endpoint
       const response = await fetch(`https://${domain}/api/v1/instance`, {
@@ -309,10 +298,7 @@ export class InstanceDiscoveryService {
   }> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(
-        () => controller.abort(),
-        this.requestTimeout,
-      );
+      const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
       const response = await fetch(`https://${domain}/api/v1/instance`, {
         headers: {
@@ -375,39 +361,25 @@ export class InstanceDiscoveryService {
     // Tech/Programming
     if (
       interestsLower.some((i) =>
-        ["tech", "programming", "coding", "development", "software"].includes(
-          i,
-        ),
+        ["tech", "programming", "coding", "development", "software"].includes(i),
       )
     ) {
       recommendations.push(
         ...this.getPopularInstances().filter((i) =>
-          ["fosstodon.org", "hachyderm.io", "techhub.social"].includes(
-            i.domain,
-          ),
+          ["fosstodon.org", "hachyderm.io", "techhub.social"].includes(i.domain),
         ),
       );
     }
 
     // Academic/Research
-    if (
-      interestsLower.some((i) =>
-        ["academic", "research", "science", "education"].includes(i),
-      )
-    ) {
+    if (interestsLower.some((i) => ["academic", "research", "science", "education"].includes(i))) {
       recommendations.push(
-        ...this.getPopularInstances().filter((i) =>
-          ["scholar.social"].includes(i.domain),
-        ),
+        ...this.getPopularInstances().filter((i) => ["scholar.social"].includes(i.domain)),
       );
     }
 
     // Art/Creative
-    if (
-      interestsLower.some((i) =>
-        ["art", "creative", "design", "photography"].includes(i),
-      )
-    ) {
+    if (interestsLower.some((i) => ["art", "creative", "design", "photography"].includes(i))) {
       recommendations.push(
         ...this.getPopularInstances().filter((i) =>
           ["pixelfed.social", "art.lgbt"].includes(i.domain),
@@ -416,13 +388,9 @@ export class InstanceDiscoveryService {
     }
 
     // Journalism/News
-    if (
-      interestsLower.some((i) => ["journalism", "news", "media"].includes(i))
-    ) {
+    if (interestsLower.some((i) => ["journalism", "news", "media"].includes(i))) {
       recommendations.push(
-        ...this.getPopularInstances().filter((i) =>
-          ["journa.host"].includes(i.domain),
-        ),
+        ...this.getPopularInstances().filter((i) => ["journa.host"].includes(i.domain)),
       );
     }
 

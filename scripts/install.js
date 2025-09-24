@@ -22,10 +22,7 @@ const CONFIG_PATHS = {
       os.homedir(),
       "Library/Application Support/Claude/claude_desktop_config.json",
     ),
-    win32: path.join(
-      os.homedir(),
-      "AppData/Roaming/Claude/claude_desktop_config.json",
-    ),
+    win32: path.join(os.homedir(), "AppData/Roaming/Claude/claude_desktop_config.json"),
     linux: path.join(os.homedir(), ".config/claude/claude_desktop_config.json"),
   },
   cursor: {
@@ -33,14 +30,8 @@ const CONFIG_PATHS = {
       os.homedir(),
       "Library/Application Support/Cursor/User/globalStorage/mcp_config.json",
     ),
-    win32: path.join(
-      os.homedir(),
-      "AppData/Roaming/Cursor/User/globalStorage/mcp_config.json",
-    ),
-    linux: path.join(
-      os.homedir(),
-      ".config/Cursor/User/globalStorage/mcp_config.json",
-    ),
+    win32: path.join(os.homedir(), "AppData/Roaming/Cursor/User/globalStorage/mcp_config.json"),
+    linux: path.join(os.homedir(), ".config/Cursor/User/globalStorage/mcp_config.json"),
   },
 };
 
@@ -57,8 +48,7 @@ const SERVER_CONFIG = {
 class MCPInstaller {
   constructor() {
     this.platform = os.platform();
-    this.verbose =
-      process.argv.includes("--verbose") || process.argv.includes("-v");
+    this.verbose = process.argv.includes("--verbose") || process.argv.includes("-v");
     this.dryRun = process.argv.includes("--dry-run");
     this.client = this.parseClientArg();
   }
@@ -83,16 +73,14 @@ class MCPInstaller {
     try {
       execSync("node --version", { stdio: "pipe" });
       this.log("Node.js is installed");
-    } catch (error) {
-      throw new Error(
-        "Node.js is not installed. Please install Node.js 18+ first.",
-      );
+    } catch (_error) {
+      throw new Error("Node.js is not installed. Please install Node.js 18+ first.");
     }
 
     try {
       execSync("npm --version", { stdio: "pipe" });
       this.log("npm is installed");
-    } catch (error) {
+    } catch (_error) {
       throw new Error("npm is not installed. Please install npm first.");
     }
   }
@@ -100,7 +88,7 @@ class MCPInstaller {
   async ensureDirectoryExists(dirPath) {
     try {
       await fs.access(dirPath);
-    } catch (error) {
+    } catch (_error) {
       if (this.verbose) {
         this.log(`Creating directory: ${dirPath}`);
       }
@@ -191,7 +179,7 @@ class MCPInstaller {
         stdio: this.verbose ? "inherit" : "pipe",
       });
       this.log("Package installed successfully!");
-    } catch (error) {
+    } catch (_error) {
       this.log(
         "Global installation failed, package will be installed on first use via npx",
         "warn",
@@ -214,10 +202,7 @@ class MCPInstaller {
       });
       this.log("Installation test passed!");
     } catch (error) {
-      this.log(
-        "Installation test failed - the server may not start correctly",
-        "warn",
-      );
+      this.log("Installation test failed - the server may not start correctly", "warn");
       if (this.verbose) {
         this.log(`Test error: ${error.message}`, "warn");
       }
@@ -247,11 +232,8 @@ class MCPInstaller {
       try {
         execSync(`npm uninstall -g ${PACKAGE_NAME}`, { stdio: "pipe" });
         this.log("Global package uninstalled");
-      } catch (error) {
-        this.log(
-          "Global package was not installed or could not be removed",
-          "warn",
-        );
+      } catch (_error) {
+        this.log("Global package was not installed or could not be removed", "warn");
       }
     }
   }
@@ -278,9 +260,7 @@ class MCPInstaller {
       this.log("2. Start the ActivityPub server: npm run dev");
       this.log("3. The MCP server will start automatically when needed");
       this.log("");
-      this.log(
-        "For more information, see: https://github.com/cameronrye/activitypub-mcp",
-      );
+      this.log("For more information, see: https://github.com/cameronrye/activitypub-mcp");
     } catch (error) {
       this.log(`Installation failed: ${error.message}`, "error");
       process.exit(1);

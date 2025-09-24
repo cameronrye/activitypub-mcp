@@ -166,7 +166,7 @@ class ComprehensiveTestSuite {
       throw new Error(`Tool returned error: ${result.content[0].text}`);
     }
 
-    const responseText = result.content[0].text;
+    const _responseText = result.content[0].text;
     console.log("   Discovered instances successfully");
   }
 
@@ -357,9 +357,7 @@ class ComprehensiveTestSuite {
   }
 
   async run(): Promise<void> {
-    console.log(
-      "🌐 Starting ActivityPub MCP Server - Fediverse Client Test Suite\n",
-    );
+    console.log("🌐 Starting ActivityPub MCP Server - Fediverse Client Test Suite\n");
 
     try {
       await this.client.connect(this.transport);
@@ -371,53 +369,29 @@ class ComprehensiveTestSuite {
       await this.runTest("List Prompts", () => this.testListPrompts());
 
       // Test discovery tools
-      await this.runTest("Discover Actor Tool", () =>
-        this.testDiscoverActorTool(),
-      );
+      await this.runTest("Discover Actor Tool", () => this.testDiscoverActorTool());
       await this.runTest("Discover Actor Tool (Invalid)", () =>
         this.testDiscoverActorToolInvalid(),
       );
-      await this.runTest("Fetch Timeline Tool", () =>
-        this.testFetchTimelineTool(),
-      );
-      await this.runTest("Get Instance Info Tool", () =>
-        this.testGetInstanceInfoTool(),
-      );
-      await this.runTest("Discover Instances Tool", () =>
-        this.testDiscoverInstancesTool(),
-      );
-      await this.runTest("Recommend Instances Tool", () =>
-        this.testRecommendInstancesTool(),
-      );
-      await this.runTest("Search Instance Tool", () =>
-        this.testSearchInstanceTool(),
-      );
+      await this.runTest("Fetch Timeline Tool", () => this.testFetchTimelineTool());
+      await this.runTest("Get Instance Info Tool", () => this.testGetInstanceInfoTool());
+      await this.runTest("Discover Instances Tool", () => this.testDiscoverInstancesTool());
+      await this.runTest("Recommend Instances Tool", () => this.testRecommendInstancesTool());
+      await this.runTest("Search Instance Tool", () => this.testSearchInstanceTool());
       await this.runTest("Health Check Tool", () => this.testHealthCheckTool());
-      await this.runTest("Performance Metrics Tool", () =>
-        this.testPerformanceMetricsTool(),
-      );
+      await this.runTest("Performance Metrics Tool", () => this.testPerformanceMetricsTool());
 
       // Test resources
-      await this.runTest("Remote Actor Resource", () =>
-        this.testRemoteActorResource(),
-      );
-      await this.runTest("Remote Timeline Resource", () =>
-        this.testRemoteTimelineResource(),
-      );
-      await this.runTest("Instance Info Resource", () =>
-        this.testInstanceInfoResource(),
-      );
+      await this.runTest("Remote Actor Resource", () => this.testRemoteActorResource());
+      await this.runTest("Remote Timeline Resource", () => this.testRemoteTimelineResource());
+      await this.runTest("Instance Info Resource", () => this.testInstanceInfoResource());
 
       // Test prompts
       await this.runTest("Fediverse Exploration Prompt", () =>
         this.testFediverseExplorationPrompt(),
       );
-      await this.runTest("Compare Instances Prompt", () =>
-        this.testCompareInstancesPrompt(),
-      );
-      await this.runTest("Discover Content Prompt", () =>
-        this.testDiscoverContentPrompt(),
-      );
+      await this.runTest("Compare Instances Prompt", () => this.testCompareInstancesPrompt());
+      await this.runTest("Discover Content Prompt", () => this.testDiscoverContentPrompt());
 
       console.log("\n🧹 Disconnected from MCP server");
 
