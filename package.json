@@ -76,6 +76,8 @@
     "coverage": "c8 --reporter=text --reporter=html --reporter=lcov npm run test:all",
     "lint": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" biome check .",
     "lint:fix": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" biome check --write .",
+    "validate:biome": "node scripts/validate-biome-config.js",
+    "precommit": "npm run validate:biome && npm run lint",
     "format": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" biome format --write .",
     "format:check": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" biome ci .",
     "setup": "node scripts/run-platform.js setup",
