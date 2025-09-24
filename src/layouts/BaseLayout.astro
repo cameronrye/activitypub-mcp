@@ -1,5 +1,8 @@
 ---
 import "../styles/main.css";
+import Search from "../components/Search.astro";
+import SocialLinks from "../components/SocialLinks.astro";
+import ThemeToggle from "../components/ThemeToggle.astro";
 
 export interface Props {
   title?: string;
@@ -15,11 +18,11 @@ const {
   canonical,
 } = Astro.props;
 
-const _canonicalURL = canonical || new URL(Astro.url.pathname, Astro.site);
-const _socialImage = new URL(image, Astro.site);
+const canonicalURL = canonical || new URL(Astro.url.pathname, Astro.site);
+const socialImage = new URL(image, Astro.site);
 
 // Get the base URL for proper path resolution
-const _baseURL = import.meta.env.BASE_URL.endsWith("/")
+const baseURL = import.meta.env.BASE_URL.endsWith("/")
   ? import.meta.env.BASE_URL
   : `${import.meta.env.BASE_URL}/`;
 ---
