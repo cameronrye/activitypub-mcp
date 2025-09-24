@@ -1,0 +1,163 @@
+name: Auto Release
+
+on:
+  push:
+    branches: [ master ]
+    paths: [ 'package.json' ]
+
+jobs:
+  check-version:
+    name: Check Version and Create Release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for version comparison
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Get current version
+      id: current_version
+      run: |
+        CURRENT_VERSION=$(node -p "require('./package.json').version")
+        echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "Current version: $CURRENT_VERSION"
+    
+    - name: Check if tag exists
+      id: check_tag
+      run: |
+        TAG_NAME="v${{ steps.current_version.outputs.version }}"
+        if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+          echo "Tag $TAG_NAME already exists"
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+          echo "Tag $TAG_NAME does not exist"
+        fi
+        echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+    
+    - name: Get previous version from git
+      id: previous_version
+      if: steps.check_tag.outputs.exists == 'false'
+      run: |
+        # Get the previous commit's package.json version
+        PREV_VERSION=$(git show HEAD~1:package.json 2>/dev/null | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')).version" 2>/dev/null || echo "0.0.0")
+        echo "version=$PREV_VERSION" >> $GITHUB_OUTPUT
+        echo "Previous version: $PREV_VERSION"
+    
+    - name: Compare versions
+      id: version_changed
+      if: steps.check_tag.outputs.exists == 'false'
+      run: |
+        CURRENT="${{ steps.current_version.outputs.version }}"
+        PREVIOUS="${{ steps.previous_version.outputs.version }}"
+        
+        if [ "$CURRENT" != "$PREVIOUS" ]; then
+          echo "changed=true" >> $GITHUB_OUTPUT
+          echo "Version changed from $PREVIOUS to $CURRENT"
+        else
+          echo "changed=false" >> $GITHUB_OUTPUT
+          echo "Version unchanged: $CURRENT"
+        fi
+    
+    - name: Validate version format
+      id: validate_version
+      if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true'
+      run: |
+        VERSION="${{ steps.current_version.outputs.version }}"
+        if [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
+          echo "valid=true" >> $GITHUB_OUTPUT
+          echo "Version format is valid: $VERSION"
+        else
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "Invalid version format: $VERSION"
+          exit 1
+        fi
+    
+    - name: Install dependencies
+      if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true' && steps.validate_version.outputs.valid == 'true'
+      run: npm ci
+    
+    - name: Run tests
+      if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true' && steps.validate_version.outputs.valid == 'true'
+      run: npm run test:all
+    
+    - name: Run linting
+      if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true' && steps.validate_version.outputs.valid == 'true'
+      run: npm run lint
+    
+    - name: Build project
+      if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true' && steps.validate_version.outputs.valid == 'true'
+      run: npm run build
+    
+    - name: Create and push tag
+      if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true' && steps.validate_version.outputs.valid == 'true'
+      run: |
+        TAG_NAME="${{ steps.check_tag.outputs.tag_name }}"
+        VERSION="${{ steps.current_version.outputs.version }}"
+        
+        # Configure git
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        
+        # Create annotated tag
+        git tag -a "$TAG_NAME" -m "Release version $VERSION"
+        
+        # Push tag
+        git push origin "$TAG_NAME"
+        
+        echo "Created and pushed tag: $TAG_NAME"
+    
+    - name: Create release notes
+      if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true' && steps.validate_version.outputs.valid == 'true'
+      id: release_notes
+      run: |
+        VERSION="${{ steps.current_version.outputs.version }}"
+        TAG_NAME="${{ steps.check_tag.outputs.tag_name }}"
+        
+        # Create release notes
+        cat > release_notes.md << EOF
+        # Release $VERSION
+        
+        ## What's Changed
+        
+        This release includes the latest changes and improvements to the ActivityPub MCP Server.
+        
+        ## Installation
+        
+        \`\`\`bash
+        npm install -g activitypub-mcp@$VERSION
+        \`\`\`
+        
+        ## Documentation
+        
+        - [Usage Guide](https://cameronrye.github.io/activitypub-mcp/)
+        - [API Documentation](https://cameronrye.github.io/activitypub-mcp/guides/usage-guide/)
+        
+        **Full Changelog**: https://github.com/cameronrye/activitypub-mcp/compare/v${{ steps.previous_version.outputs.version }}...$TAG_NAME
+        EOF
+        
+        echo "Release notes created for version $VERSION"
+    
+    - name: Summary
+      if: always()
+      run: |
+        echo "## Auto Release Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Current Version**: ${{ steps.current_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tag Name**: ${{ steps.check_tag.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tag Exists**: ${{ steps.check_tag.outputs.exists }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version Changed**: ${{ steps.version_changed.outputs.changed }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version Valid**: ${{ steps.validate_version.outputs.valid }}" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ steps.check_tag.outputs.exists }}" == "false" ] && [ "${{ steps.version_changed.outputs.changed }}" == "true" ] && [ "${{ steps.validate_version.outputs.valid }}" == "true" ]; then
+          echo "- **Action**: ✅ Tag created and pushed - Release workflow will be triggered" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- **Action**: ⏭️ No action taken" >> $GITHUB_STEP_SUMMARY
+        fi
