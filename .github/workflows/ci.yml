@@ -87,7 +87,10 @@ jobs:
     
     - name: Install dependencies
       run: npm ci
-    
+
+    - name: Validate Biome configuration
+      run: npm run validate:biome
+
     - name: Auto-fix linting issues
       run: npm run lint:fix
 
