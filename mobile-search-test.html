@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Search Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        #console-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        .log-error { color: #dc3545; }
+        .log-warn { color: #ffc107; }
+        .log-info { color: #17a2b8; }
+        .log-debug { color: #6c757d; }
+
+        /* Mobile search overlay styles */
+        .mobile-search-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .mobile-search-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .mobile-search-container {
+            background: white;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mobile-search-header {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #dee2e6;
+            gap: 12px;
+        }
+
+        .mobile-search-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .mobile-search-input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        .mobile-search-close {
+            background: none;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-search-close:hover {
+            background-color: #f8f9fa;
+        }
+
+        .mobile-search-results {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .search-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 20px;
+            color: #6c757d;
+        }
+
+        .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #dee2e6;
+            border-top: 2px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Mobile Search Button Test</h1>
+
+    <!-- Mobile search overlay (from Search.astro) -->
+    <div id="mobile-search-overlay" class="mobile-search-overlay">
+        <div class="mobile-search-container">
+            <div class="mobile-search-header">
+                <input
+                    type="search"
+                    id="mobile-search-input"
+                    placeholder="Search documentation..."
+                    class="mobile-search-input"
+                    autocomplete="off"
+                    aria-label="Search documentation"
+                >
+                <button type="button" class="mobile-search-close" aria-label="Close search">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div id="mobile-search-results" class="mobile-search-results">
+                <div id="mobile-search-loading" class="search-loading" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <span>Searching...</span>
+                </div>
+                <div id="mobile-search-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Mobile Search Button</h2>
+        <p>This test simulates clicking the mobile search button that exists on the actual site.</p>
+        <button class="test-button" onclick="testMobileSearchButton()">Simulate Mobile Search Button Click</button>
+        <button class="test-button" onclick="testGlobalFunctions()">Test Global Functions</button>
+        <button class="test-button" onclick="clearConsole()">Clear Console</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Console Output</h2>
+        <div id="console-output"></div>
+    </div>
+
+    <script>
+        // Capture console output
+        const consoleOutput = document.getElementById('console-output');
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn,
+            info: console.info
+        };
+
+        function addLogEntry(message, type = 'log') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            consoleOutput.appendChild(entry);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalConsole.log.apply(console, args);
+            addLogEntry(args.join(' '), 'info');
+        };
+
+        console.error = function(...args) {
+            originalConsole.error.apply(console, args);
+            addLogEntry(args.join(' '), 'error');
+        };
+
+        console.warn = function(...args) {
+            originalConsole.warn.apply(console, args);
+            addLogEntry(args.join(' '), 'warn');
+        };
+
+        console.info = function(...args) {
+            originalConsole.info.apply(console, args);
+            addLogEntry(args.join(' '), 'info');
+        };
+
+        function clearConsole() {
+            consoleOutput.innerHTML = '';
+        }
+
+        function testMobileSearchButton() {
+            console.log('Testing mobile search button click simulation...');
+            
+            // Simulate the exact logic from main.js
+            const searchToggle = document.querySelector('.mobile-search-toggle');
+            
+            if (!searchToggle) {
+                console.log('Creating mock mobile search toggle button...');
+                // Create a mock button for testing
+                const mockButton = document.createElement('button');
+                mockButton.className = 'mobile-search-toggle';
+                mockButton.style.display = 'none';
+                document.body.appendChild(mockButton);
+            }
+            
+            console.log('Simulating mobile search button click logic...');
+            
+            // Simulate the click handler logic from main.js
+            try {
+                // Use the global mobile search function from Search.astro
+                if (window.showMobileSearch) {
+                    console.log('✓ window.showMobileSearch found, calling it...');
+                    window.showMobileSearch();
+                } else {
+                    console.log('✗ window.showMobileSearch not found, trying fallback...');
+                    // Fallback to direct approach if Search.astro hasn't loaded yet
+                    showMobileSearchOverlay();
+                }
+            } catch (error) {
+                console.error('✗ Error in mobile search button simulation:', error);
+            }
+        }
+
+        function showMobileSearchOverlay() {
+            console.log('Fallback showMobileSearchOverlay called');
+            const mobileSearchOverlay = document.getElementById("mobile-search-overlay");
+
+            if (mobileSearchOverlay) {
+                console.log('✓ Mobile search overlay found, showing it');
+                mobileSearchOverlay.classList.add("show");
+                
+                // Focus the search input
+                const mobileSearchInput = document.getElementById("mobile-search-input");
+                if (mobileSearchInput) {
+                    setTimeout(() => mobileSearchInput.focus(), 150);
+                }
+            } else {
+                console.error('✗ Mobile search overlay not found');
+            }
+        }
+
+        function testGlobalFunctions() {
+            console.log('Testing global functions availability...');
+            
+            console.log('window.showMobileSearch:', typeof window.showMobileSearch);
+            console.log('window.hideMobileSearch:', typeof window.hideMobileSearch);
+            
+            // List all window properties that might be related to search
+            const searchRelated = Object.keys(window).filter(key => 
+                key.toLowerCase().includes('search') || 
+                key.toLowerCase().includes('mobile')
+            );
+            
+            console.log('Search-related window properties:', searchRelated);
+            
+            // Check if main.js functions are available
+            if (typeof showMobileSearchOverlay === 'function') {
+                console.log('✓ showMobileSearchOverlay function is available');
+            } else {
+                console.log('✗ showMobileSearchOverlay function is not available');
+            }
+        }
+
+        // Mobile search functionality (simplified version from Search.astro)
+        class MobileSearchManager {
+            constructor() {
+                this.mobileSearchOverlay = document.getElementById('mobile-search-overlay');
+                this.mobileSearchInput = document.getElementById('mobile-search-input');
+                this.mobileSearchResults = document.getElementById('mobile-search-results');
+                this.mobileSearchContent = document.getElementById('mobile-search-content');
+                this.mobileSearchClose = document.querySelector('.mobile-search-close');
+
+                this.init();
+            }
+
+            init() {
+                if (this.mobileSearchClose) {
+                    this.mobileSearchClose.addEventListener('click', () => this.hideMobileSearch());
+                }
+
+                if (this.mobileSearchOverlay) {
+                    this.mobileSearchOverlay.addEventListener('click', (event) => {
+                        if (event.target === this.mobileSearchOverlay) {
+                            this.hideMobileSearch();
+                        }
+                    });
+                }
+
+                // Handle escape key
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && this.mobileSearchOverlay && this.mobileSearchOverlay.classList.contains('show')) {
+                        this.hideMobileSearch();
+                    }
+                });
+            }
+
+            showMobileSearch() {
+                console.log('showMobileSearch called');
+                if (this.mobileSearchOverlay) {
+                    console.log('Adding show class to mobile search overlay');
+                    this.mobileSearchOverlay.classList.add('show');
+                    // Focus the mobile search input
+                    setTimeout(() => {
+                        if (this.mobileSearchInput) {
+                            this.mobileSearchInput.focus();
+                        }
+                    }, 100);
+                } else {
+                    console.error('Mobile search overlay not found');
+                }
+            }
+
+            hideMobileSearch() {
+                console.log('hideMobileSearch called');
+                if (this.mobileSearchOverlay) {
+                    this.mobileSearchOverlay.classList.remove('show');
+                    // Clear the mobile search input
+                    if (this.mobileSearchInput) {
+                        this.mobileSearchInput.value = '';
+                    }
+                    if (this.mobileSearchContent) {
+                        this.mobileSearchContent.innerHTML = '';
+                    }
+                }
+            }
+        }
+
+        // Initialize mobile search manager and expose global functions
+        let mobileSearchManager;
+
+        function initializeMobileSearch() {
+            console.log('Initializing mobile search manager');
+            mobileSearchManager = new MobileSearchManager();
+
+            // Make mobile search methods globally available
+            window.showMobileSearch = () => {
+                console.log('Global showMobileSearch called');
+                if (mobileSearchManager) {
+                    mobileSearchManager.showMobileSearch();
+                } else {
+                    console.error('Mobile search manager not available');
+                }
+            };
+
+            window.hideMobileSearch = () => {
+                console.log('Global hideMobileSearch called');
+                if (mobileSearchManager) {
+                    mobileSearchManager.hideMobileSearch();
+                } else {
+                    console.error('Mobile search manager not available');
+                }
+            };
+
+            console.log('Mobile search manager initialized and global functions set');
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', () => {
+            console.log('Mobile search test page loaded');
+            console.log('Current URL:', window.location.href);
+
+            // Initialize mobile search functionality
+            initializeMobileSearch();
+
+            // Wait a bit and then test global functions
+            setTimeout(() => {
+                testGlobalFunctions();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

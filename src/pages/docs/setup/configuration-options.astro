@@ -1,0 +1,593 @@
+---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
+const title = "Configuration Options - ActivityPub MCP Server";
+const description =
+  "Comprehensive guide to configuring the ActivityPub MCP Server with environment variables, custom settings, and advanced options.";
+
+// Get the base URL for proper path resolution
+const baseURL = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="config-page">
+    <div class="container">
+      <div class="config-header">
+        <h1>Configuration Options</h1>
+        <p class="config-description">
+          Customize the ActivityPub MCP Server behavior with environment variables, logging settings, and performance tuning options.
+        </p>
+      </div>
+
+      <div class="config-content">
+        <section class="config-section">
+          <h2>🔧 Environment Variables</h2>
+          <p>Configure the server using environment variables in your MCP client configuration:</p>
+          
+          <div class="env-vars-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Default</th>
+                  <th>Description</th>
+                  <th>Example</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>LOG_LEVEL</code></td>
+                  <td><code>info</code></td>
+                  <td>Logging verbosity level</td>
+                  <td><code>debug</code>, <code>info</code>, <code>warning</code>, <code>error</code>, <code>fatal</code></td>
+                </tr>
+                <tr>
+                  <td><code>USER_AGENT</code></td>
+                  <td><code>ActivityPub-MCP-Server/1.0</code></td>
+                  <td>Custom User-Agent for HTTP requests</td>
+                  <td><code>MyApp-ActivityPub/2.0</code></td>
+                </tr>
+                <tr>
+                  <td><code>REQUEST_TIMEOUT</code></td>
+                  <td><code>30000</code></td>
+                  <td>HTTP request timeout in milliseconds</td>
+                  <td><code>45000</code> (45 seconds)</td>
+                </tr>
+                <tr>
+                  <td><code>CACHE_TTL</code></td>
+                  <td><code>300</code></td>
+                  <td>Cache time-to-live in seconds</td>
+                  <td><code>600</code> (10 minutes)</td>
+                </tr>
+                <tr>
+                  <td><code>RATE_LIMIT_ENABLED</code></td>
+                  <td><code>true</code></td>
+                  <td>Enable/disable rate limiting</td>
+                  <td><code>false</code> to disable</td>
+                </tr>
+                <tr>
+                  <td><code>RATE_LIMIT_MAX</code></td>
+                  <td><code>100</code></td>
+                  <td>Maximum requests per window</td>
+                  <td><code>200</code></td>
+                </tr>
+                <tr>
+                  <td><code>RATE_LIMIT_WINDOW</code></td>
+                  <td><code>900000</code></td>
+                  <td>Rate limit window in milliseconds</td>
+                  <td><code>1800000</code> (30 minutes)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="config-section">
+          <h2>📝 Configuration Examples</h2>
+          
+          <div class="config-examples">
+            <div class="config-example">
+              <h3>Development Configuration</h3>
+              <p>Optimized for development with verbose logging and relaxed limits:</p>
+              <pre><code>{`{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "debug",
+        "REQUEST_TIMEOUT": "60000",
+        "CACHE_TTL": "60",
+        "RATE_LIMIT_ENABLED": "false"
+      }
+    }
+  }
+}`}</code></pre>
+            </div>
+
+            <div class="config-example">
+              <h3>Production Configuration</h3>
+              <p>Optimized for production with conservative settings:</p>
+              <pre><code>{`{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "warning",
+        "REQUEST_TIMEOUT": "30000",
+        "CACHE_TTL": "900",
+        "RATE_LIMIT_ENABLED": "true",
+        "RATE_LIMIT_MAX": "50",
+        "USER_AGENT": "MyApp-ActivityPub/1.0"
+      }
+    }
+  }
+}`}</code></pre>
+            </div>
+
+            <div class="config-example">
+              <h3>High-Performance Configuration</h3>
+              <p>Optimized for high-throughput scenarios:</p>
+              <pre><code>{`{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "error",
+        "REQUEST_TIMEOUT": "15000",
+        "CACHE_TTL": "1800",
+        "RATE_LIMIT_ENABLED": "true",
+        "RATE_LIMIT_MAX": "200",
+        "RATE_LIMIT_WINDOW": "600000"
+      }
+    }
+  }
+}`}</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="config-section">
+          <h2>🎛️ Logging Configuration</h2>
+          
+          <div class="logging-info">
+            <div class="log-level">
+              <h3>Log Levels</h3>
+              <div class="log-levels-grid">
+                <div class="log-level-item">
+                  <h4><code>debug</code></h4>
+                  <p>Detailed debugging information, HTTP requests/responses, internal state changes</p>
+                  <span class="log-badge debug">Most Verbose</span>
+                </div>
+                <div class="log-level-item">
+                  <h4><code>info</code></h4>
+                  <p>General operational messages, tool executions, resource access</p>
+                  <span class="log-badge info">Default</span>
+                </div>
+                <div class="log-level-item">
+                  <h4><code>warning</code></h4>
+                  <p>Warning conditions, rate limiting, recoverable errors</p>
+                  <span class="log-badge warning">Recommended</span>
+                </div>
+                <div class="log-level-item">
+                  <h4><code>error</code></h4>
+                  <p>Error conditions, failed requests, unrecoverable issues</p>
+                  <span class="log-badge error">Errors Only</span>
+                </div>
+                <div class="log-level-item">
+                  <h4><code>fatal</code></h4>
+                  <p>Critical errors that cause server shutdown</p>
+                  <span class="log-badge fatal">Critical Only</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="log-output">
+              <h3>Log Output Examples</h3>
+              <div class="log-examples">
+                <div class="log-example">
+                  <h4>Debug Level Output</h4>
+                  <pre><code>[DEBUG] HTTP Request: GET https://mastodon.social/.well-known/webfinger
+[INFO] Discovering actor: @mastodon@mastodon.social
+[DEBUG] WebFinger response received: 200 OK
+[DEBUG] ActivityPub actor fetched successfully</code></pre>
+                </div>
+                <div class="log-example">
+                  <h4>Warning Level Output</h4>
+                  <pre><code>[WARNING] Rate limit approaching for domain: example.social
+[ERROR] Failed to fetch timeline: Network timeout</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="config-section">
+          <h2>⚡ Performance Tuning</h2>
+          
+          <div class="performance-tips">
+            <div class="perf-tip">
+              <h3>🚀 Request Timeout</h3>
+              <p>Adjust <code>REQUEST_TIMEOUT</code> based on your network conditions:</p>
+              <ul>
+                <li><strong>Fast networks:</strong> 15-20 seconds</li>
+                <li><strong>Standard networks:</strong> 30 seconds (default)</li>
+                <li><strong>Slow networks:</strong> 45-60 seconds</li>
+              </ul>
+            </div>
+
+            <div class="perf-tip">
+              <h3>💾 Cache Configuration</h3>
+              <p>Optimize <code>CACHE_TTL</code> for your use case:</p>
+              <ul>
+                <li><strong>Real-time data:</strong> 60-300 seconds</li>
+                <li><strong>General use:</strong> 300-600 seconds (default)</li>
+                <li><strong>Static data:</strong> 1800+ seconds</li>
+              </ul>
+            </div>
+
+            <div class="perf-tip">
+              <h3>🛡️ Rate Limiting</h3>
+              <p>Configure rate limits to be respectful to fediverse servers:</p>
+              <ul>
+                <li><strong>Conservative:</strong> 50 requests per 15 minutes</li>
+                <li><strong>Standard:</strong> 100 requests per 15 minutes (default)</li>
+                <li><strong>Aggressive:</strong> 200 requests per 10 minutes</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="config-section">
+          <h2>🔍 Configuration Validation</h2>
+          
+          <div class="validation-info">
+            <div class="validation-step">
+              <h3>Test Your Configuration</h3>
+              <p>Use these commands to validate your configuration:</p>
+              
+              <div class="validation-commands">
+                <div class="validation-command">
+                  <h4>Check Server Status</h4>
+                  <p>Verify the server starts with your configuration:</p>
+                  <pre><code># Using MCP Inspector
+npx @modelcontextprotocol/inspector
+
+# Connect to: npx activitypub-mcp</code></pre>
+                </div>
+
+                <div class="validation-command">
+                  <h4>Test Health Check</h4>
+                  <p>Use the health-check tool to verify functionality:</p>
+                  <pre><code># In Claude Desktop or MCP Inspector
+health-check --includeMetrics true</code></pre>
+                </div>
+
+                <div class="validation-command">
+                  <h4>Monitor Logs</h4>
+                  <p>Check logs for configuration issues:</p>
+                  <pre><code># Enable debug logging temporarily
+"LOG_LEVEL": "debug"</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="config-section">
+          <h2>🚀 Next Steps</h2>
+          <div class="next-steps">
+            <a href={`${baseURL}docs/setup/claude-desktop-integration/`} class="next-step-card">
+              <h3>Claude Desktop Integration</h3>
+              <p>Apply your configuration to Claude Desktop integration.</p>
+            </a>
+            <a href={`${baseURL}docs/guides/basic-usage/`} class="next-step-card">
+              <h3>Basic Usage Guide</h3>
+              <p>Start using the server with your custom configuration.</p>
+            </a>
+            <a href={`${baseURL}docs/troubleshooting/`} class="next-step-card">
+              <h3>Troubleshooting</h3>
+              <p>Resolve configuration and performance issues.</p>
+            </a>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .config-page {
+    padding: var(--space-16) 0;
+  }
+
+  .config-header {
+    text-align: center;
+    margin-bottom: var(--space-16);
+  }
+
+  .config-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .config-description {
+    font-size: var(--text-xl);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .config-content {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .config-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .config-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .env-vars-table {
+    overflow-x: auto;
+    margin: var(--space-6) 0;
+  }
+
+  .env-vars-table table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .env-vars-table th,
+  .env-vars-table td {
+    padding: var(--space-4);
+    text-align: left;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .env-vars-table th {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    font-weight: var(--font-medium);
+  }
+
+  .env-vars-table code {
+    background: var(--color-gray-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+  }
+
+  .config-examples {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .config-example {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .config-example h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .config-example p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    margin: 0;
+  }
+
+  .log-levels-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+  }
+
+  @media (min-width: 768px) {
+    .log-levels-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .log-level-item {
+    background: var(--bg-secondary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+    position: relative;
+  }
+
+  .log-level-item h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .log-level-item p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-3);
+  }
+
+  .log-badge {
+    display: inline-block;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    text-transform: uppercase;
+  }
+
+  .log-badge.debug { background: var(--color-purple-100); color: var(--color-purple-800); }
+  .log-badge.info { background: var(--color-blue-100); color: var(--color-blue-800); }
+  .log-badge.warning { background: var(--color-yellow-100); color: var(--color-yellow-800); }
+  .log-badge.error { background: var(--color-red-100); color: var(--color-red-800); }
+  .log-badge.fatal { background: var(--color-gray-100); color: var(--color-gray-800); }
+
+  .log-examples {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+  }
+
+  .log-example {
+    background: var(--bg-secondary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .log-example h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .performance-tips {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .performance-tips {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .perf-tip {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .perf-tip h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .perf-tip p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+  }
+
+  .perf-tip ul {
+    margin: 0;
+    padding-left: var(--space-6);
+  }
+
+  .perf-tip li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+  }
+
+  .validation-commands {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    margin-top: var(--space-4);
+  }
+
+  .validation-command {
+    background: var(--bg-secondary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .validation-command h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .validation-command p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+  }
+
+  .next-steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .next-steps {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .next-step-card {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .next-step-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .next-step-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .next-step-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

@@ -1,0 +1,827 @@
+---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
+const title = "Architecture Overview - ActivityPub MCP Server";
+const description =
+  "Technical architecture and design decisions of the ActivityPub MCP Server. Understanding the system components and their interactions.";
+
+// Get the base URL for proper path resolution
+const baseURL = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="architecture-page">
+    <div class="container">
+      <div class="architecture-header">
+        <h1>Architecture Overview</h1>
+        <p class="architecture-description">
+          Technical architecture and design decisions of the ActivityPub MCP Server. Understanding how the system components work together to enable LLM-fediverse interaction.
+        </p>
+      </div>
+
+      <div class="architecture-content">
+        <section class="architecture-section">
+          <h2>🏗️ System Architecture</h2>
+          
+          <div class="architecture-overview">
+            <div class="architecture-diagram">
+              <div class="diagram-layer">
+                <h3>LLM Layer</h3>
+                <div class="layer-components">
+                  <div class="component">Claude Desktop</div>
+                  <div class="component">MCP Inspector</div>
+                  <div class="component">Other MCP Clients</div>
+                </div>
+              </div>
+              
+              <div class="diagram-arrow">↕️ MCP Protocol</div>
+              
+              <div class="diagram-layer">
+                <h3>MCP Server Layer</h3>
+                <div class="layer-components">
+                  <div class="component">Tools</div>
+                  <div class="component">Resources</div>
+                  <div class="component">Prompts</div>
+                </div>
+              </div>
+              
+              <div class="diagram-arrow">↕️ HTTP/HTTPS</div>
+              
+              <div class="diagram-layer">
+                <h3>Fediverse Layer</h3>
+                <div class="layer-components">
+                  <div class="component">Mastodon</div>
+                  <div class="component">Pixelfed</div>
+                  <div class="component">PeerTube</div>
+                  <div class="component">Other ActivityPub Servers</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="architecture-section">
+          <h2>🔧 Core Components</h2>
+          
+          <div class="components-grid">
+            <div class="component-card">
+              <h3>MCP Server Core</h3>
+              <p>Central server implementation handling MCP protocol communication</p>
+              <div class="component-details">
+                <h4>Key Features:</h4>
+                <ul>
+                  <li>Protocol compliance with MCP specification</li>
+                  <li>Tool, resource, and prompt registration</li>
+                  <li>Error handling and validation</li>
+                  <li>Request/response lifecycle management</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="component-card">
+              <h3>Remote Client</h3>
+              <p>HTTP client for communicating with fediverse servers</p>
+              <div class="component-details">
+                <h4>Key Features:</h4>
+                <ul>
+                  <li>WebFinger resolution</li>
+                  <li>ActivityPub data fetching</li>
+                  <li>HTTP request optimization</li>
+                  <li>Error handling and retries</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="component-card">
+              <h3>Performance Monitor</h3>
+              <p>System performance tracking and metrics collection</p>
+              <div class="component-details">
+                <h4>Key Features:</h4>
+                <ul>
+                  <li>Request timing and latency tracking</li>
+                  <li>Memory usage monitoring</li>
+                  <li>Error rate tracking</li>
+                  <li>Performance analytics</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="component-card">
+              <h3>Health Checker</h3>
+              <p>System health monitoring and diagnostics</p>
+              <div class="component-details">
+                <h4>Key Features:</h4>
+                <ul>
+                  <li>Server status verification</li>
+                  <li>Dependency health checks</li>
+                  <li>Resource availability monitoring</li>
+                  <li>Diagnostic reporting</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="component-card">
+              <h3>Instance Discovery</h3>
+              <p>Fediverse instance discovery and recommendation engine</p>
+              <div class="component-details">
+                <h4>Key Features:</h4>
+                <ul>
+                  <li>Instance categorization</li>
+                  <li>Interest-based recommendations</li>
+                  <li>Community analysis</li>
+                  <li>Instance metadata management</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="component-card">
+              <h3>Logging System</h3>
+              <p>Comprehensive logging and debugging infrastructure</p>
+              <div class="component-details">
+                <h4>Key Features:</h4>
+                <ul>
+                  <li>Structured logging with LogTape</li>
+                  <li>Configurable log levels</li>
+                  <li>Request tracing</li>
+                  <li>Error context preservation</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="architecture-section">
+          <h2>🔄 Data Flow</h2>
+          
+          <div class="data-flow">
+            <div class="flow-step">
+              <h3>1. LLM Request</h3>
+              <p>Claude or another MCP client sends a request to the server</p>
+              <div class="flow-details">
+                <strong>Examples:</strong> Tool calls, resource access, prompt requests
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <h3>2. Request Processing</h3>
+              <p>MCP server validates and routes the request to appropriate handlers</p>
+              <div class="flow-details">
+                <strong>Components:</strong> Input validation, rate limiting, authentication
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <h3>3. Fediverse Interaction</h3>
+              <p>Server communicates with fediverse instances via HTTP/ActivityPub</p>
+              <div class="flow-details">
+                <strong>Protocols:</strong> WebFinger, ActivityPub, HTTP APIs
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <h3>4. Data Processing</h3>
+              <p>Raw fediverse data is processed and formatted for LLM consumption</p>
+              <div class="flow-details">
+                <strong>Operations:</strong> Data transformation, filtering, aggregation
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <h3>5. Response Delivery</h3>
+              <p>Processed data is returned to the LLM in MCP-compliant format</p>
+              <div class="flow-details">
+                <strong>Formats:</strong> JSON responses, structured text, error messages
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="architecture-section">
+          <h2>🛡️ Security & Privacy</h2>
+          
+          <div class="security-features">
+            <div class="security-item">
+              <h3>Rate Limiting</h3>
+              <p>Protects both the MCP server and target fediverse instances from abuse</p>
+              <div class="security-details">
+                <ul>
+                  <li>Per-domain request limits</li>
+                  <li>Configurable time windows</li>
+                  <li>Graceful degradation</li>
+                  <li>Respect for server resources</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="security-item">
+              <h3>Input Validation</h3>
+              <p>Comprehensive validation of all inputs to prevent injection attacks</p>
+              <div class="security-details">
+                <ul>
+                  <li>Schema-based validation with Zod</li>
+                  <li>Sanitization of user inputs</li>
+                  <li>URL validation and normalization</li>
+                  <li>Parameter type checking</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="security-item">
+              <h3>Privacy Protection</h3>
+              <p>Respects user privacy and follows fediverse best practices</p>
+              <div class="security-details">
+                <ul>
+                  <li>No data storage or persistence</li>
+                  <li>Minimal data collection</li>
+                  <li>Respect for instance privacy settings</li>
+                  <li>Transparent operation</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="security-item">
+              <h3>Error Handling</h3>
+              <p>Secure error handling that doesn't leak sensitive information</p>
+              <div class="security-details">
+                <ul>
+                  <li>Sanitized error messages</li>
+                  <li>Proper exception handling</li>
+                  <li>Logging without sensitive data</li>
+                  <li>Graceful failure modes</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="architecture-section">
+          <h2>⚡ Performance Optimizations</h2>
+          
+          <div class="performance-optimizations">
+            <div class="optimization-item">
+              <h3>Caching Strategy</h3>
+              <p>Intelligent caching reduces redundant requests and improves response times</p>
+              <div class="optimization-details">
+                <h4>Cache Layers:</h4>
+                <ul>
+                  <li><strong>WebFinger Cache:</strong> 5-minute TTL for actor resolution</li>
+                  <li><strong>Actor Profile Cache:</strong> 5-minute TTL for profile data</li>
+                  <li><strong>Instance Info Cache:</strong> 15-minute TTL for instance metadata</li>
+                  <li><strong>Error Cache:</strong> 1-minute TTL for failed requests</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="optimization-item">
+              <h3>Request Optimization</h3>
+              <p>Efficient HTTP client configuration for optimal network performance</p>
+              <div class="optimization-details">
+                <h4>Optimizations:</h4>
+                <ul>
+                  <li>Connection pooling and reuse</li>
+                  <li>Configurable timeouts</li>
+                  <li>Compression support</li>
+                  <li>Parallel request handling</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="optimization-item">
+              <h3>Memory Management</h3>
+              <p>Efficient memory usage for handling large datasets and concurrent requests</p>
+              <div class="optimization-details">
+                <h4>Strategies:</h4>
+                <ul>
+                  <li>Streaming data processing</li>
+                  <li>Garbage collection optimization</li>
+                  <li>Memory usage monitoring</li>
+                  <li>Resource cleanup</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="architecture-section">
+          <h2>🔌 Integration Points</h2>
+          
+          <div class="integration-points">
+            <div class="integration-item">
+              <h3>MCP Protocol</h3>
+              <p>Standard Model Context Protocol for LLM integration</p>
+              <div class="integration-specs">
+                <ul>
+                  <li>JSON-RPC 2.0 based communication</li>
+                  <li>Bidirectional message passing</li>
+                  <li>Tool, resource, and prompt capabilities</li>
+                  <li>Error handling and status reporting</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="integration-item">
+              <h3>ActivityPub Protocol</h3>
+              <p>W3C standard for decentralized social networking</p>
+              <div class="integration-specs">
+                <ul>
+                  <li>Actor discovery and profile fetching</li>
+                  <li>Activity stream processing</li>
+                  <li>Federation and cross-instance communication</li>
+                  <li>Content type negotiation</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="integration-item">
+              <h3>WebFinger Protocol</h3>
+              <p>RFC 7033 standard for resource discovery</p>
+              <div class="integration-specs">
+                <ul>
+                  <li>Actor identifier resolution</li>
+                  <li>Service discovery</li>
+                  <li>Cross-domain resource linking</li>
+                  <li>Metadata exchange</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="architecture-section">
+          <h2>📊 Monitoring & Observability</h2>
+          
+          <div class="monitoring-features">
+            <div class="monitoring-item">
+              <h3>Performance Metrics</h3>
+              <p>Comprehensive performance tracking and analysis</p>
+              <div class="monitoring-details">
+                <h4>Tracked Metrics:</h4>
+                <ul>
+                  <li>Request latency and throughput</li>
+                  <li>Error rates and types</li>
+                  <li>Cache hit/miss ratios</li>
+                  <li>Memory and CPU usage</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="monitoring-item">
+              <h3>Health Monitoring</h3>
+              <p>Continuous health checks and system diagnostics</p>
+              <div class="monitoring-details">
+                <h4>Health Checks:</h4>
+                <ul>
+                  <li>Server responsiveness</li>
+                  <li>External dependency status</li>
+                  <li>Resource availability</li>
+                  <li>Configuration validation</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="monitoring-item">
+              <h3>Logging & Debugging</h3>
+              <p>Structured logging for troubleshooting and analysis</p>
+              <div class="monitoring-details">
+                <h4>Log Categories:</h4>
+                <ul>
+                  <li>Request/response tracing</li>
+                  <li>Error and exception logging</li>
+                  <li>Performance bottleneck identification</li>
+                  <li>Security event tracking</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="architecture-section">
+          <h2>🚀 Next Steps</h2>
+          <div class="next-steps">
+            <a href={`${baseURL}docs/development/performance-monitoring/`} class="next-step-card">
+              <h3>Performance Monitoring</h3>
+              <p>Deep dive into performance monitoring and optimization techniques.</p>
+            </a>
+            <a href={`${baseURL}docs/development/security-audit-checklist/`} class="next-step-card">
+              <h3>Security Audit</h3>
+              <p>Security considerations and audit checklist for the server.</p>
+            </a>
+            <a href={`${baseURL}docs/api/tools/`} class="next-step-card">
+              <h3>API Reference</h3>
+              <p>Detailed documentation of tools, resources, and prompts.</p>
+            </a>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .architecture-page {
+    padding: var(--space-16) 0;
+  }
+
+  .architecture-header {
+    text-align: center;
+    margin-bottom: var(--space-16);
+  }
+
+  .architecture-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .architecture-description {
+    font-size: var(--text-xl);
+    color: var(--text-secondary);
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .architecture-content {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .architecture-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .architecture-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .architecture-diagram {
+    background: var(--bg-secondary);
+    padding: var(--space-8);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .diagram-layer {
+    background: var(--bg-primary);
+    padding: var(--space-6);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+  }
+
+  .diagram-layer h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .layer-components {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--space-3);
+  }
+
+  .component {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+  }
+
+  .diagram-arrow {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    font-weight: var(--font-medium);
+  }
+
+  .components-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .components-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .components-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .component-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .component-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .component-card > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  .component-details h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .component-details ul {
+    margin: 0;
+    padding-left: var(--space-6);
+  }
+
+  .component-details li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+    font-size: var(--text-sm);
+  }
+
+  .data-flow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .flow-step {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    border-left: 4px solid var(--color-primary);
+  }
+
+  .flow-step h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .flow-step > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+  }
+
+  .flow-details {
+    background: var(--bg-primary);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+    font-size: var(--text-sm);
+  }
+
+  .flow-details strong {
+    color: var(--text-primary);
+  }
+
+  .security-features {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .security-features {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .security-item {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .security-item h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .security-item > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  .security-details ul {
+    margin: 0;
+    padding-left: var(--space-6);
+  }
+
+  .security-details li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+    font-size: var(--text-sm);
+  }
+
+  .performance-optimizations {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .optimization-item {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .optimization-item h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .optimization-item > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  .optimization-details h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .optimization-details ul {
+    margin: 0;
+    padding-left: var(--space-6);
+  }
+
+  .optimization-details li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  .optimization-details strong {
+    color: var(--text-primary);
+  }
+
+  .integration-points {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .integration-points {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .integration-item {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .integration-item h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .integration-item > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  .integration-specs ul {
+    margin: 0;
+    padding-left: var(--space-6);
+  }
+
+  .integration-specs li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+    font-size: var(--text-sm);
+  }
+
+  .monitoring-features {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .monitoring-features {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .monitoring-item {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .monitoring-item h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .monitoring-item > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  .monitoring-details h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .monitoring-details ul {
+    margin: 0;
+    padding-left: var(--space-6);
+  }
+
+  .monitoring-details li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+    font-size: var(--text-sm);
+  }
+
+  .next-steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .next-steps {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .next-step-card {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .next-step-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .next-step-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .next-step-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

@@ -23,6 +23,10 @@
         nav.classList.add("show");
         toggle.classList.add("active");
         toggle.setAttribute("aria-expanded", "true");
+        // Close mobile search if it's open
+        if (window.hideMobileSearch) {
+          window.hideMobileSearch();
+        }
       }
     });
 
@@ -69,6 +73,123 @@
         toggle.setAttribute("aria-expanded", "false");
       }
     });
+  }
+
+  // Mobile search toggle
+  function initMobileSearch() {
+    const searchToggle = document.querySelector(".mobile-search-toggle");
+
+    if (!searchToggle) return;
+
+    // Initialize aria-expanded attribute
+    searchToggle.setAttribute("aria-expanded", "false");
+
+    searchToggle.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      // Close mobile nav if it's open
+      const nav = document.querySelector(".navbar-nav");
+      const navToggle = document.querySelector(".navbar-toggle");
+      if (nav && nav.classList.contains("show")) {
+        nav.classList.remove("show");
+        if (navToggle) {
+          navToggle.classList.remove("active");
+          navToggle.setAttribute("aria-expanded", "false");
+        }
+      }
+
+      // Use the global mobile search function from Search.astro
+      if (window.showMobileSearch) {
+        window.showMobileSearch();
+      } else {
+        // Fallback to direct approach if Search.astro hasn't loaded yet
+        showMobileSearchOverlay();
+      }
+    });
+
+    // Direct mobile search overlay control
+    function showMobileSearchOverlay() {
+      const mobileSearchOverlay = document.getElementById("mobile-search-overlay");
+
+      if (mobileSearchOverlay) {
+        mobileSearchOverlay.classList.add("show");
+        searchToggle.setAttribute("aria-expanded", "true");
+
+        // Focus the search input
+        const mobileSearchInput = document.getElementById("mobile-search-input");
+        if (mobileSearchInput) {
+          setTimeout(() => mobileSearchInput.focus(), 150);
+        }
+
+        // Set up close functionality if not already set
+        const closeButton = mobileSearchOverlay.querySelector(".mobile-search-close");
+        if (closeButton && !closeButton.hasAttribute("data-close-handler")) {
+          closeButton.setAttribute("data-close-handler", "true");
+          closeButton.addEventListener("click", hideMobileSearchOverlay);
+        }
+
+        // Close on overlay click if not already set
+        if (!mobileSearchOverlay.hasAttribute("data-overlay-handler")) {
+          mobileSearchOverlay.setAttribute("data-overlay-handler", "true");
+          mobileSearchOverlay.addEventListener("click", (e) => {
+            if (e.target === mobileSearchOverlay) {
+              hideMobileSearchOverlay();
+            }
+          });
+        }
+      }
+    }
+
+    function hideMobileSearchOverlay() {
+      const mobileSearchOverlay = document.getElementById("mobile-search-overlay");
+      if (mobileSearchOverlay) {
+        mobileSearchOverlay.classList.remove("show");
+        searchToggle.setAttribute("aria-expanded", "false");
+
+        // Clear the search input
+        const mobileSearchInput = document.getElementById("mobile-search-input");
+        if (mobileSearchInput) {
+          mobileSearchInput.value = "";
+        }
+      }
+    }
+
+    // Close mobile search on escape key
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        const mobileSearchOverlay = document.getElementById("mobile-search-overlay");
+        if (mobileSearchOverlay && mobileSearchOverlay.classList.contains("show")) {
+          hideMobileSearchOverlay();
+          searchToggle.focus(); // Return focus to toggle button for accessibility
+        }
+      }
+    });
+
+    // Close mobile search when resizing to desktop view
+    window.addEventListener("resize", () => {
+      if (window.innerWidth >= 768) {
+        const mobileSearchOverlay = document.getElementById("mobile-search-overlay");
+        if (mobileSearchOverlay && mobileSearchOverlay.classList.contains("show")) {
+          hideMobileSearchOverlay();
+        }
+      }
+    });
+
+    // Make hideMobileSearchOverlay available for escape and resize handlers
+    function hideMobileSearchOverlay() {
+      const mobileSearchOverlay = document.getElementById("mobile-search-overlay");
+      if (mobileSearchOverlay) {
+        mobileSearchOverlay.classList.remove("show");
+        searchToggle.setAttribute("aria-expanded", "false");
+
+        // Clear the search input
+        const mobileSearchInput = document.getElementById("mobile-search-input");
+        if (mobileSearchInput) {
+          mobileSearchInput.value = "";
+        }
+      }
+    }
   }
 
   // Smooth scrolling for anchor links
@@ -137,6 +258,16 @@
     for (const codeBlock of codeBlocks) {
       const pre = codeBlock.parentElement;
 
+      // Enhanced check for existing copy buttons - check both pre and parent container
+      if (pre.querySelector(".copy-button") || pre.parentElement?.querySelector(".copy-button")) {
+        continue;
+      }
+
+      // Also check if this pre element already has a data attribute to mark it as processed
+      if (pre.hasAttribute("data-copy-button-added")) {
+        continue;
+      }
+
       // Create copy button
       const copyButton = document.createElement("button");
       copyButton.className = "copy-button";
@@ -146,6 +277,9 @@
       // Add copy button to pre element
       pre.style.position = "relative";
       pre.appendChild(copyButton);
+
+      // Mark this pre element as processed
+      pre.setAttribute("data-copy-button-added", "true");
 
       copyButton.addEventListener("click", async function () {
         try {
@@ -179,33 +313,10 @@
     }
   }
 
-  // Scroll to top functionality
-  function initScrollToTop() {
-    const scrollButton = document.createElement("button");
-    scrollButton.className = "scroll-to-top";
-    scrollButton.innerHTML = "↑";
-    scrollButton.setAttribute("aria-label", "Scroll to top");
-    scrollButton.style.display = "none";
-
-    document.body.appendChild(scrollButton);
-
-    // Show/hide button based on scroll position
-    window.addEventListener("scroll", () => {
-      if (window.pageYOffset > 300) {
-        scrollButton.style.display = "block";
-      } else {
-        scrollButton.style.display = "none";
-      }
-    });
-
-    // Scroll to top when clicked
-    scrollButton.addEventListener("click", () => {
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    });
-  }
+  // Scroll to top functionality - REMOVED
+  // function initScrollToTop() {
+  //   // This functionality has been removed per user request
+  // }
 
   // Theme toggle (if needed in the future)
   function initThemeToggle() {
@@ -216,11 +327,15 @@
   // Initialize all functionality
   function init() {
     initMobileNav();
+    initMobileSearch();
     initSmoothScrolling();
     initTabs();
     initCodeCopy();
-    initScrollToTop();
+    // initScrollToTop(); // Removed per user request
     initThemeToggle();
+
+    // Debug: Log initialization completion
+    console.log("Main.js initialization complete");
   }
 
   // Initialize when DOM is ready
