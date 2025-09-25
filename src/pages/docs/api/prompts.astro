@@ -1,0 +1,682 @@
+---
+const title = "MCP Prompts Reference - ActivityPub MCP Server";
+const description =
+  "Pre-built prompts and templates for common ActivityPub operations. Accelerate your fediverse exploration with ready-to-use prompt patterns.";
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="prompts-page">
+    <div class="prompts-header">
+      <h1>MCP Prompts Reference</h1>
+      <p class="prompts-description">
+        Pre-built prompts and templates for common ActivityPub operations. These prompts help you get started quickly and demonstrate best practices for fediverse exploration.
+      </p>
+    </div>
+
+    <div class="prompts-content">
+      <section class="prompts-section">
+        <h2>📋 Prompt Categories</h2>
+        <div class="category-grid">
+          <div class="category-card">
+            <h3>🔍 Discovery Prompts</h3>
+            <p>Find actors, instances, and communities</p>
+          </div>
+          <div class="category-card">
+            <h3>📊 Analysis Prompts</h3>
+            <p>Analyze content, trends, and engagement</p>
+          </div>
+          <div class="category-card">
+            <h3>🔬 Research Prompts</h3>
+            <p>Academic and professional research workflows</p>
+          </div>
+          <div class="category-card">
+            <h3>📈 Monitoring Prompts</h3>
+            <p>Track changes and monitor activity</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="prompts-section">
+        <h2>🔍 Discovery Prompts</h2>
+        
+        <div class="prompt-card">
+          <h3>Community Discovery</h3>
+          <div class="prompt-content">
+            <h4>Prompt Template:</h4>
+            <div class="prompt-template">
+              <blockquote>
+                "Help me discover active communities in the fediverse focused on [TOPIC]. Find relevant instances, identify key actors, and show me what they're discussing. Provide a summary of each community's focus and activity level."
+              </blockquote>
+            </div>
+            
+            <h4>Example Usage:</h4>
+            <div class="prompt-examples">
+              <div class="example">
+                <h5>Technology Communities</h5>
+                <blockquote>
+                  "Help me discover active communities in the fediverse focused on open source software. Find relevant instances, identify key actors, and show me what they're discussing. Provide a summary of each community's focus and activity level."
+                </blockquote>
+              </div>
+              <div class="example">
+                <h5>Art Communities</h5>
+                <blockquote>
+                  "Help me discover active communities in the fediverse focused on digital art and creative work. Find relevant instances, identify key actors, and show me what they're discussing. Provide a summary of each community's focus and activity level."
+                </blockquote>
+              </div>
+            </div>
+
+            <h4>Expected Workflow:</h4>
+            <ol>
+              <li>Use <code>discover-instances</code> to find topic-relevant instances</li>
+              <li>Use <code>get-instance-info</code> to analyze each instance</li>
+              <li>Use <code>discover-actor</code> to find key community members</li>
+              <li>Use <code>fetch-timeline</code> to sample recent content</li>
+              <li>Synthesize findings into a comprehensive community overview</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <h3>Actor Research</h3>
+          <div class="prompt-content">
+            <h4>Prompt Template:</h4>
+            <div class="prompt-template">
+              <blockquote>
+                "Research the fediverse actor [ACTOR_IDENTIFIER]. Provide their profile information, recent activity summary, engagement patterns, and identify their main topics of interest. Also show their connections to other notable actors."
+              </blockquote>
+            </div>
+            
+            <h4>Example Usage:</h4>
+            <div class="prompt-examples">
+              <div class="example">
+                <h5>Specific Actor Research</h5>
+                <blockquote>
+                  "Research the fediverse actor @gargron@mastodon.social. Provide their profile information, recent activity summary, engagement patterns, and identify their main topics of interest. Also show their connections to other notable actors."
+                </blockquote>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <h3>Instance Comparison</h3>
+          <div class="prompt-content">
+            <h4>Prompt Template:</h4>
+            <div class="prompt-template">
+              <blockquote>
+                "Compare the fediverse instances [INSTANCE1] and [INSTANCE2]. Analyze their size, community focus, rules, activity levels, and notable members. Help me understand which might be a better fit for someone interested in [INTEREST_AREA]."
+              </blockquote>
+            </div>
+            
+            <h4>Example Usage:</h4>
+            <div class="prompt-examples">
+              <div class="example">
+                <h5>Tech Instance Comparison</h5>
+                <blockquote>
+                  "Compare the fediverse instances fosstodon.org and hachyderm.io. Analyze their size, community focus, rules, activity levels, and notable members. Help me understand which might be a better fit for someone interested in open source development."
+                </blockquote>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="prompts-section">
+        <h2>📊 Analysis Prompts</h2>
+        
+        <div class="prompt-card">
+          <h3>Trend Analysis</h3>
+          <div class="prompt-content">
+            <h4>Prompt Template:</h4>
+            <div class="prompt-template">
+              <blockquote>
+                "Analyze current trends and discussions about [TOPIC] across the fediverse. Find instances and actors discussing this topic, summarize the main points of conversation, and identify any emerging themes or controversies."
+              </blockquote>
+            </div>
+            
+            <h4>Example Usage:</h4>
+            <div class="prompt-examples">
+              <div class="example">
+                <h5>AI Discussion Analysis</h5>
+                <blockquote>
+                  "Analyze current trends and discussions about artificial intelligence across the fediverse. Find instances and actors discussing this topic, summarize the main points of conversation, and identify any emerging themes or controversies."
+                </blockquote>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <h3>Engagement Analysis</h3>
+          <div class="prompt-content">
+            <h4>Prompt Template:</h4>
+            <div class="prompt-template">
+              <blockquote>
+                "Analyze the engagement patterns of [ACTOR_IDENTIFIER]. Look at their recent posts, reply rates, boost frequency, and interaction with other users. Identify their most engaging content types and optimal posting patterns."
+              </blockquote>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <h3>Content Categorization</h3>
+          <div class="prompt-content">
+            <h4>Prompt Template:</h4>
+            <div class="prompt-template">
+              <blockquote>
+                "Analyze and categorize the recent content from [INSTANCE/ACTOR]. Group posts by topic, identify the most common themes, and provide statistics on content types (original posts, replies, boosts, media posts)."
+              </blockquote>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="prompts-section">
+        <h2>🔬 Research Prompts</h2>
+        
+        <div class="prompt-card">
+          <h3>Academic Research</h3>
+          <div class="prompt-content">
+            <h4>Prompt Template:</h4>
+            <div class="prompt-template">
+              <blockquote>
+                "Conduct a systematic analysis of [RESEARCH_TOPIC] discussions in the fediverse for academic research. Find relevant communities, identify key voices and experts, analyze discourse patterns, and provide data suitable for scholarly analysis. Include methodology notes and data quality assessments."
+              </blockquote>
+            </div>
+            
+            <h4>Example Usage:</h4>
+            <div class="prompt-examples">
+              <div class="example">
+                <h5>Climate Change Research</h5>
+                <blockquote>
+                  "Conduct a systematic analysis of climate change discussions in the fediverse for academic research. Find relevant communities, identify key voices and experts, analyze discourse patterns, and provide data suitable for scholarly analysis. Include methodology notes and data quality assessments."
+                </blockquote>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <h3>Market Research</h3>
+          <div class="prompt-content">
+            <h4>Prompt Template:</h4>
+            <div class="prompt-template">
+              <blockquote>
+                "Research market sentiment and discussions about [PRODUCT/INDUSTRY] in the fediverse. Identify target demographics, analyze user needs and pain points, find potential early adopters, and assess competitive landscape discussions."
+              </blockquote>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <h3>Network Analysis</h3>
+          <div class="prompt-content">
+            <h4>Prompt Template:</h4>
+            <div class="prompt-template">
+              <blockquote>
+                "Map the network structure of [COMMUNITY/TOPIC] in the fediverse. Identify key nodes (influential actors), connection patterns between instances, information flow pathways, and community clusters. Provide insights into network dynamics and influence patterns."
+              </blockquote>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="prompts-section">
+        <h2>📈 Monitoring Prompts</h2>
+        
+        <div class="prompt-card">
+          <h3>Brand Monitoring</h3>
+          <div class="prompt-content">
+            <h4>Prompt Template:</h4>
+            <div class="prompt-template">
+              <blockquote>
+                "Monitor mentions and discussions of [BRAND/ORGANIZATION] across the fediverse. Track sentiment, identify key conversations, find influential voices discussing the brand, and alert me to any significant changes in discussion volume or tone."
+              </blockquote>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <h3>Community Health Monitoring</h3>
+          <div class="prompt-content">
+            <h4>Prompt Template:</h4>
+            <div class="prompt-template">
+              <blockquote>
+                "Monitor the health and activity of [INSTANCE/COMMUNITY]. Track user engagement, content quality, growth patterns, and community dynamics. Identify any concerning trends or positive developments that warrant attention."
+              </blockquote>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <h3>Topic Tracking</h3>
+          <div class="prompt-content">
+            <h4>Prompt Template:</h4>
+            <div class="prompt-template">
+              <blockquote>
+                "Track discussions and developments related to [TOPIC] across the fediverse. Monitor for new information, changing sentiment, emerging sub-topics, and key contributors to the conversation. Provide regular updates on significant changes."
+              </blockquote>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="prompts-section">
+        <h2>🛠️ Custom Prompt Building</h2>
+        
+        <div class="prompt-building">
+          <div class="building-card">
+            <h3>Prompt Structure</h3>
+            <div class="structure-elements">
+              <div class="element">
+                <h4>1. Objective Statement</h4>
+                <p>Clearly state what you want to accomplish</p>
+                <code>"Help me [ACTION] [TARGET] in the fediverse"</code>
+              </div>
+              <div class="element">
+                <h4>2. Scope Definition</h4>
+                <p>Specify the scope and boundaries</p>
+                <code>"Focus on [INSTANCES/ACTORS/TOPICS]"</code>
+              </div>
+              <div class="element">
+                <h4>3. Output Requirements</h4>
+                <p>Define what kind of output you need</p>
+                <code>"Provide [ANALYSIS/SUMMARY/DATA/RECOMMENDATIONS]"</code>
+              </div>
+              <div class="element">
+                <h4>4. Context Information</h4>
+                <p>Add relevant context or constraints</p>
+                <code>"Consider [TIMEFRAME/AUDIENCE/PURPOSE]"</code>
+              </div>
+            </div>
+          </div>
+
+          <div class="building-card">
+            <h3>Best Practices</h3>
+            <ul>
+              <li><strong>Be Specific:</strong> Use exact actor identifiers and instance names</li>
+              <li><strong>Set Expectations:</strong> Clearly state what kind of analysis you want</li>
+              <li><strong>Provide Context:</strong> Explain the purpose or use case</li>
+              <li><strong>Request Methodology:</strong> Ask for explanation of the approach used</li>
+              <li><strong>Specify Format:</strong> Request specific output formats if needed</li>
+            </ul>
+          </div>
+
+          <div class="building-card">
+            <h3>Common Variables</h3>
+            <div class="variables-list">
+              <div class="variable">
+                <code>[TOPIC]</code>
+                <p>Subject area or theme of interest</p>
+              </div>
+              <div class="variable">
+                <code>[ACTOR_IDENTIFIER]</code>
+                <p>@username@instance.com or actor URL</p>
+              </div>
+              <div class="variable">
+                <code>[INSTANCE]</code>
+                <p>Domain name of fediverse instance</p>
+              </div>
+              <div class="variable">
+                <code>[TIMEFRAME]</code>
+                <p>Time period for analysis (e.g., "past week")</p>
+              </div>
+              <div class="variable">
+                <code>[COMMUNITY]</code>
+                <p>Specific community or group focus</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="prompts-section">
+        <h2>⚡ Quick Start Prompts</h2>
+        
+        <div class="quick-prompts">
+          <div class="quick-prompt">
+            <h4>Explore a New Topic</h4>
+            <blockquote>"Show me what the fediverse is saying about [TOPIC]"</blockquote>
+          </div>
+          <div class="quick-prompt">
+            <h4>Find Communities</h4>
+            <blockquote>"Find active [TOPIC] communities in the fediverse"</blockquote>
+          </div>
+          <div class="quick-prompt">
+            <h4>Research an Actor</h4>
+            <blockquote>"Tell me about @username@instance.com"</blockquote>
+          </div>
+          <div class="quick-prompt">
+            <h4>Compare Instances</h4>
+            <blockquote>"Compare instance1.com and instance2.com"</blockquote>
+          </div>
+          <div class="quick-prompt">
+            <h4>Monitor Activity</h4>
+            <blockquote>"What's new with @username@instance.com?"</blockquote>
+          </div>
+          <div class="quick-prompt">
+            <h4>Analyze Trends</h4>
+            <blockquote>"What are the trending topics in [COMMUNITY]?"</blockquote>
+          </div>
+        </div>
+      </section>
+
+      <section class="prompts-section">
+        <h2>🔗 Related Documentation</h2>
+        <div class="related-links">
+          <a href="/docs/api/tools/" class="related-link">
+            <h3>MCP Tools</h3>
+            <p>Learn about the tools these prompts will use</p>
+          </a>
+          <a href="/docs/guides/examples/" class="related-link">
+            <h3>Practical Examples</h3>
+            <p>See these prompts in action with real examples</p>
+          </a>
+          <a href="/docs/guides/usage-guide/" class="related-link">
+            <h3>Usage Guide</h3>
+            <p>Advanced techniques for effective fediverse exploration</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .prompts-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .prompts-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  .prompts-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .prompts-description {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .prompts-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .prompts-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .category-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-align: center;
+  }
+
+  .category-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .category-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+  }
+
+  .prompt-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-8);
+    margin-bottom: var(--space-8);
+  }
+
+  .prompt-card h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .prompt-content h4 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin: var(--space-6) 0 var(--space-3) 0;
+  }
+
+  .prompt-template blockquote {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    margin: var(--space-3) 0;
+    font-style: italic;
+    font-size: var(--text-lg);
+    line-height: var(--leading-relaxed);
+  }
+
+  .prompt-examples {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .example {
+    background: var(--bg-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .example h5 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .example blockquote {
+    background: var(--bg-tertiary);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--color-primary);
+    margin: 0;
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+
+  .prompt-content ol {
+    padding-left: var(--space-6);
+    margin: var(--space-3) 0;
+  }
+
+  .prompt-content li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .prompt-content code {
+    background: var(--color-gray-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+  }
+
+  .prompt-building {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-8);
+  }
+
+  .building-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .building-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .structure-elements {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .element {
+    background: var(--bg-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .element h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .element p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  .building-card ul {
+    padding-left: var(--space-6);
+  }
+
+  .building-card li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .variables-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .variable {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .variable code {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    white-space: nowrap;
+  }
+
+  .variable p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    margin: 0;
+  }
+
+  .quick-prompts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-4);
+  }
+
+  .quick-prompt {
+    background: var(--bg-secondary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .quick-prompt h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .quick-prompt blockquote {
+    background: var(--bg-primary);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--color-primary);
+    margin: 0;
+    font-style: italic;
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+  }
+
+  .related-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .related-link {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .related-link:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .related-link h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .related-link p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

@@ -1,0 +1,633 @@
+---
+const title = "Real-World Test Scenarios - ActivityPub MCP Server";
+const description =
+  "Practical test scenarios and real-world use cases for the ActivityPub MCP Server. Learn through hands-on examples and comprehensive case studies.";
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="scenarios-page">
+    <div class="scenarios-header">
+      <h1>Real-World Test Scenarios</h1>
+      <p class="scenarios-description">
+        Practical test scenarios and real-world use cases for the ActivityPub MCP Server. Learn through hands-on examples, comprehensive case studies, and step-by-step walkthroughs.
+      </p>
+    </div>
+
+    <div class="scenarios-content">
+      <section class="scenarios-section">
+        <h2>🎯 Scenario Categories</h2>
+        <div class="category-overview">
+          <div class="category-item">
+            <h3>🔬 Research & Analysis</h3>
+            <p>Academic research, market analysis, and trend identification</p>
+          </div>
+          <div class="category-item">
+            <h3>📊 Community Management</h3>
+            <p>Understanding communities, monitoring engagement, and growth analysis</p>
+          </div>
+          <div class="category-item">
+            <h3>🚀 Business Intelligence</h3>
+            <p>Brand monitoring, competitor analysis, and market insights</p>
+          </div>
+          <div class="category-item">
+            <h3>📰 Journalism & Media</h3>
+            <p>Source verification, story research, and trend tracking</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="scenarios-section">
+        <h2>🔬 Research & Analysis Scenarios</h2>
+        
+        <div class="scenario-card">
+          <h3>Scenario 1: Academic Research on Open Source Communities</h3>
+          <div class="scenario-details">
+            <h4>Objective:</h4>
+            <p>Research the structure and dynamics of open source software communities in the fediverse for an academic paper.</p>
+            
+            <h4>Step-by-Step Process:</h4>
+            <div class="process-steps">
+              <div class="step">
+                <h5>1. Initial Discovery</h5>
+                <p><strong>Query:</strong> "Find all fediverse instances focused on open source software development"</p>
+                <p><strong>Expected Tools:</strong> <code>discover-instances</code> with "open source" query</p>
+                <p><strong>Expected Results:</strong> List of instances like fosstodon.org, floss.social, etc.</p>
+              </div>
+
+              <div class="step">
+                <h5>2. Instance Analysis</h5>
+                <p><strong>Query:</strong> "Analyze the top 5 open source instances - their size, rules, and community focus"</p>
+                <p><strong>Expected Tools:</strong> <code>get-instance-info</code> for each instance</p>
+                <p><strong>Expected Results:</strong> Comparative data on user counts, posting activity, and community guidelines</p>
+              </div>
+
+              <div class="step">
+                <h5>3. Key Actor Identification</h5>
+                <p><strong>Query:</strong> "Identify the most influential open source developers and maintainers on these instances"</p>
+                <p><strong>Expected Tools:</strong> <code>discover-actor</code> for prominent users</p>
+                <p><strong>Expected Results:</strong> Profiles of key contributors with follower counts and project affiliations</p>
+              </div>
+
+              <div class="step">
+                <h5>4. Content Analysis</h5>
+                <p><strong>Query:</strong> "Analyze recent discussions about programming languages, tools, and project management"</p>
+                <p><strong>Expected Tools:</strong> <code>fetch-timeline</code> for key actors</p>
+                <p><strong>Expected Results:</strong> Trending topics, discussion themes, and community concerns</p>
+              </div>
+
+              <div class="step">
+                <h5>5. Network Mapping</h5>
+                <p><strong>Query:</strong> "Map the connections between different open source communities and identify collaboration patterns"</p>
+                <p><strong>Expected Tools:</strong> Cross-instance actor discovery and relationship analysis</p>
+                <p><strong>Expected Results:</strong> Network diagram showing inter-community connections</p>
+              </div>
+            </div>
+
+            <div class="scenario-outcomes">
+              <h4>Expected Outcomes:</h4>
+              <ul>
+                <li>Comprehensive dataset of open source fediverse communities</li>
+                <li>Analysis of community structures and governance models</li>
+                <li>Identification of key influencers and thought leaders</li>
+                <li>Understanding of collaboration patterns and knowledge sharing</li>
+                <li>Data suitable for academic publication</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="scenario-card">
+          <h3>Scenario 2: Climate Change Discourse Analysis</h3>
+          <div class="scenario-details">
+            <h4>Objective:</h4>
+            <p>Analyze how climate change is discussed across different fediverse communities to understand public sentiment and information flow.</p>
+            
+            <h4>Research Questions:</h4>
+            <ul>
+              <li>Which instances have the most active climate discussions?</li>
+              <li>How do different communities frame climate issues?</li>
+              <li>Who are the key voices in climate discourse?</li>
+              <li>What solutions and actions are being promoted?</li>
+            </ul>
+
+            <h4>Methodology:</h4>
+            <div class="methodology-steps">
+              <div class="method-step">
+                <h5>Data Collection</h5>
+                <p>Use <code>discover-instances</code> to find climate-focused instances, then <code>search-content</code> for climate-related posts across multiple instances.</p>
+              </div>
+              <div class="method-step">
+                <h5>Actor Analysis</h5>
+                <p>Identify climate scientists, activists, and organizations using <code>discover-actor</code> and analyze their posting patterns.</p>
+              </div>
+              <div class="method-step">
+                <h5>Content Categorization</h5>
+                <p>Classify posts by topic (policy, science, activism, solutions) and sentiment (optimistic, pessimistic, neutral).</p>
+              </div>
+              <div class="method-step">
+                <h5>Network Analysis</h5>
+                <p>Map information flow between instances and identify key information brokers.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scenarios-section">
+        <h2>📊 Community Management Scenarios</h2>
+        
+        <div class="scenario-card">
+          <h3>Scenario 3: New Instance Community Building</h3>
+          <div class="scenario-details">
+            <h4>Objective:</h4>
+            <p>You're launching a new Mastodon instance focused on sustainable technology and want to understand the landscape and build connections.</p>
+            
+            <h4>Strategic Approach:</h4>
+            <div class="strategy-steps">
+              <div class="strategy-step">
+                <h5>1. Competitive Analysis</h5>
+                <p><strong>Query:</strong> "Find existing instances focused on sustainability, green technology, and environmental topics"</p>
+                <p><strong>Analysis:</strong> Study their community guidelines, user engagement, and content themes</p>
+              </div>
+
+              <div class="strategy-step">
+                <h5>2. Influencer Identification</h5>
+                <p><strong>Query:</strong> "Identify key voices in sustainable technology who might be interested in a new community"</p>
+                <p><strong>Outreach:</strong> Understand their current instance affiliations and engagement patterns</p>
+              </div>
+
+              <div class="strategy-step">
+                <h5>3. Content Strategy Development</h5>
+                <p><strong>Query:</strong> "Analyze what types of sustainable technology content get the most engagement"</p>
+                <p><strong>Planning:</strong> Develop content themes and posting strategies based on successful patterns</p>
+              </div>
+
+              <div class="strategy-step">
+                <h5>4. Federation Strategy</h5>
+                <p><strong>Query:</strong> "Identify instances that would be good federation partners for a sustainable tech community"</p>
+                <p><strong>Networking:</strong> Plan outreach to compatible communities for cross-pollination</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="scenario-card">
+          <h3>Scenario 4: Community Health Monitoring</h3>
+          <div class="scenario-details">
+            <h4>Objective:</h4>
+            <p>Monitor the health and engagement of your existing fediverse community to identify trends and potential issues.</p>
+            
+            <h4>Monitoring Framework:</h4>
+            <div class="monitoring-framework">
+              <div class="framework-item">
+                <h5>Engagement Metrics</h5>
+                <ul>
+                  <li>Post frequency and timing patterns</li>
+                  <li>Reply and boost ratios</li>
+                  <li>New user onboarding success</li>
+                  <li>Active user retention rates</li>
+                </ul>
+              </div>
+
+              <div class="framework-item">
+                <h5>Content Quality</h5>
+                <ul>
+                  <li>Discussion depth and quality</li>
+                  <li>Topic diversity and focus</li>
+                  <li>Knowledge sharing patterns</li>
+                  <li>Community-generated content</li>
+                </ul>
+              </div>
+
+              <div class="framework-item">
+                <h5>Community Dynamics</h5>
+                <ul>
+                  <li>Inter-user interaction patterns</li>
+                  <li>Conflict resolution effectiveness</li>
+                  <li>Moderation workload and issues</li>
+                  <li>Cross-instance relationship health</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scenarios-section">
+        <h2>🚀 Business Intelligence Scenarios</h2>
+        
+        <div class="scenario-card">
+          <h3>Scenario 5: Brand Monitoring and Reputation Management</h3>
+          <div class="scenario-details">
+            <h4>Objective:</h4>
+            <p>Monitor mentions of your brand across the fediverse and understand public sentiment and engagement.</p>
+            
+            <h4>Monitoring Strategy:</h4>
+            <div class="monitoring-strategy">
+              <div class="strategy-component">
+                <h5>Direct Mentions</h5>
+                <p>Track explicit mentions of brand name, products, and key personnel across instances</p>
+                <p><strong>Tools:</strong> <code>search-content</code> with brand keywords</p>
+              </div>
+
+              <div class="strategy-component">
+                <h5>Industry Discussions</h5>
+                <p>Monitor broader industry conversations that might impact brand perception</p>
+                <p><strong>Tools:</strong> <code>discover-instances</code> for industry-specific communities</p>
+              </div>
+
+              <div class="strategy-component">
+                <h5>Competitor Analysis</h5>
+                <p>Track competitor mentions and compare engagement levels</p>
+                <p><strong>Tools:</strong> <code>fetch-timeline</code> for competitor-focused accounts</p>
+              </div>
+
+              <div class="strategy-component">
+                <h5>Influencer Relations</h5>
+                <p>Identify and monitor key industry influencers and their brand interactions</p>
+                <p><strong>Tools:</strong> <code>discover-actor</code> for industry thought leaders</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="scenario-card">
+          <h3>Scenario 6: Market Research for Product Launch</h3>
+          <div class="scenario-details">
+            <h4>Objective:</h4>
+            <p>Research market sentiment and identify potential early adopters for a new privacy-focused communication tool.</p>
+            
+            <h4>Research Methodology:</h4>
+            <div class="research-steps">
+              <div class="research-step">
+                <h5>1. Target Audience Identification</h5>
+                <p><strong>Query:</strong> "Find communities discussing privacy, security, and digital rights"</p>
+                <p><strong>Goal:</strong> Identify instances and actors most concerned with privacy issues</p>
+              </div>
+
+              <div class="research-step">
+                <h5>2. Pain Point Analysis</h5>
+                <p><strong>Query:</strong> "Analyze discussions about current communication tools and their limitations"</p>
+                <p><strong>Goal:</strong> Understand user frustrations and unmet needs</p>
+              </div>
+
+              <div class="research-step">
+                <h5>3. Feature Validation</h5>
+                <p><strong>Query:</strong> "Research what features privacy-conscious users value most in communication tools"</p>
+                <p><strong>Goal:</strong> Validate product features against real user preferences</p>
+              </div>
+
+              <div class="research-step">
+                <h5>4. Early Adopter Profiling</h5>
+                <p><strong>Query:</strong> "Identify users who frequently try new privacy tools and share their experiences"</p>
+                <p><strong>Goal:</strong> Build a list of potential beta testers and early advocates</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scenarios-section">
+        <h2>📰 Journalism & Media Scenarios</h2>
+        
+        <div class="scenario-card">
+          <h3>Scenario 7: Breaking News Source Verification</h3>
+          <div class="scenario-details">
+            <h4>Objective:</h4>
+            <p>Verify sources and gather additional context for a breaking news story spreading across the fediverse.</p>
+            
+            <h4>Verification Process:</h4>
+            <div class="verification-steps">
+              <div class="verification-step">
+                <h5>1. Source Identification</h5>
+                <p>Use <code>discover-actor</code> to verify the credibility and background of original sources</p>
+              </div>
+
+              <div class="verification-step">
+                <h5>2. Cross-Reference Checking</h5>
+                <p>Search for corroborating accounts and additional sources across multiple instances</p>
+              </div>
+
+              <div class="verification-step">
+                <h5>3. Timeline Reconstruction</h5>
+                <p>Use <code>fetch-timeline</code> to understand the chronology of events and information flow</p>
+              </div>
+
+              <div class="verification-step">
+                <h5>4. Expert Opinion Gathering</h5>
+                <p>Identify and contact relevant experts who have commented on the story</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="scenario-card">
+          <h3>Scenario 8: Investigative Journalism Research</h3>
+          <div class="scenario-details">
+            <h4>Objective:</h4>
+            <p>Research a complex story about corporate influence in environmental policy using fediverse sources.</p>
+            
+            <h4>Investigation Framework:</h4>
+            <div class="investigation-framework">
+              <div class="framework-element">
+                <h5>Source Network Mapping</h5>
+                <p>Map connections between environmental activists, policy experts, and corporate representatives</p>
+              </div>
+
+              <div class="framework-element">
+                <h5>Information Trail Following</h5>
+                <p>Track how information and narratives spread through different communities</p>
+              </div>
+
+              <div class="framework-element">
+                <h5>Expert Testimony Collection</h5>
+                <p>Identify and interview subject matter experts active in relevant fediverse communities</p>
+              </div>
+
+              <div class="framework-element">
+                <h5>Public Sentiment Analysis</h5>
+                <p>Gauge public reaction and understanding of the issues across different demographics</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scenarios-section">
+        <h2>🧪 Testing Protocols</h2>
+        
+        <div class="testing-protocols">
+          <div class="protocol-card">
+            <h3>Scenario Validation Checklist</h3>
+            <ul>
+              <li>✅ All required tools are accessible and functional</li>
+              <li>✅ Data quality meets research standards</li>
+              <li>✅ Privacy and ethical guidelines are followed</li>
+              <li>✅ Results are reproducible and verifiable</li>
+              <li>✅ Methodology is documented and transparent</li>
+            </ul>
+          </div>
+
+          <div class="protocol-card">
+            <h3>Performance Benchmarks</h3>
+            <ul>
+              <li>⏱️ Query response time under 30 seconds</li>
+              <li>📊 Data accuracy above 95%</li>
+              <li>🔄 Cache hit ratio above 70%</li>
+              <li>🚫 Error rate below 5%</li>
+              <li>📈 Successful completion rate above 90%</li>
+            </ul>
+          </div>
+
+          <div class="protocol-card">
+            <h3>Quality Assurance</h3>
+            <ul>
+              <li>🔍 Cross-validate findings with multiple sources</li>
+              <li>📝 Document all queries and methodologies</li>
+              <li>🔄 Test scenarios with different parameters</li>
+              <li>👥 Peer review of analysis and conclusions</li>
+              <li>📊 Statistical significance testing where applicable</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="scenarios-section">
+        <h2>🔗 Next Steps</h2>
+        <div class="next-steps">
+          <a href="/docs/guides/usage-guide/" class="next-step-card">
+            <h3>← Back to Usage Guide</h3>
+            <p>Review advanced workflows and best practices.</p>
+          </a>
+          <a href="/docs/api/tools/" class="next-step-card">
+            <h3>Complete Tool Reference</h3>
+            <p>Detailed documentation for all available MCP tools.</p>
+          </a>
+          <a href="/docs/troubleshooting/" class="next-step-card">
+            <h3>Troubleshooting Guide</h3>
+            <p>Solutions for common issues in real-world scenarios.</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .scenarios-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .scenarios-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  .scenarios-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .scenarios-description {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .scenarios-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .scenarios-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .category-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .category-item {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-align: center;
+  }
+
+  .category-item h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .category-item p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+  }
+
+  .scenario-card {
+    background: var(--bg-secondary);
+    padding: var(--space-8);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    margin-bottom: var(--space-8);
+  }
+
+  .scenario-card h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .scenario-details h4 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin: var(--space-6) 0 var(--space-3) 0;
+  }
+
+  .scenario-details h5 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin: var(--space-4) 0 var(--space-2) 0;
+  }
+
+  .scenario-details p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin-bottom: var(--space-3);
+  }
+
+  .scenario-details ul {
+    padding-left: var(--space-6);
+    margin-bottom: var(--space-4);
+  }
+
+  .scenario-details li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .process-steps,
+  .methodology-steps,
+  .strategy-steps,
+  .research-steps,
+  .verification-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    margin: var(--space-4) 0;
+  }
+
+  .step,
+  .method-step,
+  .strategy-step,
+  .research-step,
+  .verification-step {
+    background: var(--bg-primary);
+    padding: var(--space-6);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--color-primary);
+  }
+
+  .monitoring-framework,
+  .strategy-steps,
+  .monitoring-strategy,
+  .investigation-framework {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+    margin: var(--space-4) 0;
+  }
+
+  .framework-item,
+  .strategy-component,
+  .framework-element {
+    background: var(--bg-primary);
+    padding: var(--space-6);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .testing-protocols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .protocol-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .protocol-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .protocol-card ul {
+    padding-left: var(--space-6);
+  }
+
+  .protocol-card li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .next-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .next-step-card {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .next-step-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .next-step-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .next-step-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

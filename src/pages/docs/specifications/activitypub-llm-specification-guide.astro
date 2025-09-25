@@ -1,0 +1,569 @@
+---
+const title = "ActivityPub Specification Guide - ActivityPub MCP Server";
+const description =
+  "Comprehensive guide to the ActivityPub specification for LLM applications. Learn how the ActivityPub MCP Server implements and extends the W3C ActivityPub standard.";
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="spec-page">
+    <div class="spec-header">
+      <h1>ActivityPub Specification Guide</h1>
+      <p class="spec-description">
+        Comprehensive guide to the ActivityPub specification as implemented by the ActivityPub MCP Server. Learn how this W3C standard enables decentralized social networking and how our server leverages it for AI applications.
+      </p>
+    </div>
+
+    <div class="spec-content">
+      <section class="spec-section">
+        <h2>📋 ActivityPub Overview</h2>
+        <div class="overview-content">
+          <div class="overview-card">
+            <h3>What is ActivityPub?</h3>
+            <p>ActivityPub is a W3C Recommendation that provides a client-to-server API for creating, updating and deleting content, as well as a federated server-to-server API for delivering notifications and content.</p>
+            
+            <h4>Key Features:</h4>
+            <ul>
+              <li><strong>Decentralized:</strong> No single point of control</li>
+              <li><strong>Federated:</strong> Servers communicate with each other</li>
+              <li><strong>Extensible:</strong> Built on Activity Streams 2.0</li>
+              <li><strong>Interoperable:</strong> Standard protocol for social networking</li>
+            </ul>
+          </div>
+
+          <div class="overview-card">
+            <h3>Core Concepts</h3>
+            <div class="concept-list">
+              <div class="concept-item">
+                <h4>Actors</h4>
+                <p>Entities that can perform activities (users, bots, services)</p>
+              </div>
+              <div class="concept-item">
+                <h4>Activities</h4>
+                <p>Actions performed by actors (Create, Update, Delete, Follow)</p>
+              </div>
+              <div class="concept-item">
+                <h4>Objects</h4>
+                <p>Things that activities are performed on (Notes, Articles, Images)</p>
+              </div>
+              <div class="concept-item">
+                <h4>Collections</h4>
+                <p>Ordered or unordered sets of objects (Inbox, Outbox, Followers)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>🏗️ ActivityPub Architecture</h2>
+        
+        <div class="architecture-diagram">
+          <div class="arch-component">
+            <h3>Client-to-Server (C2S)</h3>
+            <p>How clients interact with their home server</p>
+            <ul>
+              <li>Authentication and authorization</li>
+              <li>Content creation and management</li>
+              <li>Activity submission to outbox</li>
+              <li>Collection access (inbox, outbox)</li>
+            </ul>
+          </div>
+
+          <div class="arch-component">
+            <h3>Server-to-Server (S2S)</h3>
+            <p>How servers federate with each other</p>
+            <ul>
+              <li>Activity delivery between servers</li>
+              <li>Actor discovery and verification</li>
+              <li>Collection synchronization</li>
+              <li>HTTP signatures for authentication</li>
+            </ul>
+          </div>
+
+          <div class="arch-component">
+            <h3>MCP Server Role</h3>
+            <p>How our server fits into the ecosystem</p>
+            <ul>
+              <li>Read-only access to public data</li>
+              <li>Actor and instance discovery</li>
+              <li>Content aggregation and analysis</li>
+              <li>No content creation or modification</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>📄 Core ActivityPub Objects</h2>
+        
+        <div class="objects-reference">
+          <div class="object-card">
+            <h3>Actor Object</h3>
+            <p>Represents an entity capable of performing activities</p>
+            <pre><code>{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Person",
+  "id": "https://mastodon.social/users/gargron",
+  "preferredUsername": "gargron",
+  "name": "Eugen Rochko",
+  "summary": "Creator of Mastodon",
+  "inbox": "https://mastodon.social/users/gargron/inbox",
+  "outbox": "https://mastodon.social/users/gargron/outbox",
+  "followers": "https://mastodon.social/users/gargron/followers",
+  "following": "https://mastodon.social/users/gargron/following",
+  "publicKey": {
+    "id": "https://mastodon.social/users/gargron#main-key",
+    "owner": "https://mastodon.social/users/gargron",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----..."
+  }
+}</code></pre>
+          </div>
+
+          <div class="object-card">
+            <h3>Activity Object</h3>
+            <p>Represents an action performed by an actor</p>
+            <pre><code>{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Create",
+  "id": "https://mastodon.social/activities/123",
+  "actor": "https://mastodon.social/users/gargron",
+  "object": {
+    "type": "Note",
+    "id": "https://mastodon.social/users/gargron/statuses/456",
+    "content": "Hello, fediverse!",
+    "published": "2025-01-15T10:30:00Z",
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  },
+  "published": "2025-01-15T10:30:00Z"
+}</code></pre>
+          </div>
+
+          <div class="object-card">
+            <h3>Collection Object</h3>
+            <p>Represents an ordered or unordered set of objects</p>
+            <pre><code>{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "OrderedCollection",
+  "id": "https://mastodon.social/users/gargron/outbox",
+  "totalItems": 1247,
+  "first": "https://mastodon.social/users/gargron/outbox?page=1",
+  "last": "https://mastodon.social/users/gargron/outbox?page=62"
+}</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>🔧 MCP Server Implementation</h2>
+        
+        <div class="implementation-details">
+          <div class="impl-card">
+            <h3>Actor Discovery</h3>
+            <p>How the MCP server discovers and retrieves actor information:</p>
+            
+            <h4>Discovery Process:</h4>
+            <ol>
+              <li><strong>WebFinger Lookup:</strong> Resolve @user@domain to actor URL</li>
+              <li><strong>Actor Retrieval:</strong> Fetch actor object via HTTP GET</li>
+              <li><strong>Validation:</strong> Verify object structure and required fields</li>
+              <li><strong>Caching:</strong> Store actor data with appropriate TTL</li>
+            </ol>
+
+            <h4>Supported Actor Types:</h4>
+            <ul>
+              <li><code>Person</code> - Individual users</li>
+              <li><code>Service</code> - Bot accounts and services</li>
+              <li><code>Organization</code> - Organizational accounts</li>
+              <li><code>Application</code> - Application accounts</li>
+            </ul>
+          </div>
+
+          <div class="impl-card">
+            <h3>Content Retrieval</h3>
+            <p>How the server accesses public content:</p>
+            
+            <h4>Collection Access:</h4>
+            <ul>
+              <li><strong>Outbox:</strong> Actor's published activities</li>
+              <li><strong>Public Collections:</strong> Publicly accessible content</li>
+              <li><strong>Pagination:</strong> Handle large collections efficiently</li>
+              <li><strong>Rate Limiting:</strong> Respect server limits</li>
+            </ul>
+
+            <h4>Content Types:</h4>
+            <ul>
+              <li><code>Note</code> - Short text posts (like tweets)</li>
+              <li><code>Article</code> - Longer form content</li>
+              <li><code>Image</code> - Image posts</li>
+              <li><code>Video</code> - Video content</li>
+            </ul>
+          </div>
+
+          <div class="impl-card">
+            <h3>Instance Information</h3>
+            <p>How the server gathers instance metadata:</p>
+            
+            <h4>Data Sources:</h4>
+            <ul>
+              <li><strong>NodeInfo:</strong> Standard instance metadata</li>
+              <li><strong>Instance API:</strong> Platform-specific endpoints</li>
+              <li><strong>Well-known URLs:</strong> Standard discovery endpoints</li>
+              <li><strong>Actor Analysis:</strong> Infer from actor data</li>
+            </ul>
+
+            <h4>Collected Information:</h4>
+            <ul>
+              <li>Software name and version</li>
+              <li>User and post counts</li>
+              <li>Registration status</li>
+              <li>Instance rules and policies</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>🔒 Security Considerations</h2>
+        
+        <div class="security-considerations">
+          <div class="security-card">
+            <h3>HTTP Signatures</h3>
+            <p>ActivityPub uses HTTP signatures for server-to-server authentication:</p>
+            <ul>
+              <li><strong>Verification:</strong> Verify signatures on incoming requests</li>
+              <li><strong>Key Management:</strong> Retrieve and cache public keys</li>
+              <li><strong>Signature Validation:</strong> Ensure request integrity</li>
+              <li><strong>Replay Protection:</strong> Prevent replay attacks</li>
+            </ul>
+          </div>
+
+          <div class="security-card">
+            <h3>Content Validation</h3>
+            <p>Ensuring received content is valid and safe:</p>
+            <ul>
+              <li><strong>Schema Validation:</strong> Verify ActivityStreams format</li>
+              <li><strong>Content Sanitization:</strong> Clean HTML content</li>
+              <li><strong>URL Validation:</strong> Verify URL formats and schemes</li>
+              <li><strong>Size Limits:</strong> Prevent oversized content</li>
+            </ul>
+          </div>
+
+          <div class="security-card">
+            <h3>Privacy Protection</h3>
+            <p>Respecting user privacy and data protection:</p>
+            <ul>
+              <li><strong>Public Data Only:</strong> Access only public information</li>
+              <li><strong>Respect Robots.txt:</strong> Honor crawling restrictions</li>
+              <li><strong>Data Minimization:</strong> Collect only necessary data</li>
+              <li><strong>Retention Limits:</strong> Implement data retention policies</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>🌐 Federation Protocols</h2>
+        
+        <div class="federation-info">
+          <div class="protocol-card">
+            <h3>Activity Delivery</h3>
+            <p>How activities are delivered between servers:</p>
+            <pre><code>POST /users/alice/inbox HTTP/1.1
+Host: example.com
+Content-Type: application/activity+json
+Signature: keyId="https://sender.com/users/bob#main-key",
+           algorithm="rsa-sha256",
+           headers="(request-target) host date",
+           signature="..."
+
+{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Follow",
+  "actor": "https://sender.com/users/bob",
+  "object": "https://example.com/users/alice"
+}</code></pre>
+          </div>
+
+          <div class="protocol-card">
+            <h3>Collection Synchronization</h3>
+            <p>How collections are kept in sync across servers:</p>
+            <ul>
+              <li><strong>Pagination:</strong> Handle large collections efficiently</li>
+              <li><strong>Incremental Updates:</strong> Sync only new content</li>
+              <li><strong>Error Handling:</strong> Graceful failure recovery</li>
+              <li><strong>Rate Limiting:</strong> Respect server capabilities</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>📚 Extensions and Compatibility</h2>
+        
+        <div class="extensions-info">
+          <div class="extension-card">
+            <h3>Common Extensions</h3>
+            <ul>
+              <li><strong>Mastodon Extensions:</strong> Custom properties for Mastodon features</li>
+              <li><strong>PeerTube Extensions:</strong> Video-specific properties</li>
+              <li><strong>Pleroma Extensions:</strong> Additional metadata fields</li>
+              <li><strong>Misskey Extensions:</strong> Reaction and emoji support</li>
+            </ul>
+          </div>
+
+          <div class="extension-card">
+            <h3>Compatibility Strategy</h3>
+            <ul>
+              <li><strong>Graceful Degradation:</strong> Handle unknown properties</li>
+              <li><strong>Core Compliance:</strong> Support standard ActivityPub</li>
+              <li><strong>Extension Detection:</strong> Identify platform-specific features</li>
+              <li><strong>Future-Proofing:</strong> Design for extensibility</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>🔗 Related Resources</h2>
+        <div class="related-resources">
+          <a href="https://www.w3.org/TR/activitypub/" target="_blank" rel="noopener" class="resource-link">
+            <h3>W3C ActivityPub Specification</h3>
+            <p>Official W3C Recommendation for ActivityPub</p>
+          </a>
+          <a href="/docs/specifications/activitystreams-vocabulary-llm-specification-guide/" class="resource-link">
+            <h3>ActivityStreams Vocabulary</h3>
+            <p>Learn about the underlying vocabulary used by ActivityPub</p>
+          </a>
+          <a href="/docs/specifications/webfinger-llm-specification-guide/" class="resource-link">
+            <h3>WebFinger Guide</h3>
+            <p>Understand how actor discovery works with WebFinger</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .spec-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .spec-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  .spec-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .spec-description {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .spec-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .spec-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .overview-content,
+  .architecture-diagram,
+  .implementation-details,
+  .security-considerations,
+  .federation-info,
+  .extensions-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: var(--space-8);
+  }
+
+  .overview-card,
+  .arch-component,
+  .impl-card,
+  .security-card,
+  .protocol-card,
+  .extension-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .overview-card h3,
+  .arch-component h3,
+  .impl-card h3,
+  .security-card h3,
+  .protocol-card h3,
+  .extension-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .overview-card h4,
+  .impl-card h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin: var(--space-4) 0 var(--space-2) 0;
+  }
+
+  .overview-card p,
+  .arch-component p,
+  .impl-card p,
+  .security-card p,
+  .protocol-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin-bottom: var(--space-3);
+  }
+
+  .overview-card ul,
+  .arch-component ul,
+  .impl-card ul,
+  .security-card ul,
+  .extension-card ul {
+    padding-left: var(--space-6);
+    margin: var(--space-3) 0;
+  }
+
+  .overview-card li,
+  .arch-component li,
+  .impl-card li,
+  .security-card li,
+  .extension-card li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .impl-card ol {
+    padding-left: var(--space-6);
+    margin: var(--space-3) 0;
+  }
+
+  .impl-card ol li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .concept-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+  }
+
+  .concept-item {
+    background: var(--bg-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .concept-item h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .concept-item p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+
+  .objects-reference {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .object-card {
+    background: var(--bg-secondary);
+    padding: var(--space-8);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .object-card h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .object-card p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+    line-height: var(--leading-relaxed);
+  }
+
+  .object-card pre,
+  .protocol-card pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    font-family: var(--font-family-mono);
+    margin: var(--space-3) 0;
+  }
+
+  .related-resources {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .resource-link {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .resource-link:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .resource-link h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .resource-link p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

@@ -1,0 +1,604 @@
+---
+const title = "Performance Monitoring - ActivityPub MCP Server";
+const description =
+  "Comprehensive guide to monitoring and optimizing performance of the ActivityPub MCP Server. Learn about metrics, profiling, and optimization techniques.";
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="performance-page">
+    <div class="performance-header">
+      <h1>Performance Monitoring</h1>
+      <p class="performance-description">
+        Comprehensive guide to monitoring and optimizing performance of the ActivityPub MCP Server. Learn about key metrics, profiling techniques, and optimization strategies.
+      </p>
+    </div>
+
+    <div class="performance-content">
+      <section class="performance-section">
+        <h2>📊 Key Performance Metrics</h2>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <h3>Response Time</h3>
+            <ul>
+              <li><strong>Tool Execution Time:</strong> Time to complete MCP tool calls</li>
+              <li><strong>HTTP Request Time:</strong> ActivityPub/WebFinger request latency</li>
+              <li><strong>Cache Hit/Miss Time:</strong> Cache lookup performance</li>
+              <li><strong>End-to-End Latency:</strong> Total user request to response time</li>
+            </ul>
+          </div>
+          <div class="metric-card">
+            <h3>Resource Usage</h3>
+            <ul>
+              <li><strong>Memory Usage:</strong> Heap size and garbage collection</li>
+              <li><strong>CPU Usage:</strong> Processing load and utilization</li>
+              <li><strong>Network I/O:</strong> Bandwidth and connection usage</li>
+              <li><strong>Cache Size:</strong> Memory used by caching layers</li>
+            </ul>
+          </div>
+          <div class="metric-card">
+            <h3>Throughput</h3>
+            <ul>
+              <li><strong>Requests per Second:</strong> Tool call frequency</li>
+              <li><strong>Concurrent Connections:</strong> Simultaneous operations</li>
+              <li><strong>Cache Hit Rate:</strong> Percentage of cache hits</li>
+              <li><strong>Error Rate:</strong> Failed requests percentage</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="performance-section">
+        <h2>🔍 Monitoring Setup</h2>
+        
+        <div class="monitoring-setup">
+          <div class="setup-card">
+            <h3>Built-in Monitoring</h3>
+            <p>The server includes built-in performance monitoring accessible via the health-check tool:</p>
+            <pre><code># Check server performance
+health-check
+
+# Access performance data via resource
+activitypub://server-info</code></pre>
+            
+            <h4>Available Metrics:</h4>
+            <ul>
+              <li>Request count and timing statistics</li>
+              <li>Memory usage and garbage collection stats</li>
+              <li>Cache performance metrics</li>
+              <li>Error counts and types</li>
+            </ul>
+          </div>
+
+          <div class="setup-card">
+            <h3>External Monitoring Tools</h3>
+            <div class="tool-list">
+              <div class="tool-item">
+                <h4>Node.js Profiling</h4>
+                <pre><code># CPU profiling
+node --prof server.js
+
+# Memory profiling
+node --inspect server.js
+
+# Heap snapshots
+node --inspect --inspect-brk server.js</code></pre>
+              </div>
+
+              <div class="tool-item">
+                <h4>Process Monitoring</h4>
+                <pre><code># System resource usage
+top -p $(pgrep -f activitypub-mcp)
+
+# Detailed process info
+ps aux | grep activitypub-mcp
+
+# Memory details
+cat /proc/$(pgrep -f activitypub-mcp)/status</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="performance-section">
+        <h2>📈 Performance Analysis</h2>
+        
+        <div class="analysis-techniques">
+          <div class="technique-card">
+            <h3>Response Time Analysis</h3>
+            <div class="analysis-steps">
+              <h4>1. Baseline Measurement</h4>
+              <pre><code># Measure tool execution time
+time discover-actor @mastodon@mastodon.social
+
+# Benchmark multiple operations
+for i in {1..10}; do
+  time get-instance-info mastodon.social
+done</code></pre>
+
+              <h4>2. Bottleneck Identification</h4>
+              <ul>
+                <li><strong>Network Latency:</strong> Test with different instances</li>
+                <li><strong>Cache Performance:</strong> Compare cached vs uncached requests</li>
+                <li><strong>Processing Time:</strong> Profile JSON parsing and data transformation</li>
+                <li><strong>Concurrency Issues:</strong> Test with multiple simultaneous requests</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="technique-card">
+            <h3>Memory Analysis</h3>
+            <div class="memory-analysis">
+              <h4>Memory Profiling</h4>
+              <pre><code># Generate heap snapshot
+kill -USR2 $(pgrep -f activitypub-mcp)
+
+# Analyze with Chrome DevTools
+node --inspect server.js
+# Open chrome://inspect in Chrome</code></pre>
+
+              <h4>Memory Leak Detection</h4>
+              <ul>
+                <li><strong>Monitor Growth:</strong> Track memory usage over time</li>
+                <li><strong>Cache Limits:</strong> Verify cache size limits are enforced</li>
+                <li><strong>Event Listeners:</strong> Check for unremoved listeners</li>
+                <li><strong>Circular References:</strong> Look for objects preventing GC</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="technique-card">
+            <h3>Cache Performance</h3>
+            <div class="cache-analysis">
+              <h4>Cache Metrics</h4>
+              <pre><code># Check cache statistics
+curl activitypub://server-info | jq '.statistics'
+
+# Monitor cache hit rate
+watch -n 5 'curl -s activitypub://server-info | jq ".statistics.cacheHits, .statistics.cacheMisses"'</code></pre>
+
+              <h4>Optimization Strategies</h4>
+              <ul>
+                <li><strong>TTL Tuning:</strong> Adjust cache expiration times</li>
+                <li><strong>Size Limits:</strong> Optimize cache size vs hit rate</li>
+                <li><strong>Eviction Policy:</strong> Use LRU for better performance</li>
+                <li><strong>Preloading:</strong> Cache frequently accessed data</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="performance-section">
+        <h2>⚡ Optimization Strategies</h2>
+        
+        <div class="optimization-grid">
+          <div class="optimization-card">
+            <h3>Network Optimization</h3>
+            <ul>
+              <li><strong>Connection Pooling:</strong> Reuse HTTP connections</li>
+              <li><strong>Request Batching:</strong> Combine multiple requests</li>
+              <li><strong>Compression:</strong> Enable gzip/brotli compression</li>
+              <li><strong>Timeout Tuning:</strong> Optimize request timeouts</li>
+              <li><strong>Retry Logic:</strong> Implement exponential backoff</li>
+            </ul>
+          </div>
+
+          <div class="optimization-card">
+            <h3>Caching Optimization</h3>
+            <ul>
+              <li><strong>Multi-level Caching:</strong> Memory + disk caching</li>
+              <li><strong>Smart Invalidation:</strong> Selective cache clearing</li>
+              <li><strong>Predictive Caching:</strong> Pre-fetch likely requests</li>
+              <li><strong>Cache Warming:</strong> Populate cache on startup</li>
+              <li><strong>Compression:</strong> Compress cached data</li>
+            </ul>
+          </div>
+
+          <div class="optimization-card">
+            <h3>Processing Optimization</h3>
+            <ul>
+              <li><strong>Async Operations:</strong> Non-blocking I/O</li>
+              <li><strong>Stream Processing:</strong> Process data in chunks</li>
+              <li><strong>Worker Threads:</strong> Offload CPU-intensive tasks</li>
+              <li><strong>JSON Streaming:</strong> Parse large responses incrementally</li>
+              <li><strong>Memory Pooling:</strong> Reuse objects and buffers</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="performance-section">
+        <h2>🚨 Performance Alerts</h2>
+        
+        <div class="alerting-setup">
+          <div class="alert-card">
+            <h3>Threshold Configuration</h3>
+            <div class="threshold-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Metric</th>
+                    <th>Warning</th>
+                    <th>Critical</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Response Time</td>
+                    <td>&gt; 5s</td>
+                    <td>&gt; 15s</td>
+                    <td>Check network/cache</td>
+                  </tr>
+                  <tr>
+                    <td>Memory Usage</td>
+                    <td>&gt; 80%</td>
+                    <td>&gt; 95%</td>
+                    <td>Clear cache/restart</td>
+                  </tr>
+                  <tr>
+                    <td>Error Rate</td>
+                    <td>&gt; 5%</td>
+                    <td>&gt; 15%</td>
+                    <td>Check logs/connectivity</td>
+                  </tr>
+                  <tr>
+                    <td>Cache Hit Rate</td>
+                    <td>&lt; 60%</td>
+                    <td>&lt; 40%</td>
+                    <td>Tune cache settings</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="alert-card">
+            <h3>Monitoring Scripts</h3>
+            <pre><code># Simple performance monitor
+#!/bin/bash
+while true; do
+  MEMORY=$(ps -o pid,vsz,rss,comm -p $(pgrep -f activitypub-mcp))
+  RESPONSE_TIME=$(curl -w "%{time_total}" -s -o /dev/null activitypub://server-info)
+  
+  echo "$(date): Memory: $MEMORY, Response: ${RESPONSE_TIME}s"
+  
+  if (( $(echo "$RESPONSE_TIME > 10" | bc -l) )); then
+    echo "WARNING: High response time detected"
+  fi
+  
+  sleep 60
+done</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="performance-section">
+        <h2>📋 Performance Checklist</h2>
+        
+        <div class="checklist-grid">
+          <div class="checklist-card">
+            <h3>Daily Monitoring</h3>
+            <ul class="checklist">
+              <li>□ Check server response times</li>
+              <li>□ Monitor memory usage trends</li>
+              <li>□ Review error logs</li>
+              <li>□ Verify cache hit rates</li>
+              <li>□ Check for memory leaks</li>
+            </ul>
+          </div>
+
+          <div class="checklist-card">
+            <h3>Weekly Analysis</h3>
+            <ul class="checklist">
+              <li>□ Analyze performance trends</li>
+              <li>□ Review slow queries</li>
+              <li>□ Check cache effectiveness</li>
+              <li>□ Monitor resource usage patterns</li>
+              <li>□ Update performance baselines</li>
+            </ul>
+          </div>
+
+          <div class="checklist-card">
+            <h3>Monthly Optimization</h3>
+            <ul class="checklist">
+              <li>□ Profile application performance</li>
+              <li>□ Optimize cache configurations</li>
+              <li>□ Review and tune timeouts</li>
+              <li>□ Analyze dependency performance</li>
+              <li>□ Plan capacity upgrades</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="performance-section">
+        <h2>🔗 Related Resources</h2>
+        <div class="related-links">
+          <a href="/docs/development/dependency-management/" class="related-link">
+            <h3>Dependency Management</h3>
+            <p>Optimize dependencies for better performance</p>
+          </a>
+          <a href="/docs/troubleshooting/" class="related-link">
+            <h3>Troubleshooting Guide</h3>
+            <p>Solutions for performance-related issues</p>
+          </a>
+          <a href="/docs/api/tools/" class="related-link">
+            <h3>MCP Tools Reference</h3>
+            <p>Understanding tool performance characteristics</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .performance-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .performance-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  .performance-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .performance-description {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .performance-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .performance-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .metrics-grid,
+  .optimization-grid,
+  .checklist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .metric-card,
+  .optimization-card,
+  .checklist-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .metric-card h3,
+  .optimization-card h3,
+  .checklist-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .metric-card ul,
+  .optimization-card ul {
+    padding-left: var(--space-6);
+  }
+
+  .metric-card li,
+  .optimization-card li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .monitoring-setup {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--space-8);
+  }
+
+  .setup-card {
+    background: var(--bg-secondary);
+    padding: var(--space-8);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .setup-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .setup-card pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    font-family: var(--font-family-mono);
+    margin: var(--space-3) 0;
+  }
+
+  .tool-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .tool-item {
+    background: var(--bg-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .tool-item h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .analysis-techniques {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .technique-card {
+    background: var(--bg-secondary);
+    padding: var(--space-8);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .technique-card h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .analysis-steps h4,
+  .memory-analysis h4,
+  .cache-analysis h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin: var(--space-4) 0 var(--space-2) 0;
+  }
+
+  .analysis-steps ul,
+  .memory-analysis ul,
+  .cache-analysis ul {
+    padding-left: var(--space-6);
+    margin: var(--space-3) 0;
+  }
+
+  .analysis-steps li,
+  .memory-analysis li,
+  .cache-analysis li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .alerting-setup {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--space-8);
+  }
+
+  .alert-card {
+    background: var(--bg-secondary);
+    padding: var(--space-8);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .alert-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .threshold-table {
+    overflow-x: auto;
+  }
+
+  .threshold-table table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .threshold-table th,
+  .threshold-table td {
+    padding: var(--space-3);
+    text-align: left;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .threshold-table th {
+    background: var(--color-gray-100);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+  }
+
+  .threshold-table td {
+    color: var(--text-secondary);
+  }
+
+  .checklist {
+    list-style: none;
+    padding: 0;
+  }
+
+  .checklist li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+    font-family: var(--font-family-mono);
+  }
+
+  .related-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .related-link {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .related-link:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .related-link h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .related-link p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

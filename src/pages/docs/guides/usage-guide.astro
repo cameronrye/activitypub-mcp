@@ -1,0 +1,539 @@
+---
+const title = "Usage Guide - ActivityPub MCP Server";
+const description =
+  "Comprehensive usage guide for the ActivityPub MCP Server. Learn advanced workflows, best practices, and power-user techniques.";
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="usage-guide-page">
+    <div class="guide-header">
+      <h1>Usage Guide</h1>
+      <p class="guide-description">
+        Comprehensive guide to using the ActivityPub MCP Server effectively. Learn advanced workflows, best practices, and power-user techniques for exploring the fediverse.
+      </p>
+    </div>
+
+    <div class="guide-content">
+      <section class="guide-section">
+        <h2>🎯 Understanding the Fediverse</h2>
+        <div class="concept-grid">
+          <div class="concept-card">
+            <h3>Decentralized Network</h3>
+            <p>The fediverse consists of thousands of independent servers (instances) that communicate using open protocols like ActivityPub.</p>
+          </div>
+          <div class="concept-card">
+            <h3>Actors and Objects</h3>
+            <p>Users are "actors" who create and share "objects" (posts, images, etc.) across the network using standardized formats.</p>
+          </div>
+          <div class="concept-card">
+            <h3>Federation</h3>
+            <p>Instances can federate (connect) with each other, allowing users to follow and interact across different servers.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="guide-section">
+        <h2>🔧 Tool Categories</h2>
+        
+        <div class="tool-categories">
+          <div class="category-card">
+            <h3>🔍 Discovery Tools</h3>
+            <ul>
+              <li><code>discover-actor</code> - Find and analyze fediverse users</li>
+              <li><code>discover-instances</code> - Search for instances by topic</li>
+              <li><code>search-content</code> - Find posts and content</li>
+            </ul>
+            <p><strong>Use for:</strong> Finding new communities, researching topics, identifying key actors</p>
+          </div>
+
+          <div class="category-card">
+            <h3>📊 Information Tools</h3>
+            <ul>
+              <li><code>get-instance-info</code> - Instance metadata and statistics</li>
+              <li><code>fetch-timeline</code> - Actor's recent posts</li>
+              <li><code>get-post-details</code> - Detailed post information</li>
+            </ul>
+            <p><strong>Use for:</strong> Understanding communities, analyzing content, tracking activity</p>
+          </div>
+
+          <div class="category-card">
+            <h3>🔧 Utility Tools</h3>
+            <ul>
+              <li><code>health-check</code> - Server status and performance</li>
+              <li><code>clear-cache</code> - Reset cached data</li>
+              <li><code>validate-actor</code> - Check actor accessibility</li>
+            </ul>
+            <p><strong>Use for:</strong> Troubleshooting, maintenance, optimization</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="guide-section">
+        <h2>📈 Advanced Workflows</h2>
+        
+        <div class="workflow-list">
+          <div class="workflow-card">
+            <h3>Community Research Workflow</h3>
+            <div class="workflow-steps">
+              <ol>
+                <li><strong>Topic Discovery:</strong> Use <code>discover-instances</code> to find relevant communities</li>
+                <li><strong>Instance Analysis:</strong> Use <code>get-instance-info</code> to understand each community</li>
+                <li><strong>Key Actor Identification:</strong> Use <code>discover-actor</code> to find influential users</li>
+                <li><strong>Content Analysis:</strong> Use <code>fetch-timeline</code> to analyze recent discussions</li>
+                <li><strong>Trend Identification:</strong> Look for common themes and popular topics</li>
+              </ol>
+            </div>
+            <div class="workflow-example">
+              <h4>Example Query:</h4>
+              <blockquote>
+                "Research the open source software community in the fediverse. Find the most active instances, identify key contributors, and summarize current discussions."
+              </blockquote>
+            </div>
+          </div>
+
+          <div class="workflow-card">
+            <h3>Content Monitoring Workflow</h3>
+            <div class="workflow-steps">
+              <ol>
+                <li><strong>Actor Selection:</strong> Identify actors to monitor</li>
+                <li><strong>Baseline Establishment:</strong> Get current activity levels</li>
+                <li><strong>Regular Monitoring:</strong> Check timelines periodically</li>
+                <li><strong>Change Detection:</strong> Identify significant changes or trends</li>
+                <li><strong>Analysis and Reporting:</strong> Summarize findings</li>
+              </ol>
+            </div>
+            <div class="workflow-example">
+              <h4>Example Query:</h4>
+              <blockquote>
+                "Monitor @mozilla@mozilla.social for new product announcements and summarize any significant updates from the past week."
+              </blockquote>
+            </div>
+          </div>
+
+          <div class="workflow-card">
+            <h3>Network Analysis Workflow</h3>
+            <div class="workflow-steps">
+              <ol>
+                <li><strong>Seed Selection:</strong> Choose starting actors or instances</li>
+                <li><strong>Connection Mapping:</strong> Discover followers and following relationships</li>
+                <li><strong>Influence Analysis:</strong> Identify highly connected actors</li>
+                <li><strong>Community Detection:</strong> Find clusters and subgroups</li>
+                <li><strong>Visualization:</strong> Create network maps and diagrams</li>
+              </ol>
+            </div>
+            <div class="workflow-example">
+              <h4>Example Query:</h4>
+              <blockquote>
+                "Map the network of climate science researchers in the fediverse. Show how they're connected and identify the most influential voices."
+              </blockquote>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="guide-section">
+        <h2>💡 Best Practices</h2>
+        
+        <div class="best-practices">
+          <div class="practice-category">
+            <h3>🎯 Efficient Discovery</h3>
+            <ul>
+              <li><strong>Start Broad, Then Narrow:</strong> Begin with general searches, then focus on specific actors or instances</li>
+              <li><strong>Use Multiple Formats:</strong> Try different actor identifier formats (@user@domain, URLs)</li>
+              <li><strong>Cross-Reference:</strong> Verify information across multiple sources</li>
+              <li><strong>Cache Awareness:</strong> Understand that data may be cached for performance</li>
+            </ul>
+          </div>
+
+          <div class="practice-category">
+            <h3>⚡ Performance Optimization</h3>
+            <ul>
+              <li><strong>Batch Requests:</strong> Group related queries together</li>
+              <li><strong>Limit Results:</strong> Use appropriate limits for large datasets</li>
+              <li><strong>Monitor Rate Limits:</strong> Respect instance rate limiting</li>
+              <li><strong>Clear Cache Strategically:</strong> Only clear cache when fresh data is needed</li>
+            </ul>
+          </div>
+
+          <div class="practice-category">
+            <h3>🔒 Privacy and Ethics</h3>
+            <ul>
+              <li><strong>Respect Privacy:</strong> Only access public information</li>
+              <li><strong>Follow Instance Rules:</strong> Respect each instance's terms of service</li>
+              <li><strong>Be Mindful of Load:</strong> Don't overwhelm small instances</li>
+              <li><strong>Attribute Sources:</strong> Credit instances and actors when sharing findings</li>
+            </ul>
+          </div>
+
+          <div class="practice-category">
+            <h3>📊 Data Quality</h3>
+            <ul>
+              <li><strong>Verify Timestamps:</strong> Check when data was last updated</li>
+              <li><strong>Handle Errors Gracefully:</strong> Account for unavailable instances or actors</li>
+              <li><strong>Cross-Validate:</strong> Confirm important findings through multiple sources</li>
+              <li><strong>Document Methodology:</strong> Keep track of your research process</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="guide-section">
+        <h2>🔍 Advanced Query Techniques</h2>
+        
+        <div class="query-techniques">
+          <div class="technique-card">
+            <h3>Chained Discovery</h3>
+            <p>Use results from one tool as input for another:</p>
+            <div class="technique-example">
+              <pre><code># 1. Find instances
+discover-instances "journalism"
+
+# 2. Get details for each
+get-instance-info journa.host
+
+# 3. Find key actors
+discover-actor @admin@journa.host
+
+# 4. Analyze their content
+fetch-timeline https://journa.host/users/admin</code></pre>
+            </div>
+          </div>
+
+          <div class="technique-card">
+            <h3>Comparative Analysis</h3>
+            <p>Compare multiple instances or actors side by side:</p>
+            <div class="technique-example">
+              <blockquote>
+                "Compare the posting frequency, engagement levels, and topic focus between @user1@instance1.com and @user2@instance2.com"
+              </blockquote>
+            </div>
+          </div>
+
+          <div class="technique-card">
+            <h3>Temporal Analysis</h3>
+            <p>Track changes over time:</p>
+            <div class="technique-example">
+              <blockquote>
+                "Track how the discussion about renewable energy has evolved on climate-focused instances over the past month"
+              </blockquote>
+            </div>
+          </div>
+
+          <div class="technique-card">
+            <h3>Cross-Instance Research</h3>
+            <p>Research topics across multiple instances:</p>
+            <div class="technique-example">
+              <blockquote>
+                "Find all instances discussing artificial intelligence and compare their perspectives and community attitudes"
+              </blockquote>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="guide-section">
+        <h2>🚨 Common Pitfalls</h2>
+        
+        <div class="pitfalls-list">
+          <div class="pitfall-card">
+            <h3>❌ Over-Reliance on Single Sources</h3>
+            <p><strong>Problem:</strong> Drawing conclusions from one instance or actor</p>
+            <p><strong>Solution:</strong> Always cross-reference with multiple sources</p>
+          </div>
+
+          <div class="pitfall-card">
+            <h3>❌ Ignoring Instance Differences</h3>
+            <p><strong>Problem:</strong> Treating all instances as equivalent</p>
+            <p><strong>Solution:</strong> Understand each instance's culture, rules, and focus</p>
+          </div>
+
+          <div class="pitfall-card">
+            <h3>❌ Cache Confusion</h3>
+            <p><strong>Problem:</strong> Not understanding when data is cached vs. fresh</p>
+            <p><strong>Solution:</strong> Check timestamps and clear cache when needed</p>
+          </div>
+
+          <div class="pitfall-card">
+            <h3>❌ Rate Limit Violations</h3>
+            <p><strong>Problem:</strong> Making too many requests too quickly</p>
+            <p><strong>Solution:</strong> Pace requests and respect instance limits</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="guide-section">
+        <h2>📚 Learning Resources</h2>
+        
+        <div class="resources-grid">
+          <div class="resource-card">
+            <h3>ActivityPub Specification</h3>
+            <p>Official W3C specification for the ActivityPub protocol</p>
+            <a href="https://www.w3.org/TR/activitypub/" target="_blank" rel="noopener">Read Specification</a>
+          </div>
+
+          <div class="resource-card">
+            <h3>Fediverse Guide</h3>
+            <p>Comprehensive guide to understanding the fediverse</p>
+            <a href="https://fediverse.info/" target="_blank" rel="noopener">Learn More</a>
+          </div>
+
+          <div class="resource-card">
+            <h3>Instance Directory</h3>
+            <p>Browse and discover fediverse instances</p>
+            <a href="https://instances.social/" target="_blank" rel="noopener">Explore Instances</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="guide-section">
+        <h2>🔗 Next Steps</h2>
+        <div class="next-steps">
+          <a href="/docs/guides/real-world-test-scenario/" class="next-step-card">
+            <h3>Real-World Scenarios</h3>
+            <p>Apply these techniques to practical, real-world use cases.</p>
+          </a>
+          <a href="/docs/api/tools/" class="next-step-card">
+            <h3>Complete Tool Reference</h3>
+            <p>Detailed documentation for all available MCP tools.</p>
+          </a>
+          <a href="/docs/troubleshooting/" class="next-step-card">
+            <h3>Troubleshooting Guide</h3>
+            <p>Solutions for common issues and problems.</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .usage-guide-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .guide-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  .guide-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .guide-description {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .guide-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .guide-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .concept-grid,
+  .tool-categories,
+  .best-practices,
+  .query-techniques,
+  .pitfalls-list,
+  .resources-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .concept-card,
+  .category-card,
+  .practice-category,
+  .technique-card,
+  .pitfall-card,
+  .resource-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .concept-card h3,
+  .category-card h3,
+  .practice-category h3,
+  .technique-card h3,
+  .pitfall-card h3,
+  .resource-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .concept-card p,
+  .category-card p,
+  .practice-category p,
+  .technique-card p,
+  .pitfall-card p,
+  .resource-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+  }
+
+  .category-card ul,
+  .practice-category ul {
+    padding-left: var(--space-6);
+    margin: var(--space-3) 0;
+  }
+
+  .category-card li,
+  .practice-category li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .category-card code {
+    background: var(--color-gray-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+  }
+
+  .workflow-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .workflow-card {
+    background: var(--bg-secondary);
+    padding: var(--space-8);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .workflow-card h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .workflow-steps ol {
+    padding-left: var(--space-6);
+    margin-bottom: var(--space-6);
+  }
+
+  .workflow-steps li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+    line-height: var(--leading-relaxed);
+  }
+
+  .workflow-example {
+    background: var(--bg-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--color-primary);
+  }
+
+  .workflow-example h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .workflow-example blockquote {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    margin: 0;
+    font-style: italic;
+  }
+
+  .technique-example pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    font-family: var(--font-family-mono);
+    margin: var(--space-3) 0;
+  }
+
+  .technique-example blockquote {
+    background: var(--bg-tertiary);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--color-primary);
+    margin: var(--space-3) 0;
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+
+  .resource-card a {
+    display: inline-block;
+    margin-top: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-medium);
+    transition: background-color var(--transition-fast);
+  }
+
+  .resource-card a:hover {
+    background: var(--color-primary-dark);
+  }
+
+  .next-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .next-step-card {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .next-step-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .next-step-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .next-step-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

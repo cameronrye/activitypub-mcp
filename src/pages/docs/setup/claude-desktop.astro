@@ -1,0 +1,694 @@
+---
+const title = "Claude Desktop Integration - ActivityPub MCP Server";
+const description =
+  "Complete guide to integrating the ActivityPub MCP Server with Claude Desktop for seamless AI-powered fediverse exploration.";
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="claude-integration-page">
+    <div class="integration-header">
+      <h1>Claude Desktop Integration</h1>
+      <p class="integration-description">
+        Complete guide to setting up seamless integration between the ActivityPub MCP Server and Claude Desktop. Enable AI-powered exploration of the fediverse with natural language commands.
+      </p>
+    </div>
+
+    <div class="integration-content">
+      <section class="integration-section">
+        <h2>🎯 Overview</h2>
+        <p>Claude Desktop integration allows you to:</p>
+        <ul>
+          <li><strong>Natural Language Queries:</strong> Ask Claude to explore the fediverse using plain English</li>
+          <li><strong>Automated Workflows:</strong> Let Claude chain multiple MCP tools together</li>
+          <li><strong>Intelligent Analysis:</strong> Get AI-powered insights about fediverse content and communities</li>
+          <li><strong>Seamless Experience:</strong> No need to remember specific tool names or parameters</li>
+        </ul>
+      </section>
+
+      <section class="integration-section">
+        <h2>📋 Prerequisites</h2>
+        <div class="prerequisites-grid">
+          <div class="prerequisite-card">
+            <h3>Claude Desktop</h3>
+            <p>Download and install Claude Desktop from Anthropic</p>
+            <a href="https://claude.ai/download" target="_blank" rel="noopener" class="btn btn-primary">Download Claude Desktop</a>
+          </div>
+          <div class="prerequisite-card">
+            <h3>ActivityPub MCP Server</h3>
+            <p>Install the server using npm or npx</p>
+            <pre><code>npx activitypub-mcp install</code></pre>
+          </div>
+          <div class="prerequisite-card">
+            <h3>Node.js 18+</h3>
+            <p>Required for running the MCP server</p>
+            <a href="https://nodejs.org" target="_blank" rel="noopener" class="btn btn-outline">Download Node.js</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="integration-section">
+        <h2>⚙️ Configuration Setup</h2>
+        
+        <div class="config-steps">
+          <div class="config-step">
+            <h3>Step 1: Locate Configuration File</h3>
+            <p>Find your Claude Desktop configuration file:</p>
+            
+            <div class="platform-configs">
+              <div class="platform-config">
+                <h4>macOS</h4>
+                <pre><code>~/Library/Application Support/Claude/claude_desktop_config.json</code></pre>
+              </div>
+              <div class="platform-config">
+                <h4>Windows</h4>
+                <pre><code>%APPDATA%\Claude\claude_desktop_config.json</code></pre>
+              </div>
+              <div class="platform-config">
+                <h4>Linux</h4>
+                <pre><code>~/.config/Claude/claude_desktop_config.json</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="config-step">
+            <h3>Step 2: Create or Edit Configuration</h3>
+            <p>If the file doesn't exist, create it. Add the ActivityPub MCP Server configuration:</p>
+            
+            <div class="config-example">
+              <h4>Basic Configuration</h4>
+              <pre><code>{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}</code></pre>
+            </div>
+
+            <div class="config-example">
+              <h4>Advanced Configuration</h4>
+              <pre><code>{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "debug",
+        "USER_AGENT": "Claude-ActivityPub-Explorer/1.0",
+        "REQUEST_TIMEOUT": "60000",
+        "CACHE_TTL": "600",
+        "RATE_LIMIT_REQUESTS": "100"
+      }
+    }
+  }
+}</code></pre>
+            </div>
+          </div>
+
+          <div class="config-step">
+            <h3>Step 3: Restart Claude Desktop</h3>
+            <p>Close Claude Desktop completely and restart it to load the new configuration.</p>
+            
+            <div class="restart-instructions">
+              <div class="restart-platform">
+                <h4>macOS</h4>
+                <pre><code># Force quit and restart
+killall Claude
+open -a Claude</code></pre>
+              </div>
+              <div class="restart-platform">
+                <h4>Windows</h4>
+                <p>Use Task Manager to end Claude processes, then restart from Start Menu</p>
+              </div>
+              <div class="restart-platform">
+                <h4>Linux</h4>
+                <pre><code># Kill and restart
+pkill claude
+claude &</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="integration-section">
+        <h2>✅ Verification</h2>
+        
+        <div class="verification-steps">
+          <div class="verification-step">
+            <h3>1. Check Server Connection</h3>
+            <p>In Claude Desktop, ask:</p>
+            <blockquote>
+              "Can you check if the ActivityPub MCP server is working?"
+            </blockquote>
+            <p>Claude should respond with server status information.</p>
+          </div>
+
+          <div class="verification-step">
+            <h3>2. Test Basic Functionality</h3>
+            <p>Try a simple discovery command:</p>
+            <blockquote>
+              "Can you discover information about @mastodon@mastodon.social?"
+            </blockquote>
+            <p>Claude should use the discover-actor tool and return actor information.</p>
+          </div>
+
+          <div class="verification-step">
+            <h3>3. Test Complex Queries</h3>
+            <p>Try a more complex request:</p>
+            <blockquote>
+              "Help me find interesting technology communities in the fediverse and show me what people are discussing there."
+            </blockquote>
+            <p>Claude should chain multiple tools together to fulfill this request.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="integration-section">
+        <h2>💬 Usage Examples</h2>
+        
+        <div class="usage-examples">
+          <div class="example-category">
+            <h3>Discovery Queries</h3>
+            <div class="example-list">
+              <div class="example-item">
+                <h4>Find Communities</h4>
+                <blockquote>"Find me some active art communities in the fediverse"</blockquote>
+              </div>
+              <div class="example-item">
+                <h4>Explore Instances</h4>
+                <blockquote>"What can you tell me about fosstodon.org?"</blockquote>
+              </div>
+              <div class="example-item">
+                <h4>Actor Information</h4>
+                <blockquote>"Get information about @gargron@mastodon.social"</blockquote>
+              </div>
+            </div>
+          </div>
+
+          <div class="example-category">
+            <h3>Content Exploration</h3>
+            <div class="example-list">
+              <div class="example-item">
+                <h4>Timeline Analysis</h4>
+                <blockquote>"Show me recent posts from @mozilla@mozilla.social and summarize the main topics"</blockquote>
+              </div>
+              <div class="example-item">
+                <h4>Trend Discovery</h4>
+                <blockquote>"What are people talking about on technology-focused Mastodon instances?"</blockquote>
+              </div>
+              <div class="example-item">
+                <h4>Community Comparison</h4>
+                <blockquote>"Compare the communities on mastodon.social and fosstodon.org"</blockquote>
+              </div>
+            </div>
+          </div>
+
+          <div class="example-category">
+            <h3>Research Queries</h3>
+            <div class="example-list">
+              <div class="example-item">
+                <h4>Topic Research</h4>
+                <blockquote>"Help me research what the fediverse community thinks about AI and machine learning"</blockquote>
+              </div>
+              <div class="example-item">
+                <h4>Instance Analysis</h4>
+                <blockquote>"Analyze the rules and policies of different Mastodon instances"</blockquote>
+              </div>
+              <div class="example-item">
+                <h4>Network Mapping</h4>
+                <blockquote>"Map out the connections between different fediverse instances"</blockquote>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="integration-section">
+        <h2>🔧 Troubleshooting</h2>
+        
+        <div class="troubleshooting-list">
+          <div class="trouble-item">
+            <h3>Server Not Found</h3>
+            <div class="trouble-details">
+              <h4>Symptoms:</h4>
+              <ul>
+                <li>Claude says "I don't have access to ActivityPub tools"</li>
+                <li>No MCP tools appear in Claude</li>
+              </ul>
+              <h4>Solutions:</h4>
+              <ol>
+                <li>Verify configuration file location and syntax</li>
+                <li>Restart Claude Desktop completely</li>
+                <li>Check that Node.js and npm are installed</li>
+                <li>Test server manually: <code>npx activitypub-mcp</code></li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="trouble-item">
+            <h3>Connection Errors</h3>
+            <div class="trouble-details">
+              <h4>Symptoms:</h4>
+              <ul>
+                <li>Tools timeout or fail to respond</li>
+                <li>Error messages about server connection</li>
+              </ul>
+              <h4>Solutions:</h4>
+              <ol>
+                <li>Check internet connectivity</li>
+                <li>Increase timeout in configuration</li>
+                <li>Check firewall settings</li>
+                <li>Try with debug logging enabled</li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="trouble-item">
+            <h3>Performance Issues</h3>
+            <div class="trouble-details">
+              <h4>Symptoms:</h4>
+              <ul>
+                <li>Slow responses from tools</li>
+                <li>Claude takes a long time to process requests</li>
+              </ul>
+              <h4>Solutions:</h4>
+              <ol>
+                <li>Reduce cache TTL for faster updates</li>
+                <li>Limit concurrent requests</li>
+                <li>Use more specific queries</li>
+                <li>Clear server cache periodically</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="integration-section">
+        <h2>🚀 Advanced Features</h2>
+        
+        <div class="advanced-features">
+          <div class="feature-card">
+            <h3>Custom Prompts</h3>
+            <p>Create custom prompts for common workflows:</p>
+            <pre><code>"Create a weekly report of trending topics in the tech fediverse"</code></pre>
+          </div>
+
+          <div class="feature-card">
+            <h3>Automated Monitoring</h3>
+            <p>Set up regular checks for specific actors or instances:</p>
+            <pre><code>"Monitor @mozilla@mozilla.social for new announcements"</code></pre>
+          </div>
+
+          <div class="feature-card">
+            <h3>Data Analysis</h3>
+            <p>Use Claude's analysis capabilities with fediverse data:</p>
+            <pre><code>"Analyze the sentiment of recent posts about climate change"</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="integration-section">
+        <h2>🔗 Next Steps</h2>
+        <div class="next-steps">
+          <a href="/docs/guides/basic-usage/" class="next-step-card">
+            <h3>Basic Usage Guide</h3>
+            <p>Learn the essential commands and workflows for everyday use.</p>
+          </a>
+          <a href="/docs/guides/examples/" class="next-step-card">
+            <h3>Practical Examples</h3>
+            <p>See real-world examples and use cases with Claude Desktop.</p>
+          </a>
+          <a href="/docs/api/tools/" class="next-step-card">
+            <h3>Complete Tool Reference</h3>
+            <p>Detailed documentation for all available MCP tools.</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .claude-integration-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .integration-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  .integration-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .integration-description {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .integration-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .integration-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .prerequisites-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .prerequisite-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-align: center;
+  }
+
+  .prerequisite-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .prerequisite-card p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  .prerequisite-card pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    margin: var(--space-3) 0;
+  }
+
+  .config-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .config-step {
+    background: var(--bg-secondary);
+    padding: var(--space-8);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .config-step h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .platform-configs,
+  .restart-instructions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--space-4);
+    margin: var(--space-4) 0;
+  }
+
+  .platform-config,
+  .restart-platform {
+    background: var(--bg-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .platform-config h4,
+  .restart-platform h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .config-example {
+    margin: var(--space-6) 0;
+  }
+
+  .config-example h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .config-example pre,
+  .platform-config pre,
+  .restart-platform pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    font-family: var(--font-family-mono);
+    margin: var(--space-2) 0;
+  }
+
+  .verification-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .verification-step {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border-left: 4px solid var(--color-primary);
+  }
+
+  .verification-step h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .verification-step blockquote {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    margin: var(--space-3) 0;
+    font-style: italic;
+  }
+
+  .usage-examples {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-8);
+  }
+
+  .example-category {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .example-category h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .example-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .example-item {
+    background: var(--bg-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .example-item h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .example-item blockquote {
+    background: var(--bg-tertiary);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--color-primary);
+    margin: 0;
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+
+  .troubleshooting-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .trouble-item {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .trouble-item h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-error);
+    margin-bottom: var(--space-4);
+  }
+
+  .trouble-details h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin: var(--space-3) 0 var(--space-2) 0;
+  }
+
+  .trouble-details ul,
+  .trouble-details ol {
+    padding-left: var(--space-6);
+    margin-bottom: var(--space-3);
+  }
+
+  .trouble-details li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+    line-height: var(--leading-relaxed);
+  }
+
+  .advanced-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .feature-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .feature-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .feature-card p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+  }
+
+  .feature-card pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+  }
+
+  .next-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .next-step-card {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .next-step-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .next-step-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .next-step-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-weight: var(--font-medium);
+    transition: all var(--transition-fast);
+  }
+
+  .btn-primary {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+  }
+
+  .btn-primary:hover {
+    background: var(--color-primary-dark);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+  }
+
+  .btn-outline:hover {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+  }
+</style>
