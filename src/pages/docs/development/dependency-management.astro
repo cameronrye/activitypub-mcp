@@ -1,4 +1,6 @@
 ---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
 const title = "Dependency Management - ActivityPub MCP Server";
 const description =
   "Comprehensive guide to managing dependencies for the ActivityPub MCP Server. Learn about package management, security updates, and dependency optimization.";
@@ -250,16 +252,18 @@ git log --oneline --since="1 week ago"
                 <h4>Dependency Conflicts</h4>
                 <p><strong>Symptoms:</strong> Installation errors, version conflicts</p>
                 <p><strong>Solutions:</strong></p>
-                <pre><code># Clear cache and reinstall
+                <pre><code set:html={`# Clear cache and reinstall
 npm cache clean --force
 rm -rf node_modules package-lock.json
 npm install
 
 # Use npm overrides for conflicts
 # Add to package.json:
-"overrides": {
-  "package-name": "version"
-}</code></pre>
+{
+  "overrides": {
+    "package-name": "version"
+  }
+}`}></code></pre>
               </div>
 
               <div class="issue-item">

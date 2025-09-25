@@ -1,10 +1,12 @@
 ---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
 const title = "MCP Tools Reference - ActivityPub MCP Server";
 const description =
   "Complete reference documentation for all MCP tools provided by the ActivityPub MCP Server.";
 ---
 
-<BaseLayout title={title} description={description}>
+<DocsLayout title={title} description={description}>
   <div class="tools-page">
     <div class="container">
       <div class="tools-header">
@@ -304,31 +306,31 @@ clear-cache instances</code></pre>
             <div class="error-type">
               <h3>Validation Errors</h3>
               <p>Returned when parameters are invalid or missing:</p>
-              <pre><code>{`{
+              <pre><code set:html={`{\`{
   "error": "Invalid parameter",
   "message": "Actor identifier must be in @user@domain format or valid URL",
   "code": "INVALID_PARAMETER"
-}`}</code></pre>
+}\`}`}></code></pre>
             </div>
 
             <div class="error-type">
               <h3>Network Errors</h3>
               <p>Returned when external services are unreachable:</p>
-              <pre><code>{`{
+              <pre><code set:html={`{\`{
   "error": "Network error",
   "message": "Failed to connect to instance: connection timeout",
   "code": "NETWORK_ERROR"
-}`}</code></pre>
+}\`}`}></code></pre>
             </div>
 
             <div class="error-type">
               <h3>Not Found Errors</h3>
               <p>Returned when requested resources don't exist:</p>
-              <pre><code>{`{
+              <pre><code set:html={`{\`{
   "error": "Not found",
   "message": "Actor not found or not accessible",
   "code": "NOT_FOUND"
-}`}</code></pre>
+}\`}`}></code></pre>
             </div>
           </div>
         </section>
@@ -353,7 +355,7 @@ clear-cache instances</code></pre>
       </div>
     </div>
   </div>
-</BaseLayout>
+</DocsLayout>
 
 <style>
   .tools-page {

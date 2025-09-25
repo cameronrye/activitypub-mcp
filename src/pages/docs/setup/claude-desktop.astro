@@ -1,4 +1,6 @@
 ---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
 const title = "Claude Desktop Integration - ActivityPub MCP Server";
 const description =
   "Complete guide to integrating the ActivityPub MCP Server with Claude Desktop for seamless AI-powered fediverse exploration.";
@@ -76,7 +78,7 @@ const description =
             
             <div class="config-example">
               <h4>Basic Configuration</h4>
-              <pre><code>{
+              <pre><code set:html={`{
   "mcpServers": {
     "activitypub": {
       "command": "npx",
@@ -86,12 +88,12 @@ const description =
       }
     }
   }
-}</code></pre>
+}`}></code></pre>
             </div>
 
             <div class="config-example">
               <h4>Advanced Configuration</h4>
-              <pre><code>{
+              <pre><code set:html={`{
   "mcpServers": {
     "activitypub": {
       "command": "npx",
@@ -105,7 +107,7 @@ const description =
       }
     }
   }
-}</code></pre>
+}`}></code></pre>
             </div>
           </div>
 

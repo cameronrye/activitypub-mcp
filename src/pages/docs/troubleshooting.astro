@@ -1,10 +1,12 @@
 ---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
 const title = "Troubleshooting Guide - ActivityPub MCP Server";
 const description =
   "Solutions for common issues and problems when using the ActivityPub MCP Server with LLMs.";
 ---
 
-<BaseLayout title={title} description={description}>
+<DocsLayout title={title} description={description}>
   <div class="troubleshooting-page">
     <div class="container">
       <div class="troubleshooting-header">
@@ -351,7 +353,7 @@ curl https://instance.com/api/v1/instance</code></pre>
       </div>
     </div>
   </div>
-</BaseLayout>
+</DocsLayout>
 
 <style>
   .troubleshooting-page {

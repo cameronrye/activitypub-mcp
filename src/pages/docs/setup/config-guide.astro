@@ -1,4 +1,6 @@
 ---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
 const title = "Configuration Guide - ActivityPub MCP Server";
 const description =
   "Comprehensive configuration guide for the ActivityPub MCP Server. Learn how to customize server behavior, environment variables, and client integration.";
@@ -151,7 +153,7 @@ const description =
           
           <div class="config-example">
             <h4>Basic Configuration</h4>
-            <pre><code>{
+            <pre><code set:html={`{
   "mcpServers": {
     "activitypub": {
       "command": "npx",
@@ -161,12 +163,12 @@ const description =
       }
     }
   }
-}</code></pre>
+}`}></code></pre>
           </div>
 
           <div class="config-example">
             <h4>Advanced Configuration</h4>
-            <pre><code>{
+            <pre><code set:html={`{
   "mcpServers": {
     "activitypub": {
       "command": "npx",
@@ -180,7 +182,7 @@ const description =
       }
     }
   }
-}</code></pre>
+}`}></code></pre>
           </div>
 
           <div class="config-paths">
@@ -199,7 +201,7 @@ const description =
           
           <div class="config-example">
             <h4>Generic MCP Client</h4>
-            <pre><code>{
+            <pre><code set:html={`{
   "servers": {
     "activitypub": {
       "command": "npx",
@@ -209,7 +211,7 @@ const description =
       }
     }
   }
-}</code></pre>
+}`}></code></pre>
           </div>
         </div>
       </section>

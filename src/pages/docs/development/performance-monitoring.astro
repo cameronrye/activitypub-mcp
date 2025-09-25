@@ -1,4 +1,6 @@
 ---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
 const title = "Performance Monitoring - ActivityPub MCP Server";
 const description =
   "Comprehensive guide to monitoring and optimizing performance of the ActivityPub MCP Server. Learn about metrics, profiling, and optimization techniques.";
@@ -108,13 +110,13 @@ cat /proc/$(pgrep -f activitypub-mcp)/status</code></pre>
             <h3>Response Time Analysis</h3>
             <div class="analysis-steps">
               <h4>1. Baseline Measurement</h4>
-              <pre><code># Measure tool execution time
+              <pre><code set:html={`# Measure tool execution time
 time discover-actor @mastodon@mastodon.social
 
 # Benchmark multiple operations
 for i in {1..10}; do
   time get-instance-info mastodon.social
-done</code></pre>
+done`}></code></pre>
 
               <h4>2. Bottleneck Identification</h4>
               <ul>
@@ -256,20 +258,20 @@ watch -n 5 'curl -s activitypub://server-info | jq ".statistics.cacheHits, .stat
 
           <div class="alert-card">
             <h3>Monitoring Scripts</h3>
-            <pre><code># Simple performance monitor
+            <pre><code set:html={`# Simple performance monitor
 #!/bin/bash
 while true; do
   MEMORY=$(ps -o pid,vsz,rss,comm -p $(pgrep -f activitypub-mcp))
   RESPONSE_TIME=$(curl -w "%{time_total}" -s -o /dev/null activitypub://server-info)
-  
-  echo "$(date): Memory: $MEMORY, Response: ${RESPONSE_TIME}s"
-  
+
+  echo "$(date): Memory: $MEMORY, Response: \${RESPONSE_TIME}s"
+
   if (( $(echo "$RESPONSE_TIME > 10" | bc -l) )); then
     echo "WARNING: High response time detected"
   fi
-  
+
   sleep 60
-done</code></pre>
+done`}></code></pre>
           </div>
         </div>
       </section>
