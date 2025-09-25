@@ -1,0 +1,557 @@
+---
+const title = "Cross-Platform Setup - ActivityPub MCP Server";
+const description =
+  "Platform-specific installation and setup instructions for the ActivityPub MCP Server on Windows, macOS, and Linux.";
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="cross-platform-page">
+    <div class="platform-header">
+      <h1>Cross-Platform Setup</h1>
+      <p class="platform-description">
+        Platform-specific installation and setup instructions for Windows, macOS, and Linux. Get the ActivityPub MCP Server running on your preferred operating system.
+      </p>
+    </div>
+
+    <div class="platform-content">
+      <section class="platform-section">
+        <h2>🍎 macOS Setup</h2>
+        
+        <div class="platform-guide">
+          <h3>Prerequisites</h3>
+          <ul>
+            <li>macOS 10.15 (Catalina) or later</li>
+            <li>Node.js 18+ (recommended: use Homebrew)</li>
+            <li>Terminal or iTerm2</li>
+          </ul>
+
+          <h3>Installation Steps</h3>
+          <div class="step-list">
+            <div class="step">
+              <h4>1. Install Node.js</h4>
+              <pre><code># Using Homebrew (recommended)
+brew install node
+
+# Verify installation
+node --version
+npm --version</code></pre>
+            </div>
+
+            <div class="step">
+              <h4>2. Install ActivityPub MCP Server</h4>
+              <pre><code># Quick install
+npx activitypub-mcp install
+
+# Or install globally
+npm install -g activitypub-mcp</code></pre>
+            </div>
+
+            <div class="step">
+              <h4>3. Configure Claude Desktop</h4>
+              <p>Edit the configuration file:</p>
+              <pre><code># Open configuration file
+open ~/Library/Application\ Support/Claude/claude_desktop_config.json
+
+# Or create if it doesn't exist
+mkdir -p ~/Library/Application\ Support/Claude/
+touch ~/Library/Application\ Support/Claude/claude_desktop_config.json</code></pre>
+              
+              <p>Add the server configuration:</p>
+              <pre><code>{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}</code></pre>
+            </div>
+
+            <div class="step">
+              <h4>4. Restart Claude Desktop</h4>
+              <pre><code># Force quit and restart Claude Desktop
+killall Claude
+open -a Claude</code></pre>
+            </div>
+          </div>
+
+          <div class="platform-notes">
+            <h3>macOS-Specific Notes</h3>
+            <ul>
+              <li><strong>Permissions:</strong> You may need to grant Terminal permissions in System Preferences > Security & Privacy</li>
+              <li><strong>Homebrew:</strong> Install from <a href="https://brew.sh" target="_blank">brew.sh</a> if you don't have it</li>
+              <li><strong>Apple Silicon:</strong> Works natively on M1/M2 Macs</li>
+              <li><strong>Rosetta:</strong> Not required for Apple Silicon</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="platform-section">
+        <h2>🪟 Windows Setup</h2>
+        
+        <div class="platform-guide">
+          <h3>Prerequisites</h3>
+          <ul>
+            <li>Windows 10 or Windows 11</li>
+            <li>Node.js 18+ (download from nodejs.org)</li>
+            <li>PowerShell or Command Prompt</li>
+          </ul>
+
+          <h3>Installation Steps</h3>
+          <div class="step-list">
+            <div class="step">
+              <h4>1. Install Node.js</h4>
+              <p>Download and install from <a href="https://nodejs.org" target="_blank">nodejs.org</a></p>
+              <pre><code># Verify installation in PowerShell
+node --version
+npm --version</code></pre>
+            </div>
+
+            <div class="step">
+              <h4>2. Install ActivityPub MCP Server</h4>
+              <pre><code># In PowerShell or Command Prompt
+npx activitypub-mcp install
+
+# Or install globally
+npm install -g activitypub-mcp</code></pre>
+            </div>
+
+            <div class="step">
+              <h4>3. Configure Claude Desktop</h4>
+              <p>Edit the configuration file:</p>
+              <pre><code># Open configuration directory
+explorer %APPDATA%\Claude
+
+# Create config file if needed
+echo {} > %APPDATA%\Claude\claude_desktop_config.json</code></pre>
+              
+              <p>Edit <code>claude_desktop_config.json</code> with:</p>
+              <pre><code>{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}</code></pre>
+            </div>
+
+            <div class="step">
+              <h4>4. Restart Claude Desktop</h4>
+              <p>Close Claude Desktop completely and restart it.</p>
+            </div>
+          </div>
+
+          <div class="platform-notes">
+            <h3>Windows-Specific Notes</h3>
+            <ul>
+              <li><strong>PowerShell:</strong> Use PowerShell for better command support</li>
+              <li><strong>Execution Policy:</strong> You may need to run <code>Set-ExecutionPolicy RemoteSigned</code></li>
+              <li><strong>Windows Defender:</strong> May flag npm packages; add exclusions if needed</li>
+              <li><strong>WSL:</strong> Can also run in Windows Subsystem for Linux</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="platform-section">
+        <h2>🐧 Linux Setup</h2>
+        
+        <div class="platform-guide">
+          <h3>Prerequisites</h3>
+          <ul>
+            <li>Modern Linux distribution (Ubuntu 20.04+, Fedora 35+, etc.)</li>
+            <li>Node.js 18+ (via package manager or NodeSource)</li>
+            <li>Terminal access</li>
+          </ul>
+
+          <h3>Installation Steps</h3>
+          <div class="step-list">
+            <div class="step">
+              <h4>1. Install Node.js</h4>
+              
+              <div class="distro-specific">
+                <h5>Ubuntu/Debian:</h5>
+                <pre><code># Using NodeSource repository (recommended)
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Or using snap
+sudo snap install node --classic</code></pre>
+              </div>
+
+              <div class="distro-specific">
+                <h5>Fedora/RHEL/CentOS:</h5>
+                <pre><code># Using NodeSource repository
+curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+sudo dnf install nodejs npm
+
+# Or using dnf
+sudo dnf install nodejs npm</code></pre>
+              </div>
+
+              <div class="distro-specific">
+                <h5>Arch Linux:</h5>
+                <pre><code># Using pacman
+sudo pacman -S nodejs npm</code></pre>
+              </div>
+            </div>
+
+            <div class="step">
+              <h4>2. Install ActivityPub MCP Server</h4>
+              <pre><code># Quick install
+npx activitypub-mcp install
+
+# Or install globally
+npm install -g activitypub-mcp</code></pre>
+            </div>
+
+            <div class="step">
+              <h4>3. Configure Claude Desktop (if using)</h4>
+              <pre><code># Create config directory
+mkdir -p ~/.config/Claude
+
+# Create config file
+cat > ~/.config/Claude/claude_desktop_config.json << 'EOF'
+{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}
+EOF</code></pre>
+            </div>
+
+            <div class="step">
+              <h4>4. Test Installation</h4>
+              <pre><code># Test the server directly
+npx activitypub-mcp
+
+# Or test with MCP Inspector
+npx @modelcontextprotocol/inspector</code></pre>
+            </div>
+          </div>
+
+          <div class="platform-notes">
+            <h3>Linux-Specific Notes</h3>
+            <ul>
+              <li><strong>Permissions:</strong> Avoid using <code>sudo</code> with npm when possible</li>
+              <li><strong>Node Version Manager:</strong> Consider using <code>nvm</code> for Node.js management</li>
+              <li><strong>Systemd:</strong> Can create a service for persistent running</li>
+              <li><strong>Firewall:</strong> Ensure local connections are allowed</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="platform-section">
+        <h2>🐳 Docker Setup</h2>
+        
+        <div class="platform-guide">
+          <h3>Using Docker (All Platforms)</h3>
+          <p>Run the server in a container for consistent behavior across platforms:</p>
+
+          <div class="step-list">
+            <div class="step">
+              <h4>1. Pull the Docker Image</h4>
+              <pre><code># Pull the latest image
+docker pull activitypub-mcp:latest
+
+# Or build from source
+git clone https://github.com/cameronrye/activitypub-mcp.git
+cd activitypub-mcp
+docker build -t activitypub-mcp .</code></pre>
+            </div>
+
+            <div class="step">
+              <h4>2. Run the Container</h4>
+              <pre><code># Basic run
+docker run -p 8080:8080 activitypub-mcp
+
+# With environment variables
+docker run -p 8080:8080 \
+  -e LOG_LEVEL=debug \
+  -e CACHE_TTL=600 \
+  activitypub-mcp</code></pre>
+            </div>
+
+            <div class="step">
+              <h4>3. Configure Client</h4>
+              <p>Point your MCP client to the containerized server:</p>
+              <pre><code>{
+  "mcpServers": {
+    "activitypub": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="platform-section">
+        <h2>🔧 Troubleshooting by Platform</h2>
+        
+        <div class="troubleshooting-grid">
+          <div class="trouble-card">
+            <h3>macOS Issues</h3>
+            <ul>
+              <li><strong>Permission denied:</strong> Check System Preferences > Security & Privacy</li>
+              <li><strong>Command not found:</strong> Restart Terminal after Node.js install</li>
+              <li><strong>Claude not finding server:</strong> Check file path in config</li>
+            </ul>
+          </div>
+
+          <div class="trouble-card">
+            <h3>Windows Issues</h3>
+            <ul>
+              <li><strong>PowerShell execution policy:</strong> Run as Administrator and set policy</li>
+              <li><strong>Path issues:</strong> Use full paths in configuration</li>
+              <li><strong>Antivirus blocking:</strong> Add npm cache to exclusions</li>
+            </ul>
+          </div>
+
+          <div class="trouble-card">
+            <h3>Linux Issues</h3>
+            <ul>
+              <li><strong>Permission errors:</strong> Don't use sudo with npm</li>
+              <li><strong>Node.js version:</strong> Use NodeSource for latest versions</li>
+              <li><strong>Missing dependencies:</strong> Install build-essential if needed</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="platform-section">
+        <h2>🔗 Next Steps</h2>
+        <div class="next-steps">
+          <a href="/docs/setup/config-guide/" class="next-step-card">
+            <h3>Configuration Guide</h3>
+            <p>Learn about advanced configuration options and environment variables.</p>
+          </a>
+          <a href="/docs/guides/basic-usage/" class="next-step-card">
+            <h3>Basic Usage Guide</h3>
+            <p>Start using the server with essential commands and workflows.</p>
+          </a>
+          <a href="/docs/troubleshooting/" class="next-step-card">
+            <h3>Troubleshooting</h3>
+            <p>Solutions for platform-specific and general issues.</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .cross-platform-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .platform-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  .platform-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .platform-description {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .platform-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .platform-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .platform-guide {
+    background: var(--bg-secondary);
+    padding: var(--space-8);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .platform-guide h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .platform-guide ul {
+    padding-left: var(--space-6);
+    margin-bottom: var(--space-6);
+  }
+
+  .platform-guide li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .step-list {
+    margin: var(--space-6) 0;
+  }
+
+  .step {
+    background: var(--bg-primary);
+    padding: var(--space-6);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+    margin-bottom: var(--space-6);
+  }
+
+  .step h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .step pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    font-family: var(--font-family-mono);
+    margin: var(--space-3) 0;
+  }
+
+  .distro-specific {
+    margin: var(--space-4) 0;
+  }
+
+  .distro-specific h5 {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .platform-notes {
+    background: var(--bg-tertiary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--color-primary);
+    margin-top: var(--space-6);
+  }
+
+  .platform-notes h3 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .platform-notes ul {
+    padding-left: var(--space-6);
+  }
+
+  .platform-notes li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .troubleshooting-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .trouble-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .trouble-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .trouble-card ul {
+    padding-left: var(--space-6);
+  }
+
+  .trouble-card li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .next-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .next-step-card {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .next-step-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .next-step-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .next-step-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

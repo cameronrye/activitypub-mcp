@@ -1,0 +1,558 @@
+---
+const title = "Dependency Management - ActivityPub MCP Server";
+const description =
+  "Comprehensive guide to managing dependencies for the ActivityPub MCP Server. Learn about package management, security updates, and dependency optimization.";
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="dependency-page">
+    <div class="dependency-header">
+      <h1>Dependency Management</h1>
+      <p class="dependency-description">
+        Comprehensive guide to managing dependencies for the ActivityPub MCP Server. Learn about package management, security updates, version control, and optimization strategies.
+      </p>
+    </div>
+
+    <div class="dependency-content">
+      <section class="dependency-section">
+        <h2>📦 Package Overview</h2>
+        <div class="package-info">
+          <div class="info-card">
+            <h3>Core Dependencies</h3>
+            <ul>
+              <li><strong>@modelcontextprotocol/sdk:</strong> MCP protocol implementation</li>
+              <li><strong>node-fetch:</strong> HTTP client for ActivityPub requests</li>
+              <li><strong>@types/node:</strong> TypeScript definitions for Node.js</li>
+              <li><strong>typescript:</strong> TypeScript compiler and tooling</li>
+            </ul>
+          </div>
+          <div class="info-card">
+            <h3>Development Dependencies</h3>
+            <ul>
+              <li><strong>@biomejs/biome:</strong> Linting and formatting</li>
+              <li><strong>vitest:</strong> Testing framework</li>
+              <li><strong>@types/jest:</strong> TypeScript definitions for testing</li>
+              <li><strong>tsx:</strong> TypeScript execution environment</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="dependency-section">
+        <h2>🔧 Package Management</h2>
+        
+        <div class="management-guide">
+          <h3>Installation Commands</h3>
+          <div class="command-examples">
+            <div class="command-block">
+              <h4>Production Dependencies</h4>
+              <pre><code># Install all dependencies
+npm install
+
+# Add new production dependency
+npm install package-name
+
+# Install specific version
+npm install package-name@1.2.3</code></pre>
+            </div>
+
+            <div class="command-block">
+              <h4>Development Dependencies</h4>
+              <pre><code># Add development dependency
+npm install --save-dev package-name
+
+# Install only production dependencies
+npm install --production
+
+# Install from lock file
+npm ci</code></pre>
+            </div>
+          </div>
+
+          <h3>Version Management</h3>
+          <div class="version-strategies">
+            <div class="strategy-card">
+              <h4>Semantic Versioning</h4>
+              <p>Follow semantic versioning (semver) for dependency updates:</p>
+              <ul>
+                <li><code>^1.2.3</code> - Compatible within major version</li>
+                <li><code>~1.2.3</code> - Compatible within minor version</li>
+                <li><code>1.2.3</code> - Exact version lock</li>
+              </ul>
+            </div>
+
+            <div class="strategy-card">
+              <h4>Update Strategy</h4>
+              <p>Recommended approach for updates:</p>
+              <ol>
+                <li>Check for outdated packages: <code>npm outdated</code></li>
+                <li>Update patch versions: <code>npm update</code></li>
+                <li>Review major/minor updates manually</li>
+                <li>Test thoroughly after updates</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dependency-section">
+        <h2>🔒 Security Management</h2>
+        
+        <div class="security-practices">
+          <div class="practice-card">
+            <h3>Vulnerability Scanning</h3>
+            <div class="scanning-commands">
+              <pre><code># Check for vulnerabilities
+npm audit
+
+# Fix automatically fixable issues
+npm audit fix
+
+# Force fix (use with caution)
+npm audit fix --force
+
+# Generate detailed report
+npm audit --json > audit-report.json</code></pre>
+            </div>
+          </div>
+
+          <div class="practice-card">
+            <h3>Security Best Practices</h3>
+            <ul>
+              <li><strong>Regular Audits:</strong> Run <code>npm audit</code> weekly</li>
+              <li><strong>Automated Scanning:</strong> Use GitHub Dependabot or similar tools</li>
+              <li><strong>Minimal Dependencies:</strong> Only install necessary packages</li>
+              <li><strong>Trusted Sources:</strong> Verify package authenticity and maintainership</li>
+              <li><strong>Lock Files:</strong> Commit package-lock.json for reproducible builds</li>
+            </ul>
+          </div>
+
+          <div class="practice-card">
+            <h3>Dependency Review Process</h3>
+            <ol>
+              <li><strong>Research:</strong> Review package documentation and GitHub repository</li>
+              <li><strong>Maintenance:</strong> Check last update date and issue response time</li>
+              <li><strong>Dependencies:</strong> Review the package's own dependencies</li>
+              <li><strong>Alternatives:</strong> Consider alternative packages with better security records</li>
+              <li><strong>Testing:</strong> Thoroughly test new dependencies in development</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <section class="dependency-section">
+        <h2>⚡ Performance Optimization</h2>
+        
+        <div class="optimization-strategies">
+          <div class="strategy-card">
+            <h3>Bundle Size Analysis</h3>
+            <pre><code># Analyze bundle size
+npm run build:analyze
+
+# Check package sizes
+npm ls --depth=0
+npx bundlephobia package-name
+
+# Identify large dependencies
+du -sh node_modules/*</code></pre>
+          </div>
+
+          <div class="strategy-card">
+            <h3>Dependency Optimization</h3>
+            <ul>
+              <li><strong>Tree Shaking:</strong> Use ES modules for better tree shaking</li>
+              <li><strong>Selective Imports:</strong> Import only needed functions</li>
+              <li><strong>Alternative Packages:</strong> Choose lighter alternatives when possible</li>
+              <li><strong>Peer Dependencies:</strong> Use peer dependencies to avoid duplication</li>
+            </ul>
+          </div>
+
+          <div class="strategy-card">
+            <h3>Runtime Performance</h3>
+            <ul>
+              <li><strong>Lazy Loading:</strong> Load dependencies only when needed</li>
+              <li><strong>Caching:</strong> Cache expensive dependency operations</li>
+              <li><strong>Profiling:</strong> Profile dependency usage in production</li>
+              <li><strong>Monitoring:</strong> Monitor memory usage and startup time</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="dependency-section">
+        <h2>🔄 Update Workflow</h2>
+        
+        <div class="update-workflow">
+          <div class="workflow-step">
+            <h3>1. Preparation</h3>
+            <pre><code># Create update branch
+git checkout -b dependency-updates
+
+# Backup current state
+npm list --json > dependencies-before.json
+
+# Check current status
+npm outdated</code></pre>
+          </div>
+
+          <div class="workflow-step">
+            <h3>2. Update Process</h3>
+            <pre><code># Update patch versions
+npm update
+
+# Update specific package
+npm install package-name@latest
+
+# Update dev dependencies
+npm update --dev
+
+# Check for major version updates
+npx npm-check-updates</code></pre>
+          </div>
+
+          <div class="workflow-step">
+            <h3>3. Testing & Validation</h3>
+            <pre><code># Run full test suite
+npm test
+
+# Check for security issues
+npm audit
+
+# Verify build process
+npm run build
+
+# Test in development environment
+npm run dev</code></pre>
+          </div>
+
+          <div class="workflow-step">
+            <h3>4. Documentation</h3>
+            <pre><code># Document changes
+npm list --json > dependencies-after.json
+
+# Generate changelog entry
+git log --oneline --since="1 week ago"
+
+# Update documentation if needed
+# Commit changes with descriptive message</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="dependency-section">
+        <h2>🚨 Troubleshooting</h2>
+        
+        <div class="troubleshooting-guide">
+          <div class="issue-card">
+            <h3>Common Issues</h3>
+            <div class="issue-list">
+              <div class="issue-item">
+                <h4>Dependency Conflicts</h4>
+                <p><strong>Symptoms:</strong> Installation errors, version conflicts</p>
+                <p><strong>Solutions:</strong></p>
+                <pre><code># Clear cache and reinstall
+npm cache clean --force
+rm -rf node_modules package-lock.json
+npm install
+
+# Use npm overrides for conflicts
+# Add to package.json:
+"overrides": {
+  "package-name": "version"
+}</code></pre>
+              </div>
+
+              <div class="issue-item">
+                <h4>Outdated Lock File</h4>
+                <p><strong>Symptoms:</strong> Different versions installed than expected</p>
+                <p><strong>Solutions:</strong></p>
+                <pre><code># Update lock file
+npm install --package-lock-only
+
+# Regenerate lock file
+rm package-lock.json
+npm install</code></pre>
+              </div>
+
+              <div class="issue-item">
+                <h4>Security Vulnerabilities</h4>
+                <p><strong>Symptoms:</strong> npm audit warnings</p>
+                <p><strong>Solutions:</strong></p>
+                <pre><code># Try automatic fix
+npm audit fix
+
+# Manual update of vulnerable package
+npm install vulnerable-package@latest
+
+# Use alternative package if no fix available</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dependency-section">
+        <h2>📊 Monitoring & Maintenance</h2>
+        
+        <div class="monitoring-setup">
+          <div class="monitor-card">
+            <h3>Automated Monitoring</h3>
+            <ul>
+              <li><strong>GitHub Dependabot:</strong> Automatic security updates</li>
+              <li><strong>Renovate:</strong> Comprehensive dependency updates</li>
+              <li><strong>Snyk:</strong> Continuous security monitoring</li>
+              <li><strong>npm audit:</strong> Regular vulnerability scanning</li>
+            </ul>
+          </div>
+
+          <div class="monitor-card">
+            <h3>Maintenance Schedule</h3>
+            <ul>
+              <li><strong>Weekly:</strong> Check for security updates</li>
+              <li><strong>Monthly:</strong> Review and update patch versions</li>
+              <li><strong>Quarterly:</strong> Evaluate major version updates</li>
+              <li><strong>Annually:</strong> Comprehensive dependency audit</li>
+            </ul>
+          </div>
+
+          <div class="monitor-card">
+            <h3>Health Metrics</h3>
+            <ul>
+              <li><strong>Vulnerability Count:</strong> Track security issues</li>
+              <li><strong>Outdated Packages:</strong> Monitor update lag</li>
+              <li><strong>Bundle Size:</strong> Track size growth</li>
+              <li><strong>Build Time:</strong> Monitor performance impact</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="dependency-section">
+        <h2>🔗 Related Resources</h2>
+        <div class="related-links">
+          <a href="/docs/development/performance-monitoring/" class="related-link">
+            <h3>Performance Monitoring</h3>
+            <p>Monitor the impact of dependencies on performance</p>
+          </a>
+          <a href="/docs/development/security-audit-checklist/" class="related-link">
+            <h3>Security Audit</h3>
+            <p>Comprehensive security review including dependencies</p>
+          </a>
+          <a href="/docs/troubleshooting/" class="related-link">
+            <h3>Troubleshooting Guide</h3>
+            <p>Solutions for dependency-related issues</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .dependency-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .dependency-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  .dependency-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .dependency-description {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .dependency-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .dependency-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .package-info,
+  .command-examples,
+  .version-strategies,
+  .security-practices,
+  .optimization-strategies,
+  .monitoring-setup {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .info-card,
+  .command-block,
+  .strategy-card,
+  .practice-card,
+  .monitor-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .info-card h3,
+  .command-block h4,
+  .strategy-card h4,
+  .practice-card h3,
+  .monitor-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .info-card ul,
+  .practice-card ul,
+  .strategy-card ul,
+  .monitor-card ul {
+    padding-left: var(--space-6);
+  }
+
+  .info-card li,
+  .practice-card li,
+  .strategy-card li,
+  .monitor-card li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .strategy-card ol,
+  .practice-card ol {
+    padding-left: var(--space-6);
+  }
+
+  .strategy-card ol li,
+  .practice-card ol li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .command-block pre,
+  .workflow-step pre,
+  .issue-item pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    font-family: var(--font-family-mono);
+    margin: var(--space-3) 0;
+  }
+
+  .update-workflow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .workflow-step {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border-left: 4px solid var(--color-primary);
+  }
+
+  .workflow-step h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .troubleshooting-guide {
+    background: var(--bg-secondary);
+    padding: var(--space-8);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .issue-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .issue-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .issue-item {
+    background: var(--bg-primary);
+    padding: var(--space-6);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .issue-item h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .issue-item p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .related-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .related-link {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .related-link:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .related-link h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .related-link p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

@@ -1,0 +1,42 @@
+[
+  {
+    "title": "Getting Started",
+    "url": "/activitypub-mcp/",
+    "excerpt": "Welcome to the ActivityPub MCP Server - a comprehensive Model Context Protocol server for the Fediverse."
+  },
+  {
+    "title": "Documentation",
+    "url": "/activitypub-mcp/docs/",
+    "excerpt": "Complete documentation for the ActivityPub MCP Server including setup, configuration, and usage guides."
+  },
+  {
+    "title": "Installation Guide",
+    "url": "/activitypub-mcp/docs/installation/",
+    "excerpt": "Learn how to install and configure the ActivityPub MCP Server in your environment."
+  },
+  {
+    "title": "Features Overview",
+    "url": "/activitypub-mcp/docs/features/",
+    "excerpt": "Explore the powerful features of the ActivityPub MCP Server for Fediverse integration."
+  },
+  {
+    "title": "Quick Start Guide",
+    "url": "/activitypub-mcp/docs/quick-start/",
+    "excerpt": "Get up and running quickly with the ActivityPub MCP Server."
+  },
+  {
+    "title": "API Reference",
+    "url": "/activitypub-mcp/docs/api/",
+    "excerpt": "Complete API reference for all MCP tools, resources, and prompts available in the server."
+  },
+  {
+    "title": "Configuration Options",
+    "url": "/activitypub-mcp/docs/configuration/",
+    "excerpt": "Learn about all available configuration options and environment variables."
+  },
+  {
+    "title": "Troubleshooting",
+    "url": "/activitypub-mcp/docs/troubleshooting/",
+    "excerpt": "Common issues and solutions when working with the ActivityPub MCP Server."
+  }
+]

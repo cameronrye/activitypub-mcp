@@ -277,9 +277,19 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* Dark theme header */
+:root[data-theme="dark"] .site-header,
+:root.theme-dark .site-header {
+  background: rgba(17, 24, 39, 0.95);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* System theme header - follows OS preference */
 @media (prefers-color-scheme: dark) {
-  .site-header {
-    background-color: rgba(17, 24, 39, 0.95);
+  :root[data-theme="system"] .site-header,
+  :root.theme-system .site-header {
+    background: rgba(17, 24, 39, 0.95);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -1039,6 +1049,9 @@ p {
   align-items: center;
   gap: var(--space-1);
   backdrop-filter: blur(4px);
+  z-index: 10;
+  min-width: 60px;
+  white-space: nowrap;
 }
 
 .copy-button:hover {
@@ -1102,16 +1115,21 @@ p {
     padding: var(--space-6);
   }
 
+  .code-block {
+    padding-top: var(--space-8);
+  }
+
   .code-block pre {
     padding: var(--space-3);
     font-size: var(--text-xs);
   }
 
   .copy-button {
-    position: static;
-    margin-top: var(--space-3);
-    width: 100%;
-    justify-content: center;
+    top: var(--space-2);
+    right: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    font-size: 10px;
+    min-width: 50px;
   }
 }
 

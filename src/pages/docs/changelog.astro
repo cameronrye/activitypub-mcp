@@ -1,0 +1,612 @@
+---
+const title = "Changelog - ActivityPub MCP Server";
+const description =
+  "Complete changelog for the ActivityPub MCP Server. Track all releases, features, bug fixes, and breaking changes.";
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="changelog-page">
+    <div class="changelog-header">
+      <h1>Changelog</h1>
+      <p class="changelog-description">
+        Complete changelog for the ActivityPub MCP Server. Track all releases, new features, improvements, bug fixes, and breaking changes.
+      </p>
+    </div>
+
+    <div class="changelog-content">
+      <section class="changelog-section">
+        <h2>📋 Release Notes</h2>
+        <p>All notable changes to the ActivityPub MCP Server are documented here. The format is based on <a href="https://keepachangelog.com/en/1.0.0/" target="_blank" rel="noopener">Keep a Changelog</a>, and this project adheres to <a href="https://semver.org/spec/v2.0.0.html" target="_blank" rel="noopener">Semantic Versioning</a>.</p>
+      </section>
+
+      <div class="releases">
+        <div class="release">
+          <div class="release-header">
+            <h3>v1.0.0 - 2025-01-15</h3>
+            <span class="release-type stable">Stable Release</span>
+          </div>
+          <div class="release-content">
+            <div class="change-category">
+              <h4>🎉 Added</h4>
+              <ul>
+                <li>Initial stable release of ActivityPub MCP Server</li>
+                <li>Complete MCP (Model Context Protocol) implementation</li>
+                <li>ActivityPub actor discovery and information retrieval</li>
+                <li>Fediverse instance discovery and metadata collection</li>
+                <li>WebFinger protocol support for actor resolution</li>
+                <li>Comprehensive caching system with configurable TTL</li>
+                <li>Rate limiting and request throttling</li>
+                <li>Health check and server monitoring tools</li>
+                <li>Complete TypeScript implementation with type safety</li>
+                <li>Comprehensive error handling and logging</li>
+              </ul>
+            </div>
+
+            <div class="change-category">
+              <h4>🔧 Tools</h4>
+              <ul>
+                <li><code>discover-actor</code> - Find and analyze fediverse actors</li>
+                <li><code>discover-instances</code> - Search for instances by topic or keyword</li>
+                <li><code>get-instance-info</code> - Retrieve detailed instance information</li>
+                <li><code>fetch-timeline</code> - Get recent posts from actor timelines</li>
+                <li><code>search-content</code> - Search for content across the fediverse</li>
+                <li><code>get-post-details</code> - Retrieve detailed post information</li>
+                <li><code>health-check</code> - Monitor server health and performance</li>
+                <li><code>clear-cache</code> - Clear cached data for fresh requests</li>
+                <li><code>validate-actor</code> - Verify actor accessibility and validity</li>
+              </ul>
+            </div>
+
+            <div class="change-category">
+              <h4>📊 Resources</h4>
+              <ul>
+                <li><code>activitypub://server-info</code> - Server status and configuration</li>
+                <li><code>activitypub://actor-cache</code> - Cached actor information</li>
+                <li><code>activitypub://instance-cache</code> - Cached instance data</li>
+                <li><code>activitypub://timeline-cache</code> - Cached timeline content</li>
+                <li><code>activitypub://instance-directory</code> - Instance discovery data</li>
+                <li><code>activitypub://discovery-stats</code> - Discovery operation statistics</li>
+              </ul>
+            </div>
+
+            <div class="change-category">
+              <h4>🔒 Security</h4>
+              <ul>
+                <li>Input validation and sanitization for all user inputs</li>
+                <li>Rate limiting to prevent abuse and DoS attacks</li>
+                <li>Secure HTTP client configuration with timeout limits</li>
+                <li>Privacy-focused design - only accesses public data</li>
+                <li>Comprehensive error handling to prevent information leakage</li>
+                <li>Configurable user agent and request headers</li>
+              </ul>
+            </div>
+
+            <div class="change-category">
+              <h4>⚡ Performance</h4>
+              <ul>
+                <li>Multi-level caching with configurable TTL values</li>
+                <li>Concurrent request handling with connection pooling</li>
+                <li>Optimized JSON parsing and data transformation</li>
+                <li>Memory-efficient data structures and algorithms</li>
+                <li>Configurable request timeouts and retry logic</li>
+                <li>Performance monitoring and metrics collection</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="release">
+          <div class="release-header">
+            <h3>v0.9.0 - 2025-01-10</h3>
+            <span class="release-type beta">Beta Release</span>
+          </div>
+          <div class="release-content">
+            <div class="change-category">
+              <h4>🎉 Added</h4>
+              <ul>
+                <li>Beta release with core functionality</li>
+                <li>Basic MCP protocol implementation</li>
+                <li>ActivityPub actor discovery</li>
+                <li>Instance information retrieval</li>
+                <li>Simple caching mechanism</li>
+                <li>Basic error handling</li>
+              </ul>
+            </div>
+
+            <div class="change-category">
+              <h4>🔧 Changed</h4>
+              <ul>
+                <li>Improved error messages and logging</li>
+                <li>Enhanced cache performance</li>
+                <li>Better TypeScript type definitions</li>
+                <li>Optimized HTTP request handling</li>
+              </ul>
+            </div>
+
+            <div class="change-category">
+              <h4>🐛 Fixed</h4>
+              <ul>
+                <li>Fixed memory leaks in cache implementation</li>
+                <li>Resolved timeout issues with slow instances</li>
+                <li>Fixed JSON parsing errors for malformed responses</li>
+                <li>Corrected WebFinger resolution edge cases</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="release">
+          <div class="release-header">
+            <h3>v0.5.0 - 2025-01-05</h3>
+            <span class="release-type alpha">Alpha Release</span>
+          </div>
+          <div class="release-content">
+            <div class="change-category">
+              <h4>🎉 Added</h4>
+              <ul>
+                <li>Initial alpha release</li>
+                <li>Basic actor discovery functionality</li>
+                <li>Simple instance information retrieval</li>
+                <li>Proof-of-concept MCP integration</li>
+                <li>Basic TypeScript implementation</li>
+              </ul>
+            </div>
+
+            <div class="change-category">
+              <h4>⚠️ Known Issues</h4>
+              <ul>
+                <li>Limited error handling</li>
+                <li>No caching implementation</li>
+                <li>Basic rate limiting only</li>
+                <li>Limited instance compatibility</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="changelog-section">
+        <h2>🔮 Upcoming Features</h2>
+        <div class="upcoming-features">
+          <div class="feature-category">
+            <h3>v1.1.0 - Planned</h3>
+            <ul>
+              <li>Enhanced search capabilities with filters</li>
+              <li>Support for additional fediverse platforms (PeerTube, Pixelfed)</li>
+              <li>Advanced analytics and trend detection</li>
+              <li>Improved caching strategies and persistence</li>
+              <li>WebSocket support for real-time updates</li>
+              <li>Plugin system for extensibility</li>
+            </ul>
+          </div>
+
+          <div class="feature-category">
+            <h3>v1.2.0 - Future</h3>
+            <ul>
+              <li>Machine learning integration for content analysis</li>
+              <li>Advanced federation graph analysis</li>
+              <li>Content recommendation algorithms</li>
+              <li>Multi-language support and i18n</li>
+              <li>Advanced privacy controls and GDPR compliance tools</li>
+              <li>Integration with additional AI/ML platforms</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="changelog-section">
+        <h2>📊 Release Statistics</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Total Releases</h3>
+            <div class="stat-number">3</div>
+            <p>Including alpha, beta, and stable releases</p>
+          </div>
+          <div class="stat-card">
+            <h3>Features Added</h3>
+            <div class="stat-number">25+</div>
+            <p>Major features and capabilities</p>
+          </div>
+          <div class="stat-card">
+            <h3>Tools Available</h3>
+            <div class="stat-number">9</div>
+            <p>MCP tools for fediverse exploration</p>
+          </div>
+          <div class="stat-card">
+            <h3>Resources Provided</h3>
+            <div class="stat-number">6</div>
+            <p>MCP resources for data access</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="changelog-section">
+        <h2>🔄 Migration Guides</h2>
+        <div class="migration-guides">
+          <div class="migration-card">
+            <h3>Upgrading to v1.0.0</h3>
+            <p>No breaking changes from v0.9.0. Simply update your package:</p>
+            <pre><code>npm update activitypub-mcp</code></pre>
+            <p>All existing configurations and integrations remain compatible.</p>
+          </div>
+
+          <div class="migration-card">
+            <h3>Upgrading from v0.5.0</h3>
+            <p>Significant changes in configuration and API:</p>
+            <ul>
+              <li>Update environment variable names (see configuration guide)</li>
+              <li>Review cache settings - new TTL options available</li>
+              <li>Update any custom error handling code</li>
+              <li>Test all integrations thoroughly</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="changelog-section">
+        <h2>🤝 Contributing</h2>
+        <div class="contributing-info">
+          <p>We welcome contributions to the ActivityPub MCP Server! Here's how you can help:</p>
+          
+          <div class="contribution-types">
+            <div class="contrib-card">
+              <h3>🐛 Bug Reports</h3>
+              <p>Found a bug? Please report it on our GitHub issues page with:</p>
+              <ul>
+                <li>Detailed description of the issue</li>
+                <li>Steps to reproduce</li>
+                <li>Expected vs actual behavior</li>
+                <li>Environment information</li>
+              </ul>
+            </div>
+
+            <div class="contrib-card">
+              <h3>💡 Feature Requests</h3>
+              <p>Have an idea for a new feature? We'd love to hear it:</p>
+              <ul>
+                <li>Describe the feature and its benefits</li>
+                <li>Provide use cases and examples</li>
+                <li>Consider implementation complexity</li>
+                <li>Check existing issues first</li>
+              </ul>
+            </div>
+
+            <div class="contrib-card">
+              <h3>🔧 Code Contributions</h3>
+              <p>Ready to contribute code? Follow our guidelines:</p>
+              <ul>
+                <li>Fork the repository and create a feature branch</li>
+                <li>Follow our coding standards and conventions</li>
+                <li>Add tests for new functionality</li>
+                <li>Update documentation as needed</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="changelog-section">
+        <h2>🔗 Related Resources</h2>
+        <div class="related-links">
+          <a href="/docs/setup/" class="related-link">
+            <h3>Setup Guide</h3>
+            <p>Get started with the latest version</p>
+          </a>
+          <a href="/docs/api/tools/" class="related-link">
+            <h3>API Reference</h3>
+            <p>Complete documentation for all tools and resources</p>
+          </a>
+          <a href="/docs/troubleshooting/" class="related-link">
+            <h3>Troubleshooting</h3>
+            <p>Solutions for common issues and problems</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .changelog-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .changelog-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  .changelog-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .changelog-description {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .changelog-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .changelog-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .releases {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .release {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .release-header {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    padding: var(--space-6);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .release-header h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    margin: 0;
+  }
+
+  .release-type {
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+  }
+
+  .release-type.stable {
+    background: var(--color-success);
+    color: var(--text-inverse);
+  }
+
+  .release-type.beta {
+    background: var(--color-warning);
+    color: var(--text-inverse);
+  }
+
+  .release-type.alpha {
+    background: var(--color-info);
+    color: var(--text-inverse);
+  }
+
+  .release-content {
+    padding: var(--space-8);
+  }
+
+  .change-category {
+    margin-bottom: var(--space-6);
+  }
+
+  .change-category h4 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .change-category ul {
+    padding-left: var(--space-6);
+  }
+
+  .change-category li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .change-category code {
+    background: var(--color-gray-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+  }
+
+  .upcoming-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--space-8);
+  }
+
+  .feature-category {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .feature-category h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .feature-category ul {
+    padding-left: var(--space-6);
+  }
+
+  .feature-category li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .stat-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-align: center;
+  }
+
+  .stat-card h3 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .stat-number {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .stat-card p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    margin: 0;
+  }
+
+  .migration-guides {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .migration-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .migration-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .migration-card p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+    line-height: var(--leading-relaxed);
+  }
+
+  .migration-card pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    font-family: var(--font-family-mono);
+    margin: var(--space-3) 0;
+  }
+
+  .migration-card ul {
+    padding-left: var(--space-6);
+  }
+
+  .migration-card li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .contribution-types {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+    margin-top: var(--space-6);
+  }
+
+  .contrib-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .contrib-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .contrib-card p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+    line-height: var(--leading-relaxed);
+  }
+
+  .contrib-card ul {
+    padding-left: var(--space-6);
+  }
+
+  .contrib-card li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .related-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .related-link {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .related-link:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .related-link h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .related-link p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

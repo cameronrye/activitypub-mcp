@@ -1,0 +1,468 @@
+---
+const title = "Configuration Guide - ActivityPub MCP Server";
+const description =
+  "Comprehensive configuration guide for the ActivityPub MCP Server. Learn how to customize server behavior, environment variables, and client integration.";
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="config-guide-page">
+    <div class="config-header">
+      <h1>Configuration Guide</h1>
+      <p class="config-description">
+        Comprehensive guide to configuring the ActivityPub MCP Server for your specific needs. Learn about environment variables, client integration, and advanced configuration options.
+      </p>
+    </div>
+
+    <div class="config-content">
+      <section class="config-section">
+        <h2>📋 Configuration Overview</h2>
+        <p>The ActivityPub MCP Server can be configured through:</p>
+        <ul>
+          <li><strong>Environment Variables</strong> - Runtime configuration</li>
+          <li><strong>Client Configuration</strong> - MCP client settings (Claude Desktop, etc.)</li>
+          <li><strong>Command Line Arguments</strong> - Override settings at startup</li>
+        </ul>
+      </section>
+
+      <section class="config-section">
+        <h2>🔧 Environment Variables</h2>
+        
+        <div class="config-table">
+          <h3>Core Settings</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Variable</th>
+                <th>Default</th>
+                <th>Description</th>
+                <th>Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>LOG_LEVEL</code></td>
+                <td><code>info</code></td>
+                <td>Logging verbosity level</td>
+                <td><code>debug</code>, <code>info</code>, <code>warn</code>, <code>error</code></td>
+              </tr>
+              <tr>
+                <td><code>USER_AGENT</code></td>
+                <td><code>ActivityPub-MCP-Server/1.0</code></td>
+                <td>HTTP User-Agent header</td>
+                <td><code>MyBot/1.0 (+https://example.com)</code></td>
+              </tr>
+              <tr>
+                <td><code>REQUEST_TIMEOUT</code></td>
+                <td><code>30000</code></td>
+                <td>HTTP request timeout (ms)</td>
+                <td><code>60000</code></td>
+              </tr>
+              <tr>
+                <td><code>MAX_RETRIES</code></td>
+                <td><code>3</code></td>
+                <td>Maximum retry attempts</td>
+                <td><code>5</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="config-table">
+          <h3>Cache Settings</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Variable</th>
+                <th>Default</th>
+                <th>Description</th>
+                <th>Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>CACHE_TTL</code></td>
+                <td><code>300</code></td>
+                <td>Default cache TTL (seconds)</td>
+                <td><code>600</code></td>
+              </tr>
+              <tr>
+                <td><code>ACTOR_CACHE_TTL</code></td>
+                <td><code>300</code></td>
+                <td>Actor info cache TTL</td>
+                <td><code>900</code></td>
+              </tr>
+              <tr>
+                <td><code>INSTANCE_CACHE_TTL</code></td>
+                <td><code>3600</code></td>
+                <td>Instance info cache TTL</td>
+                <td><code>7200</code></td>
+              </tr>
+              <tr>
+                <td><code>TIMELINE_CACHE_TTL</code></td>
+                <td><code>120</code></td>
+                <td>Timeline cache TTL</td>
+                <td><code>300</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="config-table">
+          <h3>Rate Limiting</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Variable</th>
+                <th>Default</th>
+                <th>Description</th>
+                <th>Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>RATE_LIMIT_REQUESTS</code></td>
+                <td><code>100</code></td>
+                <td>Requests per window</td>
+                <td><code>200</code></td>
+              </tr>
+              <tr>
+                <td><code>RATE_LIMIT_WINDOW</code></td>
+                <td><code>900</code></td>
+                <td>Rate limit window (seconds)</td>
+                <td><code>1800</code></td>
+              </tr>
+              <tr>
+                <td><code>CONCURRENT_REQUESTS</code></td>
+                <td><code>10</code></td>
+                <td>Max concurrent requests</td>
+                <td><code>20</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="config-section">
+        <h2>🖥️ Client Configuration</h2>
+        
+        <div class="client-config">
+          <h3>Claude Desktop Configuration</h3>
+          <p>Add the server to your Claude Desktop configuration file:</p>
+          
+          <div class="config-example">
+            <h4>Basic Configuration</h4>
+            <pre><code>{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}</code></pre>
+          </div>
+
+          <div class="config-example">
+            <h4>Advanced Configuration</h4>
+            <pre><code>{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "debug",
+        "USER_AGENT": "MyCustomBot/1.0",
+        "REQUEST_TIMEOUT": "60000",
+        "CACHE_TTL": "600",
+        "RATE_LIMIT_REQUESTS": "50"
+      }
+    }
+  }
+}</code></pre>
+          </div>
+
+          <div class="config-paths">
+            <h4>Configuration File Locations</h4>
+            <ul>
+              <li><strong>macOS:</strong> <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
+              <li><strong>Windows:</strong> <code>%APPDATA%\Claude\claude_desktop_config.json</code></li>
+              <li><strong>Linux:</strong> <code>~/.config/Claude/claude_desktop_config.json</code></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="client-config">
+          <h3>Other MCP Clients</h3>
+          <p>For other MCP-compatible clients, use similar configuration patterns:</p>
+          
+          <div class="config-example">
+            <h4>Generic MCP Client</h4>
+            <pre><code>{
+  "servers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["activitypub-mcp"],
+      "environment": {
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="config-section">
+        <h2>⚙️ Advanced Configuration</h2>
+        
+        <div class="advanced-config">
+          <h3>Development Mode</h3>
+          <p>For development and debugging:</p>
+          <pre><code>export DEBUG=activitypub-mcp:*
+export LOG_LEVEL=debug
+export REQUEST_TIMEOUT=120000
+npm run dev</code></pre>
+        </div>
+
+        <div class="advanced-config">
+          <h3>Production Optimization</h3>
+          <p>Recommended settings for production use:</p>
+          <pre><code>export LOG_LEVEL=warn
+export CACHE_TTL=900
+export RATE_LIMIT_REQUESTS=200
+export CONCURRENT_REQUESTS=20</code></pre>
+        </div>
+
+        <div class="advanced-config">
+          <h3>Proxy Configuration</h3>
+          <p>If you need to use a proxy:</p>
+          <pre><code>export HTTP_PROXY=http://proxy.example.com:8080
+export HTTPS_PROXY=http://proxy.example.com:8080
+export NO_PROXY=localhost,127.0.0.1</code></pre>
+        </div>
+      </section>
+
+      <section class="config-section">
+        <h2>🔍 Configuration Validation</h2>
+        
+        <div class="validation-info">
+          <h3>Checking Your Configuration</h3>
+          <p>Validate your configuration before starting:</p>
+          <pre><code># Check configuration syntax
+npm run config:validate
+
+# Test server startup
+npm run test:config
+
+# View current configuration
+npm run config:show</code></pre>
+        </div>
+
+        <div class="validation-info">
+          <h3>Common Configuration Issues</h3>
+          <ul>
+            <li><strong>Invalid JSON:</strong> Check for syntax errors in client config files</li>
+            <li><strong>Missing quotes:</strong> Environment variable values should be strings</li>
+            <li><strong>Wrong paths:</strong> Verify command paths and file locations</li>
+            <li><strong>Permission issues:</strong> Ensure the server has necessary permissions</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="config-section">
+        <h2>🔗 Next Steps</h2>
+        <div class="next-steps">
+          <a href="/docs/setup/cross-platform/" class="next-step-card">
+            <h3>Cross-Platform Setup</h3>
+            <p>Platform-specific installation and configuration instructions.</p>
+          </a>
+          <a href="/docs/guides/basic-usage/" class="next-step-card">
+            <h3>Basic Usage Guide</h3>
+            <p>Learn how to use the server once it's configured.</p>
+          </a>
+          <a href="/docs/troubleshooting/" class="next-step-card">
+            <h3>Troubleshooting</h3>
+            <p>Solutions for common configuration problems.</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .config-guide-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .config-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  .config-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .config-description {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .config-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .config-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .config-table {
+    margin-bottom: var(--space-8);
+  }
+
+  .config-table h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .config-table table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: var(--space-6);
+  }
+
+  .config-table th,
+  .config-table td {
+    padding: var(--space-3);
+    text-align: left;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .config-table th {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    font-weight: var(--font-medium);
+  }
+
+  .config-table td {
+    color: var(--text-secondary);
+  }
+
+  .config-table code {
+    background: var(--color-gray-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+  }
+
+  .client-config,
+  .advanced-config,
+  .validation-info {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    margin-bottom: var(--space-6);
+  }
+
+  .client-config h3,
+  .advanced-config h3,
+  .validation-info h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .config-example {
+    margin: var(--space-4) 0;
+  }
+
+  .config-example h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .config-example pre,
+  .advanced-config pre,
+  .validation-info pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    font-family: var(--font-family-mono);
+    margin: var(--space-3) 0;
+  }
+
+  .config-paths ul,
+  .validation-info ul {
+    padding-left: var(--space-6);
+  }
+
+  .config-paths li,
+  .validation-info li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .next-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .next-step-card {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .next-step-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .next-step-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .next-step-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

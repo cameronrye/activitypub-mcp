@@ -1,0 +1,58 @@
+# ActivityPub MCP Server
+
+> A comprehensive Model Context Protocol (MCP) server that enables LLMs like Claude to explore and interact with the existing Fediverse through standardized MCP tools, resources, and prompts. Built with TypeScript and designed specifically for LLM integration patterns.
+
+The ActivityPub MCP Server is a Fediverse client that allows AI assistants to discover actors, fetch timelines, explore instances, and search content across the decentralized social web. It implements the complete MCP specification with resources for data access, tools for interaction, and prompts for guided exploration.
+
+Key capabilities include:
+- **Fediverse Integration**: Connect to any ActivityPub server (Mastodon, Pleroma, Misskey, etc.)
+- **WebFinger Discovery**: Find and resolve actors across the network
+- **MCP Protocol**: Full implementation with resources, tools, and prompts
+- **TypeScript Implementation**: Modern, type-safe codebase with ESM support
+- **Cross-Platform Support**: Works on Windows, macOS, and Linux
+- **LLM-Optimized**: Designed for efficient AI assistant interaction
+
+## Setup & Installation
+
+- [Installation Guide](https://cameronrye.github.io/activitypub-mcp/docs/setup/): Complete setup instructions for all platforms
+- [Claude Desktop Integration](https://cameronrye.github.io/activitypub-mcp/docs/setup/claude-desktop/): Configure with Claude Desktop
+- [Cross-Platform Setup](https://cameronrye.github.io/activitypub-mcp/docs/setup/cross-platform/): Platform-specific installation methods
+- [Configuration Guide](https://cameronrye.github.io/activitypub-mcp/docs/setup/config-guide/): Environment variables and configuration options
+
+## API Reference
+
+- [MCP Tools](https://cameronrye.github.io/activitypub-mcp/docs/api/tools/): Interactive tools for fediverse discovery and content fetching
+- [MCP Resources](https://cameronrye.github.io/activitypub-mcp/docs/api/resources/): Read-only access to remote ActivityPub data
+- [MCP Prompts](https://cameronrye.github.io/activitypub-mcp/docs/api/prompts/): Templates for fediverse exploration and discovery
+
+## Guides & Examples
+
+- [Basic Usage](https://cameronrye.github.io/activitypub-mcp/docs/guides/basic-usage/): Getting started with the MCP server
+- [Usage Guide](https://cameronrye.github.io/activitypub-mcp/docs/guides/usage-guide/): Comprehensive usage documentation
+- [Examples](https://cameronrye.github.io/activitypub-mcp/docs/guides/examples/): Practical examples and integration patterns
+- [Real-World Scenarios](https://cameronrye.github.io/activitypub-mcp/docs/guides/real-world-test-scenario/): Testing with actual fediverse instances
+
+## Development
+
+- [Performance Monitoring](https://cameronrye.github.io/activitypub-mcp/docs/development/performance-monitoring/): Built-in logging and metrics
+- [Dependency Management](https://cameronrye.github.io/activitypub-mcp/docs/development/dependency-management/): Managing project dependencies
+- [Security Audit](https://cameronrye.github.io/activitypub-mcp/docs/development/security-audit-checklist/): Security best practices and audit checklist
+
+## Specifications
+
+- [ActivityPub LLM Guide](https://cameronrye.github.io/activitypub-mcp/docs/specifications/activitypub-llm-specification-guide/): Understanding ActivityPub for LLM integration
+
+## Project Resources
+
+- [GitHub Repository](https://github.com/cameronrye/activitypub-mcp): Source code and issue tracking
+- [npm Package](https://www.npmjs.com/package/activitypub-mcp): Install via npm
+- [Documentation Site](https://cameronrye.github.io/activitypub-mcp/): Complete documentation
+- [Changelog](https://cameronrye.github.io/activitypub-mcp/docs/changelog/): Version history and updates
+
+## Optional
+
+- [Troubleshooting](https://cameronrye.github.io/activitypub-mcp/docs/troubleshooting/): Common issues and solutions
+- [ActivityPub Specification](https://www.w3.org/TR/activitypub/): W3C ActivityPub protocol specification
+- [Model Context Protocol](https://modelcontextprotocol.io/): MCP specification and documentation
+- [Fedify Documentation](https://fedify.dev/): ActivityPub server framework used in the project
+- [Fediverse Info](https://fediverse.info/): General information about the Fediverse

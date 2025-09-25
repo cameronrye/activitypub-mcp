@@ -1,0 +1,646 @@
+---
+const title = "Security Audit Checklist - ActivityPub MCP Server";
+const description =
+  "Comprehensive security audit checklist for the ActivityPub MCP Server. Ensure your deployment follows security best practices and compliance requirements.";
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="security-page">
+    <div class="security-header">
+      <h1>Security Audit Checklist</h1>
+      <p class="security-description">
+        Comprehensive security audit checklist for the ActivityPub MCP Server. Ensure your deployment follows security best practices, compliance requirements, and industry standards.
+      </p>
+    </div>
+
+    <div class="security-content">
+      <section class="security-section">
+        <h2>🔒 Security Overview</h2>
+        <div class="overview-grid">
+          <div class="overview-card">
+            <h3>Core Security Principles</h3>
+            <ul>
+              <li><strong>Least Privilege:</strong> Minimal necessary permissions</li>
+              <li><strong>Defense in Depth:</strong> Multiple security layers</li>
+              <li><strong>Fail Secure:</strong> Secure defaults and error handling</li>
+              <li><strong>Zero Trust:</strong> Verify all requests and data</li>
+            </ul>
+          </div>
+          <div class="overview-card">
+            <h3>Threat Model</h3>
+            <ul>
+              <li><strong>Data Exposure:</strong> Unauthorized access to cached data</li>
+              <li><strong>Service Abuse:</strong> Resource exhaustion attacks</li>
+              <li><strong>Injection Attacks:</strong> Malicious input processing</li>
+              <li><strong>Privacy Violations:</strong> Unauthorized data collection</li>
+            </ul>
+          </div>
+          <div class="overview-card">
+            <h3>Compliance Considerations</h3>
+            <ul>
+              <li><strong>GDPR:</strong> Data protection and privacy rights</li>
+              <li><strong>CCPA:</strong> California consumer privacy</li>
+              <li><strong>SOC 2:</strong> Security and availability controls</li>
+              <li><strong>ISO 27001:</strong> Information security management</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="security-section">
+        <h2>🔍 Input Validation & Sanitization</h2>
+        
+        <div class="audit-checklist">
+          <div class="checklist-category">
+            <h3>Actor Identifier Validation</h3>
+            <ul class="security-checklist">
+              <li>□ Validate @username@domain format</li>
+              <li>□ Sanitize special characters in usernames</li>
+              <li>□ Check domain name validity (DNS resolution)</li>
+              <li>□ Prevent directory traversal in URLs</li>
+              <li>□ Validate URL schemes (https only for production)</li>
+              <li>□ Limit identifier length to prevent buffer overflows</li>
+              <li>□ Block known malicious domains</li>
+            </ul>
+          </div>
+
+          <div class="checklist-category">
+            <h3>HTTP Request Security</h3>
+            <ul class="security-checklist">
+              <li>□ Validate Content-Type headers</li>
+              <li>□ Limit request body size</li>
+              <li>□ Sanitize HTTP headers</li>
+              <li>□ Implement request timeout limits</li>
+              <li>□ Validate SSL/TLS certificates</li>
+              <li>□ Use secure HTTP client configuration</li>
+              <li>□ Implement proper error handling</li>
+            </ul>
+          </div>
+
+          <div class="checklist-category">
+            <h3>Data Processing Security</h3>
+            <ul class="security-checklist">
+              <li>□ Validate JSON structure and content</li>
+              <li>□ Sanitize text content for XSS prevention</li>
+              <li>□ Limit data structure depth (prevent DoS)</li>
+              <li>□ Validate ActivityPub object types</li>
+              <li>□ Check for malicious embedded content</li>
+              <li>□ Implement content size limits</li>
+              <li>□ Validate date/time formats</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="security-section">
+        <h2>🛡️ Access Control & Authentication</h2>
+        
+        <div class="access-control-audit">
+          <div class="control-category">
+            <h3>MCP Client Authentication</h3>
+            <ul class="security-checklist">
+              <li>□ Verify MCP client identity</li>
+              <li>□ Implement secure communication channels</li>
+              <li>□ Validate client permissions</li>
+              <li>□ Log authentication attempts</li>
+              <li>□ Implement session management</li>
+              <li>□ Use secure token handling</li>
+            </ul>
+          </div>
+
+          <div class="control-category">
+            <h3>Resource Access Control</h3>
+            <ul class="security-checklist">
+              <li>□ Implement resource-level permissions</li>
+              <li>□ Validate access to cached data</li>
+              <li>□ Control server information exposure</li>
+              <li>□ Implement rate limiting per client</li>
+              <li>□ Log resource access attempts</li>
+              <li>□ Prevent unauthorized data enumeration</li>
+            </ul>
+          </div>
+
+          <div class="control-category">
+            <h3>Network Security</h3>
+            <ul class="security-checklist">
+              <li>□ Use HTTPS for all external requests</li>
+              <li>□ Implement certificate pinning where appropriate</li>
+              <li>□ Configure secure TLS settings</li>
+              <li>□ Validate SSL certificate chains</li>
+              <li>□ Implement connection timeouts</li>
+              <li>□ Use secure DNS resolution</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="security-section">
+        <h2>💾 Data Protection & Privacy</h2>
+        
+        <div class="data-protection-audit">
+          <div class="protection-category">
+            <h3>Data Collection & Storage</h3>
+            <ul class="security-checklist">
+              <li>□ Minimize data collection (only necessary data)</li>
+              <li>□ Implement data retention policies</li>
+              <li>□ Secure cache storage mechanisms</li>
+              <li>□ Encrypt sensitive data at rest</li>
+              <li>□ Implement secure data deletion</li>
+              <li>□ Prevent data leakage in logs</li>
+              <li>□ Document data flows and storage</li>
+            </ul>
+          </div>
+
+          <div class="protection-category">
+            <h3>Privacy Compliance</h3>
+            <ul class="security-checklist">
+              <li>□ Implement data subject rights (GDPR)</li>
+              <li>□ Provide data portability mechanisms</li>
+              <li>□ Implement right to erasure</li>
+              <li>□ Maintain consent records</li>
+              <li>□ Implement privacy by design</li>
+              <li>□ Conduct privacy impact assessments</li>
+              <li>□ Document legal basis for processing</li>
+            </ul>
+          </div>
+
+          <div class="protection-category">
+            <h3>Data Transmission Security</h3>
+            <ul class="security-checklist">
+              <li>□ Encrypt data in transit</li>
+              <li>□ Implement secure communication protocols</li>
+              <li>□ Validate data integrity</li>
+              <li>□ Prevent man-in-the-middle attacks</li>
+              <li>□ Use secure serialization formats</li>
+              <li>□ Implement message authentication</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="security-section">
+        <h2>⚡ Rate Limiting & DoS Protection</h2>
+        
+        <div class="dos-protection-audit">
+          <div class="protection-item">
+            <h3>Rate Limiting Implementation</h3>
+            <ul class="security-checklist">
+              <li>□ Implement per-client rate limits</li>
+              <li>□ Configure per-endpoint rate limits</li>
+              <li>□ Implement sliding window rate limiting</li>
+              <li>□ Configure burst protection</li>
+              <li>□ Implement graceful degradation</li>
+              <li>□ Log rate limit violations</li>
+              <li>□ Implement automatic blocking for abuse</li>
+            </ul>
+          </div>
+
+          <div class="protection-item">
+            <h3>Resource Protection</h3>
+            <ul class="security-checklist">
+              <li>□ Limit concurrent connections</li>
+              <li>□ Implement memory usage limits</li>
+              <li>□ Configure CPU usage thresholds</li>
+              <li>□ Limit cache size and growth</li>
+              <li>□ Implement request timeout limits</li>
+              <li>□ Monitor resource consumption</li>
+              <li>□ Implement circuit breakers</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="security-section">
+        <h2>📝 Logging & Monitoring</h2>
+        
+        <div class="logging-audit">
+          <div class="logging-category">
+            <h3>Security Event Logging</h3>
+            <ul class="security-checklist">
+              <li>□ Log authentication attempts</li>
+              <li>□ Log authorization failures</li>
+              <li>□ Log rate limit violations</li>
+              <li>□ Log suspicious request patterns</li>
+              <li>□ Log data access events</li>
+              <li>□ Log configuration changes</li>
+              <li>□ Log error conditions</li>
+            </ul>
+          </div>
+
+          <div class="logging-category">
+            <h3>Log Security</h3>
+            <ul class="security-checklist">
+              <li>□ Sanitize sensitive data in logs</li>
+              <li>□ Implement log integrity protection</li>
+              <li>□ Secure log storage and transmission</li>
+              <li>□ Implement log retention policies</li>
+              <li>□ Control access to log files</li>
+              <li>□ Implement log monitoring and alerting</li>
+              <li>□ Regular log review procedures</li>
+            </ul>
+          </div>
+
+          <div class="logging-category">
+            <h3>Monitoring & Alerting</h3>
+            <ul class="security-checklist">
+              <li>□ Monitor for security anomalies</li>
+              <li>□ Implement real-time threat detection</li>
+              <li>□ Configure security alerts</li>
+              <li>□ Monitor system resource usage</li>
+              <li>□ Track performance degradation</li>
+              <li>□ Implement incident response procedures</li>
+              <li>□ Regular security metric reviews</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="security-section">
+        <h2>🔧 Configuration Security</h2>
+        
+        <div class="config-security-audit">
+          <div class="config-category">
+            <h3>Environment Configuration</h3>
+            <ul class="security-checklist">
+              <li>□ Use secure default configurations</li>
+              <li>□ Disable unnecessary features</li>
+              <li>□ Configure secure environment variables</li>
+              <li>□ Implement configuration validation</li>
+              <li>□ Use secure random number generation</li>
+              <li>□ Configure proper file permissions</li>
+              <li>□ Implement configuration change tracking</li>
+            </ul>
+          </div>
+
+          <div class="config-category">
+            <h3>Deployment Security</h3>
+            <ul class="security-checklist">
+              <li>□ Use minimal container images</li>
+              <li>□ Implement container security scanning</li>
+              <li>□ Configure secure runtime environments</li>
+              <li>□ Implement network segmentation</li>
+              <li>□ Use secure orchestration platforms</li>
+              <li>□ Implement secrets management</li>
+              <li>□ Regular security updates</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="security-section">
+        <h2>🧪 Security Testing</h2>
+        
+        <div class="testing-procedures">
+          <div class="testing-category">
+            <h3>Automated Security Testing</h3>
+            <pre><code># Dependency vulnerability scanning
+npm audit
+
+# Static code analysis
+npm run lint:security
+
+# Container security scanning
+docker scan activitypub-mcp:latest
+
+# Network security testing
+nmap -sS -O target-host</code></pre>
+          </div>
+
+          <div class="testing-category">
+            <h3>Manual Security Testing</h3>
+            <ul class="security-checklist">
+              <li>□ Input validation testing</li>
+              <li>□ Authentication bypass testing</li>
+              <li>□ Authorization testing</li>
+              <li>□ Rate limiting testing</li>
+              <li>□ Data exposure testing</li>
+              <li>□ Error handling testing</li>
+              <li>□ Configuration security review</li>
+            </ul>
+          </div>
+
+          <div class="testing-category">
+            <h3>Penetration Testing</h3>
+            <ul class="security-checklist">
+              <li>□ External penetration testing</li>
+              <li>□ Internal security assessment</li>
+              <li>□ Social engineering testing</li>
+              <li>□ Physical security assessment</li>
+              <li>□ Wireless security testing</li>
+              <li>□ Application security testing</li>
+              <li>□ Regular security audits</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="security-section">
+        <h2>📋 Compliance Checklist</h2>
+        
+        <div class="compliance-grid">
+          <div class="compliance-card">
+            <h3>GDPR Compliance</h3>
+            <ul class="security-checklist">
+              <li>□ Data protection impact assessment</li>
+              <li>□ Lawful basis for processing</li>
+              <li>□ Data subject rights implementation</li>
+              <li>□ Consent management</li>
+              <li>□ Data breach notification procedures</li>
+              <li>□ Privacy by design implementation</li>
+            </ul>
+          </div>
+
+          <div class="compliance-card">
+            <h3>SOC 2 Type II</h3>
+            <ul class="security-checklist">
+              <li>□ Security controls documentation</li>
+              <li>□ Availability monitoring</li>
+              <li>□ Processing integrity controls</li>
+              <li>□ Confidentiality measures</li>
+              <li>□ Privacy protection controls</li>
+              <li>□ Regular control testing</li>
+            </ul>
+          </div>
+
+          <div class="compliance-card">
+            <h3>ISO 27001</h3>
+            <ul class="security-checklist">
+              <li>□ Information security policy</li>
+              <li>□ Risk assessment procedures</li>
+              <li>□ Security control implementation</li>
+              <li>□ Incident management procedures</li>
+              <li>□ Business continuity planning</li>
+              <li>□ Regular management reviews</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="security-section">
+        <h2>🚨 Incident Response</h2>
+        
+        <div class="incident-response">
+          <div class="response-phase">
+            <h3>Preparation</h3>
+            <ul class="security-checklist">
+              <li>□ Incident response plan documented</li>
+              <li>□ Response team roles defined</li>
+              <li>□ Communication procedures established</li>
+              <li>□ Forensic tools prepared</li>
+              <li>□ Backup and recovery procedures tested</li>
+            </ul>
+          </div>
+
+          <div class="response-phase">
+            <h3>Detection & Analysis</h3>
+            <ul class="security-checklist">
+              <li>□ Security monitoring systems active</li>
+              <li>□ Incident classification procedures</li>
+              <li>□ Evidence collection procedures</li>
+              <li>□ Impact assessment methods</li>
+              <li>□ Threat intelligence integration</li>
+            </ul>
+          </div>
+
+          <div class="response-phase">
+            <h3>Containment & Recovery</h3>
+            <ul class="security-checklist">
+              <li>□ Containment strategies defined</li>
+              <li>□ System isolation procedures</li>
+              <li>□ Recovery procedures documented</li>
+              <li>□ Validation testing procedures</li>
+              <li>□ Lessons learned documentation</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="security-section">
+        <h2>🔗 Security Resources</h2>
+        <div class="security-resources">
+          <a href="/docs/development/dependency-management/" class="resource-link">
+            <h3>Dependency Security</h3>
+            <p>Secure dependency management practices</p>
+          </a>
+          <a href="/docs/development/performance-monitoring/" class="resource-link">
+            <h3>Performance Monitoring</h3>
+            <p>Monitor for security-related performance issues</p>
+          </a>
+          <a href="/docs/troubleshooting/" class="resource-link">
+            <h3>Security Troubleshooting</h3>
+            <p>Common security issues and solutions</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .security-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .security-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  .security-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .security-description {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .security-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .security-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .overview-grid,
+  .compliance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .overview-card,
+  .compliance-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .overview-card h3,
+  .compliance-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .overview-card ul,
+  .compliance-card ul {
+    padding-left: var(--space-6);
+  }
+
+  .overview-card li,
+  .compliance-card li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .audit-checklist,
+  .access-control-audit,
+  .data-protection-audit,
+  .dos-protection-audit,
+  .logging-audit,
+  .config-security-audit {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: var(--space-8);
+  }
+
+  .checklist-category,
+  .control-category,
+  .protection-category,
+  .protection-item,
+  .logging-category,
+  .config-category {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .checklist-category h3,
+  .control-category h3,
+  .protection-category h3,
+  .protection-item h3,
+  .logging-category h3,
+  .config-category h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .security-checklist {
+    list-style: none;
+    padding: 0;
+  }
+
+  .security-checklist li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+  }
+
+  .testing-procedures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--space-8);
+  }
+
+  .testing-category {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .testing-category h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .testing-category pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    font-family: var(--font-family-mono);
+    margin: var(--space-3) 0;
+  }
+
+  .incident-response {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .response-phase {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .response-phase h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .security-resources {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .resource-link {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .resource-link:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .resource-link h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .resource-link p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

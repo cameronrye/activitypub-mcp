@@ -1,0 +1,645 @@
+---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
+const title = "MCP Resources Reference - ActivityPub MCP Server";
+const description =
+  "Complete reference documentation for all MCP resources provided by the ActivityPub MCP Server. Learn about available data sources and resource URIs.";
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="resources-page">
+    <div class="resources-header">
+      <h1>MCP Resources Reference</h1>
+      <p class="resources-description">
+        Complete reference for all Model Context Protocol resources provided by the ActivityPub MCP Server. Resources provide structured access to cached data and server information.
+      </p>
+    </div>
+
+    <div class="resources-content">
+      <section class="resources-section">
+        <h2>📋 Resource Overview</h2>
+        <p>MCP Resources provide read-only access to structured data maintained by the server. Unlike tools, resources don't perform actions but expose cached information and server state.</p>
+        
+        <div class="resource-types">
+          <div class="type-card">
+            <h3>Server Resources</h3>
+            <p>Information about the server itself, configuration, and status</p>
+          </div>
+          <div class="type-card">
+            <h3>Cache Resources</h3>
+            <p>Access to cached actor, instance, and timeline data</p>
+          </div>
+          <div class="type-card">
+            <h3>Discovery Resources</h3>
+            <p>Aggregated discovery data and instance directories</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="resources-section">
+        <h2>🖥️ Server Resources</h2>
+        
+        <div class="resource-reference">
+          <h3><code>activitypub://server-info</code></h3>
+          <p>Provides comprehensive information about the MCP server instance.</p>
+          
+          <div class="resource-details">
+            <div class="resource-content-example">
+              <h4>Content Structure</h4>
+              <pre><code>{
+  "server": {
+    "name": "ActivityPub MCP Server",
+    "version": "1.0.0",
+    "uptime": "2h 34m 12s",
+    "startTime": "2025-01-15T08:30:00Z"
+  },
+  "capabilities": {
+    "tools": ["discover-actor", "fetch-timeline", "get-instance-info"],
+    "resources": ["server-info", "actor-cache", "instance-cache"],
+    "protocols": ["ActivityPub", "WebFinger"]
+  },
+  "configuration": {
+    "logLevel": "info",
+    "userAgent": "ActivityPub-MCP-Server/1.0",
+    "requestTimeout": 30000,
+    "cacheEnabled": true
+  },
+  "statistics": {
+    "totalRequests": 1247,
+    "cacheHits": 892,
+    "cacheMisses": 355,
+    "errorCount": 12
+  }
+}</code></pre>
+            </div>
+
+            <div class="usage-examples">
+              <h4>Usage Examples</h4>
+              <div class="example-item">
+                <h5>Check Server Status</h5>
+                <blockquote>"What's the current status of the ActivityPub MCP server?"</blockquote>
+                <p>Claude will access the server-info resource to provide uptime, performance metrics, and configuration details.</p>
+              </div>
+              <div class="example-item">
+                <h5>Troubleshooting</h5>
+                <blockquote>"Are there any errors or performance issues with the server?"</blockquote>
+                <p>Claude will examine error counts, cache performance, and system health indicators.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="resource-reference">
+          <h3><code>activitypub://server-config</code></h3>
+          <p>Exposes current server configuration and environment settings.</p>
+          
+          <div class="resource-details">
+            <div class="resource-content-example">
+              <h4>Content Structure</h4>
+              <pre><code>{
+  "environment": {
+    "nodeVersion": "18.17.0",
+    "platform": "darwin",
+    "architecture": "arm64"
+  },
+  "settings": {
+    "logLevel": "info",
+    "userAgent": "ActivityPub-MCP-Server/1.0",
+    "requestTimeout": 30000,
+    "maxRetries": 3,
+    "cacheSettings": {
+      "defaultTTL": 300,
+      "actorCacheTTL": 300,
+      "instanceCacheTTL": 3600,
+      "timelineCacheTTL": 120
+    },
+    "rateLimiting": {
+      "requestsPerWindow": 100,
+      "windowSize": 900,
+      "concurrentRequests": 10
+    }
+  }
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="resources-section">
+        <h2>💾 Cache Resources</h2>
+        
+        <div class="resource-reference">
+          <h3><code>activitypub://actor-cache</code></h3>
+          <p>Access to cached actor information and discovery data.</p>
+          
+          <div class="resource-details">
+            <div class="resource-content-example">
+              <h4>Content Structure</h4>
+              <pre><code>{
+  "cacheInfo": {
+    "totalEntries": 156,
+    "lastUpdated": "2025-01-15T10:45:00Z",
+    "hitRate": 0.78,
+    "averageAge": "4m 32s"
+  },
+  "recentActors": [
+    {
+      "id": "https://mastodon.social/users/gargron",
+      "preferredUsername": "gargron",
+      "name": "Eugen Rochko",
+      "instance": "mastodon.social",
+      "cachedAt": "2025-01-15T10:42:00Z",
+      "followers": 847392,
+      "following": 612
+    }
+  ],
+  "popularInstances": [
+    "mastodon.social",
+    "fosstodon.org",
+    "hachyderm.io"
+  ]
+}</code></pre>
+            </div>
+
+            <div class="usage-examples">
+              <h4>Usage Examples</h4>
+              <div class="example-item">
+                <h5>Cache Analysis</h5>
+                <blockquote>"Show me the most recently discovered actors and their basic information"</blockquote>
+              </div>
+              <div class="example-item">
+                <h5>Performance Monitoring</h5>
+                <blockquote>"What's the cache hit rate for actor lookups?"</blockquote>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="resource-reference">
+          <h3><code>activitypub://instance-cache</code></h3>
+          <p>Cached instance information and metadata.</p>
+          
+          <div class="resource-details">
+            <div class="resource-content-example">
+              <h4>Content Structure</h4>
+              <pre><code>{
+  "cacheInfo": {
+    "totalEntries": 89,
+    "lastUpdated": "2025-01-15T10:30:00Z",
+    "hitRate": 0.85
+  },
+  "instances": [
+    {
+      "domain": "mastodon.social",
+      "title": "Mastodon",
+      "description": "The original server operated by the Mastodon gGmbH",
+      "version": "4.2.1",
+      "userCount": 847392,
+      "statusCount": 45892341,
+      "cachedAt": "2025-01-15T09:15:00Z",
+      "lastChecked": "2025-01-15T10:30:00Z",
+      "isUp": true
+    }
+  ],
+  "statistics": {
+    "totalUsers": 2847392,
+    "totalPosts": 145892341,
+    "averageUsersPerInstance": 31984
+  }
+}</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="resource-reference">
+          <h3><code>activitypub://timeline-cache</code></h3>
+          <p>Recently fetched timeline data and content summaries.</p>
+          
+          <div class="resource-details">
+            <div class="resource-content-example">
+              <h4>Content Structure</h4>
+              <pre><code>{
+  "cacheInfo": {
+    "totalEntries": 234,
+    "totalPosts": 4680,
+    "lastUpdated": "2025-01-15T10:45:00Z"
+  },
+  "recentTimelines": [
+    {
+      "actorId": "https://mastodon.social/users/gargron",
+      "postCount": 20,
+      "fetchedAt": "2025-01-15T10:42:00Z",
+      "topics": ["mastodon", "development", "fediverse"],
+      "engagement": {
+        "averageBoosts": 45,
+        "averageReplies": 12,
+        "averageFavorites": 89
+      }
+    }
+  ],
+  "trendingTopics": [
+    "activitypub",
+    "mastodon",
+    "fediverse",
+    "privacy",
+    "opensource"
+  ]
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="resources-section">
+        <h2>🔍 Discovery Resources</h2>
+        
+        <div class="resource-reference">
+          <h3><code>activitypub://instance-directory</code></h3>
+          <p>Curated directory of known fediverse instances with categorization.</p>
+          
+          <div class="resource-details">
+            <div class="resource-content-example">
+              <h4>Content Structure</h4>
+              <pre><code>{
+  "directory": {
+    "totalInstances": 12847,
+    "lastUpdated": "2025-01-15T06:00:00Z",
+    "categories": {
+      "general": 4521,
+      "technology": 1892,
+      "art": 1234,
+      "science": 987,
+      "gaming": 756,
+      "other": 3457
+    }
+  },
+  "featured": [
+    {
+      "domain": "mastodon.social",
+      "category": "general",
+      "description": "The original server operated by the Mastodon gGmbH",
+      "userCount": 847392,
+      "language": "en",
+      "registrationOpen": true
+    }
+  ],
+  "byCategory": {
+    "technology": [
+      "fosstodon.org",
+      "hachyderm.io",
+      "tech.lgbt"
+    ]
+  }
+}</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="resource-reference">
+          <h3><code>activitypub://discovery-stats</code></h3>
+          <p>Statistics and insights from discovery operations.</p>
+          
+          <div class="resource-details">
+            <div class="resource-content-example">
+              <h4>Content Structure</h4>
+              <pre><code>{
+  "discoveryMetrics": {
+    "totalActorsDiscovered": 15672,
+    "totalInstancesFound": 2847,
+    "successfulLookups": 14892,
+    "failedLookups": 780,
+    "averageResponseTime": "2.3s"
+  },
+  "popularQueries": [
+    "technology",
+    "art",
+    "science",
+    "gaming",
+    "music"
+  ],
+  "instanceHealth": {
+    "responsive": 2456,
+    "slow": 234,
+    "unreachable": 157
+  },
+  "trends": {
+    "growingInstances": ["example.social", "newinstance.org"],
+    "popularActors": ["@user@instance.com"],
+    "emergingTopics": ["ai", "climate", "privacy"]
+  }
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="resources-section">
+        <h2>🔧 Resource Access Patterns</h2>
+        
+        <div class="access-patterns">
+          <div class="pattern-card">
+            <h3>Direct Access</h3>
+            <p>Access resources directly by URI:</p>
+            <pre><code># Request specific resource
+GET activitypub://server-info
+
+# Access with parameters
+GET activitypub://actor-cache?limit=10</code></pre>
+          </div>
+
+          <div class="pattern-card">
+            <h3>Filtered Access</h3>
+            <p>Use query parameters to filter resource content:</p>
+            <pre><code># Filter by category
+GET activitypub://instance-directory?category=technology
+
+# Limit results
+GET activitypub://timeline-cache?limit=5&actor=gargron</code></pre>
+          </div>
+
+          <div class="pattern-card">
+            <h3>Aggregated Views</h3>
+            <p>Combine multiple resources for comprehensive views:</p>
+            <blockquote>"Show me a dashboard view with server status, cache performance, and recent discovery activity"</blockquote>
+          </div>
+        </div>
+      </section>
+
+      <section class="resources-section">
+        <h2>⚡ Performance Considerations</h2>
+        
+        <div class="performance-info">
+          <div class="perf-card">
+            <h3>Caching Behavior</h3>
+            <ul>
+              <li>Resources are cached for optimal performance</li>
+              <li>Cache TTL varies by resource type</li>
+              <li>Real-time data may have slight delays</li>
+              <li>Use <code>clear-cache</code> tool for fresh data</li>
+            </ul>
+          </div>
+
+          <div class="perf-card">
+            <h3>Resource Size</h3>
+            <ul>
+              <li>Large resources are paginated automatically</li>
+              <li>Use limit parameters to control response size</li>
+              <li>Consider filtering for specific data needs</li>
+              <li>Monitor memory usage with large datasets</li>
+            </ul>
+          </div>
+
+          <div class="perf-card">
+            <h3>Update Frequency</h3>
+            <ul>
+              <li>Server resources: Updated in real-time</li>
+              <li>Cache resources: Updated on cache operations</li>
+              <li>Discovery resources: Updated periodically</li>
+              <li>Check lastUpdated timestamps for freshness</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="resources-section">
+        <h2>🔗 Related Documentation</h2>
+        <div class="related-links">
+          <a href="/docs/api/tools/" class="related-link">
+            <h3>MCP Tools</h3>
+            <p>Learn about the tools that populate these resources</p>
+          </a>
+          <a href="/docs/guides/usage-guide/" class="related-link">
+            <h3>Usage Guide</h3>
+            <p>Advanced workflows using tools and resources together</p>
+          </a>
+          <a href="/docs/troubleshooting/" class="related-link">
+            <h3>Troubleshooting</h3>
+            <p>Solutions for resource access and performance issues</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .resources-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .resources-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  .resources-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .resources-description {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .resources-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .resources-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .resource-types,
+  .access-patterns,
+  .performance-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .type-card,
+  .pattern-card,
+  .perf-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .type-card h3,
+  .pattern-card h3,
+  .perf-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .type-card p,
+  .pattern-card p,
+  .perf-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+  }
+
+  .resource-reference {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-8);
+    margin-bottom: var(--space-8);
+  }
+
+  .resource-reference h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .resource-reference h3 code {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-family: var(--font-family-mono);
+  }
+
+  .resource-reference > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-6);
+    line-height: var(--leading-relaxed);
+  }
+
+  .resource-details {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .resource-content-example h4,
+  .usage-examples h4 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .resource-content-example pre,
+  .pattern-card pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    font-family: var(--font-family-mono);
+    margin: var(--space-3) 0;
+  }
+
+  .usage-examples {
+    background: var(--bg-primary);
+    padding: var(--space-6);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .example-item {
+    margin-bottom: var(--space-4);
+  }
+
+  .example-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .example-item h5 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .example-item blockquote {
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    margin: var(--space-2) 0;
+    font-style: italic;
+  }
+
+  .example-item p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+
+  .pattern-card blockquote {
+    background: var(--bg-tertiary);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--color-primary);
+    margin: var(--space-3) 0;
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+
+  .perf-card ul {
+    padding-left: var(--space-6);
+    margin-top: var(--space-3);
+  }
+
+  .perf-card li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-relaxed);
+  }
+
+  .related-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .related-link {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .related-link:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .related-link h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .related-link p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>
