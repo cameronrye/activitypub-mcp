@@ -4,13 +4,6 @@ import Search from "../components/Search.astro";
 import SocialLinks from "../components/SocialLinks.astro";
 import ThemeToggle from "../components/ThemeToggle.astro";
 
-export interface Props {
-  title?: string;
-  description?: string;
-  image?: string;
-  canonical?: string;
-}
-
 const {
   title = "ActivityPub MCP Server", // Used in meta tags below
   description = "A comprehensive Model Context Protocol server that enables LLMs like Claude to explore and interact with the existing Fediverse through standardized MCP tools, resources, and prompts.", // Used in meta tags below
