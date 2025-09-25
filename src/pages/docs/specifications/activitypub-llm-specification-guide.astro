@@ -1,4 +1,6 @@
 ---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
 const title = "ActivityPub Specification Guide - ActivityPub MCP Server";
 const description =
   "Comprehensive guide to the ActivityPub specification for LLM applications. Learn how the ActivityPub MCP Server implements and extends the W3C ActivityPub standard.";
@@ -100,7 +102,7 @@ const description =
           <div class="object-card">
             <h3>Actor Object</h3>
             <p>Represents an entity capable of performing activities</p>
-            <pre><code>{
+            <pre><code set:html={`{
   "@context": "https://www.w3.org/ns/activitystreams",
   "type": "Person",
   "id": "https://mastodon.social/users/gargron",
@@ -116,13 +118,13 @@ const description =
     "owner": "https://mastodon.social/users/gargron",
     "publicKeyPem": "-----BEGIN PUBLIC KEY-----..."
   }
-}</code></pre>
+}`}></code></pre>
           </div>
 
           <div class="object-card">
             <h3>Activity Object</h3>
             <p>Represents an action performed by an actor</p>
-            <pre><code>{
+            <pre><code set:html={`{
   "@context": "https://www.w3.org/ns/activitystreams",
   "type": "Create",
   "id": "https://mastodon.social/activities/123",
@@ -135,20 +137,20 @@ const description =
     "to": ["https://www.w3.org/ns/activitystreams#Public"]
   },
   "published": "2025-01-15T10:30:00Z"
-}</code></pre>
+}`}></code></pre>
           </div>
 
           <div class="object-card">
             <h3>Collection Object</h3>
             <p>Represents an ordered or unordered set of objects</p>
-            <pre><code>{
+            <pre><code set:html={`{
   "@context": "https://www.w3.org/ns/activitystreams",
   "type": "OrderedCollection",
   "id": "https://mastodon.social/users/gargron/outbox",
   "totalItems": 1247,
   "first": "https://mastodon.social/users/gargron/outbox?page=1",
   "last": "https://mastodon.social/users/gargron/outbox?page=62"
-}</code></pre>
+}`}></code></pre>
           </div>
         </div>
       </section>
@@ -268,7 +270,7 @@ const description =
           <div class="protocol-card">
             <h3>Activity Delivery</h3>
             <p>How activities are delivered between servers:</p>
-            <pre><code>POST /users/alice/inbox HTTP/1.1
+            <pre><code set:html={`POST /users/alice/inbox HTTP/1.1
 Host: example.com
 Content-Type: application/activity+json
 Signature: keyId="https://sender.com/users/bob#main-key",
@@ -281,7 +283,7 @@ Signature: keyId="https://sender.com/users/bob#main-key",
   "type": "Follow",
   "actor": "https://sender.com/users/bob",
   "object": "https://example.com/users/alice"
-}</code></pre>
+}`}></code></pre>
           </div>
 
           <div class="protocol-card">

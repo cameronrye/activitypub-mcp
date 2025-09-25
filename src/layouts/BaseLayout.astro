@@ -1,12 +1,8 @@
 ---
 import "../styles/main.css";
-
-export interface Props {
-  title?: string;
-  description?: string;
-  image?: string;
-  canonical?: string;
-}
+import Search from "../components/Search.astro";
+import SocialLinks from "../components/SocialLinks.astro";
+import ThemeToggle from "../components/ThemeToggle.astro";
 
 const {
   title = "ActivityPub MCP Server", // Used in meta tags below

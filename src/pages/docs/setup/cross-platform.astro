@@ -1,4 +1,6 @@
 ---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
 const title = "Cross-Platform Setup - ActivityPub MCP Server";
 const description =
   "Platform-specific installation and setup instructions for the ActivityPub MCP Server on Windows, macOS, and Linux.";
@@ -57,7 +59,7 @@ mkdir -p ~/Library/Application\ Support/Claude/
 touch ~/Library/Application\ Support/Claude/claude_desktop_config.json</code></pre>
               
               <p>Add the server configuration:</p>
-              <pre><code>{
+              <pre><code set:html={`{
   "mcpServers": {
     "activitypub": {
       "command": "npx",
@@ -67,7 +69,7 @@ touch ~/Library/Application\ Support/Claude/claude_desktop_config.json</code></p
       }
     }
   }
-}</code></pre>
+}`}></code></pre>
             </div>
 
             <div class="step">
@@ -123,14 +125,14 @@ npm install -g activitypub-mcp</code></pre>
             <div class="step">
               <h4>3. Configure Claude Desktop</h4>
               <p>Edit the configuration file:</p>
-              <pre><code># Open configuration directory
-explorer %APPDATA%\Claude
+              <pre><code set:html={`# Open configuration directory
+explorer %APPDATA%\\Claude
 
 # Create config file if needed
-echo {} > %APPDATA%\Claude\claude_desktop_config.json</code></pre>
+echo {} > %APPDATA%\\Claude\\claude_desktop_config.json`}></code></pre>
               
               <p>Edit <code>claude_desktop_config.json</code> with:</p>
-              <pre><code>{
+              <pre><code set:html={`{
   "mcpServers": {
     "activitypub": {
       "command": "npx",
@@ -140,7 +142,7 @@ echo {} > %APPDATA%\Claude\claude_desktop_config.json</code></pre>
       }
     }
   }
-}</code></pre>
+}`}></code></pre>
             </div>
 
             <div class="step">
@@ -215,7 +217,7 @@ npm install -g activitypub-mcp</code></pre>
 
             <div class="step">
               <h4>3. Configure Claude Desktop (if using)</h4>
-              <pre><code># Create config directory
+              <pre><code set:html={`# Create config directory
 mkdir -p ~/.config/Claude
 
 # Create config file
@@ -231,7 +233,7 @@ cat > ~/.config/Claude/claude_desktop_config.json << 'EOF'
     }
   }
 }
-EOF</code></pre>
+EOF`}></code></pre>
             </div>
 
             <div class="step">
@@ -290,7 +292,7 @@ docker run -p 8080:8080 \
             <div class="step">
               <h4>3. Configure Client</h4>
               <p>Point your MCP client to the containerized server:</p>
-              <pre><code>{
+              <pre><code set:html={`{
   "mcpServers": {
     "activitypub": {
       "command": "docker",
@@ -300,7 +302,7 @@ docker run -p 8080:8080 \
       }
     }
   }
-}</code></pre>
+}`}></code></pre>
             </div>
           </div>
         </div>

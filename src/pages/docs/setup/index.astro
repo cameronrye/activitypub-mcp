@@ -1,10 +1,12 @@
 ---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
 const title = "Installation & Setup - ActivityPub MCP Server";
 const description =
   "Complete installation and setup guide for the ActivityPub MCP Server. Get up and running in minutes.";
 ---
 
-<BaseLayout title={title} description={description}>
+<DocsLayout title={title} description={description}>
   <div class="setup-page">
     <div class="container">
       <div class="setup-header">
@@ -55,7 +57,7 @@ const description =
           <div class="code-block">
             <h3>Manual Configuration</h3>
             <p>If you prefer manual setup, add this to your Claude Desktop configuration:</p>
-            <pre><code>{`{
+            <pre><code set:html={`{\`{
   "mcpServers": {
     "activitypub": {
       "command": "npx",
@@ -65,7 +67,7 @@ const description =
       }
     }
   }
-}`}</code></pre>
+}\`}`}></code></pre>
           </div>
         </section>
 
@@ -187,7 +189,7 @@ activitypub-mcp</code></pre>
       </div>
     </div>
   </div>
-</BaseLayout>
+</DocsLayout>
 
 <style>
   .setup-page {

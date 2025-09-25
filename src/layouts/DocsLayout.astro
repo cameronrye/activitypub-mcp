@@ -1,12 +1,5 @@
 ---
-export interface Props {
-  title?: string;
-  description?: string;
-  frontmatter?: {
-    title?: string;
-    description?: string;
-  };
-}
+import BaseLayout from "./BaseLayout.astro";
 
 const { title, description, frontmatter } = Astro.props;
 const _pageTitle = title || frontmatter?.title || "Documentation";
@@ -82,7 +75,7 @@ const _docsNav = [
 const _currentPath = Astro.url.pathname;
 ---
 
-<BaseLayout title={pageTitle} description={pageDescription}>
+<BaseLayout title={_pageTitle} description={_pageDescription}>
   <div class="docs-layout">
     <div class="container">
       <div class="docs-grid">
@@ -94,7 +87,7 @@ const _currentPath = Astro.url.pathname;
             </div>
             
             <nav class="docs-nav">
-              {docsNav.map(section => (
+              {_docsNav.map(section => (
                 <div class="nav-section">
                   <h3 class="nav-section-title">{section.title}</h3>
                   <ul class="nav-section-items">
@@ -102,7 +95,7 @@ const _currentPath = Astro.url.pathname;
                       <li>
                         <a 
                           href={item.href} 
-                          class={`nav-item ${currentPath === item.href ? 'active' : ''}`}
+                          class={`nav-item ${_currentPath === item.href ? 'active' : ''}`}
                         >
                           {item.title}
                         </a>

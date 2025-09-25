@@ -1,10 +1,12 @@
 ---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
 const title = "Basic Usage Guide - ActivityPub MCP Server";
 const description =
   "Learn the essential commands and workflows for using the ActivityPub MCP Server with LLMs like Claude.";
 ---
 
-<BaseLayout title={title} description={description}>
+<DocsLayout title={title} description={description}>
   <div class="usage-page">
     <div class="container">
       <div class="usage-header">
@@ -210,7 +212,7 @@ fetch-timeline https://fosstodon.org/users/admin</code></pre>
       </div>
     </div>
   </div>
-</BaseLayout>
+</DocsLayout>
 
 <style>
   .usage-page {

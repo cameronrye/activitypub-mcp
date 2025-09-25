@@ -1,10 +1,12 @@
 ---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
 const title = "Practical Examples - ActivityPub MCP Server";
 const description =
   "Real-world examples and use cases for the ActivityPub MCP Server with step-by-step instructions and expected outputs.";
 ---
 
-<BaseLayout title={title} description={description}>
+<DocsLayout title={title} description={description}>
   <div class="examples-page">
     <div class="container">
       <div class="examples-header">
@@ -28,7 +30,7 @@ const description =
                 <pre><code>discover-instances technology</code></pre>
                 <div class="step-result">
                   <h5>Expected Output:</h5>
-                  <pre><code>{`{
+                  <pre><code set:html={`{\`{
   "instances": [
     {
       "domain": "fosstodon.org",
@@ -45,7 +47,7 @@ const description =
       "posts": 445123
     }
   ]
-}`}</code></pre>
+}\`}`}></code></pre>
                 </div>
               </div>
 
@@ -54,7 +56,7 @@ const description =
                 <pre><code>get-instance-info fosstodon.org</code></pre>
                 <div class="step-result">
                   <h5>Expected Output:</h5>
-                  <pre><code>{`{
+                  <pre><code set:html={`{\`{
   "domain": "fosstodon.org",
   "title": "Fosstodon",
   "description": "Fosstodon is an English speaking Mastodon instance...",
@@ -70,7 +72,7 @@ const description =
     "status_count": 892341,
     "domain_count": 8932
   }
-}`}</code></pre>
+}\`}`}></code></pre>
                 </div>
               </div>
 
@@ -79,7 +81,7 @@ const description =
                 <pre><code>discover-actor @kev@fosstodon.org</code></pre>
                 <div class="step-result">
                   <h5>Expected Output:</h5>
-                  <pre><code>{`{
+                  <pre><code set:html={`{\`{
   "id": "https://fosstodon.org/users/kev",
   "type": "Person",
   "preferredUsername": "kev",
@@ -89,7 +91,7 @@ const description =
   "followers": 4521,
   "following": 892,
   "posts": 3421
-}`}</code></pre>
+}\`}`}></code></pre>
                 </div>
               </div>
 
@@ -98,7 +100,7 @@ const description =
                 <pre><code>fetch-timeline https://fosstodon.org/users/kev</code></pre>
                 <div class="step-result">
                   <h5>Expected Output:</h5>
-                  <pre><code>{`{
+                  <pre><code set:html={`{\`{
   "posts": [
     {
       "id": "https://fosstodon.org/users/kev/statuses/111234567",
@@ -109,7 +111,7 @@ const description =
       "likes": 89
     }
   ]
-}`}</code></pre>
+}\`}`}></code></pre>
                 </div>
               </div>
             </div>
@@ -276,7 +278,7 @@ fetch-timeline https://hachyderm.io/users/admin</code></pre>
       </div>
     </div>
   </div>
-</BaseLayout>
+</DocsLayout>
 
 <style>
   .examples-page {

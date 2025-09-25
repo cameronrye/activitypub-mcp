@@ -46,31 +46,13 @@ const description =
           <div class="resource-details">
             <div class="resource-content-example">
               <h4>Content Structure</h4>
-              <pre><code>{
-  "server": {
-    "name": "ActivityPub MCP Server",
-    "version": "1.0.0",
-    "uptime": "2h 34m 12s",
-    "startTime": "2025-01-15T08:30:00Z"
-  },
-  "capabilities": {
-    "tools": ["discover-actor", "fetch-timeline", "get-instance-info"],
-    "resources": ["server-info", "actor-cache", "instance-cache"],
-    "protocols": ["ActivityPub", "WebFinger"]
-  },
-  "configuration": {
-    "logLevel": "info",
-    "userAgent": "ActivityPub-MCP-Server/1.0",
-    "requestTimeout": 30000,
-    "cacheEnabled": true
-  },
-  "statistics": {
-    "totalRequests": 1247,
-    "cacheHits": 892,
-    "cacheMisses": 355,
-    "errorCount": 12
-  }
-}</code></pre>
+              <p>Returns comprehensive server information including:</p>
+              <ul>
+                <li>Server name, version, and uptime</li>
+                <li>Available tools and resources</li>
+                <li>Configuration settings</li>
+                <li>Performance statistics</li>
+              </ul>
             </div>
 
             <div class="usage-examples">
@@ -96,30 +78,13 @@ const description =
           <div class="resource-details">
             <div class="resource-content-example">
               <h4>Content Structure</h4>
-              <pre><code>{
-  "environment": {
-    "nodeVersion": "18.17.0",
-    "platform": "darwin",
-    "architecture": "arm64"
-  },
-  "settings": {
-    "logLevel": "info",
-    "userAgent": "ActivityPub-MCP-Server/1.0",
-    "requestTimeout": 30000,
-    "maxRetries": 3,
-    "cacheSettings": {
-      "defaultTTL": 300,
-      "actorCacheTTL": 300,
-      "instanceCacheTTL": 3600,
-      "timelineCacheTTL": 120
-    },
-    "rateLimiting": {
-      "requestsPerWindow": 100,
-      "windowSize": 900,
-      "concurrentRequests": 10
-    }
-  }
-}</code></pre>
+              <p>Returns server configuration including:</p>
+              <ul>
+                <li>Environment details (Node version, platform)</li>
+                <li>Server settings and timeouts</li>
+                <li>Cache configuration</li>
+                <li>Rate limiting settings</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -135,30 +100,13 @@ const description =
           <div class="resource-details">
             <div class="resource-content-example">
               <h4>Content Structure</h4>
-              <pre><code>{
-  "cacheInfo": {
-    "totalEntries": 156,
-    "lastUpdated": "2025-01-15T10:45:00Z",
-    "hitRate": 0.78,
-    "averageAge": "4m 32s"
-  },
-  "recentActors": [
-    {
-      "id": "https://mastodon.social/users/gargron",
-      "preferredUsername": "gargron",
-      "name": "Eugen Rochko",
-      "instance": "mastodon.social",
-      "cachedAt": "2025-01-15T10:42:00Z",
-      "followers": 847392,
-      "following": 612
-    }
-  ],
-  "popularInstances": [
-    "mastodon.social",
-    "fosstodon.org",
-    "hachyderm.io"
-  ]
-}</code></pre>
+              <p>Returns actor cache information including:</p>
+              <ul>
+                <li>Cache statistics and hit rates</li>
+                <li>Recently discovered actors</li>
+                <li>Popular instances</li>
+                <li>Cache performance metrics</li>
+              </ul>
             </div>
 
             <div class="usage-examples">
@@ -182,31 +130,13 @@ const description =
           <div class="resource-details">
             <div class="resource-content-example">
               <h4>Content Structure</h4>
-              <pre><code>{
-  "cacheInfo": {
-    "totalEntries": 89,
-    "lastUpdated": "2025-01-15T10:30:00Z",
-    "hitRate": 0.85
-  },
-  "instances": [
-    {
-      "domain": "mastodon.social",
-      "title": "Mastodon",
-      "description": "The original server operated by the Mastodon gGmbH",
-      "version": "4.2.1",
-      "userCount": 847392,
-      "statusCount": 45892341,
-      "cachedAt": "2025-01-15T09:15:00Z",
-      "lastChecked": "2025-01-15T10:30:00Z",
-      "isUp": true
-    }
-  ],
-  "statistics": {
-    "totalUsers": 2847392,
-    "totalPosts": 145892341,
-    "averageUsersPerInstance": 31984
-  }
-}</code></pre>
+              <p>Returns instance cache information including:</p>
+              <ul>
+                <li>Cache statistics and performance</li>
+                <li>Known instance details</li>
+                <li>Instance health status</li>
+                <li>Aggregate statistics</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -218,33 +148,13 @@ const description =
           <div class="resource-details">
             <div class="resource-content-example">
               <h4>Content Structure</h4>
-              <pre><code>{
-  "cacheInfo": {
-    "totalEntries": 234,
-    "totalPosts": 4680,
-    "lastUpdated": "2025-01-15T10:45:00Z"
-  },
-  "recentTimelines": [
-    {
-      "actorId": "https://mastodon.social/users/gargron",
-      "postCount": 20,
-      "fetchedAt": "2025-01-15T10:42:00Z",
-      "topics": ["mastodon", "development", "fediverse"],
-      "engagement": {
-        "averageBoosts": 45,
-        "averageReplies": 12,
-        "averageFavorites": 89
-      }
-    }
-  ],
-  "trendingTopics": [
-    "activitypub",
-    "mastodon",
-    "fediverse",
-    "privacy",
-    "opensource"
-  ]
-}</code></pre>
+              <p>Returns timeline cache information including:</p>
+              <ul>
+                <li>Cache statistics and entry counts</li>
+                <li>Recent timeline data</li>
+                <li>Engagement metrics</li>
+                <li>Trending topics</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -260,37 +170,13 @@ const description =
           <div class="resource-details">
             <div class="resource-content-example">
               <h4>Content Structure</h4>
-              <pre><code>{
-  "directory": {
-    "totalInstances": 12847,
-    "lastUpdated": "2025-01-15T06:00:00Z",
-    "categories": {
-      "general": 4521,
-      "technology": 1892,
-      "art": 1234,
-      "science": 987,
-      "gaming": 756,
-      "other": 3457
-    }
-  },
-  "featured": [
-    {
-      "domain": "mastodon.social",
-      "category": "general",
-      "description": "The original server operated by the Mastodon gGmbH",
-      "userCount": 847392,
-      "language": "en",
-      "registrationOpen": true
-    }
-  ],
-  "byCategory": {
-    "technology": [
-      "fosstodon.org",
-      "hachyderm.io",
-      "tech.lgbt"
-    ]
-  }
-}</code></pre>
+              <p>Returns instance directory information including:</p>
+              <ul>
+                <li>Total instance counts by category</li>
+                <li>Featured instances</li>
+                <li>Categorized instance lists</li>
+                <li>Registration and language information</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -302,32 +188,13 @@ const description =
           <div class="resource-details">
             <div class="resource-content-example">
               <h4>Content Structure</h4>
-              <pre><code>{
-  "discoveryMetrics": {
-    "totalActorsDiscovered": 15672,
-    "totalInstancesFound": 2847,
-    "successfulLookups": 14892,
-    "failedLookups": 780,
-    "averageResponseTime": "2.3s"
-  },
-  "popularQueries": [
-    "technology",
-    "art",
-    "science",
-    "gaming",
-    "music"
-  ],
-  "instanceHealth": {
-    "responsive": 2456,
-    "slow": 234,
-    "unreachable": 157
-  },
-  "trends": {
-    "growingInstances": ["example.social", "newinstance.org"],
-    "popularActors": ["@user@instance.com"],
-    "emergingTopics": ["ai", "climate", "privacy"]
-  }
-}</code></pre>
+              <p>Returns discovery statistics including:</p>
+              <ul>
+                <li>Discovery metrics and performance</li>
+                <li>Popular search queries</li>
+                <li>Instance health status</li>
+                <li>Trending instances and topics</li>
+              </ul>
             </div>
           </div>
         </div>
