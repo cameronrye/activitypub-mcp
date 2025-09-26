@@ -6,24 +6,29 @@ const _pageTitle = title || frontmatter?.title || "Documentation";
 const _pageDescription =
   description || frontmatter?.description || "ActivityPub MCP Server Documentation";
 
+// Get the base URL for proper path resolution
+const baseURL = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+
 // Navigation structure for docs
 const _docsNav = [
   {
     title: "Getting Started",
     items: [
-      { title: "Overview", href: "/docs/" },
-      { title: "Configuration Guide", href: "/docs/setup/config-guide/" },
-      { title: "Cross-Platform Setup", href: "/docs/setup/cross-platform/" },
+      { title: "Overview", href: `${baseURL}docs/` },
+      { title: "Configuration Guide", href: `${baseURL}docs/setup/config-guide/` },
+      { title: "Cross-Platform Setup", href: `${baseURL}docs/setup/cross-platform/` },
     ],
   },
   {
     title: "User Guides",
     items: [
-      { title: "Usage Guide", href: "/docs/guides/usage-guide/" },
-      { title: "Examples", href: "/docs/guides/examples/" },
+      { title: "Usage Guide", href: `${baseURL}docs/guides/usage-guide/` },
+      { title: "Examples", href: `${baseURL}docs/guides/examples/` },
       {
         title: "Real-World Scenarios",
-        href: "/docs/guides/real-world-test-scenario/",
+        href: `${baseURL}docs/guides/real-world-test-scenario/`,
       },
     ],
   },
@@ -32,15 +37,15 @@ const _docsNav = [
     items: [
       {
         title: "Dependency Management",
-        href: "/docs/development/dependency-management/",
+        href: `${baseURL}docs/development/dependency-management/`,
       },
       {
         title: "Performance Monitoring",
-        href: "/docs/development/performance-monitoring/",
+        href: `${baseURL}docs/development/performance-monitoring/`,
       },
       {
         title: "Security Audit",
-        href: "/docs/development/security-audit-checklist/",
+        href: `${baseURL}docs/development/security-audit-checklist/`,
       },
     ],
   },
@@ -49,25 +54,25 @@ const _docsNav = [
     items: [
       {
         title: "ActivityPub Guide",
-        href: "/docs/specifications/activitypub-llm-specification-guide/",
+        href: `${baseURL}docs/specifications/activitypub-llm-specification-guide/`,
       },
       {
         title: "ActivityStreams Vocabulary",
-        href: "/docs/specifications/activitystreams-vocabulary-llm-specification-guide/",
+        href: `${baseURL}docs/specifications/activitystreams-vocabulary-llm-specification-guide/`,
       },
       {
         title: "Fedify CLI",
-        href: "/docs/specifications/fedify-cli-llm-specification-guide/",
+        href: `${baseURL}docs/specifications/fedify-cli-llm-specification-guide/`,
       },
       {
         title: "WebFinger Guide",
-        href: "/docs/specifications/webfinger-llm-specification-guide/",
+        href: `${baseURL}docs/specifications/webfinger-llm-specification-guide/`,
       },
     ],
   },
   {
     title: "Project Info",
-    items: [{ title: "Changelog", href: "/docs/changelog/" }],
+    items: [{ title: "Changelog", href: `${baseURL}docs/changelog/` }],
   },
 ];
 
@@ -85,7 +90,7 @@ const _currentPath = Astro.url.pathname;
             <div class="sidebar-header">
               <h2>Documentation</h2>
             </div>
-            
+
             <nav class="docs-nav">
               {_docsNav.map(section => (
                 <div class="nav-section">
@@ -93,8 +98,8 @@ const _currentPath = Astro.url.pathname;
                   <ul class="nav-section-items">
                     {section.items.map(item => (
                       <li>
-                        <a 
-                          href={item.href} 
+                        <a
+                          href={item.href}
                           class={`nav-item ${_currentPath === item.href ? 'active' : ''}`}
                         >
                           {item.title}
@@ -107,13 +112,13 @@ const _currentPath = Astro.url.pathname;
             </nav>
           </div>
         </aside>
-        
+
         <!-- Main Content -->
         <main class="docs-main">
           <div class="docs-content" data-pagefind-body>
             <slot />
           </div>
-          
+
 
         </main>
       </div>
@@ -125,28 +130,28 @@ const _currentPath = Astro.url.pathname;
   .docs-layout {
     min-height: calc(100vh - 200px);
   }
-  
+
   .docs-grid {
     display: grid;
     grid-template-columns: 280px 1fr;
     gap: var(--space-8);
     align-items: start;
   }
-  
+
   @media (max-width: 1024px) {
     .docs-grid {
       grid-template-columns: 1fr;
     }
-    
+
     .docs-sidebar {
       order: 2;
     }
-    
+
     .docs-main {
       order: 1;
     }
   }
-  
+
   /* Sidebar */
   .docs-sidebar {
     position: sticky;
@@ -154,29 +159,29 @@ const _currentPath = Astro.url.pathname;
     max-height: calc(100vh - var(--space-16));
     overflow-y: auto;
   }
-  
+
   .sidebar-content {
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-lg);
     padding: var(--space-6);
   }
-  
+
   .sidebar-header h2 {
     font-size: var(--text-lg);
     font-weight: var(--font-semibold);
     margin-bottom: var(--space-6);
     color: var(--text-primary);
   }
-  
+
   .nav-section {
     margin-bottom: var(--space-6);
   }
-  
+
   .nav-section:last-child {
     margin-bottom: 0;
   }
-  
+
   .nav-section-title {
     font-size: var(--text-sm);
     font-weight: var(--font-semibold);
@@ -185,15 +190,15 @@ const _currentPath = Astro.url.pathname;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
-  
+
   .nav-section-items {
     list-style: none;
   }
-  
+
   .nav-section-items li {
     margin-bottom: var(--space-1);
   }
-  
+
   .nav-item {
     display: block;
     padding: var(--space-2) var(--space-3);
@@ -203,31 +208,31 @@ const _currentPath = Astro.url.pathname;
     font-size: var(--text-sm);
     transition: all var(--transition-fast);
   }
-  
+
   .nav-item:hover {
     background-color: var(--bg-tertiary);
     color: var(--text-primary);
   }
-  
+
   .nav-item.active {
     background-color: var(--color-primary);
     color: var(--color-white);
   }
-  
+
   /* Main content */
   .docs-main {
     display: block;
   }
-  
 
-  
+
+
   .docs-content {
     max-width: none;
   }
-  
+
   /* Table of Contents */
 
-  
+
   /* Mobile sidebar toggle */
   @media (max-width: 1024px) {
     .docs-sidebar {
