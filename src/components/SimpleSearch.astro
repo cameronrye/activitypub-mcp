@@ -6,7 +6,7 @@
   <input
     type="search"
     id="search-input"
-    placeholder="Search documentation..."
+    placeholder="Search"
     class="search-input"
     autocomplete="off"
   >
@@ -74,7 +74,7 @@
     color: var(--color-primary);
     background-color: rgba(37, 99, 235, 0.1);
   }
-  
+
   .search-results {
     position: absolute;
     top: 100%;
@@ -123,6 +123,21 @@
     margin: var(--space-1);
   }
 
+  /* Ensure no underline on search result links */
+  .search-result,
+  .search-result:link,
+  .search-result:visited,
+  .search-result:hover,
+  .search-result:active {
+    text-decoration: none;
+  }
+
+  .search-result .result-title,
+  .search-result .result-excerpt {
+    text-decoration: none;
+  }
+
+
   .search-result:hover,
   .search-result.active {
     background: linear-gradient(
@@ -149,17 +164,17 @@
   .search-result:last-child {
     border-bottom: none;
   }
-  
+
   .result-title {
     font-weight: var(--font-semibold);
     margin-bottom: var(--space-2);
-    font-size: var(--text-base);
+    font-size: var(--text-xs);
     line-height: var(--leading-tight);
     color: var(--text-primary);
   }
 
   .result-excerpt {
-    font-size: var(--text-sm);
+    font-size: 0.7rem;
     color: var(--text-secondary);
     line-height: var(--leading-relaxed);
     display: -webkit-box;
@@ -198,11 +213,11 @@
       this.searchResults = document.getElementById('search-results');
       this.searchContent = document.getElementById('search-content');
       this.debounceTimer = null;
-      
+
       // Load search data from generated file or use fallback
       this.searchData = [];
       this.loadSearchData();
-      
+
       this.init();
     }
 
@@ -252,20 +267,20 @@
 
     init() {
       if (!this.searchInput || !this.searchResults) return;
-      
+
       this.searchInput.addEventListener('input', this.handleInput.bind(this));
       this.searchInput.addEventListener('focus', this.handleFocus.bind(this));
       this.searchInput.addEventListener('keydown', this.handleKeyDown.bind(this));
       document.addEventListener('click', this.handleDocumentClick.bind(this));
     }
-    
+
     handleInput(event) {
       const query = event.target.value.trim();
-      
+
       if (this.debounceTimer) {
         clearTimeout(this.debounceTimer);
       }
-      
+
       this.debounceTimer = setTimeout(() => {
         if (query.length >= 2) {
           this.performSearch(query);
@@ -274,18 +289,18 @@
         }
       }, 300);
     }
-    
+
     handleFocus(event) {
       const query = event.target.value.trim();
       if (query.length >= 2) {
         this.performSearch(query);
       }
     }
-    
+
     handleKeyDown(event) {
       const results = this.searchResults.querySelectorAll('.search-result');
       const activeResult = this.searchResults.querySelector('.search-result.active');
-      
+
       switch (event.key) {
         case 'ArrowDown':
           event.preventDefault();
@@ -299,7 +314,7 @@
             results[0].classList.add('active');
           }
           break;
-          
+
         case 'ArrowUp':
           event.preventDefault();
           if (activeResult) {
@@ -310,37 +325,37 @@
             }
           }
           break;
-          
+
         case 'Enter':
           event.preventDefault();
           if (activeResult) {
             window.location.href = activeResult.href;
           }
           break;
-          
+
         case 'Escape':
           this.hideResults();
           this.searchInput.blur();
           break;
       }
     }
-    
+
     handleDocumentClick(event) {
       if (!this.searchInput.contains(event.target) && !this.searchResults.contains(event.target)) {
         this.hideResults();
       }
     }
-    
+
     performSearch(query) {
       const queryLower = query.toLowerCase();
-      const results = this.searchData.filter(item => 
-        item.title.toLowerCase().includes(queryLower) || 
+      const results = this.searchData.filter(item =>
+        item.title.toLowerCase().includes(queryLower) ||
         item.excerpt.toLowerCase().includes(queryLower)
       );
-      
+
       this.displayResults(results, query);
     }
-    
+
     displayResults(results, query) {
       if (results.length === 0) {
         this.searchContent.innerHTML = '<div class="no-results">No results found</div>';
@@ -378,29 +393,29 @@
         return false;
       }
     }
-    
+
     highlightQuery(text, query) {
       if (!text || !query) return text;
-      
+
       const regex = new RegExp(`(${this.escapeRegex(query)})`, 'gi');
       return text.replace(regex, '<mark>$1</mark>');
     }
-    
+
     escapeRegex(string) {
       return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
-    
+
     showResults() {
       this.searchResults.classList.add('show');
     }
-    
+
     hideResults() {
       this.searchResults.classList.remove('show');
       const activeResults = this.searchResults.querySelectorAll('.search-result.active');
       activeResults.forEach(result => result.classList.remove('active'));
     }
   }
-  
+
   // Initialize search when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => new SimpleSearch());

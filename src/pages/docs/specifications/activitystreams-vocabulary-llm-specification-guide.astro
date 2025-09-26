@@ -1,0 +1,577 @@
+---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
+const title = "ActivityStreams Vocabulary Specification Guide - ActivityPub MCP Server";
+const description =
+  "Comprehensive guide to the ActivityStreams Vocabulary specification for LLM applications. Learn the complete vocabulary for describing social activities, objects, and relationships.";
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="spec-page">
+    <div class="spec-header">
+      <h1>ActivityStreams Vocabulary Specification Guide</h1>
+      <p class="spec-description">
+        Complete reference to the ActivityStreams Vocabulary W3C Recommendation. This guide provides comprehensive documentation of the vocabulary used for describing social activities, objects, and relationships in the fediverse.
+      </p>
+    </div>
+
+    <div class="spec-content">
+      <section class="spec-section">
+        <h2>📋 Executive Summary</h2>
+        <div class="overview-content">
+          <div class="overview-card">
+            <h3>Purpose and Overview</h3>
+            <p>The ActivityStreams Vocabulary is a W3C Recommendation (published May 23, 2017) that defines a comprehensive vocabulary for describing social activities, objects, and relationships in a machine-readable format. It serves as the foundational vocabulary for ActivityPub and other social web protocols.</p>
+            
+            <h4>Core Concepts:</h4>
+            <ul>
+              <li><strong>Core Types:</strong> Essential base types (Object, Link, Activity, Collection)</li>
+              <li><strong>Extended Types:</strong> Specialized types (Create, Follow, Like, Person, Note)</li>
+              <li><strong>Properties:</strong> Attributes describing relationships and characteristics</li>
+            </ul>
+          </div>
+
+          <div class="overview-card">
+            <h3>Key Components</h3>
+            <div class="concept-list">
+              <div class="concept-item">
+                <h4>Objects</h4>
+                <p>Content items, actors, and abstract entities</p>
+              </div>
+              <div class="concept-item">
+                <h4>Activities</h4>
+                <p>Actions performed by actors on objects</p>
+              </div>
+              <div class="concept-item">
+                <h4>Links</h4>
+                <p>References to external resources with metadata</p>
+              </div>
+              <div class="concept-item">
+                <h4>Collections</h4>
+                <p>Ordered or unordered groups of objects</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>🏗️ Core Types Architecture</h2>
+        <div class="architecture-grid">
+          <div class="arch-card">
+            <h3>Object</h3>
+            <p>The base type for all ActivityStreams objects. Provides fundamental properties like id, type, name, and content.</p>
+            <div class="properties">
+              <strong>Key Properties:</strong> id, type, name, content, url, published, updated
+            </div>
+          </div>
+          
+          <div class="arch-card">
+            <h3>Link</h3>
+            <p>Represents references to external resources with associated metadata and relationship information.</p>
+            <div class="properties">
+              <strong>Key Properties:</strong> href, rel, mediaType, name, hreflang, height, width
+            </div>
+          </div>
+          
+          <div class="arch-card">
+            <h3>Activity</h3>
+            <p>Describes actions performed by actors. Extends Object with actor, object, and target properties.</p>
+            <div class="properties">
+              <strong>Key Properties:</strong> actor, object, target, result, origin, instrument
+            </div>
+          </div>
+          
+          <div class="arch-card">
+            <h3>Collection</h3>
+            <p>Represents groups of objects or links, supporting both ordered and unordered collections.</p>
+            <div class="properties">
+              <strong>Key Properties:</strong> items, totalItems, first, last, current
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>🎯 Extended Activity Types</h2>
+        <div class="activity-types">
+          <div class="type-category">
+            <h3>Content Activities</h3>
+            <ul>
+              <li><strong>Create:</strong> Creating new content</li>
+              <li><strong>Update:</strong> Modifying existing content</li>
+              <li><strong>Delete:</strong> Removing content</li>
+              <li><strong>Announce:</strong> Sharing/boosting content</li>
+            </ul>
+          </div>
+          
+          <div class="type-category">
+            <h3>Social Activities</h3>
+            <ul>
+              <li><strong>Follow:</strong> Following an actor</li>
+              <li><strong>Like:</strong> Expressing approval</li>
+              <li><strong>Block:</strong> Blocking an actor</li>
+              <li><strong>Flag:</strong> Reporting content</li>
+            </ul>
+          </div>
+          
+          <div class="type-category">
+            <h3>Collection Activities</h3>
+            <ul>
+              <li><strong>Add:</strong> Adding to collections</li>
+              <li><strong>Remove:</strong> Removing from collections</li>
+              <li><strong>Move:</strong> Moving between collections</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>👥 Extended Actor Types</h2>
+        <div class="actor-types">
+          <div class="actor-card">
+            <h3>Person</h3>
+            <p>Individual human users in the social network</p>
+          </div>
+          <div class="actor-card">
+            <h3>Organization</h3>
+            <p>Formal organizations, companies, or institutions</p>
+          </div>
+          <div class="actor-card">
+            <h3>Service</h3>
+            <p>Automated services, bots, or applications</p>
+          </div>
+          <div class="actor-card">
+            <h3>Group</h3>
+            <p>Collections of actors working together</p>
+          </div>
+          <div class="actor-card">
+            <h3>Application</h3>
+            <p>Software applications that can perform activities</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>📄 Extended Object Types</h2>
+        <div class="object-types">
+          <div class="object-category">
+            <h3>Content Objects</h3>
+            <ul>
+              <li><strong>Note:</strong> Short text content (like tweets)</li>
+              <li><strong>Article:</strong> Long-form content with rich formatting</li>
+              <li><strong>Document:</strong> File attachments and documents</li>
+              <li><strong>Page:</strong> Web pages and standalone content</li>
+            </ul>
+          </div>
+          
+          <div class="object-category">
+            <h3>Media Objects</h3>
+            <ul>
+              <li><strong>Image:</strong> Pictures and visual content</li>
+              <li><strong>Video:</strong> Video content and streams</li>
+              <li><strong>Audio:</strong> Audio files and podcasts</li>
+            </ul>
+          </div>
+          
+          <div class="object-category">
+            <h3>Social Objects</h3>
+            <ul>
+              <li><strong>Event:</strong> Calendar events and gatherings</li>
+              <li><strong>Place:</strong> Geographic locations</li>
+              <li><strong>Profile:</strong> Actor profile information</li>
+              <li><strong>Relationship:</strong> Connections between actors</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>🔗 Implementation in ActivityPub MCP Server</h2>
+        <div class="implementation-content">
+          <div class="impl-card">
+            <h3>Vocabulary Usage</h3>
+            <p>Our MCP server implements the complete ActivityStreams vocabulary to ensure full compatibility with the fediverse ecosystem.</p>
+            <ul>
+              <li>Full support for all core and extended types</li>
+              <li>Proper JSON-LD context handling</li>
+              <li>Extensibility for custom properties</li>
+              <li>Validation against vocabulary specifications</li>
+            </ul>
+          </div>
+          
+          <div class="impl-card">
+            <h3>LLM Integration</h3>
+            <p>The vocabulary is exposed to LLMs through structured MCP tools and resources.</p>
+            <ul>
+              <li>Type-aware object creation and manipulation</li>
+              <li>Vocabulary-guided content generation</li>
+              <li>Semantic understanding of social activities</li>
+              <li>Automated compliance checking</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>📚 Additional Resources</h2>
+        <div class="resources-grid">
+          <a href="https://www.w3.org/TR/activitystreams-vocabulary/" class="resource-link" target="_blank" rel="noopener">
+            <h3>Official W3C Specification</h3>
+            <p>The complete ActivityStreams Vocabulary W3C Recommendation</p>
+          </a>
+          
+          <a href="https://www.w3.org/TR/activitystreams-core/" class="resource-link" target="_blank" rel="noopener">
+            <h3>ActivityStreams 2.0 Core</h3>
+            <p>Core syntax and serialization specification</p>
+          </a>
+          
+          <a href="/docs/specifications/activitypub-llm-specification-guide/" class="resource-link">
+            <h3>ActivityPub Implementation</h3>
+            <p>How our server implements ActivityPub using this vocabulary</p>
+          </a>
+          
+          <a href="/docs/api/tools/" class="resource-link">
+            <h3>MCP Tools Reference</h3>
+            <p>Tools for working with ActivityStreams objects</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .spec-page {
+    max-width: none;
+  }
+
+  .spec-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+    padding-bottom: var(--space-8);
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .spec-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .spec-description {
+    font-size: var(--text-xl);
+    color: var(--text-secondary);
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .spec-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .spec-section h2 {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-4);
+    border-bottom: 2px solid var(--color-primary);
+  }
+
+  .overview-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  @media (min-width: 768px) {
+    .overview-content {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .overview-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+  }
+
+  .overview-card h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .overview-card h4 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin: var(--space-4) 0 var(--space-2) 0;
+  }
+
+  .concept-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  @media (min-width: 640px) {
+    .concept-list {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .concept-item {
+    padding: var(--space-3);
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-secondary);
+  }
+
+  .concept-item h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-1);
+  }
+
+  .concept-item p {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .architecture-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .architecture-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .arch-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    transition: all var(--transition-fast);
+  }
+
+  .arch-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+  }
+
+  .arch-card h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .properties {
+    margin-top: var(--space-4);
+    padding: var(--space-3);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+  }
+
+  .activity-types {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .activity-types {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .type-category {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+  }
+
+  .type-category h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .type-category ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .type-category li {
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--border-secondary);
+  }
+
+  .type-category li:last-child {
+    border-bottom: none;
+  }
+
+  .actor-types {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  @media (min-width: 640px) {
+    .actor-types {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .actor-types {
+      grid-template-columns: repeat(5, 1fr);
+    }
+  }
+
+  .actor-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    text-align: center;
+    transition: all var(--transition-fast);
+  }
+
+  .actor-card:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+  }
+
+  .actor-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .object-types {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .object-types {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .object-category {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+  }
+
+  .object-category h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .object-category ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .object-category li {
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--border-secondary);
+  }
+
+  .object-category li:last-child {
+    border-bottom: none;
+  }
+
+  .implementation-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  @media (min-width: 768px) {
+    .implementation-content {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .impl-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+  }
+
+  .impl-card h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .impl-card ul {
+    margin-top: var(--space-4);
+  }
+
+  .resources-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .resources-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .resource-link {
+    display: block;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .resource-link:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .resource-link h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .resource-link p {
+    color: var(--text-secondary);
+    margin: 0;
+  }
+</style>

@@ -1,0 +1,906 @@
+---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
+const title = "Practical Examples - ActivityPub MCP Server";
+const description =
+  "Real-world examples and step-by-step tutorials for using the ActivityPub MCP Server. Learn through practical scenarios and use cases.";
+
+// Get the base URL for proper path resolution
+const baseURL = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="examples-page">
+    <div class="container">
+      <div class="examples-header">
+        <h1>Practical Examples</h1>
+        <p class="examples-description">
+          Learn through real-world scenarios and step-by-step tutorials. These examples demonstrate practical applications of the ActivityPub MCP Server.
+        </p>
+      </div>
+
+      <div class="examples-content">
+        <section class="examples-section">
+          <h2>🚀 Quick Start Examples</h2>
+          
+          <div class="quick-examples">
+            <div class="example-card">
+              <h3>Discover a Popular Actor</h3>
+              <p>Learn about a well-known fediverse personality:</p>
+              <div class="example-steps">
+                <div class="step">
+                  <span class="step-number">1</span>
+                  <div class="step-content">
+                    <p><strong>Ask Claude:</strong></p>
+                    <code>"Can you discover information about @gargron@mastodon.social?"</code>
+                  </div>
+                </div>
+                <div class="step">
+                  <span class="step-number">2</span>
+                  <div class="step-content">
+                    <p><strong>What you'll learn:</strong></p>
+                    <ul>
+                      <li>Profile information and bio</li>
+                      <li>Follower and following counts</li>
+                      <li>Recent post activity</li>
+                      <li>Instance details</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="example-card">
+              <h3>Explore an Instance</h3>
+              <p>Get comprehensive information about a fediverse instance:</p>
+              <div class="example-steps">
+                <div class="step">
+                  <span class="step-number">1</span>
+                  <div class="step-content">
+                    <p><strong>Ask Claude:</strong></p>
+                    <code>"What can you tell me about the fosstodon.org instance?"</code>
+                  </div>
+                </div>
+                <div class="step">
+                  <span class="step-number">2</span>
+                  <div class="step-content">
+                    <p><strong>What you'll discover:</strong></p>
+                    <ul>
+                      <li>Community focus and rules</li>
+                      <li>Software version and features</li>
+                      <li>User statistics</li>
+                      <li>Federation status</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="examples-section">
+          <h2>🔍 Research Scenarios</h2>
+          
+          <div class="research-scenarios">
+            <div class="scenario">
+              <h3>Scenario 1: Finding Climate Science Communities</h3>
+              <p>You want to find active climate science discussions and researchers on the fediverse.</p>
+              
+              <div class="scenario-steps">
+                <div class="scenario-step">
+                  <h4>Step 1: Use the Exploration Prompt</h4>
+                  <p><strong>Ask Claude:</strong></p>
+                  <code>"Use the explore-fediverse prompt with interests 'climate science, environmental research, sustainability' and instance type 'mastodon'"</code>
+                  
+                  <div class="expected-result">
+                    <h5>Expected Result:</h5>
+                    <p>Personalized recommendations for instances, actors, and hashtags related to climate science.</p>
+                  </div>
+                </div>
+
+                <div class="scenario-step">
+                  <h4>Step 2: Investigate Recommended Instances</h4>
+                  <p><strong>Follow up with:</strong></p>
+                  <code>"Can you get detailed information about scholar.social and climatejustice.social?"</code>
+                  
+                  <div class="expected-result">
+                    <h5>Expected Result:</h5>
+                    <p>Detailed comparison of academic vs. activist climate communities.</p>
+                  </div>
+                </div>
+
+                <div class="scenario-step">
+                  <h4>Step 3: Find Key Researchers</h4>
+                  <p><strong>Search for content:</strong></p>
+                  <code>"Search for 'climate research' on scholar.social and show me the most active accounts"</code>
+                  
+                  <div class="expected-result">
+                    <h5>Expected Result:</h5>
+                    <p>List of active climate researchers and their recent contributions.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="scenario">
+              <h3>Scenario 2: Comparing Tech Communities</h3>
+              <p>You want to understand the differences between various tech-focused fediverse instances.</p>
+              
+              <div class="scenario-steps">
+                <div class="scenario-step">
+                  <h4>Step 1: Use the Comparison Prompt</h4>
+                  <p><strong>Ask Claude:</strong></p>
+                  <code>"Use the compare-instances prompt to compare 'fosstodon.org, hachyderm.io, mas.to' with criteria 'community size, technical focus, moderation style'"</code>
+                  
+                  <div class="expected-result">
+                    <h5>Expected Result:</h5>
+                    <p>Detailed comparison highlighting the unique characteristics of each tech community.</p>
+                  </div>
+                </div>
+
+                <div class="scenario-step">
+                  <h4>Step 2: Analyze Community Leaders</h4>
+                  <p><strong>Discover influential members:</strong></p>
+                  <code>"Who are some influential tech leaders on fosstodon.org? Can you discover a few popular accounts?"</code>
+                  
+                  <div class="expected-result">
+                    <h5>Expected Result:</h5>
+                    <p>Profiles of key community members and their areas of expertise.</p>
+                  </div>
+                </div>
+
+                <div class="scenario-step">
+                  <h4>Step 3: Content Analysis</h4>
+                  <p><strong>Examine recent discussions:</strong></p>
+                  <code>"What are the trending topics on hachyderm.io? Search for recent popular posts."</code>
+                  
+                  <div class="expected-result">
+                    <h5>Expected Result:</h5>
+                    <p>Current trending topics and active discussions in the community.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="examples-section">
+          <h2>📊 Data Analysis Examples</h2>
+          
+          <div class="analysis-examples">
+            <div class="analysis-example">
+              <h3>Network Analysis: Following Patterns</h3>
+              <p>Analyze the network connections of a prominent fediverse actor:</p>
+              
+              <div class="analysis-steps">
+                <div class="analysis-step">
+                  <h4>1. Get Actor Information</h4>
+                  <code>"Discover information about @dansup@pixelfed.social"</code>
+                </div>
+                
+                <div class="analysis-step">
+                  <h4>2. Analyze Following Network</h4>
+                  <code>"Who does @dansup@pixelfed.social follow? Can you categorize them by type?"</code>
+                </div>
+                
+                <div class="analysis-step">
+                  <h4>3. Examine Followers</h4>
+                  <code>"Show me some of @dansup@pixelfed.social's followers and their profiles"</code>
+                </div>
+                
+                <div class="analysis-step">
+                  <h4>4. Cross-Reference Networks</h4>
+                  <code>"Are there common connections between @dansup@pixelfed.social and @gargron@mastodon.social?"</code>
+                </div>
+              </div>
+              
+              <div class="analysis-insights">
+                <h4>Insights You Can Gain:</h4>
+                <ul>
+                  <li>Understanding of fediverse developer networks</li>
+                  <li>Identification of key influencers in different communities</li>
+                  <li>Cross-platform relationship patterns</li>
+                  <li>Community overlap and bridges</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="analysis-example">
+              <h3>Instance Health Assessment</h3>
+              <p>Evaluate the health and activity of different instances:</p>
+              
+              <div class="analysis-steps">
+                <div class="analysis-step">
+                  <h4>1. Get Instance Statistics</h4>
+                  <code>"Compare the instance information for mastodon.social, mas.to, and mstdn.social"</code>
+                </div>
+                
+                <div class="analysis-step">
+                  <h4>2. Check Activity Levels</h4>
+                  <code>"Show me the public timeline from each of these instances to compare activity"</code>
+                </div>
+                
+                <div class="analysis-step">
+                  <h4>3. Analyze Content Diversity</h4>
+                  <code>"Search for different topics on each instance to see content diversity"</code>
+                </div>
+                
+                <div class="analysis-step">
+                  <h4>4. Federation Assessment</h4>
+                  <code>"Check if these instances are federating properly by looking at cross-instance interactions"</code>
+                </div>
+              </div>
+              
+              <div class="analysis-insights">
+                <h4>Health Indicators:</h4>
+                <ul>
+                  <li>User growth and retention patterns</li>
+                  <li>Content posting frequency and diversity</li>
+                  <li>Cross-instance interaction levels</li>
+                  <li>Community engagement metrics</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="examples-section">
+          <h2>🎯 Specialized Use Cases</h2>
+          
+          <div class="specialized-cases">
+            <div class="use-case">
+              <h3>Academic Research</h3>
+              <p>Using the fediverse for academic research and collaboration:</p>
+              
+              <div class="use-case-example">
+                <h4>Finding Research Collaborators</h4>
+                <div class="example-flow">
+                  <div class="flow-step">
+                    <span class="flow-number">1</span>
+                    <p>Use discover-content prompt: <code>"machine learning, computer vision, academic research"</code></p>
+                  </div>
+                  <div class="flow-step">
+                    <span class="flow-number">2</span>
+                    <p>Explore scholar.social and other academic instances</p>
+                  </div>
+                  <div class="flow-step">
+                    <span class="flow-number">3</span>
+                    <p>Analyze researcher networks and collaboration patterns</p>
+                  </div>
+                  <div class="flow-step">
+                    <span class="flow-number">4</span>
+                    <p>Identify active research discussions and conferences</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="use-case">
+              <h3>Community Management</h3>
+              <p>Understanding and managing fediverse communities:</p>
+              
+              <div class="use-case-example">
+                <h4>Community Health Monitoring</h4>
+                <div class="example-flow">
+                  <div class="flow-step">
+                    <span class="flow-number">1</span>
+                    <p>Regular instance health checks using health-check tool</p>
+                  </div>
+                  <div class="flow-step">
+                    <span class="flow-number">2</span>
+                    <p>Monitor community activity and engagement patterns</p>
+                  </div>
+                  <div class="flow-step">
+                    <span class="flow-number">3</span>
+                    <p>Track cross-instance relationships and federation status</p>
+                  </div>
+                  <div class="flow-step">
+                    <span class="flow-number">4</span>
+                    <p>Identify emerging trends and discussion topics</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="use-case">
+              <h3>Content Discovery</h3>
+              <p>Finding interesting content and creators across platforms:</p>
+              
+              <div class="use-case-example">
+                <h4>Multi-Platform Content Curation</h4>
+                <div class="example-flow">
+                  <div class="flow-step">
+                    <span class="flow-number">1</span>
+                    <p>Search across Mastodon, Pixelfed, and PeerTube instances</p>
+                  </div>
+                  <div class="flow-step">
+                    <span class="flow-number">2</span>
+                    <p>Identify cross-platform creators and their content</p>
+                  </div>
+                  <div class="flow-step">
+                    <span class="flow-number">3</span>
+                    <p>Analyze content engagement and reach patterns</p>
+                  </div>
+                  <div class="flow-step">
+                    <span class="flow-number">4</span>
+                    <p>Track trending topics and viral content propagation</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="examples-section">
+          <h2>🛠️ Advanced Techniques</h2>
+          
+          <div class="advanced-examples">
+            <div class="advanced-example">
+              <h3>Batch Analysis with Performance Monitoring</h3>
+              <p>Efficiently analyze multiple instances while monitoring performance:</p>
+              
+              <pre><code>// Example conversation flow
+1. "Use the health-check tool with metrics enabled"
+2. "Get instance info for: mastodon.social, fosstodon.org, hachyderm.io"
+3. "Compare their user counts and activity levels"
+4. "Check performance metrics again to see resource usage"</code></pre>
+            </div>
+
+            <div class="advanced-example">
+              <h3>Cross-Instance Content Tracking</h3>
+              <p>Track how content spreads across different instances:</p>
+              
+              <pre><code>// Example tracking workflow
+1. "Search for a specific hashtag on multiple instances"
+2. "Identify the original post and its author"
+3. "Track reposts and mentions across instances"
+4. "Analyze the propagation pattern and timing"</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="examples-section">
+          <h2>💡 Tips for Success</h2>
+          
+          <div class="success-tips">
+            <div class="tip">
+              <h3>🎯 Be Specific</h3>
+              <p>Use specific actor handles (@user@domain.com) and instance domains for best results.</p>
+            </div>
+            
+            <div class="tip">
+              <h3>⏱️ Be Patient</h3>
+              <p>Some queries may take time, especially when fetching data from distant or slow instances.</p>
+            </div>
+            
+            <div class="tip">
+              <h3>🔄 Use Prompts</h3>
+              <p>Leverage the built-in prompts (explore-fediverse, compare-instances, discover-content) for structured exploration.</p>
+            </div>
+            
+            <div class="tip">
+              <h3>📊 Monitor Performance</h3>
+              <p>Use the health-check tool to monitor server performance and rate limiting.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="examples-section">
+          <h2>🚀 Next Steps</h2>
+          <div class="next-steps">
+            <a href={`${baseURL}docs/api/tools/`} class="next-step-card">
+              <h3>API Tools Reference</h3>
+              <p>Detailed documentation for all available tools and their parameters.</p>
+            </a>
+            <a href={`${baseURL}docs/api/prompts/`} class="next-step-card">
+              <h3>MCP Prompts</h3>
+              <p>Complete guide to using pre-built exploration prompts.</p>
+            </a>
+            <a href={`${baseURL}docs/troubleshooting/`} class="next-step-card">
+              <h3>Troubleshooting</h3>
+              <p>Solutions for common issues and optimization tips.</p>
+            </a>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .examples-page {
+    padding: var(--space-16) 0;
+  }
+
+  .examples-header {
+    text-align: center;
+    margin-bottom: var(--space-16);
+  }
+
+  .examples-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .examples-description {
+    font-size: var(--text-xl);
+    color: var(--text-secondary);
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .examples-content {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .examples-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .examples-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .quick-examples {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .quick-examples {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .example-card {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .example-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .example-card > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  .example-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .step {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+  }
+
+  .step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    border-radius: 50%;
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    flex-shrink: 0;
+  }
+
+  .step-content {
+    flex: 1;
+  }
+
+  .step-content p {
+    margin-bottom: var(--space-2);
+    color: var(--text-secondary);
+  }
+
+  .step-content strong {
+    color: var(--text-primary);
+  }
+
+  .step-content code {
+    display: block;
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    margin: var(--space-2) 0;
+  }
+
+  .step-content ul {
+    margin: var(--space-2) 0 0 0;
+    padding-left: var(--space-6);
+  }
+
+  .step-content li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+    font-size: var(--text-sm);
+  }
+
+  .research-scenarios {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .scenario {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .scenario h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .scenario > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-6);
+    font-style: italic;
+  }
+
+  .scenario-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .scenario-step {
+    background: var(--bg-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .scenario-step h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .scenario-step p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+  }
+
+  .scenario-step strong {
+    color: var(--text-primary);
+  }
+
+  .scenario-step code {
+    display: block;
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    margin: var(--space-2) 0;
+  }
+
+  .expected-result {
+    background: var(--color-green-50);
+    border: 1px solid var(--color-green-200);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3);
+    margin-top: var(--space-3);
+  }
+
+  .expected-result h5 {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--color-green-800);
+    margin-bottom: var(--space-2);
+  }
+
+  .expected-result p {
+    color: var(--color-green-700);
+    font-size: var(--text-sm);
+    margin: 0;
+  }
+
+  .analysis-examples {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .analysis-example {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .analysis-example h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .analysis-example > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  .analysis-steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .analysis-steps {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .analysis-step {
+    background: var(--bg-primary);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .analysis-step h4 {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .analysis-step code {
+    display: block;
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-xs);
+  }
+
+  .analysis-insights {
+    background: var(--color-blue-50);
+    border: 1px solid var(--color-blue-200);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+  }
+
+  .analysis-insights h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--color-blue-800);
+    margin-bottom: var(--space-3);
+  }
+
+  .analysis-insights ul {
+    margin: 0;
+    padding-left: var(--space-6);
+  }
+
+  .analysis-insights li {
+    color: var(--color-blue-700);
+    margin-bottom: var(--space-1);
+    font-size: var(--text-sm);
+  }
+
+  .specialized-cases {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .specialized-cases {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .use-case {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .use-case h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .use-case > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  .use-case-example h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .example-flow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .flow-step {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+  }
+
+  .flow-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    border-radius: 50%;
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    flex-shrink: 0;
+  }
+
+  .flow-step p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    margin: 0;
+  }
+
+  .flow-step code {
+    background: var(--color-gray-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-xs);
+  }
+
+  .advanced-examples {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .advanced-example {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .advanced-example h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .advanced-example > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  .advanced-example pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+  }
+
+  .success-tips {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  @media (min-width: 768px) {
+    .success-tips {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .tip {
+    background: var(--bg-secondary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .tip h3 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .tip p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    margin: 0;
+  }
+
+  .next-steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .next-steps {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .next-step-card {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .next-step-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .next-step-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .next-step-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

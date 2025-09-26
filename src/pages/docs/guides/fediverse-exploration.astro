@@ -1,0 +1,738 @@
+---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
+const title = "Fediverse Exploration - ActivityPub MCP Server";
+const description =
+  "Advanced guide to exploring the fediverse using the ActivityPub MCP Server. Discover actors, instances, content, and communities across the decentralized social web.";
+
+// Get the base URL for proper path resolution
+const baseURL = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="exploration-page">
+    <div class="container">
+      <div class="exploration-header">
+        <h1>Fediverse Exploration</h1>
+        <p class="exploration-description">
+          Master the art of exploring the fediverse with AI assistance. Discover actors, instances, content, and communities across the decentralized social web.
+        </p>
+      </div>
+
+      <div class="exploration-content">
+        <section class="exploration-section">
+          <h2>🌐 Understanding the Fediverse</h2>
+          
+          <div class="fediverse-overview">
+            <div class="overview-item">
+              <h3>What is the Fediverse?</h3>
+              <p>The fediverse is a collection of interconnected social media servers that can communicate with each other using open protocols like ActivityPub. Each server (instance) is independently operated but can interact with others.</p>
+            </div>
+            
+            <div class="overview-item">
+              <h3>Key Concepts</h3>
+              <ul>
+                <li><strong>Instances:</strong> Individual servers (e.g., mastodon.social, pixelfed.org)</li>
+                <li><strong>Actors:</strong> Users, bots, or organizations with accounts</li>
+                <li><strong>Federation:</strong> The ability for instances to communicate</li>
+                <li><strong>ActivityPub:</strong> The protocol that enables federation</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="exploration-section">
+          <h2>🔍 Discovery Strategies</h2>
+          
+          <div class="discovery-strategies">
+            <div class="strategy">
+              <h3>1. Actor Discovery</h3>
+              <p>Find interesting people and organizations across the fediverse:</p>
+              
+              <div class="strategy-examples">
+                <div class="example">
+                  <h4>Discover by Handle</h4>
+                  <p>Ask Claude: "Can you discover information about @gargron@mastodon.social?"</p>
+                  <div class="example-result">
+                    <strong>What you'll learn:</strong> Profile info, follower count, recent posts, instance details
+                  </div>
+                </div>
+                
+                <div class="example">
+                  <h4>Explore Followers/Following</h4>
+                  <p>Ask Claude: "Who does @mastodon@mastodon.social follow?"</p>
+                  <div class="example-result">
+                    <strong>What you'll learn:</strong> Network connections, related accounts, community insights
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="strategy">
+              <h3>2. Instance Exploration</h3>
+              <p>Understand different communities and their characteristics:</p>
+              
+              <div class="strategy-examples">
+                <div class="example">
+                  <h4>Instance Information</h4>
+                  <p>Ask Claude: "What can you tell me about the fosstodon.org instance?"</p>
+                  <div class="example-result">
+                    <strong>What you'll learn:</strong> Community focus, rules, software, user count, federation status
+                  </div>
+                </div>
+                
+                <div class="example">
+                  <h4>Compare Instances</h4>
+                  <p>Use the compare-instances prompt: "Compare mastodon.social and fosstodon.org"</p>
+                  <div class="example-result">
+                    <strong>What you'll learn:</strong> Differences in size, focus, policies, and community culture
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="strategy">
+              <h3>3. Content Discovery</h3>
+              <p>Find interesting content and conversations:</p>
+              
+              <div class="strategy-examples">
+                <div class="example">
+                  <h4>Search Instance Content</h4>
+                  <p>Ask Claude: "Search for 'climate change' posts on mastodon.social"</p>
+                  <div class="example-result">
+                    <strong>What you'll learn:</strong> Recent posts, popular hashtags, active discussions
+                  </div>
+                </div>
+                
+                <div class="example">
+                  <h4>Timeline Exploration</h4>
+                  <p>Ask Claude: "Show me the public timeline from pixelfed.social"</p>
+                  <div class="example-result">
+                    <strong>What you'll learn:</strong> Recent public posts, community activity, content types
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="exploration-section">
+          <h2>🎯 Targeted Exploration</h2>
+          
+          <div class="targeted-exploration">
+            <div class="exploration-type">
+              <h3>By Interest</h3>
+              <p>Use the explore-fediverse prompt to find communities based on your interests:</p>
+              <div class="prompt-example">
+                <h4>Example Prompt Usage</h4>
+                <pre><code>Prompt: explore-fediverse
+Interests: "photography, open source, climate science"
+Instance Type: "any"</code></pre>
+                <p><strong>Result:</strong> Personalized recommendations for instances, actors, and content related to your interests.</p>
+              </div>
+            </div>
+
+            <div class="exploration-type">
+              <h3>By Platform Type</h3>
+              <p>Explore different types of fediverse platforms:</p>
+              <div class="platform-types">
+                <div class="platform-type">
+                  <h4>Mastodon</h4>
+                  <p>Twitter-like microblogging</p>
+                  <span class="platform-example">mastodon.social, fosstodon.org</span>
+                </div>
+                <div class="platform-type">
+                  <h4>Pixelfed</h4>
+                  <p>Instagram-like photo sharing</p>
+                  <span class="platform-example">pixelfed.social, pixelfed.art</span>
+                </div>
+                <div class="platform-type">
+                  <h4>PeerTube</h4>
+                  <p>YouTube-like video sharing</p>
+                  <span class="platform-example">framatube.org, tilvids.com</span>
+                </div>
+                <div class="platform-type">
+                  <h4>Pleroma/Akkoma</h4>
+                  <p>Lightweight microblogging</p>
+                  <span class="platform-example">pleroma.social, social.vivaldi.net</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="exploration-section">
+          <h2>🔧 Advanced Techniques</h2>
+          
+          <div class="advanced-techniques">
+            <div class="technique">
+              <h3>Network Analysis</h3>
+              <p>Understand relationships and influence patterns:</p>
+              <ul>
+                <li>Map follower networks of key actors</li>
+                <li>Identify community clusters and bridges</li>
+                <li>Track information flow between instances</li>
+                <li>Discover influential voices in specific topics</li>
+              </ul>
+            </div>
+
+            <div class="technique">
+              <h3>Instance Health Monitoring</h3>
+              <p>Assess instance reliability and community health:</p>
+              <ul>
+                <li>Check instance uptime and performance</li>
+                <li>Monitor federation status with other instances</li>
+                <li>Evaluate moderation policies and enforcement</li>
+                <li>Track user growth and activity patterns</li>
+              </ul>
+            </div>
+
+            <div class="technique">
+              <h3>Content Trend Analysis</h3>
+              <p>Identify emerging topics and discussions:</p>
+              <ul>
+                <li>Track hashtag popularity across instances</li>
+                <li>Monitor cross-instance conversation threads</li>
+                <li>Identify viral content and its propagation</li>
+                <li>Analyze sentiment and engagement patterns</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="exploration-section">
+          <h2>📊 Using MCP Prompts</h2>
+          
+          <div class="prompt-usage">
+            <div class="prompt-guide">
+              <h3>explore-fediverse</h3>
+              <p>Get personalized recommendations for fediverse exploration:</p>
+              <div class="prompt-details">
+                <h4>Parameters:</h4>
+                <ul>
+                  <li><code>interests</code>: Your topics of interest (required)</li>
+                  <li><code>instanceType</code>: Preferred platform type (optional)</li>
+                </ul>
+                <h4>Example Usage:</h4>
+                <pre><code>Ask Claude: "Use the explore-fediverse prompt with interests 'sustainable technology, renewable energy' and instance type 'mastodon'"</code></pre>
+              </div>
+            </div>
+
+            <div class="prompt-guide">
+              <h3>compare-instances</h3>
+              <p>Get detailed comparisons between fediverse instances:</p>
+              <div class="prompt-details">
+                <h4>Parameters:</h4>
+                <ul>
+                  <li><code>instances</code>: Comma-separated list of domains (required)</li>
+                  <li><code>criteria</code>: Specific comparison criteria (optional)</li>
+                </ul>
+                <h4>Example Usage:</h4>
+                <pre><code>Ask Claude: "Use the compare-instances prompt to compare 'mastodon.social, fosstodon.org, hachyderm.io' with criteria 'community size, moderation policies, technical focus'"</code></pre>
+              </div>
+            </div>
+
+            <div class="prompt-guide">
+              <h3>discover-content</h3>
+              <p>Find interesting content and people based on topics:</p>
+              <div class="prompt-details">
+                <h4>Parameters:</h4>
+                <ul>
+                  <li><code>topics</code>: Comma-separated topics to explore (required)</li>
+                  <li><code>contentType</code>: Type of content to discover (optional)</li>
+                </ul>
+                <h4>Example Usage:</h4>
+                <pre><code>Ask Claude: "Use the discover-content prompt with topics 'machine learning, AI ethics' and content type 'people'"</code></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="exploration-section">
+          <h2>💡 Best Practices</h2>
+          
+          <div class="best-practices">
+            <div class="practice">
+              <h3>🤝 Be Respectful</h3>
+              <ul>
+                <li>Respect instance rules and community guidelines</li>
+                <li>Don't overwhelm small instances with requests</li>
+                <li>Be mindful of rate limits and server resources</li>
+                <li>Respect user privacy and consent</li>
+              </ul>
+            </div>
+
+            <div class="practice">
+              <h3>🔍 Start Small</h3>
+              <ul>
+                <li>Begin with well-known, stable instances</li>
+                <li>Explore one community at a time</li>
+                <li>Build understanding gradually</li>
+                <li>Document interesting findings</li>
+              </ul>
+            </div>
+
+            <div class="practice">
+              <h3>📈 Scale Thoughtfully</h3>
+              <ul>
+                <li>Use caching to reduce redundant requests</li>
+                <li>Batch related queries when possible</li>
+                <li>Monitor your impact on target instances</li>
+                <li>Consider time zones and peak usage periods</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="exploration-section">
+          <h2>🚀 Next Steps</h2>
+          <div class="next-steps">
+            <a href={`${baseURL}docs/guides/practical-examples/`} class="next-step-card">
+              <h3>Practical Examples</h3>
+              <p>See real-world examples and use cases for fediverse exploration.</p>
+            </a>
+            <a href={`${baseURL}docs/api/tools/`} class="next-step-card">
+              <h3>API Tools Reference</h3>
+              <p>Detailed documentation for all available exploration tools.</p>
+            </a>
+            <a href={`${baseURL}docs/api/prompts/`} class="next-step-card">
+              <h3>MCP Prompts</h3>
+              <p>Complete guide to using pre-built exploration prompts.</p>
+            </a>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .exploration-page {
+    padding: var(--space-16) 0;
+  }
+
+  .exploration-header {
+    text-align: center;
+    margin-bottom: var(--space-16);
+  }
+
+  .exploration-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .exploration-description {
+    font-size: var(--text-xl);
+    color: var(--text-secondary);
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .exploration-content {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .exploration-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .exploration-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .fediverse-overview {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .fediverse-overview {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .overview-item {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .overview-item h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .overview-item p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin-bottom: var(--space-3);
+  }
+
+  .overview-item ul {
+    margin: 0;
+    padding-left: var(--space-6);
+  }
+
+  .overview-item li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+  }
+
+  .discovery-strategies {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .strategy {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .strategy h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .strategy > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  .strategy-examples {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  @media (min-width: 768px) {
+    .strategy-examples {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .example {
+    background: var(--bg-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .example h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .example p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-3);
+  }
+
+  .example-result {
+    background: var(--color-blue-50);
+    border: 1px solid var(--color-blue-200);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2);
+    font-size: var(--text-xs);
+  }
+
+  .example-result strong {
+    color: var(--color-blue-800);
+  }
+
+  .targeted-exploration {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .exploration-type {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .exploration-type h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .prompt-example {
+    background: var(--bg-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+    margin-top: var(--space-4);
+  }
+
+  .prompt-example h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .prompt-example pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    margin: var(--space-2) 0;
+  }
+
+  .platform-types {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+  }
+
+  @media (min-width: 768px) {
+    .platform-types {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .platform-type {
+    background: var(--bg-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .platform-type h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .platform-type p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-2);
+  }
+
+  .platform-example {
+    display: inline-block;
+    background: var(--color-gray-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    color: var(--color-gray-700);
+    font-family: var(--font-family-mono);
+  }
+
+  .advanced-techniques {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .advanced-techniques {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .technique {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .technique h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .technique p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+  }
+
+  .technique ul {
+    margin: 0;
+    padding-left: var(--space-6);
+  }
+
+  .technique li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  .prompt-usage {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .prompt-guide {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .prompt-guide h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+    font-family: var(--font-family-mono);
+    background: var(--color-gray-100);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    display: inline-block;
+  }
+
+  .prompt-guide > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  .prompt-details h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin: var(--space-3) 0 var(--space-2) 0;
+  }
+
+  .prompt-details ul {
+    margin: 0 0 var(--space-3) 0;
+    padding-left: var(--space-6);
+  }
+
+  .prompt-details li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+    font-size: var(--text-sm);
+  }
+
+  .prompt-details code {
+    background: var(--color-gray-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-xs);
+  }
+
+  .prompt-details pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    margin: var(--space-2) 0;
+  }
+
+  .best-practices {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .best-practices {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .practice {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .practice h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .practice ul {
+    margin: 0;
+    padding-left: var(--space-6);
+  }
+
+  .practice li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  .next-steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .next-steps {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .next-step-card {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .next-step-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .next-step-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .next-step-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

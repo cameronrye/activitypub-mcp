@@ -455,7 +455,7 @@ await client.connect(transport);
 
 ## 🤝 Contributing
 
-See the main [README.md](README.md) for contribution guidelines and development setup instructions.
+See the main [README.md](../../README.md) for contribution guidelines and development setup instructions.
 
 ## 📚 Additional Resources
 

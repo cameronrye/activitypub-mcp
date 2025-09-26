@@ -1,0 +1,753 @@
+---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
+const title = "Fedify CLI Specification Guide - ActivityPub MCP Server";
+const description =
+  "Comprehensive guide to the Fedify CLI toolchain for LLM applications. Learn how to use Fedify's command-line tools for ActivityPub development and debugging.";
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="spec-page">
+    <div class="spec-header">
+      <h1>Fedify CLI Specification Guide</h1>
+      <p class="spec-description">
+        Complete reference to the Fedify CLI toolchain for building, testing, and debugging ActivityPub-enabled federated server applications. Essential tools for fediverse development and integration.
+      </p>
+    </div>
+
+    <div class="spec-content">
+      <section class="spec-section">
+        <h2>📋 Executive Summary</h2>
+        <div class="overview-content">
+          <div class="overview-card">
+            <h3>Purpose and Overview</h3>
+            <p>The Fedify CLI (`fedify`) is a comprehensive command-line toolchain designed for building, testing, and debugging ActivityPub-enabled federated server applications. While primarily designed for developers using the Fedify framework, it provides universal utilities that work with any ActivityPub-enabled server.</p>
+            
+            <h4>Core Functionality:</h4>
+            <ul>
+              <li><strong>Project Initialization:</strong> Scaffolding new Fedify projects</li>
+              <li><strong>ActivityPub Debugging:</strong> Object and actor inspection</li>
+              <li><strong>Development Testing:</strong> Ephemeral server creation</li>
+              <li><strong>Network Utilities:</strong> Tunneling and WebFinger discovery</li>
+              <li><strong>Instance Analysis:</strong> NodeInfo visualization</li>
+            </ul>
+          </div>
+
+          <div class="overview-card">
+            <h3>Key Components</h3>
+            <div class="concept-list">
+              <div class="concept-item">
+                <h4>Project Generator</h4>
+                <p>Interactive project scaffolding with multiple runtime options</p>
+              </div>
+              <div class="concept-item">
+                <h4>Object Inspector</h4>
+                <p>Comprehensive ActivityPub object lookup and analysis</p>
+              </div>
+              <div class="concept-item">
+                <h4>Ephemeral Server</h4>
+                <p>Temporary ActivityPub server for testing federation</p>
+              </div>
+              <div class="concept-item">
+                <h4>Network Tools</h4>
+                <p>Secure tunneling and WebFinger discovery utilities</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>🚀 Installation and Setup</h2>
+        <div class="installation-content">
+          <div class="install-card">
+            <h3>Prerequisites</h3>
+            <ul>
+              <li>Node.js 18.0 or later</li>
+              <li>npm, yarn, pnpm, or bun package manager</li>
+              <li>Git for version control</li>
+              <li>Optional: Docker for containerized development</li>
+            </ul>
+          </div>
+          
+          <div class="install-card">
+            <h3>Installation Methods</h3>
+            <div class="install-methods">
+              <div class="method">
+                <h4>Global Installation</h4>
+                <pre><code>npm install -g @fedify/cli</code></pre>
+              </div>
+              <div class="method">
+                <h4>Project-specific</h4>
+                <pre><code>npx @fedify/cli [command]</code></pre>
+              </div>
+              <div class="method">
+                <h4>Package Manager</h4>
+                <pre><code>yarn global add @fedify/cli
+pnpm add -g @fedify/cli</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>⚡ Command Reference</h2>
+        <div class="commands-grid">
+          <div class="command-category">
+            <h3>Project Management</h3>
+            <div class="command-list">
+              <div class="command-item">
+                <h4><code>fedify init</code></h4>
+                <p>Initialize a new Fedify project with interactive setup</p>
+                <div class="command-options">
+                  <code>--runtime</code> - Choose runtime (Node.js, Deno, Bun)<br>
+                  <code>--framework</code> - Select framework integration<br>
+                  <code>--template</code> - Use predefined template
+                </div>
+              </div>
+              
+              <div class="command-item">
+                <h4><code>fedify dev</code></h4>
+                <p>Start development server with hot reloading</p>
+                <div class="command-options">
+                  <code>--port</code> - Specify port number<br>
+                  <code>--host</code> - Set host address<br>
+                  <code>--tunnel</code> - Enable public tunneling
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="command-category">
+            <h3>ActivityPub Debugging</h3>
+            <div class="command-list">
+              <div class="command-item">
+                <h4><code>fedify lookup</code></h4>
+                <p>Look up ActivityPub objects, actors, and collections</p>
+                <div class="command-options">
+                  <code>--format</code> - Output format (json, typescript, raw)<br>
+                  <code>--follow</code> - Follow redirects<br>
+                  <code>--headers</code> - Show HTTP headers
+                </div>
+              </div>
+              
+              <div class="command-item">
+                <h4><code>fedify webfinger</code></h4>
+                <p>Perform WebFinger resource discovery</p>
+                <div class="command-options">
+                  <code>--resource</code> - Target resource identifier<br>
+                  <code>--rel</code> - Filter by relationship type
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="command-category">
+            <h3>Testing & Development</h3>
+            <div class="command-list">
+              <div class="command-item">
+                <h4><code>fedify ephemeral</code></h4>
+                <p>Create temporary ActivityPub server for testing</p>
+                <div class="command-options">
+                  <code>--duration</code> - Server lifetime<br>
+                  <code>--actors</code> - Number of test actors<br>
+                  <code>--activities</code> - Generate test activities
+                </div>
+              </div>
+              
+              <div class="command-item">
+                <h4><code>fedify tunnel</code></h4>
+                <p>Create secure tunnel to local development server</p>
+                <div class="command-options">
+                  <code>--port</code> - Local port to tunnel<br>
+                  <code>--subdomain</code> - Custom subdomain<br>
+                  <code>--auth</code> - Enable authentication
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="command-category">
+            <h3>Instance Analysis</h3>
+            <div class="command-list">
+              <div class="command-item">
+                <h4><code>fedify nodeinfo</code></h4>
+                <p>Analyze and visualize NodeInfo data</p>
+                <div class="command-options">
+                  <code>--instance</code> - Target instance URL<br>
+                  <code>--format</code> - Output format<br>
+                  <code>--stats</code> - Include usage statistics
+                </div>
+              </div>
+              
+              <div class="command-item">
+                <h4><code>fedify federation</code></h4>
+                <p>Test federation capabilities and connectivity</p>
+                <div class="command-options">
+                  <code>--target</code> - Target instance<br>
+                  <code>--activity</code> - Test activity type<br>
+                  <code>--timeout</code> - Request timeout
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>🏗️ Project Scaffolding</h2>
+        <div class="scaffolding-content">
+          <div class="scaffold-card">
+            <h3>Runtime Options</h3>
+            <div class="runtime-options">
+              <div class="runtime-option">
+                <h4>Node.js</h4>
+                <p>Traditional Node.js runtime with npm ecosystem</p>
+                <ul>
+                  <li>Express.js integration</li>
+                  <li>TypeScript support</li>
+                  <li>Rich middleware ecosystem</li>
+                </ul>
+              </div>
+              
+              <div class="runtime-option">
+                <h4>Deno</h4>
+                <p>Modern runtime with built-in TypeScript and security</p>
+                <ul>
+                  <li>Native TypeScript</li>
+                  <li>Built-in testing</li>
+                  <li>Secure by default</li>
+                </ul>
+              </div>
+              
+              <div class="runtime-option">
+                <h4>Bun</h4>
+                <p>Fast all-in-one JavaScript runtime and toolkit</p>
+                <ul>
+                  <li>Ultra-fast performance</li>
+                  <li>Built-in bundler</li>
+                  <li>Native package manager</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <div class="scaffold-card">
+            <h3>Framework Integration</h3>
+            <div class="framework-options">
+              <div class="framework-option">
+                <h4>Standalone</h4>
+                <p>Pure Fedify implementation without additional frameworks</p>
+              </div>
+              
+              <div class="framework-option">
+                <h4>Express.js</h4>
+                <p>Integration with Express.js web framework</p>
+              </div>
+              
+              <div class="framework-option">
+                <h4>Fastify</h4>
+                <p>High-performance web framework integration</p>
+              </div>
+              
+              <div class="framework-option">
+                <h4>Hono</h4>
+                <p>Lightweight web framework for edge computing</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>🔧 Development Workflow</h2>
+        <div class="workflow-content">
+          <div class="workflow-step">
+            <h3>1. Project Initialization</h3>
+            <pre><code>fedify init my-activitypub-server
+cd my-activitypub-server</code></pre>
+            <p>Creates a new project with interactive configuration</p>
+          </div>
+          
+          <div class="workflow-step">
+            <h3>2. Development Server</h3>
+            <pre><code>fedify dev --tunnel</code></pre>
+            <p>Starts development server with public tunnel for federation testing</p>
+          </div>
+          
+          <div class="workflow-step">
+            <h3>3. Testing Federation</h3>
+            <pre><code>fedify ephemeral --actors 5 --activities 10</code></pre>
+            <p>Creates temporary test environment for federation testing</p>
+          </div>
+          
+          <div class="workflow-step">
+            <h3>4. Debugging Objects</h3>
+            <pre><code>fedify lookup https://mastodon.social/@user</code></pre>
+            <p>Inspects ActivityPub objects and actors across the fediverse</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>🔗 Integration with ActivityPub MCP Server</h2>
+        <div class="integration-content">
+          <div class="integration-card">
+            <h3>Development Tools</h3>
+            <p>The Fedify CLI provides essential development tools for building and testing ActivityPub applications that integrate with our MCP server.</p>
+            <ul>
+              <li>Object inspection for debugging MCP tool outputs</li>
+              <li>Federation testing for server-to-server communication</li>
+              <li>WebFinger discovery for actor resolution</li>
+              <li>Ephemeral servers for testing LLM-generated activities</li>
+            </ul>
+          </div>
+          
+          <div class="integration-card">
+            <h3>LLM Development Workflow</h3>
+            <p>Streamlined workflow for developing LLM applications with ActivityPub integration.</p>
+            <ul>
+              <li>Rapid prototyping with scaffolded projects</li>
+              <li>Real-time testing with tunneled development servers</li>
+              <li>Automated federation testing for AI-generated content</li>
+              <li>Debugging tools for ActivityPub object validation</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="spec-section">
+        <h2>📚 Additional Resources</h2>
+        <div class="resources-grid">
+          <a href="https://fedify.dev/cli" class="resource-link" target="_blank" rel="noopener">
+            <h3>Official Fedify CLI Documentation</h3>
+            <p>Complete documentation and API reference for the Fedify CLI</p>
+          </a>
+          
+          <a href="https://fedify.dev/" class="resource-link" target="_blank" rel="noopener">
+            <h3>Fedify Framework</h3>
+            <p>The complete Fedify framework for ActivityPub development</p>
+          </a>
+          
+          <a href="/docs/specifications/activitypub-llm-specification-guide/" class="resource-link">
+            <h3>ActivityPub Implementation</h3>
+            <p>How our MCP server implements ActivityPub protocols</p>
+          </a>
+          
+          <a href="/docs/development/architecture/" class="resource-link">
+            <h3>Development Architecture</h3>
+            <p>Technical architecture and development patterns</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .spec-page {
+    max-width: none;
+  }
+
+  .spec-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+    padding-bottom: var(--space-8);
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .spec-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .spec-description {
+    font-size: var(--text-xl);
+    color: var(--text-secondary);
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .spec-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .spec-section h2 {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-4);
+    border-bottom: 2px solid var(--color-primary);
+  }
+
+  .overview-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  @media (min-width: 768px) {
+    .overview-content {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .overview-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+  }
+
+  .overview-card h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .overview-card h4 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin: var(--space-4) 0 var(--space-2) 0;
+  }
+
+  .concept-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  @media (min-width: 640px) {
+    .concept-list {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .concept-item {
+    padding: var(--space-3);
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-secondary);
+  }
+
+  .concept-item h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-1);
+  }
+
+  .concept-item p {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .installation-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  @media (min-width: 768px) {
+    .installation-content {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .install-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+  }
+
+  .install-card h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .install-methods {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .method h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .method pre {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    overflow-x: auto;
+  }
+
+  .commands-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  @media (min-width: 768px) {
+    .commands-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .command-category {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+  }
+
+  .command-category h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border-secondary);
+  }
+
+  .command-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .command-item h4 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-2);
+    font-family: var(--font-family-mono);
+  }
+
+  .command-item p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+  }
+
+  .command-options {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+  }
+
+  .scaffolding-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  @media (min-width: 768px) {
+    .scaffolding-content {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .scaffold-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+  }
+
+  .scaffold-card h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+  }
+
+  .runtime-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .runtime-option {
+    padding: var(--space-4);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-md);
+  }
+
+  .runtime-option h4 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .runtime-option p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+  }
+
+  .runtime-option ul {
+    margin: 0;
+    padding-left: var(--space-4);
+  }
+
+  .framework-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  @media (min-width: 640px) {
+    .framework-options {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .framework-option {
+    padding: var(--space-3);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-md);
+  }
+
+  .framework-option h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-1);
+  }
+
+  .framework-option p {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .workflow-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .workflow-content {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .workflow-step {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+  }
+
+  .workflow-step h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .workflow-step pre {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-3);
+    overflow-x: auto;
+  }
+
+  .integration-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  @media (min-width: 768px) {
+    .integration-content {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .integration-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+  }
+
+  .integration-card h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .integration-card ul {
+    margin-top: var(--space-4);
+  }
+
+  .resources-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .resources-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .resource-link {
+    display: block;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .resource-link:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .resource-link h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .resource-link p {
+    color: var(--text-secondary);
+    margin: 0;
+  }
+</style>

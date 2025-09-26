@@ -4,6 +4,11 @@ import DocsLayout from "../../../layouts/DocsLayout.astro";
 const title = "Basic Usage Guide - ActivityPub MCP Server";
 const description =
   "Learn the essential commands and workflows for using the ActivityPub MCP Server with LLMs like Claude.";
+
+// Get the base URL for proper path resolution
+const baseURL = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
 ---
 
 <DocsLayout title={title} description={description}>
@@ -195,15 +200,15 @@ fetch-timeline https://fosstodon.org/users/admin</code></pre>
         <section class="usage-section">
           <h2>🔗 Next Steps</h2>
           <div class="next-steps">
-            <a href="/docs/guides/examples/" class="next-step-card">
+            <a href={`${baseURL}docs/guides/examples/`} class="next-step-card">
               <h3>Practical Examples</h3>
               <p>See detailed examples and real-world use cases.</p>
             </a>
-            <a href="/docs/api/tools/" class="next-step-card">
+            <a href={`${baseURL}docs/api/tools/`} class="next-step-card">
               <h3>Complete Tool Reference</h3>
               <p>Detailed documentation for all available tools.</p>
             </a>
-            <a href="/docs/troubleshooting/" class="next-step-card">
+            <a href={`${baseURL}docs/troubleshooting/`} class="next-step-card">
               <h3>Troubleshooting Guide</h3>
               <p>Solutions for common issues and problems.</p>
             </a>

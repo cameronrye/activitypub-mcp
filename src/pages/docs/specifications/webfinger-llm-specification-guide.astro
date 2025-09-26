@@ -1,0 +1,897 @@
+---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
+const title = "WebFinger for LLMs - ActivityPub MCP Server";
+const description =
+  "Complete guide to WebFinger protocol implementation in the ActivityPub MCP Server. Learn how actor discovery works across the fediverse.";
+
+// Get the base URL for proper path resolution
+const baseURL = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+
+<DocsLayout title={title} description={description}>
+  <div class="webfinger-page">
+    <div class="container">
+      <div class="webfinger-header">
+        <h1>WebFinger for LLMs</h1>
+        <p class="webfinger-description">
+          Understanding WebFinger protocol and how the ActivityPub MCP Server uses it for actor discovery across the fediverse.
+        </p>
+      </div>
+
+      <div class="webfinger-content">
+        <section class="webfinger-section">
+          <h2>🌐 What is WebFinger?</h2>
+          
+          <div class="webfinger-overview">
+            <div class="overview-item">
+              <h3>Protocol Purpose</h3>
+              <p>WebFinger is a protocol that allows discovery of information about people and other entities on the internet using simple identifiers like email addresses or @user@domain.com handles.</p>
+            </div>
+            
+            <div class="overview-item">
+              <h3>Fediverse Role</h3>
+              <p>In the fediverse, WebFinger is the primary mechanism for discovering ActivityPub actors. When you search for @user@domain.com, WebFinger resolves this to the actual ActivityPub profile URL.</p>
+            </div>
+            
+            <div class="overview-item">
+              <h3>MCP Integration</h3>
+              <p>The ActivityPub MCP Server uses WebFinger automatically when you use actor identifiers in @user@domain.com format, making actor discovery seamless for LLMs.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="webfinger-section">
+          <h2>🔍 How WebFinger Works</h2>
+          
+          <div class="webfinger-process">
+            <div class="process-step">
+              <h3>Step 1: Identifier Input</h3>
+              <p>You provide an identifier like <code>@gargron@mastodon.social</code></p>
+              <div class="step-example">
+                <strong>Example:</strong> When you ask Claude to discover @gargron@mastodon.social
+              </div>
+            </div>
+
+            <div class="process-step">
+              <h3>Step 2: WebFinger Query</h3>
+              <p>The server constructs a WebFinger query to the target domain:</p>
+              <div class="step-example">
+                <code>GET https://mastodon.social/.well-known/webfinger?resource=acct:gargron@mastodon.social</code>
+              </div>
+            </div>
+
+            <div class="process-step">
+              <h3>Step 3: WebFinger Response</h3>
+              <p>The server returns a JSON document with links to the actor's ActivityPub profile:</p>
+              <div class="step-example">
+                <pre><code>{`{
+  "subject": "acct:gargron@mastodon.social",
+  "links": [
+    {
+      "rel": "self",
+      "type": "application/activity+json",
+      "href": "https://mastodon.social/users/gargron"
+    }
+  ]
+}`}</code></pre>
+              </div>
+            </div>
+
+            <div class="process-step">
+              <h3>Step 4: ActivityPub Fetch</h3>
+              <p>Using the discovered URL, the server fetches the full ActivityPub actor profile:</p>
+              <div class="step-example">
+                <code>GET https://mastodon.social/users/gargron</code> with <code>Accept: application/activity+json</code>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="webfinger-section">
+          <h2>📋 WebFinger Response Format</h2>
+          
+          <div class="response-format">
+            <h3>Standard WebFinger Response</h3>
+            <p>A typical WebFinger response contains these key elements:</p>
+            
+            <div class="format-details">
+              <div class="format-item">
+                <h4><code>subject</code></h4>
+                <p>The canonical identifier for the resource being described</p>
+                <div class="format-example">
+                  <code>"subject": "acct:user@domain.com"</code>
+                </div>
+              </div>
+
+              <div class="format-item">
+                <h4><code>aliases</code> (optional)</h4>
+                <p>Alternative identifiers for the same resource</p>
+                <div class="format-example">
+                  <code>"aliases": ["https://domain.com/@user", "https://domain.com/users/user"]</code>
+                </div>
+              </div>
+
+              <div class="format-item">
+                <h4><code>links</code></h4>
+                <p>Array of links to related resources and services</p>
+                <div class="format-example">
+                  <pre><code>{`"links": [
+  {
+    "rel": "self",
+    "type": "application/activity+json",
+    "href": "https://domain.com/users/user"
+  },
+  {
+    "rel": "http://webfinger.net/rel/profile-page",
+    "type": "text/html",
+    "href": "https://domain.com/@user"
+  }
+]`}</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="webfinger-section">
+          <h2>🔗 Link Relations</h2>
+          
+          <div class="link-relations">
+            <div class="relation-item">
+              <h3><code>self</code></h3>
+              <p>Points to the ActivityPub actor object (JSON-LD format)</p>
+              <div class="relation-usage">
+                <strong>Usage:</strong> Primary link for fetching actor data
+              </div>
+            </div>
+
+            <div class="relation-item">
+              <h3><code>http://webfinger.net/rel/profile-page</code></h3>
+              <p>Points to the human-readable profile page (HTML format)</p>
+              <div class="relation-usage">
+                <strong>Usage:</strong> Web browser view of the profile
+              </div>
+            </div>
+
+            <div class="relation-item">
+              <h3><code>http://ostatus.org/schema/1.0/subscribe</code></h3>
+              <p>Template for remote follow/subscribe actions</p>
+              <div class="relation-usage">
+                <strong>Usage:</strong> Enables remote following functionality
+              </div>
+            </div>
+
+            <div class="relation-item">
+              <h3><code>http://webfinger.net/rel/avatar</code></h3>
+              <p>Points to the user's avatar image</p>
+              <div class="relation-usage">
+                <strong>Usage:</strong> Direct access to profile picture
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="webfinger-section">
+          <h2>⚙️ MCP Server Implementation</h2>
+          
+          <div class="implementation-details">
+            <div class="implementation-item">
+              <h3>Automatic Resolution</h3>
+              <p>The MCP server automatically performs WebFinger resolution when you use @user@domain.com identifiers in any tool or resource request.</p>
+              
+              <div class="implementation-example">
+                <h4>Example Usage:</h4>
+                <p>When you ask Claude: "Discover information about @mastodon@mastodon.social"</p>
+                <ol>
+                  <li>Server extracts domain: mastodon.social</li>
+                  <li>Performs WebFinger query for acct:mastodon@mastodon.social</li>
+                  <li>Extracts ActivityPub URL from response</li>
+                  <li>Fetches full actor profile</li>
+                  <li>Returns formatted information to Claude</li>
+                </ol>
+              </div>
+            </div>
+
+            <div class="implementation-item">
+              <h3>Error Handling</h3>
+              <p>The server handles various WebFinger error scenarios:</p>
+              
+              <div class="error-scenarios">
+                <div class="error-scenario">
+                  <h4>Domain Not Found</h4>
+                  <p>If the domain doesn't exist or doesn't support WebFinger</p>
+                  <div class="error-response">Returns clear error message about domain availability</div>
+                </div>
+                
+                <div class="error-scenario">
+                  <h4>User Not Found</h4>
+                  <p>If the user doesn't exist on the specified domain</p>
+                  <div class="error-response">Returns user-not-found error with suggestions</div>
+                </div>
+                
+                <div class="error-scenario">
+                  <h4>Server Timeout</h4>
+                  <p>If the WebFinger endpoint is slow or unresponsive</p>
+                  <div class="error-response">Returns timeout error with retry suggestions</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="implementation-item">
+              <h3>Caching Strategy</h3>
+              <p>WebFinger responses are cached to improve performance and reduce load on target servers:</p>
+              
+              <div class="caching-details">
+                <ul>
+                  <li><strong>Cache Duration:</strong> 5 minutes for successful responses</li>
+                  <li><strong>Error Caching:</strong> 1 minute for failed requests</li>
+                  <li><strong>Cache Key:</strong> Based on full acct: identifier</li>
+                  <li><strong>Invalidation:</strong> Automatic expiration, no manual invalidation</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="webfinger-section">
+          <h2>🛠️ Troubleshooting WebFinger</h2>
+          
+          <div class="troubleshooting">
+            <div class="trouble-item">
+              <h3>Common Issues</h3>
+              
+              <div class="issue-list">
+                <div class="issue">
+                  <h4>Invalid Identifier Format</h4>
+                  <p><strong>Problem:</strong> Using incorrect @user@domain format</p>
+                  <p><strong>Solution:</strong> Ensure format is exactly @username@domain.com</p>
+                  <div class="issue-examples">
+                    <span class="correct">✅ @gargron@mastodon.social</span>
+                    <span class="incorrect">❌ gargron@mastodon.social (missing @)</span>
+                    <span class="incorrect">❌ @gargron (missing domain)</span>
+                  </div>
+                </div>
+
+                <div class="issue">
+                  <h4>Instance Doesn't Support WebFinger</h4>
+                  <p><strong>Problem:</strong> Target instance doesn't implement WebFinger</p>
+                  <p><strong>Solution:</strong> Use direct ActivityPub URLs instead</p>
+                  <div class="issue-examples">
+                    <span class="alternative">Alternative: https://domain.com/users/username</span>
+                  </div>
+                </div>
+
+                <div class="issue">
+                  <h4>Network Connectivity Issues</h4>
+                  <p><strong>Problem:</strong> Cannot reach target domain</p>
+                  <p><strong>Solution:</strong> Check domain accessibility and try again later</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="trouble-item">
+              <h3>Debugging Tips</h3>
+              
+              <div class="debug-tips">
+                <div class="debug-tip">
+                  <h4>Manual WebFinger Testing</h4>
+                  <p>Test WebFinger endpoints directly in your browser:</p>
+                  <code>https://domain.com/.well-known/webfinger?resource=acct:user@domain.com</code>
+                </div>
+
+                <div class="debug-tip">
+                  <h4>Check Server Logs</h4>
+                  <p>Enable debug logging to see WebFinger request details:</p>
+                  <code>"LOG_LEVEL": "debug"</code>
+                </div>
+
+                <div class="debug-tip">
+                  <h4>Verify Domain Configuration</h4>
+                  <p>Ensure the target domain has proper DNS and SSL configuration</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="webfinger-section">
+          <h2>📚 Technical Specifications</h2>
+          
+          <div class="specifications">
+            <div class="spec-item">
+              <h3>RFC 7033</h3>
+              <p>WebFinger is defined by RFC 7033, which specifies the protocol for discovering information about people and other entities.</p>
+              <a href="https://tools.ietf.org/html/rfc7033" target="_blank" rel="noopener" class="spec-link">Read RFC 7033</a>
+            </div>
+
+            <div class="spec-item">
+              <h3>ActivityPub Integration</h3>
+              <p>The ActivityPub specification defines how WebFinger should be used for actor discovery in federated social networks.</p>
+              <a href="https://www.w3.org/TR/activitypub/#webfinger" target="_blank" rel="noopener" class="spec-link">ActivityPub WebFinger Section</a>
+            </div>
+
+            <div class="spec-item">
+              <h3>Mastodon Implementation</h3>
+              <p>Mastodon's WebFinger implementation serves as a reference for many fediverse platforms.</p>
+              <a href="https://docs.joinmastodon.org/spec/webfinger/" target="_blank" rel="noopener" class="spec-link">Mastodon WebFinger Docs</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="webfinger-section">
+          <h2>🚀 Next Steps</h2>
+          <div class="next-steps">
+            <a href={`${baseURL}docs/specifications/activitypub-llm-specification-guide/`} class="next-step-card">
+              <h3>ActivityPub Protocol</h3>
+              <p>Learn about the ActivityPub protocol and how it works with WebFinger.</p>
+            </a>
+            <a href={`${baseURL}docs/api/tools/`} class="next-step-card">
+              <h3>MCP Tools</h3>
+              <p>Explore tools that use WebFinger for actor discovery.</p>
+            </a>
+            <a href={`${baseURL}docs/guides/fediverse-exploration/`} class="next-step-card">
+              <h3>Fediverse Exploration</h3>
+              <p>Advanced techniques for discovering actors across the fediverse.</p>
+            </a>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</DocsLayout>
+
+<style>
+  .webfinger-page {
+    padding: var(--space-16) 0;
+  }
+
+  .webfinger-header {
+    text-align: center;
+    margin-bottom: var(--space-16);
+  }
+
+  .webfinger-header h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .webfinger-description {
+    font-size: var(--text-xl);
+    color: var(--text-secondary);
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: var(--leading-relaxed);
+  }
+
+  .webfinger-content {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .webfinger-section {
+    margin-bottom: var(--space-16);
+  }
+
+  .webfinger-section h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-6);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: var(--space-2);
+  }
+
+  .webfinger-overview {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .webfinger-overview {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .overview-item {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .overview-item h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .overview-item p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+
+  .webfinger-process {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .process-step {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    border-left: 4px solid var(--color-primary);
+  }
+
+  .process-step h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .process-step > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+  }
+
+  .step-example {
+    background: var(--bg-primary);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .step-example strong {
+    color: var(--text-primary);
+  }
+
+  .step-example code {
+    display: block;
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    margin: var(--space-2) 0;
+    overflow-x: auto;
+  }
+
+  .step-example pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    margin: var(--space-2) 0;
+    overflow-x: auto;
+  }
+
+  .response-format {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .response-format h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .response-format > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-6);
+  }
+
+  .format-details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .format-item {
+    background: var(--bg-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .format-item h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+    font-family: var(--font-family-mono);
+  }
+
+  .format-item > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+  }
+
+  .format-example code {
+    display: block;
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    overflow-x: auto;
+  }
+
+  .format-example pre {
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    overflow-x: auto;
+  }
+
+  .link-relations {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  @media (min-width: 768px) {
+    .link-relations {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .relation-item {
+    background: var(--bg-secondary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .relation-item h3 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+    font-family: var(--font-family-mono);
+    background: var(--color-gray-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    display: inline-block;
+  }
+
+  .relation-item > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  .relation-usage {
+    background: var(--color-blue-50);
+    border: 1px solid var(--color-blue-200);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2);
+    font-size: var(--text-xs);
+  }
+
+  .relation-usage strong {
+    color: var(--color-blue-800);
+  }
+
+  .implementation-details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .implementation-item {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .implementation-item h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .implementation-item > p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  .implementation-example {
+    background: var(--bg-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .implementation-example h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .implementation-example p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-3);
+  }
+
+  .implementation-example ol {
+    margin: 0;
+    padding-left: var(--space-6);
+  }
+
+  .implementation-example li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+    font-size: var(--text-sm);
+  }
+
+  .error-scenarios {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+  }
+
+  .error-scenario {
+    background: var(--bg-primary);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .error-scenario h4 {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .error-scenario > p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-2);
+  }
+
+  .error-response {
+    background: var(--color-red-50);
+    border: 1px solid var(--color-red-200);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--color-red-700);
+  }
+
+  .caching-details ul {
+    margin: var(--space-3) 0 0 0;
+    padding-left: var(--space-6);
+  }
+
+  .caching-details li {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  .caching-details strong {
+    color: var(--text-primary);
+  }
+
+  .troubleshooting {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .trouble-item {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .trouble-item h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .issue-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .issue {
+    background: var(--bg-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .issue h4 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .issue p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-2);
+  }
+
+  .issue-examples {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+  }
+
+  .issue-examples span {
+    font-family: var(--font-family-mono);
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+  }
+
+  .correct {
+    background: var(--color-green-100);
+    color: var(--color-green-800);
+  }
+
+  .incorrect {
+    background: var(--color-red-100);
+    color: var(--color-red-800);
+  }
+
+  .alternative {
+    background: var(--color-blue-100);
+    color: var(--color-blue-800);
+  }
+
+  .debug-tips {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .debug-tip {
+    background: var(--bg-primary);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .debug-tip h4 {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .debug-tip p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-2);
+  }
+
+  .debug-tip code {
+    display: block;
+    background: var(--color-gray-900);
+    color: var(--color-gray-100);
+    padding: var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--text-xs);
+  }
+
+  .specifications {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  @media (min-width: 768px) {
+    .specifications {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .spec-item {
+    background: var(--bg-secondary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+  }
+
+  .spec-item h3 {
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .spec-item p {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-3);
+  }
+
+  .spec-link {
+    display: inline-block;
+    color: var(--color-primary);
+    text-decoration: none;
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+  }
+
+  .spec-link:hover {
+    text-decoration: underline;
+  }
+
+  .next-steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .next-steps {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .next-step-card {
+    display: block;
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .next-step-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .next-step-card h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .next-step-card p {
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+  }
+</style>

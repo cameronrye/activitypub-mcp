@@ -4,6 +4,11 @@ import DocsLayout from "../../../layouts/DocsLayout.astro";
 const title = "Practical Examples - ActivityPub MCP Server";
 const description =
   "Real-world examples and use cases for the ActivityPub MCP Server with step-by-step instructions and expected outputs.";
+
+// Get the base URL for proper path resolution
+const baseURL = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
 ---
 
 <DocsLayout title={title} description={description}>
@@ -261,15 +266,15 @@ fetch-timeline https://hachyderm.io/users/admin</code></pre>
         <section class="examples-section">
           <h2>🔗 Next Steps</h2>
           <div class="next-steps">
-            <a href="/docs/guides/basic-usage/" class="next-step-card">
+            <a href={`${baseURL}docs/guides/basic-usage/`} class="next-step-card">
               <h3>← Back to Basic Usage</h3>
               <p>Review the fundamental concepts and tools.</p>
             </a>
-            <a href="/docs/api/tools/" class="next-step-card">
+            <a href={`${baseURL}docs/api/tools/`} class="next-step-card">
               <h3>Complete Tool Reference</h3>
               <p>Detailed documentation for all available tools.</p>
             </a>
-            <a href="/docs/troubleshooting/" class="next-step-card">
+            <a href={`${baseURL}docs/troubleshooting/`} class="next-step-card">
               <h3>Troubleshooting Guide</h3>
               <p>Solutions for common issues and problems.</p>
             </a>

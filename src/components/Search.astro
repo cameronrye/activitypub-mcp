@@ -6,7 +6,7 @@
   <input
     type="search"
     id="search-input"
-    placeholder="Search documentation..."
+    placeholder="Search"
     class="search-input"
     autocomplete="off"
     aria-label="Search documentation"
@@ -26,11 +26,40 @@
   </div>
 </div>
 
+<!-- Mobile search overlay -->
+<div id="mobile-search-overlay" class="mobile-search-overlay">
+  <div class="mobile-search-container">
+    <div class="mobile-search-header">
+      <input
+        type="search"
+        id="mobile-search-input"
+        placeholder="Search"
+        class="mobile-search-input"
+        autocomplete="off"
+        aria-label="Search documentation"
+      >
+      <button type="button" class="mobile-search-close" aria-label="Close search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div id="mobile-search-results" class="mobile-search-results">
+      <div id="mobile-search-loading" class="search-loading" style="display: none;">
+        <div class="loading-spinner"></div>
+        <span>Searching...</span>
+      </div>
+      <div id="mobile-search-content"></div>
+    </div>
+  </div>
+</div>
+
 <style>
   .search-container {
     position: relative;
     width: 100%;
-    max-width: 400px;
+    max-width: 520px;
     display: flex;
     align-items: center;
   }
@@ -89,31 +118,50 @@
     background-color: rgba(37, 99, 235, 0.1);
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
   }
-  
+
   .search-results {
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
-    background: linear-gradient(
-      135deg,
-      var(--bg-primary) 0%,
-      var(--bg-secondary) 100%
-    );
+    background: var(--bg-primary);
     border: 1px solid var(--border-primary);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
-    max-height: 400px;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-2);
+    max-height: 420px;
     overflow-y: auto;
-    z-index: var(--z-dropdown);
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    z-index: 9999;
     display: none;
     margin-top: var(--space-2);
     backdrop-filter: blur(12px);
   }
 
+  /* Scrollbar styling */
+  .search-results::-webkit-scrollbar { width: 10px; height: 10px; }
+  .search-results::-webkit-scrollbar-track { background: transparent; }
+  .search-results::-webkit-scrollbar-thumb {
+    background-color: var(--border-primary);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  .search-results { scrollbar-width: thin; scrollbar-color: var(--border-primary) transparent; }
+
+
   .search-results.show {
     display: block;
     animation: searchDropdownFadeIn 0.2s ease-out;
+  }
+
+  /* Minimal list layout */
+  #search-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-1);
   }
 
   @keyframes searchDropdownFadeIn {
@@ -151,56 +199,71 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
-  
+
   .search-result {
     display: block;
-    padding: var(--space-4);
-    border-bottom: 1px solid var(--border-primary);
+    padding: var(--space-4) var(--space-4);
     color: var(--text-primary);
     text-decoration: none;
-    transition: all var(--transition-fast);
-    border-radius: var(--radius-md);
-    margin: var(--space-1);
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+    border-radius: var(--radius-lg);
+    margin: 0;
     position: relative;
   }
 
+  /* Ensure no underline on search result links */
+  .search-result,
+  .search-result:link,
+  .search-result:visited,
+  .search-result:hover,
+  .search-result:active {
+    text-decoration: none;
+  }
+
+  .search-result .result-title,
+  .search-result .result-excerpt {
+    text-decoration: none;
+  }
+
+
+
   .search-result:hover,
   .search-result.active {
-    background: linear-gradient(
-      135deg,
-      var(--color-primary) 0%,
-      var(--color-primary-light) 100%
-    );
-    color: var(--color-white);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background: var(--bg-secondary);
+    color: inherit;
+    transform: none;
+    box-shadow: 0 0 0 1px var(--border-primary) inset;
     border-color: transparent;
   }
 
   .search-result:hover .result-title,
   .search-result.active .result-title {
-    color: var(--color-white);
+    color: inherit;
   }
 
   .search-result:hover .result-excerpt,
   .search-result.active .result-excerpt {
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--text-secondary);
   }
 
   .search-result:last-child {
     border-bottom: none;
   }
 
+  .search-result + .search-result {
+    border-top: 1px solid var(--border-primary);
+  }
+
   .result-title {
     font-weight: var(--font-semibold);
     margin-bottom: var(--space-2);
-    font-size: var(--text-base);
+    font-size: var(--text-xs);
     line-height: var(--leading-tight);
     color: var(--text-primary);
   }
 
   .result-excerpt {
-    font-size: var(--text-sm);
+    font-size: 0.7rem;
     color: var(--text-secondary);
     line-height: var(--leading-relaxed);
     display: -webkit-box;
@@ -210,8 +273,8 @@
   }
 
   .result-excerpt mark {
-    background-color: rgba(59, 130, 246, 0.3);
-    color: var(--color-primary);
+    background-color: rgba(59, 130, 246, 0.15);
+    color: inherit;
     padding: 1px 4px;
     border-radius: var(--radius-sm);
     font-weight: var(--font-medium);
@@ -219,8 +282,8 @@
 
   .search-result:hover .result-excerpt mark,
   .search-result.active .result-excerpt mark {
-    background-color: rgba(255, 255, 255, 0.3);
-    color: var(--color-white);
+    background-color: rgba(59, 130, 246, 0.15);
+    color: inherit;
   }
 
   .no-results {
@@ -264,6 +327,11 @@
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
   }
+  /* Wider search bar on large screens */
+  @media (min-width: 1024px) {
+    .search-container { max-width: 600px; }
+  }
+
 
   .search-button:focus-visible {
     outline: 2px solid var(--color-primary);
@@ -287,12 +355,113 @@
     }
   }
 
+  /* Mobile search overlay */
+  .mobile-search-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: var(--z-modal);
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition-fast);
+  }
+
+  .mobile-search-overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .mobile-search-container {
+    width: 100vw;
+    background: linear-gradient(
+      135deg,
+      var(--bg-primary) 0%,
+      var(--bg-secondary) 100%
+    );
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(-100%);
+    transition: transform var(--transition-normal);
+  }
+
+  .mobile-search-overlay.show .mobile-search-container {
+    transform: translateY(0);
+  }
+
+  .mobile-search-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .mobile-search-input {
+    flex: 1;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: var(--text-base);
+    transition: all var(--transition-fast);
+  }
+
+  .mobile-search-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  .mobile-search-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .mobile-search-close:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .mobile-search-results {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-2);
+  }
+
+  /* Hide mobile search overlay on desktop, but allow it to show when .show class is present */
+  @media (min-width: 768px) {
+    .mobile-search-overlay:not(.show) {
+      display: none;
+    }
+  }
+
   /* Reduced motion support */
   @media (prefers-reduced-motion: reduce) {
     .search-input,
     .search-button,
     .search-result,
-    .search-results {
+    .search-results,
+    .mobile-search-overlay,
+    .mobile-search-container {
       transition: none;
     }
 
@@ -308,32 +477,58 @@
 
 <script>
   // Pagefind search implementation
+  // Dev-safe console wrapper: logs/warns only in development; errors always shown
+  const realConsole = window.console;
+  const console = {
+    log: (...args) => { if (import.meta.env.DEV) realConsole.log(...args); },
+    debug: (...args) => { if (import.meta.env.DEV && realConsole.debug) realConsole.debug(...args); },
+    warn: (...args) => { if (import.meta.env.DEV) realConsole.warn(...args); },
+    error: (...args) => { realConsole.error(...args); }
+  };
+
+  // Pagefind search implementation
+
   class PagefindSearch {
     constructor() {
       this.searchInput = document.getElementById('search-input');
       this.searchResults = document.getElementById('search-results');
       this.searchContent = document.getElementById('search-content');
       this.searchLoading = document.getElementById('search-loading');
+
+      // Mobile search elements
+      this.mobileSearchInput = document.getElementById('mobile-search-input');
+      this.mobileSearchResults = document.getElementById('mobile-search-results');
+      this.mobileSearchContent = document.getElementById('mobile-search-content');
+      this.mobileSearchLoading = document.getElementById('mobile-search-loading');
+      this.mobileSearchOverlay = document.getElementById('mobile-search-overlay');
+      this.mobileSearchClose = document.querySelector('.mobile-search-close');
+
       this.pagefind = null;
       this.fallbackData = [];
       this.debounceTimer = null;
+      this.mobileDebounceTimer = null;
       this.currentQuery = '';
-      
+      this.currentMobileQuery = '';
+
       this.init();
     }
-    
+
     async init() {
       if (!this.searchInput || !this.searchResults) return;
 
       // Load Pagefind
       try {
         const currentPath = window.location.pathname;
-        const basePath = currentPath.includes('/activitypub-mcp/') ? '/activitypub-mcp/' : '/';
+        const repoBase = '/activitypub-mcp';
+        const onRepoBase = (currentPath === repoBase) || currentPath.startsWith(repoBase + '/');
+        const basePath = onRepoBase ? (repoBase + '/') : '/';
         const pagefindPath = `${basePath}pagefind/pagefind.js`;
 
+        console.log('Loading Pagefind from:', pagefindPath);
         // @ts-ignore
         const pagefindModule = await import(pagefindPath);
         this.pagefind = pagefindModule;
+        console.log('Pagefind loaded successfully');
       } catch (error) {
         console.warn('Pagefind not available:', error);
         // Fallback to simple search
@@ -341,20 +536,37 @@
       }
 
       // Bind events (always bind events regardless of search method)
-      this.searchInput.addEventListener('input', this.handleInput.bind(this));
-      this.searchInput.addEventListener('focus', this.handleFocus.bind(this));
-      this.searchInput.addEventListener('keydown', this.handleKeyDown.bind(this));
+      if (this.searchInput) {
+        this.searchInput.addEventListener('input', this.handleInput.bind(this));
+        this.searchInput.addEventListener('focus', this.handleFocus.bind(this));
+        this.searchInput.addEventListener('keydown', this.handleKeyDown.bind(this));
+      }
+
+      // Bind mobile search events
+      if (this.mobileSearchInput) {
+        this.mobileSearchInput.addEventListener('input', this.handleMobileInput.bind(this));
+        this.mobileSearchInput.addEventListener('keydown', this.handleMobileKeyDown.bind(this));
+      }
+
+      if (this.mobileSearchClose) {
+        this.mobileSearchClose.addEventListener('click', this.hideMobileSearch.bind(this));
+      }
+
+      if (this.mobileSearchOverlay) {
+        this.mobileSearchOverlay.addEventListener('click', this.handleMobileOverlayClick.bind(this));
+      }
+
       document.addEventListener('click', this.handleDocumentClick.bind(this));
     }
-    
+
     handleInput(event) {
       const query = event.target.value.trim();
-      
+
       // Clear previous timer
       if (this.debounceTimer) {
         clearTimeout(this.debounceTimer);
       }
-      
+
       // Debounce search
       this.debounceTimer = setTimeout(() => {
         if (query.length >= 2) {
@@ -364,18 +576,18 @@
         }
       }, 300);
     }
-    
+
     handleFocus(event) {
       const query = event.target.value.trim();
       if (query.length >= 2 && this.currentQuery === query) {
         this.showResults();
       }
     }
-    
+
     handleKeyDown(event) {
       const results = this.searchResults.querySelectorAll('.search-result');
       const activeResult = this.searchResults.querySelector('.search-result.active');
-      
+
       switch (event.key) {
         case 'ArrowDown':
           event.preventDefault();
@@ -389,7 +601,7 @@
             results[0].classList.add('active');
           }
           break;
-          
+
         case 'ArrowUp':
           event.preventDefault();
           if (activeResult) {
@@ -400,49 +612,186 @@
             }
           }
           break;
-          
+
         case 'Enter':
           event.preventDefault();
           if (activeResult) {
             window.location.href = activeResult.href;
           }
           break;
-          
+
         case 'Escape':
           this.hideResults();
           this.searchInput.blur();
           break;
       }
     }
-    
+
     handleDocumentClick(event) {
-      if (!this.searchInput.contains(event.target) && !this.searchResults.contains(event.target)) {
+      if (this.searchInput && this.searchResults &&
+          !this.searchInput.contains(event.target) && !this.searchResults.contains(event.target)) {
         this.hideResults();
       }
     }
-    
+
+    // Mobile search methods
+    handleMobileInput(event) {
+      const query = event.target.value.trim();
+
+      // Clear previous timer
+      if (this.mobileDebounceTimer) {
+        clearTimeout(this.mobileDebounceTimer);
+      }
+
+      // Debounce search
+      this.mobileDebounceTimer = setTimeout(() => {
+        if (query.length >= 2) {
+          this.performMobileSearch(query);
+        } else {
+          this.hideMobileResults();
+        }
+      }, 300);
+    }
+
+    handleMobileKeyDown(event) {
+      const results = this.mobileSearchResults.querySelectorAll('.search-result');
+      const activeResult = this.mobileSearchResults.querySelector('.search-result.active');
+
+      switch (event.key) {
+        case 'ArrowDown':
+          event.preventDefault();
+          if (activeResult) {
+            const next = activeResult.nextElementSibling;
+            if (next && next.classList.contains('search-result')) {
+              activeResult.classList.remove('active');
+              next.classList.add('active');
+            }
+          } else if (results.length > 0) {
+            results[0].classList.add('active');
+          }
+          break;
+
+        case 'ArrowUp':
+          event.preventDefault();
+          if (activeResult) {
+            const prev = activeResult.previousElementSibling;
+            if (prev && prev.classList.contains('search-result')) {
+              activeResult.classList.remove('active');
+              prev.classList.add('active');
+            }
+          }
+          break;
+
+        case 'Enter':
+          event.preventDefault();
+          if (activeResult) {
+            window.location.href = activeResult.href;
+          }
+          break;
+
+        case 'Escape':
+          this.hideMobileSearch();
+          break;
+      }
+    }
+
+    handleMobileOverlayClick(event) {
+      if (event.target === this.mobileSearchOverlay) {
+        this.hideMobileSearch();
+      }
+    }
+
+    showMobileSearch() {
+      console.log('showMobileSearch called');
+      if (this.mobileSearchOverlay) {
+        console.log('Adding show class to mobile search overlay');
+        this.mobileSearchOverlay.classList.add('show');
+        // Focus the mobile search input
+        setTimeout(() => {
+          if (this.mobileSearchInput) {
+            this.mobileSearchInput.focus();
+          }
+        }, 100);
+      } else {
+        console.error('Mobile search overlay not found');
+      }
+    }
+
+    hideMobileSearch() {
+      if (this.mobileSearchOverlay) {
+        this.mobileSearchOverlay.classList.remove('show');
+        this.hideMobileResults();
+        // Clear the mobile search input
+        if (this.mobileSearchInput) {
+          this.mobileSearchInput.value = '';
+        }
+      }
+    }
+
+    hideMobileResults() {
+      if (this.mobileSearchContent) {
+        this.mobileSearchContent.innerHTML = '';
+      }
+      // Remove active states
+      if (this.mobileSearchResults) {
+        const activeResults = this.mobileSearchResults.querySelectorAll('.search-result.active');
+        activeResults.forEach(result => result.classList.remove('active'));
+      }
+    }
+
     async performSearch(query) {
-      if (!this.pagefind) return;
-      
+      if (!this.pagefind) {
+        console.log('Pagefind not available, using fallback search');
+        this.performFallbackSearch(query);
+        return;
+      }
+
       this.currentQuery = query;
       this.showLoading();
-      
+
       try {
+        console.log('Performing Pagefind search for:', query);
         const search = await this.pagefind.search(query);
+        console.log('Pagefind search results:', search);
         const results = await Promise.all(
           search.results.slice(0, 10).map(result => result.data())
         );
-        
+
         this.displayResults(results, query);
       } catch (error) {
         console.error('Search error:', error);
         this.displayError();
       }
     }
-    
+
+    async performMobileSearch(query) {
+      if (!this.pagefind) {
+        console.log('Pagefind not available for mobile search, using fallback');
+        this.performMobileFallbackSearch(query);
+        return;
+      }
+
+      this.currentMobileQuery = query;
+      this.showMobileLoading();
+
+      try {
+        console.log('Performing mobile Pagefind search for:', query);
+        const search = await this.pagefind.search(query);
+        console.log('Mobile Pagefind search results:', search);
+        const results = await Promise.all(
+          search.results.slice(0, 10).map(result => result.data())
+        );
+
+        this.displayMobileResults(results, query);
+      } catch (error) {
+        console.error('Mobile search error:', error);
+        this.displayMobileError();
+      }
+    }
+
     displayResults(results, query) {
       this.hideLoading();
-      
+
       if (results.length === 0) {
         this.searchContent.innerHTML = '<div class="no-results">No results found</div>';
       } else {
@@ -456,55 +805,99 @@
           `;
         }).join('');
       }
-      
+
       this.showResults();
     }
-    
+
     displayError() {
       this.hideLoading();
-      this.searchContent.innerHTML = '<div class="no-results">Search error occurred</div>';
+      if (this.searchContent) {
+        this.searchContent.innerHTML = '<div class="no-results">Search error occurred</div>';
+      }
       this.showResults();
     }
-    
+
+    displayMobileResults(results, query) {
+      this.hideMobileLoading();
+
+      if (!this.mobileSearchContent) return;
+
+      if (results.length === 0) {
+        this.mobileSearchContent.innerHTML = '<div class="no-results">No results found</div>';
+      } else {
+        this.mobileSearchContent.innerHTML = results.map(result => {
+          const excerpt = this.createExcerpt(result.excerpt, query);
+          return `
+            <a href="${result.url}" class="search-result">
+              <div class="result-title">${this.highlightQuery(result.meta.title || 'Untitled', query)}</div>
+              <div class="result-excerpt">${excerpt}</div>
+            </a>
+          `;
+        }).join('');
+      }
+    }
+
+    displayMobileError() {
+      this.hideMobileLoading();
+      if (this.mobileSearchContent) {
+        this.mobileSearchContent.innerHTML = '<div class="no-results">Search error occurred</div>';
+      }
+    }
+
+    showMobileLoading() {
+      if (this.mobileSearchLoading) {
+        this.mobileSearchLoading.style.display = 'block';
+      }
+      if (this.mobileSearchContent) {
+        this.mobileSearchContent.innerHTML = '';
+      }
+    }
+
+    hideMobileLoading() {
+      if (this.mobileSearchLoading) {
+        this.mobileSearchLoading.style.display = 'none';
+      }
+    }
+
     createExcerpt(excerpt, query, maxLength = 150) {
       if (!excerpt) return '';
-      
+
       let text = excerpt;
       if (text.length > maxLength) {
         text = text.substring(0, maxLength) + '...';
       }
-      
+
       return this.highlightQuery(text, query);
     }
-    
+
     highlightQuery(text, query) {
       if (!text || !query) return text;
-      
+
       const regex = new RegExp(`(${this.escapeRegex(query)})`, 'gi');
       return text.replace(regex, '<mark>$1</mark>');
     }
-    
+
     escapeRegex(string) {
       return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
-    
+
     showResults() {
       this.searchResults.classList.add('show');
     }
-    
+
     hideResults() {
       this.searchResults.classList.remove('show');
       // Remove active states
       const activeResults = this.searchResults.querySelectorAll('.search-result.active');
       activeResults.forEach(result => result.classList.remove('active'));
     }
-    
+
     showLoading() {
       this.searchLoading.style.display = 'block';
       this.searchContent.innerHTML = '';
       this.showResults();
     }
-    
+
     hideLoading() {
       this.searchLoading.style.display = 'none';
     }
@@ -516,12 +909,19 @@
       // Load search data for fallback
       try {
         const currentPath = window.location.pathname;
-        const basePath = currentPath.includes('/activitypub-mcp/') ? '/activitypub-mcp/' : '/';
+        const repoBase = '/activitypub-mcp';
+        const onRepoBase = (currentPath === repoBase) || currentPath.startsWith(repoBase + '/');
+        const basePath = onRepoBase ? (repoBase + '/') : '/';
         const searchDataPath = `${basePath}search.json`;
 
+        console.log('Loading fallback search data from:', searchDataPath);
         const response = await fetch(searchDataPath);
         if (response.ok) {
           this.fallbackData = await response.json();
+          console.log('Fallback search data loaded:', this.fallbackData.length, 'items');
+        } else {
+          console.error('Failed to load search data:', response.status, response.statusText);
+          this.fallbackData = [];
         }
       } catch (error) {
         console.warn('Could not load fallback search data:', error);
@@ -533,7 +933,11 @@
     }
 
     performFallbackSearch(query) {
+      console.log('Performing fallback search for:', query);
+      console.log('Fallback data available:', this.fallbackData ? this.fallbackData.length : 0, 'items');
+
       if (!this.fallbackData || this.fallbackData.length === 0) {
+        console.log('No fallback data available');
         this.displayResults([], query);
         return;
       }
@@ -545,6 +949,8 @@
         (item.content && item.content.toLowerCase().includes(queryLower))
       ).slice(0, 10); // Limit to 10 results
 
+      console.log('Fallback search found:', results.length, 'results');
+
       // Convert to Pagefind-like format
       const formattedResults = results.map(item => ({
         url: item.url,
@@ -554,12 +960,66 @@
 
       this.displayResults(formattedResults, query);
     }
+
+    performMobileFallbackSearch(query) {
+      console.log('Performing mobile fallback search for:', query);
+      console.log('Mobile fallback data available:', this.fallbackData ? this.fallbackData.length : 0, 'items');
+
+      if (!this.fallbackData || this.fallbackData.length === 0) {
+        console.log('No mobile fallback data available');
+        this.displayMobileResults([], query);
+        return;
+      }
+
+      const queryLower = query.toLowerCase();
+      const results = this.fallbackData.filter(item =>
+        item.title.toLowerCase().includes(queryLower) ||
+        item.excerpt.toLowerCase().includes(queryLower) ||
+        (item.content && item.content.toLowerCase().includes(queryLower))
+      ).slice(0, 10); // Limit to 10 results
+
+      console.log('Mobile fallback search found:', results.length, 'results');
+
+      // Convert to Pagefind-like format
+      const formattedResults = results.map(item => ({
+        url: item.url,
+        meta: { title: item.title },
+        excerpt: item.excerpt
+      }));
+
+      this.displayMobileResults(formattedResults, query);
+    }
   }
-  
+
   // Initialize search when DOM is ready
+  let searchInstance;
+
+  function initializeSearch() {
+    console.log('Initializing search instance');
+    searchInstance = new PagefindSearch();
+    // Make mobile search methods globally available
+    window.showMobileSearch = () => {
+      console.log('Global showMobileSearch called');
+      if (searchInstance) {
+        searchInstance.showMobileSearch();
+      } else {
+        console.error('Search instance not available');
+      }
+    };
+    window.hideMobileSearch = () => {
+      console.log('Global hideMobileSearch called');
+      if (searchInstance) {
+        searchInstance.hideMobileSearch();
+      } else {
+        console.error('Search instance not available');
+      }
+    };
+    console.log('Search instance initialized and global functions set');
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => new PagefindSearch());
+    document.addEventListener('DOMContentLoaded', initializeSearch);
   } else {
-    new PagefindSearch();
+    initializeSearch();
   }
 </script>

@@ -348,6 +348,20 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-4);
+  margin-left: auto; /* Push actions to the right on all screen sizes */
+}
+
+/* Adjust navbar actions spacing on mobile */
+@media (max-width: 767px) {
+  .navbar-actions {
+    gap: var(--space-3);
+    justify-content: flex-end; /* Right-align all menu icons on mobile */
+  }
+
+  /* Hide only the inline search input on mobile, keep overlay DOM mounted */
+  .navbar-actions .navbar-search .search-container {
+    display: none;
+  }
 }
 
 .navbar-social {
@@ -409,6 +423,7 @@ body {
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--transition-fast);
+  /* Removed margin-left since it's now inside navbar-actions with proper gap spacing */
 }
 
 @media (min-width: 768px) {
@@ -511,6 +526,42 @@ body {
 @media (min-width: 768px) {
   .search-container {
     display: block;
+  }
+}
+
+/* Mobile search toggle button */
+.mobile-search-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mobile-search-toggle:hover {
+  background-color: var(--bg-tertiary);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-search-toggle:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Hide mobile search toggle on desktop */
+@media (min-width: 768px) {
+  .mobile-search-toggle {
+    display: none;
   }
 }
 
@@ -894,8 +945,32 @@ p {
 
 .footer-content {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-8);
+}
+
+/* Mobile layout: Main section spans both columns, Documentation and Community in separate columns below */
+@media (max-width: 767px) {
+  .footer-content {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+  }
+
+  /* Main section (ActivityPub MCP Server) spans both columns */
+  .footer-section:first-child {
+    grid-column: 1 / -1; /* Span from first to last column */
+    margin-bottom: var(--space-6);
+  }
+
+  /* Documentation section in left column */
+  .footer-section:nth-child(2) {
+    grid-column: 1;
+  }
+
+  /* Community section in right column */
+  .footer-section:nth-child(3) {
+    grid-column: 2;
+  }
 }
 
 @media (min-width: 768px) {

@@ -4,6 +4,11 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 const title = "Troubleshooting Guide - ActivityPub MCP Server";
 const description =
   "Solutions for common issues and problems when using the ActivityPub MCP Server with LLMs.";
+
+// Get the base URL for proper path resolution
+const baseURL = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
 ---
 
 <DocsLayout title={title} description={description}>
@@ -336,15 +341,15 @@ curl https://instance.com/api/v1/instance</code></pre>
         <section class="troubleshooting-section">
           <h2>🔗 Related Resources</h2>
           <div class="next-steps">
-            <a href="/docs/guides/basic-usage/" class="next-step-card">
+            <a href={`${baseURL}docs/guides/basic-usage/`} class="next-step-card">
               <h3>Basic Usage Guide</h3>
               <p>Learn the fundamental concepts and workflows.</p>
             </a>
-            <a href="/docs/guides/examples/" class="next-step-card">
+            <a href={`${baseURL}docs/guides/examples/`} class="next-step-card">
               <h3>Practical Examples</h3>
               <p>See real-world examples and use cases.</p>
             </a>
-            <a href="/docs/api/tools/" class="next-step-card">
+            <a href={`${baseURL}docs/api/tools/`} class="next-step-card">
               <h3>Complete Tool Reference</h3>
               <p>Detailed documentation for all available tools.</p>
             </a>
