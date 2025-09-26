@@ -1280,6 +1280,18 @@ p {
   }
 }
 
+
+/* Generic code blocks (Markdown-rendered) */
+pre {
+  overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch; /* smoother scrolling on iOS */
+}
+
+pre code {
+  white-space: pre; /* prevent wrapping inside code fences */
+}
+
 /* Utility classes */
 .text-primary {
   color: var(--color-primary);
