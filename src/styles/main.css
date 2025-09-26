@@ -358,7 +358,8 @@ body {
     justify-content: flex-end; /* Right-align all menu icons on mobile */
   }
 
-  .navbar-actions .navbar-search {
+  /* Hide only the inline search input on mobile, keep overlay DOM mounted */
+  .navbar-actions .navbar-search .search-container {
     display: none;
   }
 }

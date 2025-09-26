@@ -91,7 +91,7 @@
       // Close mobile nav if it's open
       const nav = document.querySelector(".navbar-nav");
       const navToggle = document.querySelector(".navbar-toggle");
-      if (nav && nav.classList.contains("show")) {
+      if (nav?.classList.contains("show")) {
         nav.classList.remove("show");
         if (navToggle) {
           navToggle.classList.remove("active");
@@ -159,7 +159,7 @@
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
         const mobileSearchOverlay = document.getElementById("mobile-search-overlay");
-        if (mobileSearchOverlay && mobileSearchOverlay.classList.contains("show")) {
+        if (mobileSearchOverlay?.classList.contains("show")) {
           hideMobileSearchOverlay();
           searchToggle.focus(); // Return focus to toggle button for accessibility
         }
@@ -170,26 +170,13 @@
     window.addEventListener("resize", () => {
       if (window.innerWidth >= 768) {
         const mobileSearchOverlay = document.getElementById("mobile-search-overlay");
-        if (mobileSearchOverlay && mobileSearchOverlay.classList.contains("show")) {
+        if (mobileSearchOverlay?.classList.contains("show")) {
           hideMobileSearchOverlay();
         }
       }
     });
 
     // Make hideMobileSearchOverlay available for escape and resize handlers
-    function hideMobileSearchOverlay() {
-      const mobileSearchOverlay = document.getElementById("mobile-search-overlay");
-      if (mobileSearchOverlay) {
-        mobileSearchOverlay.classList.remove("show");
-        searchToggle.setAttribute("aria-expanded", "false");
-
-        // Clear the search input
-        const mobileSearchInput = document.getElementById("mobile-search-input");
-        if (mobileSearchInput) {
-          mobileSearchInput.value = "";
-        }
-      }
-    }
   }
 
   // Smooth scrolling for anchor links
@@ -335,7 +322,6 @@
     initThemeToggle();
 
     // Debug: Log initialization completion
-    console.log("Main.js initialization complete");
   }
 
   // Initialize when DOM is ready

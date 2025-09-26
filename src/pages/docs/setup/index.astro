@@ -4,6 +4,11 @@ import DocsLayout from "../../../layouts/DocsLayout.astro";
 const title = "Installation & Setup - ActivityPub MCP Server";
 const description =
   "Complete installation and setup guide for the ActivityPub MCP Server. Get up and running in minutes.";
+
+// Get the base URL for proper path resolution
+const baseURL = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
 ---
 
 <DocsLayout title={title} description={description}>
@@ -28,7 +33,7 @@ const description =
             <div class="prerequisite-item">
               <h3>Claude Desktop (Optional)</h3>
               <p>For the best experience, install Claude Desktop for seamless AI integration.</p>
-              <a href="https://claude.ai/download" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Download Claude</a>
+              <a href="https://www.anthropic.com/claude" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Download Claude</a>
             </div>
             <div class="prerequisite-item">
               <h3>MCP Inspector (Optional)</h3>
@@ -172,15 +177,15 @@ activitypub-mcp</code></pre>
         <section class="setup-section">
           <h2>🔗 Next Steps</h2>
           <div class="next-steps">
-            <a href="/docs/setup/claude-desktop/" class="next-step-card">
+            <a href={`${baseURL}docs/setup/claude-desktop/`} class="next-step-card">
               <h3>Claude Desktop Integration</h3>
               <p>Set up seamless integration with Claude Desktop for the best AI experience.</p>
             </a>
-            <a href="/docs/guides/basic-usage/" class="next-step-card">
+            <a href={`${baseURL}docs/guides/basic-usage/`} class="next-step-card">
               <h3>Basic Usage Guide</h3>
               <p>Learn the essential commands and workflows for everyday use.</p>
             </a>
-            <a href="/docs/guides/examples/" class="next-step-card">
+            <a href={`${baseURL}docs/guides/examples/`} class="next-step-card">
               <h3>Practical Examples</h3>
               <p>See real-world examples and use cases to get you started.</p>
             </a>

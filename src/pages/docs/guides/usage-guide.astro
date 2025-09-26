@@ -4,6 +4,11 @@ import DocsLayout from "../../../layouts/DocsLayout.astro";
 const title = "Usage Guide - ActivityPub MCP Server";
 const description =
   "Comprehensive usage guide for the ActivityPub MCP Server. Learn advanced workflows, best practices, and power-user techniques.";
+
+// Get the base URL for proper path resolution
+const baseURL = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
 ---
 
 <DocsLayout title={title} description={description}>
@@ -290,15 +295,15 @@ fetch-timeline https://journa.host/users/admin</code></pre>
       <section class="guide-section">
         <h2>🔗 Next Steps</h2>
         <div class="next-steps">
-          <a href="/docs/guides/real-world-test-scenario/" class="next-step-card">
+          <a href={`${baseURL}docs/guides/real-world-test-scenario/`} class="next-step-card">
             <h3>Real-World Scenarios</h3>
             <p>Apply these techniques to practical, real-world use cases.</p>
           </a>
-          <a href="/docs/api/tools/" class="next-step-card">
+          <a href={`${baseURL}docs/api/tools/`} class="next-step-card">
             <h3>Complete Tool Reference</h3>
             <p>Detailed documentation for all available MCP tools.</p>
           </a>
-          <a href="/docs/troubleshooting/" class="next-step-card">
+          <a href={`${baseURL}docs/troubleshooting/`} class="next-step-card">
             <h3>Troubleshooting Guide</h3>
             <p>Solutions for common issues and problems.</p>
           </a>
