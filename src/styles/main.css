@@ -305,8 +305,22 @@ body {
 }
 
 .navbar-brand .brand-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font-size: var(--text-xl);
   font-weight: var(--font-bold);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.navbar-brand .brand-logo {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.navbar-brand .brand-text {
   background: linear-gradient(
     135deg,
     var(--color-primary) 0%,
@@ -315,8 +329,6 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-decoration: none;
-  transition: all var(--transition-fast);
 }
 
 .navbar-brand .brand-link:hover {
@@ -631,6 +643,23 @@ body {
   padding: 0 var(--space-4);
   position: relative;
   z-index: 1;
+}
+
+.hero-logo {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto var(--space-8);
+  display: block;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 .hero-title {
