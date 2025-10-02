@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <title>ActivityPub MCP Logo</title>
+  <desc>A network node design representing the ActivityPub MCP Server connecting LLMs to the Fediverse</desc>
+  
+  <defs>
+    <!-- Blue to Purple Gradient for central node -->
+    <radialGradient id="centralGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- Purple accent gradient for outer nodes -->
+    <radialGradient id="nodeGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- Glow effect for connections -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="0.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Connection lines (drawn first, so they appear behind nodes) -->
+  <g stroke="#3b82f6" stroke-width="1.5" opacity="0.6" fill="none" filter="url(#glow)">
+    <!-- Top -->
+    <line x1="50" y1="50" x2="50" y2="15" />
+    <!-- Top Right -->
+    <line x1="50" y1="50" x2="80.3" y2="27.5" />
+    <!-- Bottom Right -->
+    <line x1="50" y1="50" x2="80.3" y2="72.5" />
+    <!-- Bottom -->
+    <line x1="50" y1="50" x2="50" y2="85" />
+    <!-- Bottom Left -->
+    <line x1="50" y1="50" x2="19.7" y2="72.5" />
+    <!-- Top Left -->
+    <line x1="50" y1="50" x2="19.7" y2="27.5" />
+  </g>
+  
+  <!-- Outer nodes (satellite instances) -->
+  <g>
+    <!-- Top node -->
+    <circle cx="50" cy="15" r="6" fill="url(#nodeGradient)" stroke="#2563eb" stroke-width="1" />
+    
+    <!-- Top Right node -->
+    <circle cx="80.3" cy="27.5" r="6" fill="url(#nodeGradient)" stroke="#2563eb" stroke-width="1" />
+    
+    <!-- Bottom Right node -->
+    <circle cx="80.3" cy="72.5" r="6" fill="url(#nodeGradient)" stroke="#2563eb" stroke-width="1" />
+    
+    <!-- Bottom node -->
+    <circle cx="50" cy="85" r="6" fill="url(#nodeGradient)" stroke="#2563eb" stroke-width="1" />
+    
+    <!-- Bottom Left node -->
+    <circle cx="19.7" cy="72.5" r="6" fill="url(#nodeGradient)" stroke="#2563eb" stroke-width="1" />
+    
+    <!-- Top Left node -->
+    <circle cx="19.7" cy="27.5" r="6" fill="url(#nodeGradient)" stroke="#2563eb" stroke-width="1" />
+  </g>
+  
+  <!-- Central node (MCP Server) -->
+  <circle cx="50" cy="50" r="12" fill="url(#centralGradient)" stroke="#1d4ed8" stroke-width="2" />
+  
+  <!-- Inner highlight for depth -->
+  <circle cx="50" cy="50" r="8" fill="none" stroke="#60a5fa" stroke-width="1" opacity="0.4" />
+</svg>
+

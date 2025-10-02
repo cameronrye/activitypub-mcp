@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <title>ActivityPub MCP Logo (Monochrome)</title>
+  <desc>A network node design representing the ActivityPub MCP Server connecting LLMs to the Fediverse</desc>
+  
+  <!-- Connection lines (drawn first, so they appear behind nodes) -->
+  <g stroke="currentColor" stroke-width="1.5" opacity="0.6" fill="none">
+    <!-- Top -->
+    <line x1="50" y1="50" x2="50" y2="15" />
+    <!-- Top Right -->
+    <line x1="50" y1="50" x2="80.3" y2="27.5" />
+    <!-- Bottom Right -->
+    <line x1="50" y1="50" x2="80.3" y2="72.5" />
+    <!-- Bottom -->
+    <line x1="50" y1="50" x2="50" y2="85" />
+    <!-- Bottom Left -->
+    <line x1="50" y1="50" x2="19.7" y2="72.5" />
+    <!-- Top Left -->
+    <line x1="50" y1="50" x2="19.7" y2="27.5" />
+  </g>
+  
+  <!-- Outer nodes (satellite instances) -->
+  <g>
+    <!-- Top node -->
+    <circle cx="50" cy="15" r="6" fill="currentColor" opacity="0.8" />
+    
+    <!-- Top Right node -->
+    <circle cx="80.3" cy="27.5" r="6" fill="currentColor" opacity="0.8" />
+    
+    <!-- Bottom Right node -->
+    <circle cx="80.3" cy="72.5" r="6" fill="currentColor" opacity="0.8" />
+    
+    <!-- Bottom node -->
+    <circle cx="50" cy="85" r="6" fill="currentColor" opacity="0.8" />
+    
+    <!-- Bottom Left node -->
+    <circle cx="19.7" cy="72.5" r="6" fill="currentColor" opacity="0.8" />
+    
+    <!-- Top Left node -->
+    <circle cx="19.7" cy="27.5" r="6" fill="currentColor" opacity="0.8" />
+  </g>
+  
+  <!-- Central node (MCP Server) -->
+  <circle cx="50" cy="50" r="12" fill="currentColor" stroke="currentColor" stroke-width="2" />
+  
+  <!-- Inner highlight for depth -->
+  <circle cx="50" cy="50" r="8" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3" />
+</svg>
+

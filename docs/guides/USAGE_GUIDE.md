@@ -103,6 +103,8 @@ npm run test:integration  # Integration tests
 
 ## 📚 MCP Resources
 
+Resources provide **read-only** access to fediverse data from remote ActivityPub servers.
+
 ### Server Information
 Get comprehensive server details and capabilities:
 
@@ -113,135 +115,279 @@ const serverInfo = await client.readResource({
 ```
 
 **Response includes:**
-- Server name, version, and base URL
-- Available capabilities and protocols
+- Server name, version, and description
+- Available resources and tools
 - Configuration settings
 - Current operational status
 
-### Actor Information
-Retrieve detailed actor/user information:
+### Remote Actor Information
+Discover and retrieve information about any actor in the fediverse:
 
 ```typescript
 const actor = await client.readResource({
-  uri: "activitypub://actor/username"
+  uri: "activitypub://remote-actor/Gargron@mastodon.social"
 });
 ```
 
 **Features:**
-- Validates actor identifiers
+- Discovers actors via WebFinger protocol
 - Returns full ActivityPub actor objects
-- Handles missing actors gracefully
+- Works with any fediverse instance
 - Includes rate limiting protection
 
-### Timeline Access
-Access actor timelines and outboxes:
+**Example identifiers:**
+- `Gargron@mastodon.social`
+- `user@fosstodon.org`
+- `developer@hachyderm.io`
+
+### Remote Timeline Access
+Access any actor's public timeline/outbox:
 
 ```typescript
 const timeline = await client.readResource({
-  uri: "activitypub://timeline/username"
+  uri: "activitypub://remote-timeline/Gargron@mastodon.social"
 });
 ```
 
 **Capabilities:**
-- Fetches real timeline data when available
-- Provides structured placeholder data
-- Supports ActivityStreams format
-- Graceful fallback handling
+- Fetches real timeline data from remote servers
+- Returns ActivityStreams OrderedCollection format
+- Includes recent posts and activities
+- Respects instance privacy settings
+
+### Instance Information
+Get details about any fediverse instance:
+
+```typescript
+const instanceInfo = await client.readResource({
+  uri: "activitypub://instance-info/mastodon.social"
+});
+```
+
+**Returns:**
+- Instance software and version
+- User and post statistics
+- Registration status
+- Instance description and policies
+
+### Remote Followers/Following
+Access social connection lists:
+
+```typescript
+// Get followers
+const followers = await client.readResource({
+  uri: "activitypub://remote-followers/user@example.social"
+});
+
+// Get following
+const following = await client.readResource({
+  uri: "activitypub://remote-following/user@example.social"
+});
+```
 
 ## 🔧 MCP Tools
 
-### Create Actor
-Create new ActivityPub actors with validation:
+Tools enable LLMs to **discover and explore** the fediverse interactively. All tools are **read-only** and designed for content discovery.
+
+### Discover Actor
+Find and get information about any actor in the fediverse:
 
 ```typescript
 const result = await client.callTool({
-  name: "create-actor",
+  name: "discover-actor",
   arguments: {
-    identifier: "alice",           // Required: alphanumeric + _ -
-    name: "Alice Smith",           // Optional: display name
-    summary: "Developer & writer"  // Optional: bio/description
+    identifier: "Gargron@mastodon.social"  // Required: user@domain format
   }
 });
 ```
 
-**Validation Rules:**
-- Identifier: 1-50 chars, alphanumeric + underscore/hyphen only
-- Name: max 100 characters
-- Summary: max 500 characters
-- Checks for existing actors
-- Rate limiting applied
+**Use Cases:**
+- Finding interesting people to follow
+- Discovering community members
+- Researching fediverse personalities
+- Exploring social connections
 
-### Create Post
-Publish new ActivityPub posts:
+### Fetch Timeline
+Retrieve recent posts from any actor's public timeline:
 
 ```typescript
 const result = await client.callTool({
-  name: "create-post",
+  name: "fetch-timeline",
   arguments: {
-    actor: "alice",                                    // Required
-    content: "Hello, Fediverse! 👋",                  // Required: 1-5000 chars
-    to: ["https://www.w3.org/ns/activitystreams#Public"], // Optional
-    cc: ["https://example.com/followers"],             // Optional
-    inReplyTo: "https://example.com/posts/123"         // Optional
+    identifier: "Gargron@mastodon.social",  // Required
+    limit: 20                                // Optional: 1-50, default 20
   }
 });
 ```
 
-### Follow Actor
-Establish following relationships:
+**Use Cases:**
+- Monitoring specific accounts
+- Analyzing posting patterns
+- Discovering content topics
+- Tracking community discussions
+
+### Search Instance
+Search for content on a specific fediverse instance:
 
 ```typescript
 const result = await client.callTool({
-  name: "follow-actor",
+  name: "search-instance",
   arguments: {
-    follower: "alice",                           // Local actor
-    target: "https://mastodon.social/users/bob"  // Remote actor URI
+    domain: "mastodon.social",     // Required
+    query: "typescript",            // Required
+    type: "accounts"                // Optional: accounts|statuses|hashtags
   }
 });
 ```
 
-### Like Post
-Express appreciation for posts:
+**Use Cases:**
+- Finding accounts by topic
+- Discovering relevant content
+- Exploring hashtags
+- Researching communities
+
+### Get Instance Info
+Get detailed information about a fediverse instance:
 
 ```typescript
 const result = await client.callTool({
-  name: "like-post",
+  name: "get-instance-info",
   arguments: {
-    actor: "alice",                        // Actor performing the like
-    postUri: "https://example.com/posts/123" // Post to like
+    domain: "fosstodon.org"  // Required
+  }
+});
+```
+
+**Use Cases:**
+- Comparing instances
+- Understanding community focus
+- Checking registration status
+- Researching instance policies
+
+### Discover Instances
+Find popular fediverse instances by category or topic:
+
+```typescript
+const result = await client.callTool({
+  name: "discover-instances",
+  arguments: {
+    category: "mastodon",        // Optional: mastodon|pleroma|misskey|etc
+    topic: "technology",         // Optional
+    size: "medium",              // Optional: small|medium|large
+    region: "europe",            // Optional
+    beginnerFriendly: true       // Optional
+  }
+});
+```
+
+**Use Cases:**
+- Finding the right instance to join
+- Discovering specialized communities
+- Exploring different fediverse platforms
+- Researching instance options
+
+### Recommend Instances
+Get personalized instance recommendations:
+
+```typescript
+const result = await client.callTool({
+  name: "recommend-instances",
+  arguments: {
+    interests: ["technology", "programming", "open source"]  // Required
+  }
+});
+```
+
+**Use Cases:**
+- Helping users choose an instance
+- Finding communities matching interests
+- Discovering niche instances
+- Personalized recommendations
+
+### Health Check
+Check the MCP server's health status:
+
+```typescript
+const result = await client.callTool({
+  name: "health-check",
+  arguments: {
+    includeMetrics: true  // Optional: include performance metrics
+  }
+});
+```
+
+### Performance Metrics
+Get detailed performance metrics:
+
+```typescript
+const result = await client.callTool({
+  name: "performance-metrics",
+  arguments: {
+    operation: "discover-actor"  // Optional: specific operation
   }
 });
 ```
 
 ## 💬 MCP Prompts
 
-### Compose Post Prompt
-Generate engaging social media content:
+Prompts help LLMs guide users through fediverse exploration.
+
+### Explore Fediverse
+Get guidance on exploring the fediverse:
 
 ```typescript
 const prompt = await client.getPrompt({
-  name: "compose-post",
+  name: "explore-fediverse",
   arguments: {
-    topic: "open source software",     // Required
-    tone: "professional",              // casual|professional|humorous|informative
-    maxLength: 280                     // Optional character limit
+    interests: "technology and programming",  // Required
+    instanceType: "mastodon"                  // Optional
   }
 });
 ```
 
-### Actor Introduction Prompt
-Create welcoming introduction posts:
+**Generated prompt helps with:**
+- Discovering interesting actors
+- Finding relevant instances
+- Exploring communities
+- Getting started in the fediverse
+
+### Compare Instances
+Get help comparing different instances:
 
 ```typescript
 const prompt = await client.getPrompt({
-  name: "actor-introduction",
+  name: "compare-instances",
   arguments: {
-    actorName: "Alice",                           // Required
-    interests: "programming, privacy, art",       // Required
-    background: "Full-stack developer"           // Optional
+    instances: "mastodon.social, fosstodon.org, hachyderm.io",  // Required
+    criteria: "community size and focus"                         // Optional
   }
 });
 ```
+
+**Generated prompt helps with:**
+- Understanding instance differences
+- Choosing the right instance
+- Comparing features and policies
+- Making informed decisions
+
+### Discover Content
+Get recommendations for discovering content:
+
+```typescript
+const prompt = await client.getPrompt({
+  name: "discover-content",
+  arguments: {
+    topics: "artificial intelligence, machine learning",  // Required
+    contentType: "people"                                 // Optional: people|hashtags|instances|all
+  }
+});
+```
+
+**Generated prompt helps with:**
+- Finding relevant accounts
+- Discovering hashtags
+- Exploring topics
+- Building a following list
 
 ## 🔒 Security & Rate Limiting
 
@@ -256,10 +402,17 @@ Protects against abuse with configurable limits:
 ### Input Validation
 Comprehensive validation for all inputs:
 
-- **Actor Identifiers**: Regex validation, length limits
-- **Content**: Length validation, sanitization
-- **URIs**: Format validation
+- **Actor Identifiers**: Format validation (user@domain.com), length limits
+- **Domain Names**: DNS-compliant format validation
+- **Query Strings**: Length validation, sanitization
 - **Error Handling**: Structured error responses with clear messages
+
+**Valid identifier format:**
+```
+user@domain.com
+username@mastodon.social
+developer@fosstodon.org
+```
 
 ### Error Handling
 Robust error handling throughout:
@@ -269,10 +422,14 @@ Robust error handling throughout:
 {
   "error": {
     "code": "InvalidParams",
-    "message": "Actor identifier too long (max 50 characters)"
+    "message": "Invalid actor identifier format. Expected: user@domain.com"
   }
 }
 ```
+
+**Common error codes:**
+- `InvalidParams` - Invalid input parameters
+- `InternalError` - Server-side errors (rate limits, network issues)
 
 ## 🧪 Testing & Development
 
@@ -284,6 +441,7 @@ npm run test:all
 
 # Individual test suites
 npm run test:comprehensive  # Complete functionality tests
+npm run test:fediverse     # Fediverse client tests
 npm run test:integration   # Integration tests
 npm run test               # Basic MCP tests
 ```
@@ -291,9 +449,11 @@ npm run test               # Basic MCP tests
 ### Development Mode
 
 ```bash
-# Start with auto-reload
-npm run dev     # ActivityPub server
-npm run mcp:dev # MCP server with watch mode
+# Start MCP server with auto-reload
+npm run mcp:dev
+
+# Run tests in watch mode
+npm run test -- --watch
 ```
 
 ### Debugging
@@ -315,19 +475,26 @@ tail -f logs/activitypub-mcp.log
 
 #### "Rate limit exceeded"
 - **Cause**: Too many requests from same identifier
-- **Solution**: Wait for rate limit window to reset or increase limits in config
+- **Solution**: Wait for rate limit window to reset (15 minutes) or increase limits in `.env`
 
 #### "Invalid actor identifier"
-- **Cause**: Identifier contains invalid characters or is too long
-- **Solution**: Use only letters, numbers, underscores, and hyphens (max 50 chars)
+- **Cause**: Identifier format is incorrect
+- **Solution**: Use format `user@domain.com` (e.g., `Gargron@mastodon.social`)
 
 #### "Actor not found"
-- **Cause**: Requested actor doesn't exist on the server
-- **Solution**: Create the actor first or verify the identifier
+- **Cause**: Actor doesn't exist on the remote server or server is unreachable
+- **Solution**: Verify the identifier is correct and the instance is online
 
-#### "Connection refused"
-- **Cause**: ActivityPub server not running
-- **Solution**: Start the server with `npm run dev`
+#### "Failed to fetch remote actor"
+- **Cause**: Network issues, instance down, or WebFinger not configured
+- **Solution**:
+  - Check if the instance is accessible in a browser
+  - Verify the actor exists on that instance
+  - Try a different instance
+
+#### "Connection timeout"
+- **Cause**: Remote server is slow or unreachable
+- **Solution**: Increase `REQUEST_TIMEOUT` in config or try again later
 
 ### Cross-Platform Issues
 

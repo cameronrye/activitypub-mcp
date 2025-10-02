@@ -1,5 +1,7 @@
 # ActivityPub MCP Server - Fediverse Client
 
+![ActivityPub MCP Logo](public/logo.svg)
+
 A comprehensive **Model Context Protocol (MCP)** server that enables LLMs like Claude to **explore and interact with the existing Fediverse** through standardized MCP tools, resources, and prompts.
 
 <!-- Trigger CI -->
@@ -567,4 +569,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ for the decentralized web and AI integration**
+Made with ❤️ by [Cameron Rye](https://rye.dev/)
