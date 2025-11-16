@@ -5,6 +5,10 @@ on:
     branches: [ master ]
     paths: [ 'package.json' ]
 
+# Add permissions for GitHub token
+permissions:
+  contents: write
+
 jobs:
   check-version:
     name: Check Version and Create Release
