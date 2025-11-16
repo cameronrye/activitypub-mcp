@@ -33,27 +33,27 @@
   },
   "homepage": "https://github.com/cameronrye/activitypub-mcp#readme",
   "dependencies": {
-    "@astrojs/check": "^0.9.4",
-    "@astrojs/mdx": "^4.3.6",
-    "@astrojs/rss": "^4.0.12",
-    "@astrojs/sitemap": "^3.6.0",
-    "@dotenvx/dotenvx": "^1.50.1",
     "@logtape/logtape": "^1.1.1",
     "@modelcontextprotocol/sdk": "^1.18.1",
-    "astro": "^5.13.10",
-    "sass": "^1.93.1",
     "tsx": "^4.20.5",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.5",
+    "@astrojs/mdx": "^4.3.10",
+    "@astrojs/rss": "^4.0.13",
+    "@astrojs/sitemap": "^3.6.0",
     "@biomejs/biome": "^2.2.4",
+    "@dotenvx/dotenvx": "^1.51.1",
     "@types/node": "^24.5.2",
+    "astro": "^5.15.8",
     "c8": "^10.1.3",
     "cross-env": "^10.0.0",
     "jsdom": "^27.0.0",
     "npm-run-all2": "^8.0.4",
     "pagefind": "^1.4.0",
     "rimraf": "^6.0.1",
+    "sass": "^1.94.0",
     "typescript": "^5.9.2"
   },
   "scripts": {
@@ -78,6 +78,7 @@
     "lint": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" biome check .",
     "lint:fix": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" biome check --write .",
     "validate:biome": "node scripts/validate-biome-config.js",
+    "validate:version": "node scripts/check-version.js",
     "precommit": "npm run validate:biome && npm run lint",
     "format": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" biome format --write .",
     "format:check": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" biome ci .",
@@ -91,11 +92,11 @@
     "install:shell:windows": "powershell -ExecutionPolicy Bypass -File scripts/install.ps1",
     "uninstall": "node scripts/install.js uninstall",
     "build": "tsc",
-    "build:site": "astro build && npx pagefind --site dist && node scripts/generate-search-data.js",
+    "build:site": "astro build && npx pagefind --site dist-site && node scripts/generate-search-data.js",
     "dev:site": "astro dev",
     "preview:site": "astro preview",
     "generate:og-image": "node scripts/generate-og-image.js",
     "clean": "rimraf dist",
-    "prepublishOnly": "run-s clean build"
+    "prepublishOnly": "run-s clean validate:version build"
   }
 }

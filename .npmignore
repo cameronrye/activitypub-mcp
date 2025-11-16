@@ -5,6 +5,19 @@ tests/
 scripts/
 docs/
 
+# Documentation site build output
+dist-site/
+public/
+
+# Astro build artifacts
+.astro/
+
+# Site-specific files (not needed for MCP server)
+dist/site-config.*
+debug-validation.ts
+link-validation-audit.js
+setup-branch-protection.json
+
 # Build and development artifacts
 *.log
 *.tgz
@@ -41,6 +54,7 @@ tsconfig.json
 biome.json
 .eslintrc*
 .prettierrc*
+astro.config.mjs
 
 # Documentation (keep README.md and LICENSE)
 CONTRIBUTING.md

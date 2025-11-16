@@ -14,6 +14,7 @@ export default defineConfig({
     },
   },
 
+  outDir: "./dist-site",
   build: {
     assets: "assets",
   },
