@@ -1,0 +1,28 @@
+# robots.txt for ActivityPub MCP Server
+# https://cameronrye.github.io/activitypub-mcp/
+
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://cameronrye.github.io/activitypub-mcp/sitemap-index.xml
+
+# Crawl-delay for polite bots
+Crawl-delay: 1
+
+# Disallow search result pages if any
+Disallow: /search?
+
+# Allow all documentation
+Allow: /docs/
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+# Well-known URIs
+Allow: /.well-known/
+
+# Assets
+Allow: /assets/
+Allow: /scripts/
+Allow: /styles/
+

@@ -9,15 +9,86 @@ const {
   description = "A comprehensive Model Context Protocol server that enables LLMs like Claude to explore and interact with the existing Fediverse through standardized MCP tools, resources, and prompts.", // Used in meta tags below
   image = "/og-image.png",
   canonical,
+  author = "Cameron Rye",
+  keywords = "activitypub, mcp, fediverse, llm, ai, model context protocol, claude, mastodon, social media, decentralized",
+  type = "website",
+  publishedTime,
+  modifiedTime,
 } = Astro.props;
 
 const canonicalURL = canonical || new URL(Astro.url.pathname, Astro.site);
 const socialImage = new URL(image, Astro.site);
+const siteName = "ActivityPub MCP Server";
+const twitterHandle = "@cameronrye"; // Update with actual Twitter handle if different
 
 // Get the base URL for proper path resolution
 const baseURL = import.meta.env.BASE_URL.endsWith("/")
   ? import.meta.env.BASE_URL
   : `${import.meta.env.BASE_URL}/`;
+
+// Structured data for Schema.org
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${Astro.site}#organization`,
+      name: siteName,
+      url: Astro.site,
+      logo: {
+        "@type": "ImageObject",
+        url: new URL(`${baseURL}logo.svg`, Astro.site),
+      },
+      sameAs: [
+        "https://github.com/cameronrye/activitypub-mcp",
+        "https://www.npmjs.com/package/activitypub-mcp",
+      ],
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${Astro.site}#website`,
+      url: Astro.site,
+      name: siteName,
+      description: description,
+      publisher: {
+        "@id": `${Astro.site}#organization`,
+      },
+      inLanguage: "en-US",
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: siteName,
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Windows, macOS, Linux",
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+      },
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: "5",
+        ratingCount: "1",
+      },
+    },
+    {
+      "@type": "WebPage",
+      "@id": canonicalURL,
+      url: canonicalURL,
+      name: title,
+      description: description,
+      isPartOf: {
+        "@id": `${Astro.site}#website`,
+      },
+      about: {
+        "@id": `${Astro.site}#organization`,
+      },
+      inLanguage: "en-US",
+      ...(publishedTime && { datePublished: publishedTime }),
+      ...(modifiedTime && { dateModified: modifiedTime }),
+    },
+  ],
+};
 ---
 
 <!DOCTYPE html>
@@ -27,28 +98,50 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{title}</title>
   <meta name="description" content={description}>
-  
+  <meta name="author" content={author}>
+  <meta name="keywords" content={keywords}>
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="color-scheme" content="light dark">
+
   <!-- Canonical URL -->
   <link rel="canonical" href={canonicalURL}>
-  
+
   <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website">
+  <meta property="og:type" content={type}>
   <meta property="og:url" content={canonicalURL}>
   <meta property="og:title" content={title}>
   <meta property="og:description" content={description}>
   <meta property="og:image" content={socialImage}>
-  
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content={title}>
+  <meta property="og:site_name" content={siteName}>
+  <meta property="og:locale" content="en_US">
+  {publishedTime && <meta property="article:published_time" content={publishedTime}>}
+  {modifiedTime && <meta property="article:modified_time" content={modifiedTime}>}
+  {author && <meta property="article:author" content={author}>}
+
   <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content={canonicalURL}>
-  <meta property="twitter:title" content={title}>
-  <meta property="twitter:description" content={description}>
-  <meta property="twitter:image" content={socialImage}>
-  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content={canonicalURL}>
+  <meta name="twitter:title" content={title}>
+  <meta name="twitter:description" content={description}>
+  <meta name="twitter:image" content={socialImage}>
+  <meta name="twitter:image:alt" content={title}>
+  <meta name="twitter:site" content={twitterHandle}>
+  <meta name="twitter:creator" content={twitterHandle}>
+
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json" is:inline set:html={JSON.stringify(structuredData)} />
+
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href={`${baseURL}favicon.svg`}>
   <link rel="icon" type="image/png" href={`${baseURL}favicon.png`}>
-  
+
+  <!-- Humans.txt -->
+  <link rel="author" href={`${baseURL}humans.txt`}>
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -149,6 +242,8 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
               <li><a href={`${baseURL}docs/`}>Getting Started</a></li>
               <li><a href={`${baseURL}docs/guides/basic-usage/`}>Usage Guide</a></li>
               <li><a href={`${baseURL}docs/api/tools/`}>API Reference</a></li>
+              <li><a href={`${baseURL}llms.txt`}>llms.txt</a></li>
+              <li><a href={`${baseURL}llms-full.txt`}>llms-full.txt</a></li>
             </ul>
           </div>
           

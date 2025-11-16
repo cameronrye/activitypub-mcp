@@ -1,0 +1,1111 @@
+# ActivityPub MCP Server - Complete Documentation
+
+> A comprehensive Model Context Protocol (MCP) server that enables LLMs like Claude to explore and interact with the existing Fediverse through standardized MCP tools, resources, and prompts. Built with TypeScript and designed specifically for LLM integration patterns.
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Quick Start](#quick-start)
+3. [Installation](#installation)
+4. [Configuration](#configuration)
+5. [API Reference](#api-reference)
+6. [Usage Guide](#usage-guide)
+7. [Examples](#examples)
+8. [Development](#development)
+9. [Specifications](#specifications)
+10. [Troubleshooting](#troubleshooting)
+
+---
+
+## Overview
+
+The ActivityPub MCP Server is a Fediverse client that allows AI assistants to discover actors, fetch timelines, explore instances, and search content across the decentralized social web. It implements the complete MCP specification with resources for data access, tools for interaction, and prompts for guided exploration.
+
+### Key Features
+
+- **Fediverse Integration**: Connect to any ActivityPub server (Mastodon, Pleroma, Misskey, etc.)
+- **WebFinger Discovery**: Find and resolve actors across the network
+- **MCP Protocol**: Full implementation with resources, tools, and prompts
+- **TypeScript Implementation**: Modern, type-safe codebase with ESM support
+- **Cross-Platform Support**: Works on Windows, macOS, and Linux
+- **LLM-Optimized**: Designed for efficient AI assistant interaction
+- **Security**: Built-in security scanning and dependency auditing
+- **Performance Monitoring**: Comprehensive logging and metrics
+- **Testing**: Extensive test coverage with multiple test suites
+
+### Architecture
+
+The server acts as a bridge between LLMs and the Fediverse:
+- **MCP Server**: Implements the Model Context Protocol specification
+- **ActivityPub Client**: Connects to existing Fediverse instances
+- **WebFinger Resolver**: Discovers actors across federated servers
+- **Resource Manager**: Provides read-only access to remote data
+- **Tool System**: Interactive operations for discovery and exploration
+- **Prompt Templates**: Guided workflows for common tasks
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 18.0.0 or higher
+- npm or yarn package manager
+- Internet connectivity for federation
+
+### Installation
+
+```bash
+# Install via npm
+npm install -g activitypub-mcp
+
+# Or install locally
+npm install activitypub-mcp
+
+# Verify installation
+activitypub-mcp --version
+```
+
+### Basic Usage
+
+```bash
+# Start the MCP server
+npx activitypub-mcp
+
+# Or if installed globally
+activitypub-mcp
+```
+
+### Claude Desktop Integration
+
+Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"]
+    }
+  }
+}
+```
+
+---
+
+## Installation
+
+### Platform-Specific Installation
+
+#### macOS / Linux
+
+```bash
+# Using npm
+npm install -g activitypub-mcp
+
+# Using the installation script
+curl -fsSL https://raw.githubusercontent.com/cameronrye/activitypub-mcp/master/scripts/install.sh | bash
+
+# Or clone and build from source
+git clone https://github.com/cameronrye/activitypub-mcp.git
+cd activitypub-mcp
+npm install
+npm run build
+```
+
+#### Windows
+
+```powershell
+# Using npm
+npm install -g activitypub-mcp
+
+# Using the installation script
+iwr -useb https://raw.githubusercontent.com/cameronrye/activitypub-mcp/master/scripts/install.ps1 | iex
+
+# Or clone and build from source
+git clone https://github.com/cameronrye/activitypub-mcp.git
+cd activitypub-mcp
+npm install
+npm run build
+```
+
+### Development Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/cameronrye/activitypub-mcp.git
+cd activitypub-mcp
+
+# Install dependencies
+npm install
+
+# Run setup script
+npm run setup
+
+# Build the project
+npm run build
+
+# Run tests
+npm run test:all
+```
+
+---
+
+## Configuration
+
+### Environment Variables
+
+Create a `.env` file in your project root or set these environment variables:
+
+```bash
+# Logging Configuration
+LOG_LEVEL=info              # Options: debug, info, warn, error
+DEBUG=false                 # Enable debug mode
+
+# Cache Configuration
+CACHE_TTL=3600             # Cache time-to-live in seconds (default: 1 hour)
+CACHE_MAX_SIZE=100         # Maximum cache entries
+
+# Network Configuration
+REQUEST_TIMEOUT=30000      # Request timeout in milliseconds
+MAX_RETRIES=3              # Maximum retry attempts for failed requests
+
+# Performance Configuration
+ENABLE_PERFORMANCE_MONITORING=true  # Enable performance metrics
+PERFORMANCE_LOG_INTERVAL=60000      # Log interval in milliseconds
+```
+
+### Configuration Files
+
+The server uses the following configuration files:
+
+- `.env` - Environment variables
+- `package.json` - Project metadata and dependencies
+- `tsconfig.json` - TypeScript compiler options
+- `biome.json` - Code formatting and linting rules
+
+### MCP Server Configuration
+
+When integrating with MCP clients like Claude Desktop, configure the server in the client's configuration file:
+
+**Claude Desktop (macOS):**
+`~/Library/Application Support/Claude/claude_desktop_config.json`
+
+**Claude Desktop (Windows):**
+`%APPDATA%\Claude\claude_desktop_config.json`
+
+**Configuration Example:**
+```json
+{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "info",
+        "CACHE_TTL": "3600"
+      }
+    }
+  }
+}
+```
+
+---
+
+## API Reference
+
+### MCP Resources
+
+Resources provide read-only access to remote ActivityPub data.
+
+#### remote-actor
+
+Access actor information from the Fediverse.
+
+**URI Format:** `activitypub://remote-actor/{handle}`
+
+**Parameters:**
+- `handle` (required): Actor handle in format `@username@domain.com`
+
+**Example:**
+```
+activitypub://remote-actor/@gargron@mastodon.social
+```
+
+**Response:**
+```json
+{
+  "id": "https://mastodon.social/users/gargron",
+  "type": "Person",
+  "preferredUsername": "gargron",
+  "name": "Eugen Rochko",
+  "summary": "Founder and CEO of Mastodon",
+  "url": "https://mastodon.social/@gargron",
+  "inbox": "https://mastodon.social/users/gargron/inbox",
+  "outbox": "https://mastodon.social/users/gargron/outbox",
+  "followers": "https://mastodon.social/users/gargron/followers",
+  "following": "https://mastodon.social/users/gargron/following"
+}
+```
+
+#### remote-timeline
+
+Fetch an actor's timeline/outbox.
+
+**URI Format:** `activitypub://remote-timeline/{handle}`
+
+**Parameters:**
+- `handle` (required): Actor handle in format `@username@domain.com`
+
+**Example:**
+```
+activitypub://remote-timeline/@gargron@mastodon.social
+```
+
+**Response:**
+```json
+{
+  "type": "OrderedCollection",
+  "totalItems": 1234,
+  "orderedItems": [
+    {
+      "type": "Create",
+      "actor": "https://mastodon.social/users/gargron",
+      "object": {
+        "type": "Note",
+        "content": "Hello Fediverse!",
+        "published": "2024-01-15T12:00:00Z"
+      }
+    }
+  ]
+}
+```
+
+#### instance-info
+
+Get information about a Fediverse instance.
+
+**URI Format:** `activitypub://instance-info/{domain}`
+
+**Parameters:**
+- `domain` (required): Instance domain (e.g., `mastodon.social`)
+
+**Example:**
+```
+activitypub://instance-info/mastodon.social
+```
+
+**Response:**
+```json
+{
+  "uri": "mastodon.social",
+  "title": "Mastodon",
+  "description": "The original server operated by the Mastodon gGmbH non-profit",
+  "version": "4.2.0",
+  "stats": {
+    "user_count": 500000,
+    "status_count": 50000000,
+    "domain_count": 10000
+  }
+}
+```
+
+### MCP Tools
+
+Tools provide interactive operations for discovery and exploration.
+
+#### discover-actor
+
+Discover an actor using WebFinger protocol.
+
+**Parameters:**
+- `handle` (required): Actor handle in format `@username@domain.com` or `username@domain.com`
+
+**Example:**
+```json
+{
+  "handle": "@gargron@mastodon.social"
+}
+```
+
+**Response:**
+```json
+{
+  "subject": "acct:gargron@mastodon.social",
+  "links": [
+    {
+      "rel": "self",
+      "type": "application/activity+json",
+      "href": "https://mastodon.social/users/gargron"
+    }
+  ]
+}
+```
+
+#### fetch-timeline
+
+Fetch an actor's public timeline.
+
+**Parameters:**
+- `handle` (required): Actor handle
+- `limit` (optional): Number of items to fetch (default: 20, max: 100)
+
+**Example:**
+```json
+{
+  "handle": "@gargron@mastodon.social",
+  "limit": 10
+}
+```
+
+#### search-fediverse
+
+Search for content across the Fediverse.
+
+**Parameters:**
+- `query` (required): Search query
+- `type` (optional): Type of content to search (`accounts`, `statuses`, `hashtags`)
+- `limit` (optional): Number of results (default: 20, max: 100)
+
+**Example:**
+```json
+{
+  "query": "activitypub",
+  "type": "statuses",
+  "limit": 20
+}
+```
+
+#### explore-instance
+
+Explore a Fediverse instance.
+
+**Parameters:**
+- `domain` (required): Instance domain
+- `include_stats` (optional): Include instance statistics (default: true)
+
+**Example:**
+```json
+{
+  "domain": "mastodon.social",
+  "include_stats": true
+}
+```
+
+### MCP Prompts
+
+Prompts provide guided workflows for common tasks.
+
+#### fediverse-discovery
+
+Guided workflow for discovering actors and content.
+
+**Variables:**
+- `topic` (optional): Topic of interest
+- `instance` (optional): Specific instance to explore
+
+**Example:**
+```json
+{
+  "topic": "open source",
+  "instance": "fosstodon.org"
+}
+```
+
+#### actor-analysis
+
+Analyze an actor's profile and activity.
+
+**Variables:**
+- `handle` (required): Actor handle to analyze
+
+**Example:**
+```json
+{
+  "handle": "@gargron@mastodon.social"
+}
+```
+
+---
+
+## Usage Guide
+
+### Basic Operations
+
+#### Discovering Actors
+
+Use the `discover-actor` tool to find actors across the Fediverse:
+
+```typescript
+// Using MCP client
+const result = await client.callTool("discover-actor", {
+  handle: "@username@instance.com"
+});
+```
+
+#### Fetching Timelines
+
+Retrieve an actor's public posts:
+
+```typescript
+const timeline = await client.callTool("fetch-timeline", {
+  handle: "@username@instance.com",
+  limit: 20
+});
+```
+
+#### Searching Content
+
+Search for posts, accounts, or hashtags:
+
+```typescript
+const results = await client.callTool("search-fediverse", {
+  query: "activitypub",
+  type: "statuses",
+  limit: 10
+});
+```
+
+### Advanced Usage
+
+#### Error Handling
+
+All MCP operations return structured error responses:
+
+```typescript
+try {
+  const result = await client.callTool("discover-actor", {
+    handle: "@invalid@nonexistent.com"
+  });
+} catch (error) {
+  if (error.code === "InvalidParams") {
+    console.error("Invalid parameters:", error.message);
+  } else if (error.code === "InternalError") {
+    console.error("Server error:", error.message);
+  }
+}
+```
+
+**Common Error Codes:**
+- `InvalidParams` - Invalid input parameters
+- `InternalError` - Server-side errors (rate limits, network issues)
+- `NotFound` - Resource not found
+- `Timeout` - Request timeout
+
+#### Caching
+
+The server implements intelligent caching to reduce network requests:
+
+- Actor profiles: 1 hour TTL
+- Timelines: 5 minutes TTL
+- Instance info: 24 hours TTL
+- WebFinger results: 1 hour TTL
+
+Configure cache behavior via environment variables:
+
+```bash
+CACHE_TTL=3600          # Default TTL in seconds
+CACHE_MAX_SIZE=100      # Maximum cache entries
+```
+
+#### Rate Limiting
+
+The server respects instance rate limits and implements exponential backoff:
+
+- Initial retry delay: 1 second
+- Maximum retry delay: 30 seconds
+- Maximum retries: 3 attempts
+
+---
+
+## Examples
+
+### Example 1: Discover and Analyze an Actor
+
+```typescript
+// Step 1: Discover the actor
+const discovery = await client.callTool("discover-actor", {
+  handle: "@gargron@mastodon.social"
+});
+
+// Step 2: Fetch actor profile
+const actor = await client.readResource(
+  "activitypub://remote-actor/@gargron@mastodon.social"
+);
+
+// Step 3: Fetch recent posts
+const timeline = await client.callTool("fetch-timeline", {
+  handle: "@gargron@mastodon.social",
+  limit: 10
+});
+
+console.log(`Actor: ${actor.name}`);
+console.log(`Posts: ${timeline.orderedItems.length}`);
+```
+
+### Example 2: Search for Content
+
+```typescript
+// Search for posts about a topic
+const posts = await client.callTool("search-fediverse", {
+  query: "activitypub protocol",
+  type: "statuses",
+  limit: 20
+});
+
+// Search for accounts
+const accounts = await client.callTool("search-fediverse", {
+  query: "developer",
+  type: "accounts",
+  limit: 10
+});
+
+// Search for hashtags
+const hashtags = await client.callTool("search-fediverse", {
+  query: "opensource",
+  type: "hashtags",
+  limit: 5
+});
+```
+
+### Example 3: Explore an Instance
+
+```typescript
+// Get instance information
+const instance = await client.readResource(
+  "activitypub://instance-info/mastodon.social"
+);
+
+console.log(`Instance: ${instance.title}`);
+console.log(`Users: ${instance.stats.user_count}`);
+console.log(`Posts: ${instance.stats.status_count}`);
+
+// Explore instance using tool
+const exploration = await client.callTool("explore-instance", {
+  domain: "mastodon.social",
+  include_stats: true
+});
+```
+
+### Example 4: Using Prompts
+
+```typescript
+// Use the fediverse-discovery prompt
+const discovery = await client.getPrompt("fediverse-discovery", {
+  topic: "open source software",
+  instance: "fosstodon.org"
+});
+
+// Use the actor-analysis prompt
+const analysis = await client.getPrompt("actor-analysis", {
+  handle: "@gargron@mastodon.social"
+});
+```
+
+### Example 5: Real-World Scenario
+
+Find popular open source projects on the Fediverse:
+
+```typescript
+// 1. Search for open source content
+const results = await client.callTool("search-fediverse", {
+  query: "open source",
+  type: "statuses",
+  limit: 50
+});
+
+// 2. Extract unique actors
+const actors = new Set(
+  results.statuses.map(status => status.account.acct)
+);
+
+// 3. Analyze each actor
+for (const handle of actors) {
+  const actor = await client.readResource(
+    `activitypub://remote-actor/@${handle}`
+  );
+
+  const timeline = await client.callTool("fetch-timeline", {
+    handle: `@${handle}`,
+    limit: 10
+  });
+
+  console.log(`${actor.name}: ${timeline.orderedItems.length} posts`);
+}
+```
+
+---
+
+## Development
+
+### Project Structure
+
+```
+activitypub-mcp/
+├── src/
+│   ├── mcp-main.ts           # MCP server entry point
+│   ├── mcp-server.ts         # MCP server implementation
+│   ├── remote-client.ts      # ActivityPub client
+│   ├── webfinger.ts          # WebFinger resolver
+│   ├── instance-discovery.ts # Instance discovery
+│   ├── health-check.ts       # Health monitoring
+│   ├── logging.ts            # Logging utilities
+│   ├── performance-monitor.ts # Performance tracking
+│   ├── config.ts             # Configuration
+│   └── validation/           # Input validation
+├── tests/
+│   ├── test-mcp.ts           # MCP server tests
+│   ├── test-integration.ts   # Integration tests
+│   ├── test-comprehensive.ts # Comprehensive tests
+│   └── test-fediverse.ts     # Fediverse client tests
+├── docs/
+│   ├── setup/                # Setup guides
+│   ├── guides/               # Usage guides
+│   ├── development/          # Development docs
+│   └── specifications/       # Protocol specs
+├── scripts/
+│   ├── install.sh            # Unix installation
+│   ├── install.ps1           # Windows installation
+│   └── setup.sh              # Setup script
+└── public/
+    ├── llms.txt              # LLM-friendly summary
+    └── llms-full.txt         # Complete documentation
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+npm run test:all
+
+# Run specific test suites
+npm run test                  # Basic MCP tests
+npm run test:integration      # Integration tests
+npm run test:comprehensive    # Comprehensive tests
+npm run test:fediverse        # Fediverse client tests
+npm run test:errors           # Error scenario tests
+npm run test:edge             # Edge case tests
+
+# Run with coverage
+npm run test:coverage
+npm run coverage
+```
+
+### Development Mode
+
+```bash
+# Start MCP server with auto-reload
+npm run mcp:dev
+
+# Run in development mode
+npm run dev
+
+# Run in production mode
+npm run prod
+```
+
+### Code Quality
+
+```bash
+# Lint code
+npm run lint
+
+# Fix linting issues
+npm run lint:fix
+
+# Format code
+npm run format
+
+# Check formatting
+npm run format:check
+
+# Validate Biome configuration
+npm run validate:biome
+```
+
+### Building
+
+```bash
+# Clean build directory
+npm run clean
+
+# Build TypeScript
+npm run build
+
+# Build documentation site
+npm run build:site
+
+# Preview documentation site
+npm run preview:site
+```
+
+### Performance Monitoring
+
+The server includes built-in performance monitoring:
+
+```typescript
+// Enable performance monitoring
+ENABLE_PERFORMANCE_MONITORING=true
+PERFORMANCE_LOG_INTERVAL=60000  // Log every 60 seconds
+```
+
+Metrics tracked:
+- Request latency
+- Cache hit/miss rates
+- Error rates
+- Memory usage
+- Active connections
+
+### Security
+
+Security best practices:
+
+1. **Dependency Auditing**: Run `npm audit` regularly
+2. **Input Validation**: All inputs are validated using Zod schemas
+3. **Rate Limiting**: Respects instance rate limits
+4. **Error Handling**: Comprehensive error handling and logging
+5. **HTTPS**: All external requests use HTTPS
+6. **No Credentials**: Server operates as a read-only client
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a pull request
+
+**Development Guidelines:**
+- Follow TypeScript best practices
+- Add tests for new features
+- Update documentation
+- Use conventional commits
+- Ensure all tests pass
+
+---
+
+## Specifications
+
+### ActivityPub Protocol
+
+ActivityPub is a decentralized social networking protocol based on ActivityStreams 2.0.
+
+**Key Concepts:**
+- **Actors**: Users, bots, or services (Person, Service, Application)
+- **Activities**: Actions performed by actors (Create, Update, Delete, Follow, Like)
+- **Objects**: Content items (Note, Article, Image, Video)
+- **Collections**: Ordered or unordered sets of objects (inbox, outbox, followers, following)
+
+**Core Endpoints:**
+- `GET /users/{username}` - Actor profile
+- `GET /users/{username}/outbox` - Actor's posts
+- `GET /users/{username}/followers` - Actor's followers
+- `GET /users/{username}/following` - Accounts actor follows
+- `POST /users/{username}/inbox` - Receive activities (server-to-server)
+
+**Example Actor Object:**
+```json
+{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Person",
+  "id": "https://mastodon.social/users/gargron",
+  "preferredUsername": "gargron",
+  "name": "Eugen Rochko",
+  "summary": "Founder and CEO of Mastodon",
+  "inbox": "https://mastodon.social/users/gargron/inbox",
+  "outbox": "https://mastodon.social/users/gargron/outbox",
+  "followers": "https://mastodon.social/users/gargron/followers",
+  "following": "https://mastodon.social/users/gargron/following"
+}
+```
+
+### WebFinger Protocol
+
+WebFinger (RFC 7033) enables discovery of information about people and resources identified by URIs.
+
+**Endpoint:** `GET /.well-known/webfinger?resource={uri}`
+
+**Example Request:**
+```
+GET /.well-known/webfinger?resource=acct:gargron@mastodon.social
+```
+
+**Example Response:**
+```json
+{
+  "subject": "acct:gargron@mastodon.social",
+  "aliases": [
+    "https://mastodon.social/@gargron",
+    "https://mastodon.social/users/gargron"
+  ],
+  "links": [
+    {
+      "rel": "self",
+      "type": "application/activity+json",
+      "href": "https://mastodon.social/users/gargron"
+    },
+    {
+      "rel": "http://webfinger.net/rel/profile-page",
+      "type": "text/html",
+      "href": "https://mastodon.social/@gargron"
+    }
+  ]
+}
+```
+
+### ActivityStreams Vocabulary
+
+ActivityStreams 2.0 defines the vocabulary for social activities.
+
+**Core Types:**
+- **Actor Types**: Person, Service, Application, Group, Organization
+- **Activity Types**: Create, Update, Delete, Follow, Like, Announce, Undo
+- **Object Types**: Note, Article, Image, Video, Document, Page
+
+**Example Activity:**
+```json
+{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Create",
+  "actor": "https://mastodon.social/users/gargron",
+  "object": {
+    "type": "Note",
+    "content": "Hello Fediverse!",
+    "published": "2024-01-15T12:00:00Z",
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  }
+}
+```
+
+### Model Context Protocol (MCP)
+
+MCP is a protocol for integrating context providers with LLM applications.
+
+**Core Components:**
+- **Resources**: Read-only data sources (URI-based)
+- **Tools**: Interactive operations (function calls)
+- **Prompts**: Templated workflows (guided interactions)
+
+**Resource URI Format:**
+```
+{protocol}://{resource-type}/{identifier}
+```
+
+**Tool Call Format:**
+```json
+{
+  "name": "tool-name",
+  "arguments": {
+    "param1": "value1",
+    "param2": "value2"
+  }
+}
+```
+
+**Prompt Format:**
+```json
+{
+  "name": "prompt-name",
+  "arguments": {
+    "variable1": "value1",
+    "variable2": "value2"
+  }
+}
+```
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+#### Server Won't Start
+
+**Problem:** Server fails to start or crashes immediately.
+
+**Solutions:**
+1. Check Node.js version: `node --version` (must be 18.0.0+)
+2. Reinstall dependencies: `npm install`
+3. Clear cache: `npm cache clean --force`
+4. Check for port conflicts
+5. Review error logs
+
+#### Actor Discovery Fails
+
+**Problem:** Cannot discover actors using WebFinger.
+
+**Solutions:**
+1. Verify handle format: `@username@domain.com`
+2. Check instance is online and accessible
+3. Verify instance supports WebFinger (`.well-known/webfinger`)
+4. Check network connectivity
+5. Review rate limiting
+
+#### Timeline Fetch Errors
+
+**Problem:** Cannot fetch actor timelines.
+
+**Solutions:**
+1. Verify actor exists and is public
+2. Check instance API is accessible
+3. Verify actor has public posts
+4. Check rate limits
+5. Review cache settings
+
+#### Performance Issues
+
+**Problem:** Slow response times or high memory usage.
+
+**Solutions:**
+1. Adjust cache settings (increase TTL)
+2. Reduce concurrent requests
+3. Enable performance monitoring
+4. Check network latency
+5. Review instance load
+
+#### Integration Issues
+
+**Problem:** MCP client cannot connect to server.
+
+**Solutions:**
+1. Verify server is running
+2. Check client configuration
+3. Review server logs
+4. Verify command path
+5. Check environment variables
+
+### Debug Mode
+
+Enable debug logging for detailed troubleshooting:
+
+```bash
+# Set environment variables
+export LOG_LEVEL=debug
+export DEBUG=true
+
+# Run server
+npm run mcp
+```
+
+### Logging
+
+Logs are written to:
+- Console (stdout/stderr)
+- Log files (if configured)
+
+Log levels:
+- `debug`: Detailed debugging information
+- `info`: General informational messages
+- `warn`: Warning messages
+- `error`: Error messages
+
+### Getting Help
+
+- **Documentation**: https://cameronrye.github.io/activitypub-mcp/
+- **GitHub Issues**: https://github.com/cameronrye/activitypub-mcp/issues
+- **GitHub Discussions**: https://github.com/cameronrye/activitypub-mcp/discussions
+- **npm Package**: https://www.npmjs.com/package/activitypub-mcp
+
+---
+
+## Additional Resources
+
+### Official Specifications
+
+- **ActivityPub**: https://www.w3.org/TR/activitypub/
+- **ActivityStreams 2.0**: https://www.w3.org/TR/activitystreams-core/
+- **WebFinger**: https://tools.ietf.org/html/rfc7033
+- **Model Context Protocol**: https://modelcontextprotocol.io/
+
+### Fediverse Resources
+
+- **Fediverse Info**: https://fediverse.info/
+- **Mastodon Documentation**: https://docs.joinmastodon.org/
+- **Fedify Framework**: https://fedify.dev/
+- **ActivityPub Rocks**: https://activitypub.rocks/
+
+### Development Tools
+
+- **MCP Inspector**: https://github.com/modelcontextprotocol/inspector
+- **ActivityPub Validator**: https://activitypub.rocks/
+- **WebFinger Tester**: https://webfinger.net/
+
+### Community
+
+- **Fediverse Developer Network**: https://fediverse.party/
+- **ActivityPub Community**: https://socialhub.activitypub.rocks/
+- **Mastodon Development**: https://github.com/mastodon/mastodon
+
+---
+
+## Changelog
+
+### Version 1.0.2 (Current)
+
+**Added:**
+- Enhanced error handling and validation
+- Improved caching mechanisms
+- Better performance monitoring
+- Additional test coverage
+
+**Fixed:**
+- WebFinger resolution edge cases
+- Timeline pagination issues
+- Memory leak in cache implementation
+
+**Changed:**
+- Updated dependencies to latest versions
+- Improved documentation
+- Enhanced logging output
+
+### Version 1.0.0
+
+**Initial Release:**
+- Complete MCP server implementation
+- ActivityPub client functionality
+- WebFinger discovery
+- Cross-platform support
+- Comprehensive test suite
+- Full documentation
+
+---
+
+## License
+
+MIT License - See LICENSE file for details
+
+Copyright (c) 2025 ActivityPub MCP Server Contributors
+
+---
+
+## Credits
+
+**Maintainer:** Cameron Rye (https://rye.dev/)
+
+**Built With:**
+- TypeScript
+- Model Context Protocol SDK
+- Fedify (ActivityPub framework)
+- LogTape (Logging)
+- Zod (Validation)
+
+**Special Thanks:**
+- Mastodon community
+- Fediverse developers
+- MCP specification authors
+- All contributors
+
+---
+
+## Contact
+
+- **Website**: https://cameronrye.github.io/activitypub-mcp/
+- **GitHub**: https://github.com/cameronrye/activitypub-mcp
+- **npm**: https://www.npmjs.com/package/activitypub-mcp
+- **Issues**: https://github.com/cameronrye/activitypub-mcp/issues
+
+---
+
+*This documentation is maintained as part of the ActivityPub MCP Server project. For the latest updates, visit the GitHub repository.*
+```
+

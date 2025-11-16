@@ -94,6 +94,7 @@
     "build:site": "astro build && npx pagefind --site dist && node scripts/generate-search-data.js",
     "dev:site": "astro dev",
     "preview:site": "astro preview",
+    "generate:og-image": "node scripts/generate-og-image.js",
     "clean": "rimraf dist",
     "prepublishOnly": "run-s clean build"
   }

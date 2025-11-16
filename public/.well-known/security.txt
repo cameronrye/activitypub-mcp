@@ -1,0 +1,63 @@
+Contact: https://github.com/cameronrye/activitypub-mcp/security/advisories/new
+Contact: mailto:c@meron.io
+Expires: 2026-12-31T23:59:59.000Z
+Preferred-Languages: en
+Canonical: https://cameronrye.github.io/activitypub-mcp/.well-known/security.txt
+Policy: https://github.com/cameronrye/activitypub-mcp/blob/master/SECURITY.md
+Acknowledgments: https://github.com/cameronrye/activitypub-mcp/blob/master/SECURITY.md#acknowledgments
+
+# Security Policy
+
+This file provides security contact information for the ActivityPub MCP Server project.
+
+## Reporting a Vulnerability
+
+If you discover a security vulnerability, please report it through one of the following channels:
+
+1. **GitHub Security Advisories** (Preferred):
+   https://github.com/cameronrye/activitypub-mcp/security/advisories/new
+
+2. **Email**:
+   c@meron.io
+
+Please include:
+- Description of the vulnerability
+- Steps to reproduce
+- Potential impact
+- Suggested fix (if available)
+
+## Response Timeline
+
+- Initial response: Within 48 hours
+- Status update: Within 7 days
+- Fix timeline: Depends on severity
+
+## Supported Versions
+
+We provide security updates for:
+- Latest major version (1.x)
+- Previous major version (if applicable)
+
+## Security Best Practices
+
+When using this software:
+- Keep dependencies up to date
+- Use the latest stable version
+- Follow configuration guidelines
+- Review security advisories regularly
+- Report any suspicious behavior
+
+## Scope
+
+This security policy covers:
+- The ActivityPub MCP Server codebase
+- Official npm package
+- Documentation and examples
+
+Out of scope:
+- Third-party integrations
+- Fediverse instances
+- User-specific configurations
+
+Thank you for helping keep ActivityPub MCP Server secure!
+

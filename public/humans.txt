@@ -1,0 +1,23 @@
+/* TEAM */
+
+Developer: Cameron Rye
+Site: https://rye.dev/
+Location: Earth
+
+/* THANKS */
+
+ActivityPub Community
+Mastodon Developers
+Fediverse Contributors
+MCP Specification Authors
+All Open Source Contributors
+
+/* SITE */
+
+Last update: 2025-11-16
+Language: English
+Standards: HTML5, CSS3, JavaScript ES2022
+Components: Astro, TypeScript, MCP SDK
+Software: ActivityPub MCP Server
+Repository: https://github.com/cameronrye/activitypub-mcp
+
