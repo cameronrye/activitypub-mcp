@@ -17,27 +17,27 @@ const description =
 
     <div class="resources-content">
       <section class="resources-section">
-        <h2>📋 Resource Overview</h2>
-        <p>MCP Resources provide read-only access to structured data maintained by the server. Unlike tools, resources don't perform actions but expose cached information and server state.</p>
-        
+        <h2>Resource Overview</h2>
+        <p>MCP Resources provide read-only access to remote ActivityPub data from any fediverse server. Resources use URI templates to access specific actors, timelines, and instances.</p>
+
         <div class="resource-types">
           <div class="type-card">
             <h3>Server Resources</h3>
-            <p>Information about the server itself, configuration, and status</p>
+            <p>Information about the MCP server itself</p>
           </div>
           <div class="type-card">
-            <h3>Cache Resources</h3>
-            <p>Access to cached actor, instance, and timeline data</p>
+            <h3>Actor Resources</h3>
+            <p>Access to remote actor profiles, timelines, and social graphs</p>
           </div>
           <div class="type-card">
-            <h3>Discovery Resources</h3>
-            <p>Aggregated discovery data and instance directories</p>
+            <h3>Instance Resources</h3>
+            <p>Information about fediverse instances</p>
           </div>
         </div>
       </section>
 
       <section class="resources-section">
-        <h2>🖥️ Server Resources</h2>
+        <h2>Server Resources</h2>
         
         <div class="resource-reference">
           <h3><code>activitypub://server-info</code></h3>
@@ -71,205 +71,243 @@ const description =
           </div>
         </div>
 
-        <div class="resource-reference">
-          <h3><code>activitypub://server-config</code></h3>
-          <p>Exposes current server configuration and environment settings.</p>
-          
-          <div class="resource-details">
-            <div class="resource-content-example">
-              <h4>Content Structure</h4>
-              <p>Returns server configuration including:</p>
-              <ul>
-                <li>Environment details (Node version, platform)</li>
-                <li>Server settings and timeouts</li>
-                <li>Cache configuration</li>
-                <li>Rate limiting settings</li>
-              </ul>
-            </div>
-          </div>
-        </div>
       </section>
 
       <section class="resources-section">
-        <h2>💾 Cache Resources</h2>
-        
+        <h2>Actor Resources</h2>
+
         <div class="resource-reference">
-          <h3><code>activitypub://actor-cache</code></h3>
-          <p>Access to cached actor information and discovery data.</p>
-          
+          <h3><code>activitypub://remote-actor/{"{identifier}"}</code></h3>
+          <p>Retrieve actor information from any fediverse server.</p>
+
           <div class="resource-details">
             <div class="resource-content-example">
+              <h4>URI Template</h4>
+              <p><code>activitypub://remote-actor/{"{identifier}"}</code></p>
+              <p>Replace <code>{"{identifier}"}</code> with the actor identifier (e.g., user@example.social)</p>
+
               <h4>Content Structure</h4>
-              <p>Returns actor cache information including:</p>
+              <p>Returns ActivityPub Actor object including:</p>
               <ul>
-                <li>Cache statistics and hit rates</li>
-                <li>Recently discovered actors</li>
-                <li>Popular instances</li>
-                <li>Cache performance metrics</li>
+                <li>Actor ID and type</li>
+                <li>Display name and username</li>
+                <li>Profile information (bio, avatar, header)</li>
+                <li>Public key for verification</li>
+                <li>Endpoints (inbox, outbox, followers, following)</li>
               </ul>
             </div>
 
             <div class="usage-examples">
               <h4>Usage Examples</h4>
               <div class="example-item">
-                <h5>Cache Analysis</h5>
-                <blockquote>"Show me the most recently discovered actors and their basic information"</blockquote>
-              </div>
-              <div class="example-item">
-                <h5>Performance Monitoring</h5>
-                <blockquote>"What's the cache hit rate for actor lookups?"</blockquote>
+                <h5>Get Actor Profile</h5>
+                <p>URI: <code>activitypub://remote-actor/mastodon@mastodon.social</code></p>
+                <blockquote>"Show me the profile information for mastodon@mastodon.social"</blockquote>
               </div>
             </div>
           </div>
         </div>
 
         <div class="resource-reference">
-          <h3><code>activitypub://instance-cache</code></h3>
-          <p>Cached instance information and metadata.</p>
-          
-          <div class="resource-details">
-            <div class="resource-content-example">
-              <h4>Content Structure</h4>
-              <p>Returns instance cache information including:</p>
-              <ul>
-                <li>Cache statistics and performance</li>
-                <li>Known instance details</li>
-                <li>Instance health status</li>
-                <li>Aggregate statistics</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+          <h3><code>activitypub://remote-timeline/{"{identifier}"}</code></h3>
+          <p>Retrieve actor's timeline/outbox from any fediverse server.</p>
 
-        <div class="resource-reference">
-          <h3><code>activitypub://timeline-cache</code></h3>
-          <p>Recently fetched timeline data and content summaries.</p>
-          
           <div class="resource-details">
             <div class="resource-content-example">
+              <h4>URI Template</h4>
+              <p><code>activitypub://remote-timeline/{"{identifier}"}</code></p>
+              <p>Replace <code>{"{identifier}"}</code> with the actor identifier</p>
+
               <h4>Content Structure</h4>
-              <p>Returns timeline cache information including:</p>
+              <p>Returns ActivityPub OrderedCollection with:</p>
               <ul>
-                <li>Cache statistics and entry counts</li>
-                <li>Recent timeline data</li>
+                <li>Collection metadata (total items, first/last pages)</li>
+                <li>Array of recent activities/posts</li>
+                <li>Post content and metadata</li>
                 <li>Engagement metrics</li>
-                <li>Trending topics</li>
               </ul>
+            </div>
+
+            <div class="usage-examples">
+              <h4>Usage Examples</h4>
+              <div class="example-item">
+                <h5>Get Recent Posts</h5>
+                <p>URI: <code>activitypub://remote-timeline/user@fosstodon.org</code></p>
+                <blockquote>"What are the recent posts from user@fosstodon.org?"</blockquote>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="resource-reference">
+          <h3><code>activitypub://remote-followers/{"{identifier}"}</code></h3>
+          <p>Retrieve followers of an actor from any fediverse server.</p>
+
+          <div class="resource-details">
+            <div class="resource-content-example">
+              <h4>URI Template</h4>
+              <p><code>activitypub://remote-followers/{"{identifier}"}</code></p>
+              <p>Replace <code>{"{identifier}"}</code> with the actor identifier</p>
+
+              <h4>Content Structure</h4>
+              <p>Returns ActivityPub OrderedCollection with:</p>
+              <ul>
+                <li>Total follower count</li>
+                <li>Collection pagination info</li>
+                <li>Follower actor URIs</li>
+              </ul>
+            </div>
+
+            <div class="usage-examples">
+              <h4>Usage Examples</h4>
+              <div class="example-item">
+                <h5>Get Followers</h5>
+                <p>URI: <code>activitypub://remote-followers/admin@mastodon.social</code></p>
+                <blockquote>"How many followers does admin@mastodon.social have?"</blockquote>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="resource-reference">
+          <h3><code>activitypub://remote-following/{"{identifier}"}</code></h3>
+          <p>Retrieve who an actor is following from any fediverse server.</p>
+
+          <div class="resource-details">
+            <div class="resource-content-example">
+              <h4>URI Template</h4>
+              <p><code>activitypub://remote-following/{"{identifier}"}</code></p>
+              <p>Replace <code>{"{identifier}"}</code> with the actor identifier</p>
+
+              <h4>Content Structure</h4>
+              <p>Returns ActivityPub OrderedCollection with:</p>
+              <ul>
+                <li>Total following count</li>
+                <li>Collection pagination info</li>
+                <li>Following actor URIs</li>
+              </ul>
+            </div>
+
+            <div class="usage-examples">
+              <h4>Usage Examples</h4>
+              <div class="example-item">
+                <h5>Get Following</h5>
+                <p>URI: <code>activitypub://remote-following/user@pixelfed.social</code></p>
+                <blockquote>"Who is user@pixelfed.social following?"</blockquote>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       <section class="resources-section">
-        <h2>🔍 Discovery Resources</h2>
-        
-        <div class="resource-reference">
-          <h3><code>activitypub://instance-directory</code></h3>
-          <p>Curated directory of known fediverse instances with categorization.</p>
-          
-          <div class="resource-details">
-            <div class="resource-content-example">
-              <h4>Content Structure</h4>
-              <p>Returns instance directory information including:</p>
-              <ul>
-                <li>Total instance counts by category</li>
-                <li>Featured instances</li>
-                <li>Categorized instance lists</li>
-                <li>Registration and language information</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        <h2>Instance Resources</h2>
 
         <div class="resource-reference">
-          <h3><code>activitypub://discovery-stats</code></h3>
-          <p>Statistics and insights from discovery operations.</p>
-          
+          <h3><code>activitypub://instance-info/{"{domain}"}</code></h3>
+          <p>Get information about any fediverse instance.</p>
+
           <div class="resource-details">
             <div class="resource-content-example">
+              <h4>URI Template</h4>
+              <p><code>activitypub://instance-info/{"{domain}"}</code></p>
+              <p>Replace <code>{"{domain}"}</code> with the instance domain (e.g., mastodon.social)</p>
+
               <h4>Content Structure</h4>
-              <p>Returns discovery statistics including:</p>
+              <p>Returns instance metadata including:</p>
               <ul>
-                <li>Discovery metrics and performance</li>
-                <li>Popular search queries</li>
-                <li>Instance health status</li>
-                <li>Trending instances and topics</li>
+                <li>Instance name and description</li>
+                <li>Software version and type</li>
+                <li>User and post statistics</li>
+                <li>Instance rules and policies</li>
+                <li>Contact information</li>
+                <li>Supported features</li>
               </ul>
+            </div>
+
+            <div class="usage-examples">
+              <h4>Usage Examples</h4>
+              <div class="example-item">
+                <h5>Get Instance Info</h5>
+                <p>URI: <code>activitypub://instance-info/fosstodon.org</code></p>
+                <blockquote>"Tell me about the fosstodon.org instance"</blockquote>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       <section class="resources-section">
-        <h2>🔧 Resource Access Patterns</h2>
-        
+        <h2>Resource Access Patterns</h2>
+
         <div class="access-patterns">
           <div class="pattern-card">
             <h3>Direct Access</h3>
             <p>Access resources directly by URI:</p>
-            <pre><code># Request specific resource
+            <pre><code># Request server information
 GET activitypub://server-info
 
-# Access with parameters
-GET activitypub://actor-cache?limit=10</code></pre>
+# Access actor profile
+GET activitypub://remote-actor/user@mastodon.social</code></pre>
           </div>
 
           <div class="pattern-card">
-            <h3>Filtered Access</h3>
-            <p>Use query parameters to filter resource content:</p>
-            <pre><code># Filter by category
-GET activitypub://instance-directory?category=technology
+            <h3>URI Templates</h3>
+            <p>Use URI templates with parameters:</p>
+            <pre><code># Get actor timeline
+GET activitypub://remote-timeline/admin@fosstodon.org
 
-# Limit results
-GET activitypub://timeline-cache?limit=5&actor=gargron</code></pre>
+# Get instance information
+GET activitypub://instance-info/pixelfed.social</code></pre>
           </div>
 
           <div class="pattern-card">
-            <h3>Aggregated Views</h3>
-            <p>Combine multiple resources for comprehensive views:</p>
-            <blockquote>"Show me a dashboard view with server status, cache performance, and recent discovery activity"</blockquote>
+            <h3>Natural Language Access</h3>
+            <p>Claude can access resources through natural language:</p>
+            <blockquote>"Show me the profile and recent posts from user@mastodon.social"</blockquote>
+            <p>Claude will automatically access the appropriate resources.</p>
           </div>
         </div>
       </section>
 
       <section class="resources-section">
-        <h2>⚡ Performance Considerations</h2>
+        <h2>Performance Considerations</h2>
         
         <div class="performance-info">
           <div class="perf-card">
-            <h3>Caching Behavior</h3>
+            <h3>Remote Data Fetching</h3>
             <ul>
-              <li>Resources are cached for optimal performance</li>
-              <li>Cache TTL varies by resource type</li>
-              <li>Real-time data may have slight delays</li>
-              <li>Use <code>clear-cache</code> tool for fresh data</li>
+              <li>Resources fetch data from remote fediverse servers</li>
+              <li>Response times depend on remote server performance</li>
+              <li>Rate limiting applies to protect remote servers</li>
+              <li>Network errors may occur with unreachable instances</li>
             </ul>
           </div>
 
           <div class="perf-card">
             <h3>Resource Size</h3>
             <ul>
-              <li>Large resources are paginated automatically</li>
-              <li>Use limit parameters to control response size</li>
-              <li>Consider filtering for specific data needs</li>
-              <li>Monitor memory usage with large datasets</li>
+              <li>Timeline and follower collections may be large</li>
+              <li>ActivityPub collections use pagination</li>
+              <li>First page of data is typically returned</li>
+              <li>Use tools for more control over data retrieval</li>
             </ul>
           </div>
 
           <div class="perf-card">
-            <h3>Update Frequency</h3>
+            <h3>Data Freshness</h3>
             <ul>
-              <li>Server resources: Updated in real-time</li>
-              <li>Cache resources: Updated on cache operations</li>
-              <li>Discovery resources: Updated periodically</li>
-              <li>Check lastUpdated timestamps for freshness</li>
+              <li>Server info: Real-time server status</li>
+              <li>Remote resources: Fetched on-demand from remote servers</li>
+              <li>Data reflects current state of remote instances</li>
+              <li>No local caching of remote data in resources</li>
             </ul>
           </div>
         </div>
       </section>
 
       <section class="resources-section">
-        <h2>🔗 Related Documentation</h2>
+        <h2>Related Documentation</h2>
         <div class="related-links">
           <a href="/docs/api/tools/" class="related-link">
             <h3>MCP Tools</h3>

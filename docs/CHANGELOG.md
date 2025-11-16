@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2024-12-21
+## [1.0.0] - 2024-09-20
 
 ### Added
 - Initial release of ActivityPub MCP Server
@@ -40,10 +40,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - zod: ^3.25.76 - Schema validation
 
 ### Development Dependencies
-- @biomejs/biome: ^1.9.4 - Linting and formatting
-- cross-env: ^7.0.3 - Cross-platform environment variables
-- npm-run-all: ^4.1.5 - Script runner
-- rimraf: ^5.0.5 - File cleanup utility
+- @biomejs/biome: ^2.2.4 - Linting and formatting
+- cross-env: ^10.0.0 - Cross-platform environment variables
+- npm-run-all2: ^8.0.4 - Script runner
+- rimraf: ^6.0.1 - File cleanup utility
+- typescript: ^5.9.2 - TypeScript compiler
+- c8: ^10.1.3 - Code coverage
 
 ## [Unreleased]
 

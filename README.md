@@ -35,9 +35,8 @@ A comprehensive **Model Context Protocol (MCP)** server that enables LLMs like C
 - **Resources**: Access remote ActivityPub data (actors, timelines, instance info)
 - **Tools**: Discover and interact with fediverse content
 - **Prompts**: Templates for fediverse exploration and discovery
-- **Completions**: Context-aware argument completion
-- **Sampling**: LLM integration for content discovery
 - **Monitoring**: Built-in logging and performance metrics
+- **Health Checks**: Server health monitoring and diagnostics
 
 ## Quick Start
 
@@ -168,8 +167,8 @@ To use this MCP server with Claude Desktop:
 
 For detailed usage instructions, examples, and troubleshooting, see:
 
-- **[Usage Guide](USAGE_GUIDE.md)** - Comprehensive usage documentation
-- **[Examples](EXAMPLES.md)** - Practical examples and integration patterns
+- **[Usage Guide](docs/guides/USAGE_GUIDE.md)** - Comprehensive usage documentation
+- **[Examples](docs/guides/EXAMPLES.md)** - Practical examples and integration patterns
 - **[API Reference](#api-reference)** - Complete API documentation (below)
 
 ### API Reference
@@ -177,6 +176,32 @@ For detailed usage instructions, examples, and troubleshooting, see:
 ### MCP Resources
 
 Resources provide read-only access to fediverse data from any ActivityPub server. All resources return JSON data unless otherwise specified.
+
+#### Server Info Resource
+
+Get information about the ActivityPub MCP server:
+
+```uri
+activitypub://server-info
+```
+
+**Parameters:**
+- None required
+
+**Example Response:**
+
+```json
+{
+  "name": "activitypub-mcp",
+  "version": "1.0.2",
+  "description": "A Model Context Protocol server for exploring and interacting with the existing Fediverse",
+  "capabilities": {
+    "resources": ["remote-actor", "remote-timeline", "instance-info", "remote-followers", "remote-following"],
+    "tools": ["discover-actor", "fetch-timeline", "search-instance", "get-instance-info", "discover-instances", "recommend-instances", "health-check", "performance-metrics"],
+    "prompts": ["explore-fediverse", "compare-instances", "discover-content"]
+  }
+}
+```
 
 #### Remote Actor Resource
 
@@ -375,6 +400,36 @@ Get personalized instance recommendations based on interests:
 **Parameters:**
 - `interests` (array, required): List of your interests or topics
 
+#### Health Check
+
+Check the health status of the MCP server:
+
+```json
+{
+  "name": "health-check",
+  "arguments": {}
+}
+```
+
+**Parameters:**
+- None required
+
+#### Performance Metrics
+
+Get performance metrics for the MCP server:
+
+```json
+{
+  "name": "performance-metrics",
+  "arguments": {
+    "operation": "discover-actor"
+  }
+}
+```
+
+**Parameters:**
+- `operation` (string, optional): Specific operation to get metrics for
+
 ### MCP Prompts
 
 #### Explore Fediverse
@@ -569,4 +624,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-Made with ❤️ by [Cameron Rye](https://rye.dev/)
+Made by [Cameron Rye](https://rye.dev/)

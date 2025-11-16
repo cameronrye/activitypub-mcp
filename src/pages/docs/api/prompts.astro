@@ -17,29 +17,130 @@ const description =
 
     <div class="prompts-content">
       <section class="prompts-section">
-        <h2>📋 Prompt Categories</h2>
-        <div class="category-grid">
-          <div class="category-card">
-            <h3>🔍 Discovery Prompts</h3>
-            <p>Find actors, instances, and communities</p>
+        <h2>Registered MCP Prompts</h2>
+        <p>The ActivityPub MCP Server provides three registered prompts that can be invoked directly through the MCP protocol:</p>
+
+        <div class="prompt-card">
+          <h3><code>explore-fediverse</code></h3>
+          <div class="prompt-content">
+            <h4>Description</h4>
+            <p>Get guidance on exploring and discovering content in the fediverse.</p>
+
+            <h4>Parameters</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Required</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>interests</code></td>
+                  <td>string</td>
+                  <td>Yes</td>
+                  <td>Your interests or topics you want to explore</td>
+                </tr>
+                <tr>
+                  <td><code>instanceType</code></td>
+                  <td>enum</td>
+                  <td>No</td>
+                  <td>Preferred type of fediverse instance: "mastodon", "pleroma", "misskey", "pixelfed", "peertube", or "any"</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h4>Example Usage</h4>
+            <div class="prompt-examples">
+              <blockquote>"I'm interested in exploring the fediverse, particularly content related to: open source software and privacy. I prefer mastodon instances. Can you help me discover interesting actors, instances, and communities to follow?"</blockquote>
+            </div>
           </div>
-          <div class="category-card">
-            <h3>📊 Analysis Prompts</h3>
-            <p>Analyze content, trends, and engagement</p>
+        </div>
+
+        <div class="prompt-card">
+          <h3><code>compare-instances</code></h3>
+          <div class="prompt-content">
+            <h4>Description</h4>
+            <p>Get help comparing different fediverse instances.</p>
+
+            <h4>Parameters</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Required</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>instances</code></td>
+                  <td>string</td>
+                  <td>Yes</td>
+                  <td>Comma-separated list of instance domains to compare</td>
+                </tr>
+                <tr>
+                  <td><code>criteria</code></td>
+                  <td>string</td>
+                  <td>No</td>
+                  <td>Specific criteria for comparison (e.g., size, rules, features)</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h4>Example Usage</h4>
+            <div class="prompt-examples">
+              <blockquote>"Please help me compare these fediverse instances: mastodon.social, fosstodon.org, pixelfed.social. I'm particularly interested in: community size, moderation policies, and technical features."</blockquote>
+            </div>
           </div>
-          <div class="category-card">
-            <h3>🔬 Research Prompts</h3>
-            <p>Academic and professional research workflows</p>
-          </div>
-          <div class="category-card">
-            <h3>📈 Monitoring Prompts</h3>
-            <p>Track changes and monitor activity</p>
+        </div>
+
+        <div class="prompt-card">
+          <h3><code>discover-content</code></h3>
+          <div class="prompt-content">
+            <h4>Description</h4>
+            <p>Get recommendations for discovering interesting content and people.</p>
+
+            <h4>Parameters</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Required</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>topics</code></td>
+                  <td>string</td>
+                  <td>Yes</td>
+                  <td>Comma-separated topics or subjects you want to explore</td>
+                </tr>
+                <tr>
+                  <td><code>contentType</code></td>
+                  <td>enum</td>
+                  <td>No</td>
+                  <td>Type of content to discover: "people", "hashtags", "instances", or "all" (default: "all")</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h4>Example Usage</h4>
+            <div class="prompt-examples">
+              <blockquote>"I want to discover people related to 'photography, nature, wildlife' in the fediverse. Can you suggest specific accounts to follow that would be interesting for someone interested in photography, nature, wildlife?"</blockquote>
+            </div>
           </div>
         </div>
       </section>
 
       <section class="prompts-section">
-        <h2>🔍 Discovery Prompts</h2>
+        <h2>Prompt Pattern Examples</h2>
+        <p>Below are example prompt patterns you can use with Claude when the ActivityPub MCP Server is connected. These demonstrate effective ways to interact with the fediverse through natural language.</p>
         
         <div class="prompt-card">
           <h3>Community Discovery</h3>
@@ -124,7 +225,7 @@ const description =
       </section>
 
       <section class="prompts-section">
-        <h2>📊 Analysis Prompts</h2>
+        <h2>Analysis Prompts</h2>
         
         <div class="prompt-card">
           <h3>Trend Analysis</h3>
@@ -174,7 +275,7 @@ const description =
       </section>
 
       <section class="prompts-section">
-        <h2>🔬 Research Prompts</h2>
+        <h2>Research Prompts</h2>
         
         <div class="prompt-card">
           <h3>Academic Research</h3>
@@ -224,7 +325,7 @@ const description =
       </section>
 
       <section class="prompts-section">
-        <h2>📈 Monitoring Prompts</h2>
+        <h2>Monitoring Prompts</h2>
         
         <div class="prompt-card">
           <h3>Brand Monitoring</h3>
@@ -264,7 +365,7 @@ const description =
       </section>
 
       <section class="prompts-section">
-        <h2>🛠️ Custom Prompt Building</h2>
+        <h2>Custom Prompt Building</h2>
         
         <div class="prompt-building">
           <div class="building-card">
@@ -364,7 +465,7 @@ const description =
       </section>
 
       <section class="prompts-section">
-        <h2>🔗 Related Documentation</h2>
+        <h2>Related Documentation</h2>
         <div class="related-links">
           <a href="/docs/api/tools/" class="related-link">
             <h3>MCP Tools</h3>

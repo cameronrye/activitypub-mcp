@@ -5,14 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.2] - 2025-09-24
+## [1.0.2] - 2024-09-24
 
 ### Fixed
 - Fixed GitHub token permissions for automated release creation
 - Resolved 403 "Resource not accessible by integration" error
 - GitHub releases now create automatically when tags are pushed
 
-## [1.0.1] - 2025-09-24
+## [1.0.1] - 2024-09-24
 
 ### Added
 - Automated CI/CD pipeline with GitHub Actions
@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added license compliance checking
 - Enhanced input validation and sanitization
 
-## [1.0.0] - 2025-09-20
+## [1.0.0] - 2024-09-20
 
 ### Added
 - Initial release of ActivityPub MCP Server

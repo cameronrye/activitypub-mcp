@@ -23,7 +23,7 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
 
       <div class="tools-content">
         <section class="tools-section">
-          <h2>🔍 Discovery Tools</h2>
+          <h2>Discovery Tools</h2>
           <p>Tools for discovering actors, instances, and content across the fediverse.</p>
 
           <div class="tool-reference">
@@ -81,8 +81,8 @@ discover-actor https://mastodon.social/@mastodon</code></pre>
 
           <div class="tool-reference">
             <h3><code>discover-instances</code></h3>
-            <p>Find fediverse instances by category, topic, or search criteria.</p>
-            
+            <p>Discover popular fediverse instances by category, topic, or size.</p>
+
             <div class="tool-details">
               <div class="parameters">
                 <h4>Parameters</h4>
@@ -97,16 +97,34 @@ discover-actor https://mastodon.social/@mastodon</code></pre>
                   </thead>
                   <tbody>
                     <tr>
-                      <td><code>query</code></td>
-                      <td>string</td>
+                      <td><code>category</code></td>
+                      <td>enum</td>
                       <td>No</td>
-                      <td>Search term or category (e.g., "technology", "art", "gaming")</td>
+                      <td>Type of fediverse software: "mastodon", "pleroma", "misskey", "peertube", "pixelfed", "lemmy", or "all"</td>
                     </tr>
                     <tr>
-                      <td><code>limit</code></td>
-                      <td>number</td>
+                      <td><code>topic</code></td>
+                      <td>string</td>
                       <td>No</td>
-                      <td>Maximum number of results to return (default: 20, max: 100)</td>
+                      <td>Topic or interest to search for (e.g., "technology", "art", "gaming")</td>
+                    </tr>
+                    <tr>
+                      <td><code>size</code></td>
+                      <td>enum</td>
+                      <td>No</td>
+                      <td>Instance size preference: "small", "medium", or "large"</td>
+                    </tr>
+                    <tr>
+                      <td><code>region</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Geographic region or language</td>
+                    </tr>
+                    <tr>
+                      <td><code>beginnerFriendly</code></td>
+                      <td>boolean</td>
+                      <td>No</td>
+                      <td>Show only beginner-friendly instances</td>
                     </tr>
                   </tbody>
                 </table>
@@ -114,21 +132,74 @@ discover-actor https://mastodon.social/@mastodon</code></pre>
 
               <div class="examples">
                 <h4>Examples</h4>
-                <pre><code># Find technology-focused instances
-discover-instances technology
+                <pre><code># Find Mastodon instances
+discover-instances --category mastodon
 
-# Find art communities
-discover-instances art
+# Find technology-focused instances
+discover-instances --topic technology
 
-# Get popular instances (no query)
-discover-instances</code></pre>
+# Find small, beginner-friendly instances
+discover-instances --size small --beginnerFriendly true
+
+# Find instances in a specific region
+discover-instances --region europe</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>recommend-instances</code></h3>
+            <p>Get personalized fediverse instance recommendations based on interests.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>interests</code></td>
+                      <td>array</td>
+                      <td>Yes</td>
+                      <td>List of your interests or topics (e.g., ["technology", "opensource", "privacy"])</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Get recommendations based on interests
+recommend-instances --interests ["technology", "opensource"]
+
+# Multiple interests
+recommend-instances --interests ["art", "photography", "design"]</code></pre>
+              </div>
+
+              <div class="response">
+                <h4>Response</h4>
+                <p>Returns personalized instance recommendations with:</p>
+                <ul>
+                  <li>Instance domain and name</li>
+                  <li>Match score based on interests</li>
+                  <li>Instance description and focus</li>
+                  <li>User statistics</li>
+                  <li>Registration status</li>
+                </ul>
               </div>
             </div>
           </div>
         </section>
 
         <section class="tools-section">
-          <h2>📊 Information Tools</h2>
+          <h2>Information Tools</h2>
           <p>Tools for getting information about instances, timelines, and content.</p>
 
           <div class="tool-reference">
@@ -184,8 +255,8 @@ get-instance-info fosstodon.org</code></pre>
 
           <div class="tool-reference">
             <h3><code>fetch-timeline</code></h3>
-            <p>Fetch recent posts from an actor's public timeline.</p>
-            
+            <p>Fetch recent posts from any actor's timeline in the fediverse.</p>
+
             <div class="tool-details">
               <div class="parameters">
                 <h4>Parameters</h4>
@@ -200,10 +271,10 @@ get-instance-info fosstodon.org</code></pre>
                   </thead>
                   <tbody>
                     <tr>
-                      <td><code>actor_url</code></td>
+                      <td><code>identifier</code></td>
                       <td>string</td>
                       <td>Yes</td>
-                      <td>ActivityPub URL of the actor</td>
+                      <td>Actor identifier (e.g., user@example.social)</td>
                     </tr>
                     <tr>
                       <td><code>limit</code></td>
@@ -218,53 +289,30 @@ get-instance-info fosstodon.org</code></pre>
               <div class="examples">
                 <h4>Examples</h4>
                 <pre><code># Get recent posts from an actor
-fetch-timeline https://mastodon.social/users/mastodon
+fetch-timeline user@mastodon.social
 
 # Limit to 10 posts
-fetch-timeline https://fosstodon.org/users/admin 10</code></pre>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="tools-section">
-          <h2>🔧 Utility Tools</h2>
-          <p>Additional tools for server management and debugging.</p>
-
-          <div class="tool-reference">
-            <h3><code>health-check</code></h3>
-            <p>Check the health and status of the MCP server.</p>
-            
-            <div class="tool-details">
-              <div class="parameters">
-                <h4>Parameters</h4>
-                <p>No parameters required.</p>
-              </div>
-
-              <div class="examples">
-                <h4>Examples</h4>
-                <pre><code># Check server health
-health-check</code></pre>
+fetch-timeline admin@fosstodon.org --limit 10</code></pre>
               </div>
 
               <div class="response">
                 <h4>Response</h4>
-                <p>Returns server status including:</p>
+                <p>Returns timeline data including:</p>
                 <ul>
-                  <li>Server uptime</li>
-                  <li>Memory usage</li>
-                  <li>Cache statistics</li>
-                  <li>Recent error counts</li>
-                  <li>Performance metrics</li>
+                  <li>Array of recent posts/activities</li>
+                  <li>Post content and metadata</li>
+                  <li>Author information</li>
+                  <li>Engagement metrics (likes, boosts, replies)</li>
+                  <li>Media attachments</li>
                 </ul>
               </div>
             </div>
           </div>
 
           <div class="tool-reference">
-            <h3><code>clear-cache</code></h3>
-            <p>Clear the server's internal cache to force fresh data retrieval.</p>
-            
+            <h3><code>search-instance</code></h3>
+            <p>Search for content on a specific fediverse instance.</p>
+
             <div class="tool-details">
               <div class="parameters">
                 <h4>Parameters</h4>
@@ -279,10 +327,22 @@ health-check</code></pre>
                   </thead>
                   <tbody>
                     <tr>
-                      <td><code>cache_type</code></td>
+                      <td><code>domain</code></td>
                       <td>string</td>
+                      <td>Yes</td>
+                      <td>Instance domain (e.g., example.social)</td>
+                    </tr>
+                    <tr>
+                      <td><code>query</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Search query</td>
+                    </tr>
+                    <tr>
+                      <td><code>type</code></td>
+                      <td>enum</td>
                       <td>No</td>
-                      <td>Type of cache to clear: "actors", "instances", "timelines", or "all"</td>
+                      <td>Type of content to search for: "accounts", "statuses", or "hashtags" (default: "accounts")</td>
                     </tr>
                   </tbody>
                 </table>
@@ -290,21 +350,135 @@ health-check</code></pre>
 
               <div class="examples">
                 <h4>Examples</h4>
-                <pre><code># Clear all caches
-clear-cache
+                <pre><code># Search for accounts
+search-instance mastodon.social "opensource"
 
-# Clear only actor cache
-clear-cache actors
+# Search for posts/statuses
+search-instance fosstodon.org "linux" --type statuses
 
-# Clear instance information cache
-clear-cache instances</code></pre>
+# Search for hashtags
+search-instance pixelfed.social "photography" --type hashtags</code></pre>
+              </div>
+
+              <div class="response">
+                <h4>Response</h4>
+                <p>Returns search results based on type:</p>
+                <ul>
+                  <li><strong>accounts</strong>: User profiles matching the query</li>
+                  <li><strong>statuses</strong>: Posts/toots containing the search terms</li>
+                  <li><strong>hashtags</strong>: Hashtags matching the query</li>
+                </ul>
               </div>
             </div>
           </div>
         </section>
 
         <section class="tools-section">
-          <h2>⚠️ Error Handling</h2>
+          <h2>Utility Tools</h2>
+          <p>Additional tools for server management and debugging.</p>
+
+          <div class="tool-reference">
+            <h3><code>health-check</code></h3>
+            <p>Check the health status of the ActivityPub MCP server.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>includeMetrics</code></td>
+                      <td>boolean</td>
+                      <td>No</td>
+                      <td>Include detailed performance metrics in the response</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Basic health check
+health-check
+
+# Include detailed metrics
+health-check --includeMetrics true</code></pre>
+              </div>
+
+              <div class="response">
+                <h4>Response</h4>
+                <p>Returns server status including:</p>
+                <ul>
+                  <li>Server uptime</li>
+                  <li>Memory usage</li>
+                  <li>Health status (healthy/degraded/unhealthy)</li>
+                  <li>Optional: Detailed performance metrics</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>performance-metrics</code></h3>
+            <p>Get detailed performance metrics for the ActivityPub MCP server.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>operation</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Specific operation to get metrics for (e.g., 'discover-actor')</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Get all performance metrics
+performance-metrics
+
+# Get metrics for a specific operation
+performance-metrics --operation discover-actor</code></pre>
+              </div>
+
+              <div class="response">
+                <h4>Response</h4>
+                <p>Returns performance data including:</p>
+                <ul>
+                  <li>Request counts by operation</li>
+                  <li>Average response times</li>
+                  <li>Success/failure rates</li>
+                  <li>Cache hit rates</li>
+                  <li>Resource utilization</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tools-section">
+          <h2>Error Handling</h2>
           <p>All tools follow consistent error handling patterns:</p>
 
           <div class="error-info">
@@ -341,7 +515,7 @@ clear-cache instances</code></pre>
         </section>
 
         <section class="tools-section">
-          <h2>🔗 Related Documentation</h2>
+          <h2>Related Documentation</h2>
           <div class="related-links">
             <a href={`${baseURL}docs/api/resources/`} class="related-link">
               <h3>MCP Resources</h3>

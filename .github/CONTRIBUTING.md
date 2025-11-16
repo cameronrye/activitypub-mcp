@@ -13,7 +13,7 @@ Thank you for your interest in contributing to the ActivityPub MCP Server! This 
 
 ### Submitting Pull Requests
 
-1. **Fork the repository** and create a new branch from `main`
+1. **Fork the repository** and create a new branch from `master`
 2. **Follow the coding standards** outlined below
 3. **Write or update tests** for your changes
 4. **Update documentation** as needed
@@ -47,12 +47,9 @@ Thank you for your interest in contributing to the ActivityPub MCP Server! This 
    # Edit .env with your configuration
    ```
 
-4. **Start development servers**:
+4. **Start MCP server in development mode**:
    ```bash
-   # Terminal 1: ActivityPub server
-   npm run dev
-   
-   # Terminal 2: MCP server
+   # Start MCP server with auto-reload
    npm run mcp:dev
    ```
 
