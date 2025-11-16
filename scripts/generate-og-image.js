@@ -5,27 +5,27 @@
  * Creates a 1200x630 PNG with logo, title, and tagline
  */
 
-import sharp from 'sharp';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import sharp from "sharp";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const projectRoot = join(__dirname, '..');
+const projectRoot = join(__dirname, "..");
 
 // OG Image dimensions
 const WIDTH = 1200;
 const HEIGHT = 630;
 
 // Brand colors
-const BLUE_DARK = '#2563eb';
-const BLUE_LIGHT = '#3b82f6';
-const PURPLE = '#7c3aed';
-const PURPLE_LIGHT = '#8b5cf6';
+const BLUE_DARK = "#2563eb";
+const BLUE_LIGHT = "#3b82f6";
+const PURPLE = "#7c3aed";
+const PURPLE_LIGHT = "#8b5cf6";
 
 async function generateOGImage() {
-  console.log('🎨 Generating Open Graph image...');
+  console.log("🎨 Generating Open Graph image...");
 
   // Create gradient background using SVG
   const backgroundSVG = `
@@ -56,14 +56,11 @@ async function generateOGImage() {
   `;
 
   // Read and scale the logo
-  const logoPath = join(projectRoot, 'public', 'logo.svg');
-  const logoSVG = readFileSync(logoPath, 'utf-8');
-  
+  const logoPath = join(projectRoot, "public", "logo.svg");
+  const logoSVG = readFileSync(logoPath, "utf-8");
+
   // Scale logo to 200x200
-  const logoBuffer = await sharp(Buffer.from(logoSVG))
-    .resize(200, 200)
-    .png()
-    .toBuffer();
+  const logoBuffer = await sharp(Buffer.from(logoSVG)).resize(200, 200).png().toBuffer();
 
   // Create text overlay SVG
   const textSVG = `
@@ -101,8 +98,8 @@ async function generateOGImage() {
   `;
 
   // Composite all layers
-  const outputPath = join(projectRoot, 'public', 'og-image.png');
-  
+  const outputPath = join(projectRoot, "public", "og-image.png");
+
   await sharp(Buffer.from(backgroundSVG))
     .composite([
       {
@@ -114,7 +111,7 @@ async function generateOGImage() {
         input: Buffer.from(textSVG),
         top: 0,
         left: 0,
-      }
+      },
     ])
     .png({
       quality: 90,
@@ -122,18 +119,17 @@ async function generateOGImage() {
     })
     .toFile(outputPath);
 
-  console.log('✅ Open Graph image generated successfully!');
+  console.log("✅ Open Graph image generated successfully!");
   console.log(`📍 Location: ${outputPath}`);
   console.log(`📐 Dimensions: ${WIDTH}x${HEIGHT}px`);
-  
+
   // Get file size
   const stats = await sharp(outputPath).metadata();
   console.log(`📦 File size: ${(stats.size / 1024).toFixed(2)} KB`);
 }
 
 // Run the generator
-generateOGImage().catch(error => {
-  console.error('❌ Error generating OG image:', error);
+generateOGImage().catch((error) => {
+  console.error("❌ Error generating OG image:", error);
   process.exit(1);
 });
-
