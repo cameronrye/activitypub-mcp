@@ -54,11 +54,11 @@ The design symbolizes the core concept of the project: connecting LLMs to the de
 
 ### Don'ts
 
-- ❌ Don't distort or stretch the logo
-- ❌ Don't change the colors in the full-color version
-- ❌ Don't add effects (shadows, outlines) unless necessary for visibility
-- ❌ Don't place the logo on busy backgrounds without proper spacing
-- ❌ Don't use low-resolution raster versions when SVG is available
+- Don't distort or stretch the logo
+- Don't change the colors in the full-color version
+- Don't add effects (shadows, outlines) unless necessary for visibility
+- Don't place the logo on busy backgrounds without proper spacing
+- Don't use low-resolution raster versions when SVG is available
 
 ### Clear Space
 

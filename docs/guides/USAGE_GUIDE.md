@@ -2,7 +2,7 @@
 
 This comprehensive guide covers everything you need to know about using the ActivityPub MCP Server effectively.
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Installation
 
@@ -101,7 +101,7 @@ npm run test              # Basic MCP tests
 npm run test:integration  # Integration tests
 ```
 
-## 📚 MCP Resources
+## MCP Resources
 
 Resources provide **read-only** access to fediverse data from remote ActivityPub servers.
 
@@ -185,7 +185,7 @@ const following = await client.readResource({
 });
 ```
 
-## 🔧 MCP Tools
+## MCP Tools
 
 Tools enable LLMs to **discover and explore** the fediverse interactively. All tools are **read-only** and designed for content discovery.
 
@@ -328,7 +328,7 @@ const result = await client.callTool({
 });
 ```
 
-## 💬 MCP Prompts
+## MCP Prompts
 
 Prompts help LLMs guide users through fediverse exploration.
 
@@ -389,7 +389,7 @@ const prompt = await client.getPrompt({
 - Exploring topics
 - Building a following list
 
-## 🔒 Security & Rate Limiting
+## Security & Rate Limiting
 
 ### Rate Limiting
 Protects against abuse with configurable limits:
@@ -431,7 +431,7 @@ Robust error handling throughout:
 - `InvalidParams` - Invalid input parameters
 - `InternalError` - Server-side errors (rate limits, network issues)
 
-## 🧪 Testing & Development
+## Testing & Development
 
 ### Running Tests
 
@@ -469,7 +469,7 @@ DEBUG=true
 tail -f logs/activitypub-mcp.log
 ```
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -556,7 +556,7 @@ METRICS_ENABLED=true
 HEALTH_CHECK_ENABLED=true
 ```
 
-## 🌐 Integration Examples
+## Integration Examples
 
 ### Claude Desktop Integration
 The server automatically integrates with Claude Desktop when installed via:
@@ -598,7 +598,7 @@ const client = new Client({
 await client.connect(transport);
 ```
 
-## 📖 Best Practices
+## Best Practices
 
 ### Actor Management
 - Use descriptive but concise identifiers
@@ -620,11 +620,11 @@ await client.connect(transport);
 - Cache frequently accessed data
 - Use appropriate timeouts
 
-## 🤝 Contributing
+## Contributing
 
 See the main [README.md](../../README.md) for contribution guidelines and development setup instructions.
 
-## 📚 Additional Resources
+## Additional Resources
 
 - [ActivityPub Specification](https://www.w3.org/TR/activitypub/)
 - [Model Context Protocol Documentation](https://modelcontextprotocol.io/)

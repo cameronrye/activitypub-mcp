@@ -8,14 +8,14 @@ Biome is our code formatter and linter. The configuration is stored in `biome.js
 
 ## Common Configuration Mistakes
 
-### ❌ Incorrect Property Names
+### Incorrect Property Names
 
 **Wrong:**
 ```json
 {
   "files": {
-    "include": ["src/**/*.ts"],   // ❌ Should be "includes"
-    "ignore": ["dist/**"]         // ❌ Should use negated patterns
+    "include": ["src/**/*.ts"],   // Should be "includes"
+    "ignore": ["dist/**"]         // Should use negated patterns
   }
 }
 ```
@@ -24,20 +24,20 @@ Biome is our code formatter and linter. The configuration is stored in `biome.js
 ```json
 {
   "files": {
-    "includes": [                 // ✅ Correct (plural)
+    "includes": [                 // Correct (plural)
       "src/**/*.ts",
-      "!dist/**"                  // ✅ Use negated patterns for ignoring
+      "!dist/**"                  // Use negated patterns for ignoring
     ]
   }
 }
 ```
 
-### ❌ Invalid Top-Level Properties
+### Invalid Top-Level Properties
 
 **Wrong:**
 ```json
 {
-  "organizeImports": {            // ❌ Not a valid top-level property
+  "organizeImports": {            // Not a valid top-level property
     "enabled": true
   }
 }

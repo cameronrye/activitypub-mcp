@@ -2,7 +2,7 @@
 
 This document provides practical examples of using the ActivityPub MCP Server with LLMs like Claude to **explore and discover content** in the existing Fediverse.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Start the MCP Server
 
@@ -38,7 +38,7 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
 }
 ```
 
-## 📖 MCP Resources Examples
+## MCP Resources Examples
 
 Resources provide read-only access to fediverse data. All resources return JSON data.
 
@@ -202,7 +202,7 @@ Access who an actor is following.
 }
 ```
 
-## 🔧 MCP Tools Examples
+## MCP Tools Examples
 
 Tools enable LLMs to discover and explore the fediverse interactively.
 
@@ -227,12 +227,12 @@ Find and get information about any actor in the fediverse.
 ```
 Successfully discovered actor: Gargron
 
-🆔 ID: https://mastodon.social/users/Gargron
-👤 Name: Eugen Rochko
-📝 Summary: Founder and lead developer of Mastodon
-🔗 URL: https://mastodon.social/@Gargron
-📥 Inbox: https://mastodon.social/users/Gargron/inbox
-📤 Outbox: https://mastodon.social/users/Gargron/outbox
+ID: https://mastodon.social/users/Gargron
+Name: Eugen Rochko
+Summary: Founder and lead developer of Mastodon
+URL: https://mastodon.social/@Gargron
+Inbox: https://mastodon.social/users/Gargron/inbox
+Outbox: https://mastodon.social/users/Gargron/outbox
 ```
 
 ### Fetch Timeline
@@ -257,9 +257,9 @@ Fetch recent posts from any actor's timeline.
 ```
 Successfully fetched timeline for Gargron@mastodon.social
 
-📊 Total items: 1234
-📝 Posts retrieved: 20
-🔗 Timeline ID: https://mastodon.social/users/Gargron/outbox
+Total items: 1234
+Posts retrieved: 20
+Timeline ID: https://mastodon.social/users/Gargron/outbox
 
 Recent posts:
 1. Note: Working on some exciting new features...
@@ -321,18 +321,18 @@ Get detailed information about a fediverse instance.
 ```
 Instance Information for fosstodon.org:
 
-🌐 Domain: fosstodon.org
-💻 Software: mastodon
-📦 Version: 4.2.0
-📝 Description: A community for FOSS enthusiasts
-🌍 Languages: en
-📝 Registrations: Open
-✅ Approval Required: Yes
+Domain: fosstodon.org
+Software: mastodon
+Version: 4.2.0
+Description: A community for FOSS enthusiasts
+Languages: en
+Registrations: Open
+Approval Required: Yes
 
-📊 Statistics:
-👥 Users: 50000
-📝 Posts: 2000000
-🌐 Domains: 15000
+Statistics:
+Users: 50000
+Posts: 2000000
+Domains: 15000
 ```
 
 ### Discover Instances
@@ -359,12 +359,12 @@ Find popular fediverse instances by category or topic.
 Found 15 fediverse instances (showing first 15):
 
 1. **fosstodon.org** (mastodon)
-   👥 Users: 50000
-   📝 A community for FOSS enthusiasts
+   Users: 50000
+   A community for FOSS enthusiasts
 
 2. **hachyderm.io** (mastodon)
-   👥 Users: 30000
-   📝 Safe space for tech professionals
+   Users: 30000
+   Safe space for tech professionals
 ...
 ```
 
@@ -390,13 +390,13 @@ Get personalized instance recommendations based on interests.
 Based on your interests (technology, programming, open source), here are some recommended fediverse instances:
 
 1. **fosstodon.org** (mastodon)
-   👥 Users: 50000
-   📝 A community for FOSS enthusiasts
-   🎯 Why recommended: Matches your interest in open source
+   Users: 50000
+   A community for FOSS enthusiasts
+   Why recommended: Matches your interest in open source
 ...
 ```
 
-## 💬 MCP Prompts Examples
+## MCP Prompts Examples
 
 Prompts help LLMs guide users through fediverse exploration.
 
@@ -463,7 +463,7 @@ Please help me compare these fediverse instances: mastodon.social, fosstodon.org
 I want to discover people related to "artificial intelligence, machine learning" in the fediverse. Can you suggest specific accounts to follow that would be interesting for someone interested in artificial intelligence, machine learning?
 ```
 
-## 🤖 LLM Integration Examples
+## LLM Integration Examples
 
 These examples show how LLMs can use the MCP server to explore and discover content in the fediverse.
 
@@ -652,7 +652,7 @@ for (const account of techAccounts.slice(0, 10)) {
 }
 ```
 
-## 🗣️ Natural Language Usage with Claude
+## Natural Language Usage with Claude
 
 When using this MCP server with Claude Desktop, you can interact naturally:
 
@@ -715,7 +715,7 @@ fosstodon.org:
 Recommendation: If you're interested in FOSS and want a more focused community...
 ```
 
-## 🧪 Testing Examples
+## Testing Examples
 
 ### Test MCP Server with Inspector
 
@@ -760,7 +760,7 @@ curl -H "Accept: application/activity+json" https://mastodon.social/users/Gargro
 curl -H "Accept: application/activity+json" https://mastodon.social/users/Gargron/outbox
 ```
 
-## 🔗 Integration Patterns
+## Integration Patterns
 
 ### Pattern 1: Discovery and Exploration
 ```
@@ -797,7 +797,7 @@ LLM → MCP Server → Query Multiple Instances → Compare Data → Recommendat
 - Comparing community sizes
 - Finding specialized communities
 
-## 📚 Additional Resources
+## Additional Resources
 
 ### Protocol Specifications
 - [ActivityPub Specification](https://www.w3.org/TR/activitypub/) - W3C standard for decentralized social networking
@@ -815,7 +815,7 @@ LLM → MCP Server → Query Multiple Instances → Compare Data → Recommendat
 - [ActivityPub Rocks!](https://activitypub.rocks/) - Test suite and validator
 - [Mastodon API Documentation](https://docs.joinmastodon.org/api/) - API reference
 
-## 🎯 Best Practices
+## Best Practices
 
 ### For LLM Interactions
 
@@ -831,7 +831,7 @@ LLM → MCP Server → Query Multiple Instances → Compare Data → Recommendat
 3. **Validate Domains**: Ensure domain names are properly formatted
 4. **Monitor Performance**: Use the health-check and performance-metrics tools
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! See the main [README.md](../../README.md) for:
 - Development setup instructions
@@ -839,6 +839,6 @@ Contributions are welcome! See the main [README.md](../../README.md) for:
 - Code style requirements
 - Testing procedures
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License. See the [LICENSE](../../LICENSE) file for details.

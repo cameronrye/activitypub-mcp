@@ -607,7 +607,7 @@ Short-form textual content (equivalent to "posts" or "status updates").
   "@context": "https://www.w3.org/ns/activitystreams",
   "type": "Note",
   "id": "https://example.com/notes/1",
-  "content": "Just learned about ActivityStreams vocabulary! 🎉",
+  "content": "Just learned about ActivityStreams vocabulary!",
   "attributedTo": "https://example.com/users/alice",
   "published": "2023-01-01T12:00:00Z",
   "to": ["https://www.w3.org/ns/activitystreams#Public"],
@@ -1847,7 +1847,7 @@ ActivityStreams can represent traditional feed content with enhanced semantics.
   "actor": "https://social.example/users/alice",
   "object": {
     "type": "Note",
-    "content": "Just deployed a new feature! 🚀 #coding #deployment",
+    "content": "Just deployed a new feature! #coding #deployment",
     "tag": [
       {"type": "Hashtag", "name": "#coding"},
       {"type": "Hashtag", "name": "#deployment"}

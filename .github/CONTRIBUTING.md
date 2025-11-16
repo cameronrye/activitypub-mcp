@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to the ActivityPub MCP Server! This document provides guidelines and information for contributors.
 
-## 🤝 How to Contribute
+## How to Contribute
 
 ### Reporting Issues
 
@@ -20,7 +20,7 @@ Thank you for your interest in contributing to the ActivityPub MCP Server! This 
 5. **Fill out the pull request template** completely
 6. **Ensure all CI checks pass** before requesting review
 
-## 🛠️ Development Setup
+## Development Setup
 
 ### Prerequisites
 
@@ -81,7 +81,7 @@ npm run format            # Format code
 npm run build             # Build TypeScript
 ```
 
-## 📝 Coding Standards
+## Coding Standards
 
 ### TypeScript Guidelines
 
@@ -143,7 +143,7 @@ fix(federation): resolve actor discovery timeout issue
 docs(readme): update installation instructions
 ```
 
-## 🧪 Testing Guidelines
+## Testing Guidelines
 
 ### Test Structure
 
@@ -167,7 +167,7 @@ tests/
 └── test-comprehensive.ts # End-to-end tests
 ```
 
-## 📚 Documentation
+## Documentation
 
 ### Code Documentation
 
@@ -183,7 +183,7 @@ tests/
 - **Update USAGE_GUIDE.md** for new features
 - **Maintain CHANGELOG.md** for releases
 
-## 🔒 Security
+## Security
 
 ### Security Guidelines
 
@@ -196,7 +196,7 @@ tests/
 
 Please report security vulnerabilities privately by emailing the maintainers or using GitHub's security advisory feature.
 
-## 🚀 Release Process
+## Release Process
 
 ### Version Management
 
@@ -213,7 +213,7 @@ We follow **Semantic Versioning** (SemVer):
 4. **Push tag**: `git push origin v1.2.3`
 5. **GitHub Actions** will automatically publish to npm
 
-## 🎯 Project Goals
+## Project Goals
 
 ### Core Objectives
 
@@ -229,7 +229,7 @@ We follow **Semantic Versioning** (SemVer):
 - **Web UI** for server management
 - **Database-specific** implementations
 
-## 💬 Communication
+## Communication
 
 ### Getting Help
 
@@ -241,11 +241,11 @@ We follow **Semantic Versioning** (SemVer):
 
 Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
-## 🙏 Recognition
+## Recognition
 
 Contributors will be recognized in:
 - **CONTRIBUTORS.md** file
 - **GitHub contributors** section
 - **Release notes** for significant contributions
 
-Thank you for contributing to the ActivityPub MCP Server! 🎉
+Thank you for contributing to the ActivityPub MCP Server!

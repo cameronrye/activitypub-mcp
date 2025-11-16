@@ -77,19 +77,19 @@ health-check --includeMetrics=true
 
 **Example Output:**
 ```
-🏥 Server Health Check
+Server Health Check
 
-Overall Status: HEALTHY ✅
+Overall Status: HEALTHY
 Uptime: 45 minutes
 Version: 1.0.0
 
 Health Checks:
-• memory: ✅ Memory usage normal: 125.34MB (2.5s)
-• disk: ✅ Disk space check passed (1.2s)
-• environment: ✅ All required environment variables present (0.1s)
-• network: ✅ Network connectivity verified (234ms)
-• mcpServer: ✅ MCP server operational (0.5s)
-• rateLimiting: ✅ Rate limiting enabled (0.1s)
+• memory: Memory usage normal: 125.34MB (2.5s)
+• disk: Disk space check passed (1.2s)
+• environment: All required environment variables present (0.1s)
+• network: Network connectivity verified (234ms)
+• mcpServer: MCP server operational (0.5s)
+• rateLimiting: Rate limiting enabled (0.1s)
 ```
 
 ### Performance Metrics Tool
@@ -106,7 +106,7 @@ performance-metrics --operation="discover-actor"
 
 **Example Output:**
 ```
-📊 Overall Performance Metrics
+Overall Performance Metrics
 
 Request Statistics:
 • Total Requests: 1,247
@@ -124,9 +124,9 @@ System Resources:
 • Uptime: 67 minutes
 
 Recent Requests (last 10):
-• discover-actor: 1,234ms ✅
-• fetch-timeline: 2,345ms ✅
-• get-instance-info: 567ms ❌
+• discover-actor: 1,234ms
+• fetch-timeline: 2,345ms
+• get-instance-info: 567ms
 ```
 
 ## Monitoring in Production

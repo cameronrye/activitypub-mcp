@@ -1487,25 +1487,25 @@ INSTANCE="your-domain.com"
 
 echo "Checking actor accessibility..."
 if fedify lookup "$ACTOR" > /dev/null 2>&1; then
-  echo "✓ Actor lookup successful"
+  echo "Actor lookup successful"
 else
-  echo "✗ Actor lookup failed"
+  echo "Actor lookup failed"
   exit 1
 fi
 
 echo "Checking WebFinger..."
 if fedify webfinger "$ACTOR" > /dev/null 2>&1; then
-  echo "✓ WebFinger successful"
+  echo "WebFinger successful"
 else
-  echo "✗ WebFinger failed"
+  echo "WebFinger failed"
   exit 1
 fi
 
 echo "Checking NodeInfo..."
 if fedify nodeinfo "$INSTANCE" > /dev/null 2>&1; then
-  echo "✓ NodeInfo successful"
+  echo "NodeInfo successful"
 else
-  echo "✗ NodeInfo failed"
+  echo "NodeInfo failed"
   exit 1
 fi
 

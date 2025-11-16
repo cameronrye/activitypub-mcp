@@ -4,18 +4,18 @@ This document outlines the cross-platform compatibility features implemented in 
 
 ## Supported Platforms
 
-✅ **Windows 10/11**
+**Windows 10/11**
 - PowerShell 5.1+
 - Command Prompt
 - Git Bash
 - Windows Subsystem for Linux (WSL)
 
-✅ **macOS**
+**macOS**
 - macOS 10.15+ (Catalina and later)
 - Bash and Zsh shells
 - Both Intel and Apple Silicon
 
-✅ **Linux**
+**Linux**
 - Ubuntu 18.04+
 - Debian 10+
 - CentOS 7+

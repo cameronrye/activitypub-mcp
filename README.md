@@ -10,36 +10,36 @@ A comprehensive **Model Context Protocol (MCP)** server that enables LLMs like C
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-## 🌟 Features
+## Features
 
 ### Core Capabilities
-- **🌐 Fediverse Client**: Interact with existing ActivityPub servers (Mastodon, Pleroma, Misskey, etc.)
-- **🔍 WebFinger Discovery**: Find and discover actors across the fediverse
-- **🤖 MCP Protocol**: Complete MCP server with resources, tools, and prompts
-- **🧠 LLM-Optimized**: Designed specifically for LLM interaction patterns
-- **📝 TypeScript**: Fully typed with modern TypeScript and ESM
-- **⚡ High Performance**: Efficient resource management and caching
-- **🔒 Secure**: Built-in security features and input validation
+- **Fediverse Client**: Interact with existing ActivityPub servers (Mastodon, Pleroma, Misskey, etc.)
+- **WebFinger Discovery**: Find and discover actors across the fediverse
+- **MCP Protocol**: Complete MCP server with resources, tools, and prompts
+- **LLM-Optimized**: Designed specifically for LLM interaction patterns
+- **TypeScript**: Fully typed with modern TypeScript and ESM
+- **High Performance**: Efficient resource management and caching
+- **Secure**: Built-in security features and input validation
 
 ### Fediverse Interaction Features
-- ✅ **Remote Actor Discovery**: Find users on any fediverse instance
-- ✅ **Timeline Fetching**: Get posts from any user's timeline
-- ✅ **Instance Discovery**: Find and explore fediverse instances
-- ✅ **Instance Information**: Get detailed info about any server
-- ✅ **Search Capabilities**: Search for content across instances
-- ✅ **WebFinger Support**: Resolve actor identifiers across the network
-- ✅ **Multi-Platform Support**: Works with Mastodon, Pleroma, Misskey, and more
-- ✅ **Follower/Following Lists**: Access social connections
+- **Remote Actor Discovery**: Find users on any fediverse instance
+- **Timeline Fetching**: Get posts from any user's timeline
+- **Instance Discovery**: Find and explore fediverse instances
+- **Instance Information**: Get detailed info about any server
+- **Search Capabilities**: Search for content across instances
+- **WebFinger Support**: Resolve actor identifiers across the network
+- **Multi-Platform Support**: Works with Mastodon, Pleroma, Misskey, and more
+- **Follower/Following Lists**: Access social connections
 
 ### MCP Features
-- **📚 Resources**: Access remote ActivityPub data (actors, timelines, instance info)
-- **🔧 Tools**: Discover and interact with fediverse content
-- **💬 Prompts**: Templates for fediverse exploration and discovery
-- **🔄 Completions**: Context-aware argument completion
-- **🎯 Sampling**: LLM integration for content discovery
-- **📊 Monitoring**: Built-in logging and performance metrics
+- **Resources**: Access remote ActivityPub data (actors, timelines, instance info)
+- **Tools**: Discover and interact with fediverse content
+- **Prompts**: Templates for fediverse exploration and discovery
+- **Completions**: Context-aware argument completion
+- **Sampling**: LLM integration for content discovery
+- **Monitoring**: Built-in logging and performance metrics
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -162,15 +162,15 @@ To use this MCP server with Claude Desktop:
 
 3. **Restart Claude Desktop** to load the new server.
 
-## 📖 Documentation
+## Documentation
 
 ### Quick Reference
 
 For detailed usage instructions, examples, and troubleshooting, see:
 
-- **[📚 Usage Guide](USAGE_GUIDE.md)** - Comprehensive usage documentation
-- **[🧪 Examples](EXAMPLES.md)** - Practical examples and integration patterns
-- **[🔧 API Reference](#api-reference)** - Complete API documentation (below)
+- **[Usage Guide](USAGE_GUIDE.md)** - Comprehensive usage documentation
+- **[Examples](EXAMPLES.md)** - Practical examples and integration patterns
+- **[API Reference](#api-reference)** - Complete API documentation (below)
 
 ### API Reference
 
@@ -410,7 +410,7 @@ Get personalized instance recommendations based on interests:
 }
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 ### Project Structure
 ```
@@ -453,7 +453,7 @@ LLM Client ←→ MCP Protocol ←→ Fediverse Client ←→ Remote ActivityPub
                               Remote Data Fetching
 ```
 
-## 📚 Documentation
+## Documentation
 
 Comprehensive documentation is available in the `docs/` directory:
 
@@ -464,7 +464,7 @@ Comprehensive documentation is available in the `docs/` directory:
 
 See the [Documentation Index](docs/README.md) for a complete overview.
 
-## 🔧 Development
+## Development
 
 ### Available Scripts
 - `npm run mcp` - Start MCP server
@@ -500,7 +500,7 @@ npm run test
 # Use the discover-actor tool to test WebFinger discovery
 ```
 
-## 🌐 Cross-Platform Compatibility
+## Cross-Platform Compatibility
 
 This project is designed to work seamlessly across different operating systems:
 
@@ -542,7 +542,7 @@ npm run setup:unix
 chmod +x scripts/*.sh
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
@@ -550,17 +550,17 @@ chmod +x scripts/*.sh
 4. Push to branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Fedify](https://fedify.dev/) - ActivityPub server framework
 - [Model Context Protocol](https://modelcontextprotocol.io/) - LLM integration standard
 - [ActivityPub](https://www.w3.org/TR/activitypub/) - W3C decentralized social networking protocol
 
-## 🔗 Links
+## Links
 
 - [ActivityPub Specification](https://www.w3.org/TR/activitypub/)
 - [Model Context Protocol](https://modelcontextprotocol.io/)

@@ -4,10 +4,10 @@
 
 We actively support the following versions of ActivityPub MCP Server with security updates:
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.x.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+| Version | Supported |
+| ------- | --------- |
+| 1.x.x   | Yes       |
+| < 1.0   | No        |
 
 ## Reporting a Vulnerability
 
@@ -166,4 +166,4 @@ This security policy is provided in good faith. We reserve the right to:
 - Decide on appropriate disclosure timelines
 - Modify this policy as needed
 
-Thank you for helping keep ActivityPub MCP Server secure! 🔒
+Thank you for helping keep ActivityPub MCP Server secure!
