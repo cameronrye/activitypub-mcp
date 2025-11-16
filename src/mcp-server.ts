@@ -14,7 +14,7 @@ const logger = getLogger("activitypub-mcp");
 // Configuration from environment variables
 const CONFIG = {
   serverName: process.env.MCP_SERVER_NAME || "activitypub-mcp",
-  serverVersion: process.env.MCP_SERVER_VERSION || "1.0.2",
+  serverVersion: process.env.MCP_SERVER_VERSION || "1.0.3",
   logLevel: process.env.LOG_LEVEL || "info",
   rateLimitEnabled: process.env.RATE_LIMIT_ENABLED === "true",
   rateLimitMax: Number.parseInt(process.env.RATE_LIMIT_MAX || "100", 10),

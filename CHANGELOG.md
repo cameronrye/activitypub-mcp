@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2025-11-16
+
+### Added
+- OG image generation for social media sharing
+- Enhanced documentation site with improved navigation and search
+- Production-ready deployment configurations
+
+### Changed
+- Upgraded dependencies to latest versions for security and performance
+- Updated Astro to 5.15.8 for improved site building
+- Updated MCP SDK to 1.22.0 for latest protocol features
+- Replaced deprecated npm-run-all with npm-run-all2
+- Improved site styling and mobile responsiveness
+- Enhanced code review findings and documentation clarity
+
+### Fixed
+- Documentation formatting and broken links
+- Mobile search functionality
+- Code block horizontal scrolling issues
+- Biome configuration schema validation
+- Various text and formatting improvements
+
+### Security
+- Fixed security vulnerabilities in dependencies
+- Updated packages with known security issues
+
 ## [1.0.2] - 2024-09-24
 
 ### Fixed
