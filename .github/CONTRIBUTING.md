@@ -103,11 +103,16 @@ We use **Biome** for code formatting and linting:
 
 ```
 src/
-├── main.ts              # ActivityPub server entry point
-├── mcp-main.ts          # MCP server entry point
-├── mcp-server.ts        # MCP server implementation
-├── federation.ts        # ActivityPub federation logic
-└── logging.ts           # Logging configuration
+├── main.ts                # Info display entry point
+├── mcp-main.ts            # MCP server entry point
+├── mcp-server.ts          # MCP server implementation
+├── webfinger.ts           # WebFinger discovery client
+├── remote-client.ts       # Remote ActivityPub client
+├── instance-discovery.ts  # Instance discovery service
+├── health-check.ts        # Health monitoring
+├── performance-monitor.ts # Performance tracking
+├── config.ts              # Configuration constants
+└── logging.ts             # Logging configuration
 ```
 
 ### Commit Messages

@@ -1,25 +1,16 @@
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import { REQUEST_TIMEOUT, USER_AGENT } from "./config.js";
+import { DomainSchema } from "./validation/schemas.js";
 import { type ActivityPubActor, webfingerClient } from "./webfinger.js";
 
 const logger = getLogger("activitypub-mcp");
 
-// Domain validation schema
-const DomainSchema = z
-  .string()
-  .min(1, "Domain cannot be empty")
-  .max(253, "Domain too long")
-  .regex(
-    /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
-    "Invalid domain format",
-  )
-  .refine(
-    (domain) => !domain.includes("..") && !domain.startsWith(".") && !domain.endsWith("."),
-    "Invalid domain format",
-  );
+// Maximum response size (10MB) to prevent DoS attacks
+const MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
 
-// URL validation schema
+// URL validation schema (reserved for future use)
+// Prefixed with underscore to indicate intentionally unused
 const _UrlSchema = z
   .string()
   .url("Invalid URL format")
@@ -124,6 +115,8 @@ export class RemoteActivityPubClient {
   private readonly requestTimeout = REQUEST_TIMEOUT;
   private readonly maxRetries = 3;
   private readonly retryDelay = 1000; // 1 second
+  private readonly instanceCache = new Map<string, { data: InstanceInfo; timestamp: number }>();
+  private readonly instanceCacheTTL = 5 * 60 * 1000; // 5 minutes
 
   /**
    * Fetch actor information from remote server
@@ -145,6 +138,11 @@ export class RemoteActivityPubClient {
    * Fetch actor's outbox (timeline/posts)
    */
   async fetchActorOutbox(identifier: string, limit = 20): Promise<ActivityPubCollection> {
+    // Validate limit parameter
+    if (limit < 1 || limit > 100) {
+      throw new Error("Limit must be between 1 and 100");
+    }
+
     const actor = await this.fetchRemoteActor(identifier);
 
     if (!actor.outbox) {
@@ -263,22 +261,31 @@ export class RemoteActivityPubClient {
   }
 
   /**
-   * Get instance information
+   * Get instance information (with caching)
    */
   async getInstanceInfo(domain: string): Promise<InstanceInfo> {
     // Validate domain input
     const validDomain = DomainSchema.parse(domain);
+
+    // Check cache first
+    const cached = this.instanceCache.get(validDomain);
+    if (cached && Date.now() - cached.timestamp < this.instanceCacheTTL) {
+      logger.debug("Returning cached instance info", { domain: validDomain });
+      return cached.data;
+    }
+
     logger.info("Fetching instance info", { domain: validDomain });
 
-    // Try multiple endpoints for instance information
+    // Try multiple endpoints for instance information in parallel
     const endpoints = [
       `https://${validDomain}/api/v1/instance`, // Mastodon/Pleroma
       `https://${validDomain}/api/meta`, // Misskey
       `https://${validDomain}/nodeinfo/2.0`, // NodeInfo
     ];
 
-    for (const endpoint of endpoints) {
-      try {
+    // Fetch from all endpoints in parallel
+    const results = await Promise.allSettled(
+      endpoints.map(async (endpoint) => {
         const response = await this.fetchWithTimeout(endpoint, {
           headers: {
             Accept: "application/json",
@@ -286,15 +293,31 @@ export class RemoteActivityPubClient {
           },
         });
 
-        if (response.ok) {
-          const data = await response.json();
-
-          // Transform different API responses to our schema
-          const instanceInfo = this.transformInstanceInfo(domain, data, endpoint);
-          return InstanceInfoSchema.parse(instanceInfo);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
         }
-      } catch (error) {
-        logger.debug("Failed to fetch from endpoint", { endpoint, error });
+
+        const data = await response.json();
+        return { endpoint, data };
+      }),
+    );
+
+    // Find the first successful result
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        const { endpoint, data } = result.value;
+
+        // Transform different API responses to our schema
+        const instanceInfo = this.transformInstanceInfo(domain, data, endpoint);
+        const validatedInfo = InstanceInfoSchema.parse(instanceInfo);
+
+        // Cache the result
+        this.instanceCache.set(validDomain, {
+          data: validatedInfo,
+          timestamp: Date.now(),
+        });
+
+        return validatedInfo;
       }
     }
 
@@ -364,7 +387,7 @@ export class RemoteActivityPubClient {
   }
 
   /**
-   * Fetch with timeout
+   * Fetch with timeout and response size limit
    */
   private async fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
     const controller = new AbortController();
@@ -376,6 +399,15 @@ export class RemoteActivityPubClient {
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
+
+      // Check response size to prevent DoS attacks
+      const contentLength = response.headers.get("content-length");
+      if (contentLength && parseInt(contentLength, 10) > MAX_RESPONSE_SIZE) {
+        throw new Error(
+          `Response too large: ${contentLength} bytes (max: ${MAX_RESPONSE_SIZE} bytes)`,
+        );
+      }
+
       return response;
     } catch (error) {
       clearTimeout(timeoutId);

@@ -173,26 +173,25 @@ class HealthChecker {
   }
 
   /**
-   * Check disk space (basic check)
+   * Check logs directory writability
    */
   private async checkDiskSpace(checks: HealthCheckResult["checks"]): Promise<void> {
     const startTime = Date.now();
 
     try {
-      // Basic disk space check - in a real implementation, you might use fs.statSync
-      // For now, we'll just check if we can write to the logs directory
+      // Check if we can write to the logs directory
       const fs = await import("node:fs/promises");
       await fs.access("./logs", fs.constants.W_OK);
 
       checks.disk = {
         status: "pass",
-        message: "Disk space check passed",
+        message: "Logs directory is writable",
         duration: Date.now() - startTime,
       };
     } catch (error) {
       checks.disk = {
         status: "warn",
-        message: `Disk space check warning: ${error instanceof Error ? error.message : String(error)}`,
+        message: `Logs directory not writable: ${error instanceof Error ? error.message : String(error)}`,
         duration: Date.now() - startTime,
       };
     }
@@ -264,17 +263,17 @@ class HealthChecker {
   }
 
   /**
-   * Check MCP server status
+   * Check MCP server initialization status
    */
   private async checkMCPServerStatus(checks: HealthCheckResult["checks"]): Promise<void> {
     const startTime = Date.now();
 
     try {
-      // Basic check - verify the server is initialized
-      // In a real implementation, you might check if the MCP server is responding
+      // Basic check - verify the health checker is initialized
+      // This confirms the MCP server process is running
       checks.mcpServer = {
         status: "pass",
-        message: "MCP server operational",
+        message: "MCP server process initialized",
         duration: Date.now() - startTime,
       };
     } catch (error) {

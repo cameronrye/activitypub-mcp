@@ -7,6 +7,7 @@ import { healthChecker } from "./health-check.js";
 import { instanceDiscovery } from "./instance-discovery.js";
 import { performanceMonitor } from "./performance-monitor.js";
 import { remoteClient } from "./remote-client.js";
+import { ActorIdentifierSchema, DomainSchema, QuerySchema } from "./validation/schemas.js";
 
 const logger = getLogger("activitypub-mcp");
 
@@ -20,41 +21,14 @@ const CONFIG = {
   rateLimitWindow: Number.parseInt(process.env.RATE_LIMIT_WINDOW || "900000", 10),
 };
 
-// Input validation schemas
-const ActorIdentifierSchema = z
-  .string()
-  .min(1, "Actor identifier cannot be empty")
-  .max(100, "Actor identifier too long")
-  .regex(
-    /^[a-zA-Z0-9_.-]+@[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
-    "Invalid identifier format. Expected: user@domain.com",
-  );
-
+// Reserved for future write operations (currently read-only client)
+// These schemas are defined but not used as this is a read-only fediverse client
 const _PostContentSchema = z
   .string()
   .min(1, "Post content cannot be empty")
   .max(5000, "Post content too long");
 
 const _UriSchema = z.string().url("Invalid URI format");
-
-const DomainSchema = z
-  .string()
-  .min(1, "Domain cannot be empty")
-  .max(253, "Domain too long")
-  .regex(
-    /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
-    "Invalid domain format",
-  )
-  .refine(
-    (domain) =>
-      !domain.includes("..") &&
-      !domain.startsWith(".") &&
-      !domain.endsWith(".") &&
-      domain.includes("."), // Must contain at least one dot for TLD
-    "Invalid domain format",
-  );
-
-const QuerySchema = z.string().min(1, "Query cannot be empty").max(500, "Query too long");
 
 /**
  * ActivityPub MCP Server
@@ -348,6 +322,11 @@ class ActivityPubMCPServer {
           });
 
           const timelineData = await remoteClient.fetchActorOutbox(validIdentifier, 20);
+
+          // Validate timeline data exists
+          if (!timelineData) {
+            throw new McpError(ErrorCode.InternalError, "Failed to fetch timeline data");
+          }
 
           // Ensure the timeline data has the expected structure
           const normalizedTimeline = {

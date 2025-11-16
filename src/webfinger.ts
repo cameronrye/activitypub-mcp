@@ -211,7 +211,7 @@ export class WebFingerClient {
         headers: {
           Accept:
             'application/activity+json, application/ld+json; profile="https://www.w3.org/ns/activitystreams"',
-          "User-Agent": "ActivityPub-MCP-Client/1.0.0",
+          "User-Agent": USER_AGENT,
         },
         signal: controller.signal,
       });
