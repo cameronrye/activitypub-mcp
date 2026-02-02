@@ -3,7 +3,7 @@ import "./logging.js";
 
 const logger = getLogger("activitypub-mcp");
 
-logger.info("🌐 ActivityPub MCP Server - Fediverse Client Mode");
+logger.info("ActivityPub MCP Server - Fediverse Client Mode");
 logger.info("This server operates as a fediverse CLIENT, not a server.");
 logger.info("It helps you interact with EXISTING ActivityPub servers across the fediverse.");
 logger.info("To use this server:");
@@ -16,11 +16,17 @@ logger.info(
   "No local ActivityPub server is running. All interactions are with remote fediverse servers.",
 );
 
-// Keep the process alive for MCP connections
+// Handle graceful shutdown
 process.on("SIGINT", () => {
-  logger.info("👋 Shutting down ActivityPub MCP Server...");
+  logger.info("Shutting down ActivityPub MCP Server...");
   process.exit(0);
 });
 
-// Prevent the process from exiting
-setInterval(() => {}, 1000);
+process.on("SIGTERM", () => {
+  logger.info("Shutting down ActivityPub MCP Server...");
+  process.exit(0);
+});
+
+// Note: This file is for informational purposes only.
+// The actual MCP server is started via mcp-main.ts which uses
+// the StdioServerTransport to stay alive while connected.

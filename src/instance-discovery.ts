@@ -1,131 +1,42 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { getLogger } from "@logtape/logtape";
+import { REQUEST_TIMEOUT, USER_AGENT } from "./config.js";
 
 const logger = getLogger("activitypub-mcp");
 
-// Popular fediverse instances by category
-const POPULAR_INSTANCES = {
-  mastodon: [
-    {
-      domain: "mastodon.social",
-      description: "The flagship Mastodon instance",
-      users: "900k+",
-    },
-    {
-      domain: "mas.to",
-      description: "General purpose Mastodon instance",
-      users: "100k+",
-    },
-    {
-      domain: "mstdn.social",
-      description: "Japanese Mastodon instance",
-      users: "200k+",
-    },
-    {
-      domain: "fosstodon.org",
-      description: "For FOSS enthusiasts",
-      users: "50k+",
-    },
-    {
-      domain: "hachyderm.io",
-      description: "For tech professionals",
-      users: "30k+",
-    },
-    {
-      domain: "pixelfed.social",
-      description: "Photo sharing (Pixelfed)",
-      users: "20k+",
-    },
-    {
-      domain: "techhub.social",
-      description: "Technology focused",
-      users: "25k+",
-    },
-    {
-      domain: "scholar.social",
-      description: "Academic community",
-      users: "15k+",
-    },
-    { domain: "journa.host", description: "For journalists", users: "5k+" },
-    {
-      domain: "art.lgbt",
-      description: "LGBTQ+ artists community",
-      users: "3k+",
-    },
-  ],
-  pleroma: [
-    {
-      domain: "pleroma.social",
-      description: "Main Pleroma instance",
-      users: "10k+",
-    },
-    {
-      domain: "shitposter.club",
-      description: "Free speech focused",
-      users: "5k+",
-    },
-    {
-      domain: "freespeechextremist.com",
-      description: "Minimal moderation",
-      users: "3k+",
-    },
-    { domain: "poa.st", description: "General Pleroma instance", users: "8k+" },
-  ],
-  misskey: [
-    {
-      domain: "misskey.io",
-      description: "Main Misskey instance",
-      users: "50k+",
-    },
-    { domain: "misskey.dev", description: "Development focused", users: "5k+" },
-    {
-      domain: "mi.nakn.jp",
-      description: "Japanese Misskey instance",
-      users: "3k+",
-    },
-  ],
-  peertube: [
-    {
-      domain: "framatube.org",
-      description: "Framasoft's PeerTube instance",
-      users: "10k+",
-    },
-    {
-      domain: "peertube.tv",
-      description: "General PeerTube instance",
-      users: "5k+",
-    },
-    {
-      domain: "tube.tchncs.de",
-      description: "German tech-focused",
-      users: "3k+",
-    },
-  ],
-  pixelfed: [
-    {
-      domain: "pixelfed.social",
-      description: "Main Pixelfed instance",
-      users: "20k+",
-    },
-    {
-      domain: "pixelfed.de",
-      description: "German Pixelfed instance",
-      users: "5k+",
-    },
-  ],
-  lemmy: [
-    { domain: "lemmy.ml", description: "Main Lemmy instance", users: "30k+" },
-    {
-      domain: "lemmy.world",
-      description: "General purpose Lemmy",
-      users: "100k+",
-    },
-    {
-      domain: "beehaw.org",
-      description: "Curated Lemmy community",
-      users: "15k+",
-    },
-  ],
-};
+// Load instance data from external JSON file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+interface InstanceData {
+  domain: string;
+  description: string;
+  users: string;
+}
+
+type PopularInstancesData = Record<string, InstanceData[]>;
+
+function loadInstanceData(): PopularInstancesData {
+  try {
+    const dataPath = join(__dirname, "data", "instances.json");
+    const data = readFileSync(dataPath, "utf-8");
+    return JSON.parse(data);
+  } catch (error) {
+    logger.warn("Failed to load instance data from file, using empty defaults", { error });
+    return {
+      mastodon: [],
+      pleroma: [],
+      misskey: [],
+      peertube: [],
+      pixelfed: [],
+      lemmy: [],
+    };
+  }
+}
+
+const POPULAR_INSTANCES = loadInstanceData();
 
 export interface FediverseInstance {
   domain: string;
@@ -139,18 +50,24 @@ export interface FediverseInstance {
  * Service for discovering and managing fediverse instances
  */
 export class InstanceDiscoveryService {
-  private readonly requestTimeout = 10000;
+  private readonly requestTimeout = REQUEST_TIMEOUT;
 
   /**
-   * Get popular instances by software type
+   * Get popular instances by software type.
+   *
+   * @param software - Optional software type filter (e.g., "mastodon", "pleroma")
+   * @returns Array of fediverse instances
    */
   getPopularInstances(software?: string): FediverseInstance[] {
-    if (software && software in POPULAR_INSTANCES) {
-      return POPULAR_INSTANCES[software as keyof typeof POPULAR_INSTANCES].map((instance) => ({
-        ...instance,
-        software,
-        category: software,
-      }));
+    if (software) {
+      const instances = POPULAR_INSTANCES[software];
+      if (instances) {
+        return instances.map((instance) => ({
+          ...instance,
+          software,
+          category: software,
+        }));
+      }
     }
 
     // Return all instances if no specific software requested
@@ -303,7 +220,7 @@ export class InstanceDiscoveryService {
       const response = await fetch(`https://${domain}/api/v1/instance`, {
         headers: {
           Accept: "application/json",
-          "User-Agent": "ActivityPub-MCP-Client/1.0.0",
+          "User-Agent": USER_AGENT,
         },
         signal: controller.signal,
       });

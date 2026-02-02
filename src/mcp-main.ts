@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { getLogger } from "@logtape/logtape";
+import { validateConfiguration } from "./config.js";
 import ActivityPubMCPServer from "./mcp-server.js";
 import "./logging.js";
 
@@ -14,6 +15,9 @@ const logger = getLogger("activitypub-mcp");
  */
 async function main() {
   try {
+    // Validate configuration and log warnings for missing recommended settings
+    validateConfiguration();
+
     const server = new ActivityPubMCPServer();
     await server.start();
   } catch (error) {

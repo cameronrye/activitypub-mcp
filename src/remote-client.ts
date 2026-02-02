@@ -1,27 +1,21 @@
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
-import { REQUEST_TIMEOUT, USER_AGENT } from "./config.js";
+import {
+  CACHE_MAX_SIZE,
+  CACHE_TTL,
+  MAX_RESPONSE_SIZE,
+  MAX_RETRIES,
+  REQUEST_TIMEOUT,
+  RETRY_BASE_DELAY,
+  RETRY_MAX_DELAY,
+  USER_AGENT,
+} from "./config.js";
+import { LRUCache } from "./utils/lru-cache.js";
+import { getErrorMessage, validateExternalUrl } from "./utils.js";
 import { DomainSchema } from "./validation/schemas.js";
 import { type ActivityPubActor, webfingerClient } from "./webfinger.js";
 
 const logger = getLogger("activitypub-mcp");
-
-// Maximum response size (10MB) to prevent DoS attacks
-const MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
-
-// URL validation schema (reserved for future use)
-// Prefixed with underscore to indicate intentionally unused
-const _UrlSchema = z
-  .string()
-  .url("Invalid URL format")
-  .refine((url) => {
-    try {
-      const parsed = new URL(url);
-      return parsed.protocol === "https:" || parsed.protocol === "http:";
-    } catch {
-      return false;
-    }
-  }, "URL must use HTTP or HTTPS protocol");
 
 // ActivityPub Collection schema
 const ActivityPubCollectionSchema = z.object({
@@ -109,17 +103,48 @@ const InstanceInfoSchema = z.object({
 export type InstanceInfo = z.infer<typeof InstanceInfoSchema>;
 
 /**
- * Client for interacting with remote ActivityPub servers
+ * Client for interacting with remote ActivityPub servers.
+ *
+ * This client provides methods for fetching ActivityPub data from remote
+ * servers, including actors, timelines, followers, and instance information.
+ * It includes caching, retry logic with exponential backoff, and SSRF protection.
  */
 export class RemoteActivityPubClient {
   private readonly requestTimeout = REQUEST_TIMEOUT;
-  private readonly maxRetries = 3;
-  private readonly retryDelay = 1000; // 1 second
-  private readonly instanceCache = new Map<string, { data: InstanceInfo; timestamp: number }>();
-  private readonly instanceCacheTTL = 5 * 60 * 1000; // 5 minutes
+  private readonly maxRetries = MAX_RETRIES;
+  private readonly baseRetryDelay = RETRY_BASE_DELAY;
+  private readonly maxRetryDelay = RETRY_MAX_DELAY;
+  private readonly instanceCache: LRUCache<string, InstanceInfo>;
 
   /**
-   * Fetch actor information from remote server
+   * Creates a new RemoteActivityPubClient instance.
+   */
+  constructor() {
+    this.instanceCache = new LRUCache<string, InstanceInfo>({
+      maxSize: CACHE_MAX_SIZE,
+      ttl: CACHE_TTL,
+    });
+  }
+
+  /**
+   * Calculates the delay for exponential backoff.
+   *
+   * @param attempt - The current attempt number (1-based)
+   * @returns The delay in milliseconds
+   */
+  private calculateBackoffDelay(attempt: number): number {
+    // Exponential backoff: baseDelay * 2^(attempt-1)
+    const delay = this.baseRetryDelay * 2 ** (attempt - 1);
+    // Cap at maxRetryDelay and add some jitter (0-10%)
+    const jitter = Math.random() * 0.1 * delay;
+    return Math.min(delay + jitter, this.maxRetryDelay);
+  }
+
+  /**
+   * Fetch actor information from remote server.
+   *
+   * @param identifier - The actor identifier (e.g., user@domain.social)
+   * @returns The ActivityPub actor data
    */
   async fetchRemoteActor(identifier: string): Promise<ActivityPubActor> {
     logger.info("Fetching remote actor", { identifier });
@@ -127,10 +152,8 @@ export class RemoteActivityPubClient {
     try {
       return await webfingerClient.discoverActor(identifier);
     } catch (error) {
-      logger.error("Failed to fetch remote actor", { identifier, error });
-      throw new Error(
-        `Failed to fetch actor ${identifier}: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
+      logger.error("Failed to fetch remote actor", { identifier, error: getErrorMessage(error) });
+      throw new Error(`Failed to fetch actor ${identifier}: ${getErrorMessage(error)}`);
     }
   }
 
@@ -261,17 +284,20 @@ export class RemoteActivityPubClient {
   }
 
   /**
-   * Get instance information (with caching)
+   * Get instance information (with LRU caching).
+   *
+   * @param domain - The instance domain to get information for
+   * @returns The instance information
    */
   async getInstanceInfo(domain: string): Promise<InstanceInfo> {
     // Validate domain input
     const validDomain = DomainSchema.parse(domain);
 
-    // Check cache first
+    // Check cache first (LRU cache handles TTL internally)
     const cached = this.instanceCache.get(validDomain);
-    if (cached && Date.now() - cached.timestamp < this.instanceCacheTTL) {
+    if (cached) {
       logger.debug("Returning cached instance info", { domain: validDomain });
-      return cached.data;
+      return cached;
     }
 
     logger.info("Fetching instance info", { domain: validDomain });
@@ -311,11 +337,8 @@ export class RemoteActivityPubClient {
         const instanceInfo = this.transformInstanceInfo(domain, data, endpoint);
         const validatedInfo = InstanceInfoSchema.parse(instanceInfo);
 
-        // Cache the result
-        this.instanceCache.set(validDomain, {
-          data: validatedInfo,
-          timestamp: Date.now(),
-        });
+        // Cache the result (LRU cache handles eviction and TTL)
+        this.instanceCache.set(validDomain, validatedInfo);
 
         return validatedInfo;
       }
@@ -351,7 +374,12 @@ export class RemoteActivityPubClient {
   }
 
   /**
-   * Fetch with retry logic
+   * Fetch with retry logic and exponential backoff.
+   *
+   * @param url - The URL to fetch
+   * @param options - Fetch options
+   * @param schema - Zod schema to validate the response
+   * @returns The validated response data
    */
   private async fetchWithRetry<T>(
     url: string,
@@ -374,22 +402,34 @@ export class RemoteActivityPubClient {
         lastError = error instanceof Error ? error : new Error(String(error));
 
         if (attempt < this.maxRetries) {
-          logger.warn(`Attempt ${attempt} failed, retrying...`, {
+          const delay = this.calculateBackoffDelay(attempt);
+          logger.warn(`Attempt ${attempt} failed, retrying in ${Math.round(delay)}ms...`, {
             url,
             error: lastError.message,
+            nextAttempt: attempt + 1,
+            delay: Math.round(delay),
           });
-          await new Promise((resolve) => setTimeout(resolve, this.retryDelay * attempt));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
     }
 
-    throw lastError || new Error("All retry attempts failed");
+    throw lastError ?? new Error("All retry attempts failed");
   }
 
   /**
-   * Fetch with timeout and response size limit
+   * Fetch with timeout and response size limit.
+   * Includes SSRF protection to block requests to private/internal addresses.
+   * Uses async DNS resolution to detect DNS rebinding attacks.
+   *
+   * @param url - The URL to fetch
+   * @param options - Fetch options
+   * @returns The fetch Response
    */
   private async fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
+    // SSRF protection: validate URL before making request (async for DNS rebinding detection)
+    await validateExternalUrl(url);
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
@@ -402,7 +442,7 @@ export class RemoteActivityPubClient {
 
       // Check response size to prevent DoS attacks
       const contentLength = response.headers.get("content-length");
-      if (contentLength && parseInt(contentLength, 10) > MAX_RESPONSE_SIZE) {
+      if (contentLength && Number.parseInt(contentLength, 10) > MAX_RESPONSE_SIZE) {
         throw new Error(
           `Response too large: ${contentLength} bytes (max: ${MAX_RESPONSE_SIZE} bytes)`,
         );
@@ -419,7 +459,88 @@ export class RemoteActivityPubClient {
   }
 
   /**
-   * Transform different instance API responses to our schema
+   * Transforms Mastodon/Pleroma API response to our schema.
+   */
+  private transformMastodonInfo(
+    base: Partial<InstanceInfo>,
+    dataObj: Record<string, unknown>,
+  ): Partial<InstanceInfo> {
+    const version = typeof dataObj.version === "string" ? dataObj.version : undefined;
+    return {
+      ...base,
+      software: version?.includes("Pleroma") ? "pleroma" : "mastodon",
+      version,
+      description: typeof dataObj.description === "string" ? dataObj.description : undefined,
+      languages: Array.isArray(dataObj.languages) ? (dataObj.languages as string[]) : undefined,
+      registrations: typeof dataObj.registrations === "boolean" ? dataObj.registrations : undefined,
+      approval_required:
+        typeof dataObj.approval_required === "boolean" ? dataObj.approval_required : undefined,
+      contact_account:
+        typeof dataObj.contact_account === "object"
+          ? (dataObj.contact_account as {
+              id: string;
+              username: string;
+              display_name?: string;
+            })
+          : undefined,
+      stats:
+        typeof dataObj.stats === "object"
+          ? (dataObj.stats as {
+              user_count?: number;
+              status_count?: number;
+              domain_count?: number;
+            })
+          : undefined,
+    };
+  }
+
+  /**
+   * Transforms Misskey API response to our schema.
+   */
+  private transformMisskeyInfo(
+    base: Partial<InstanceInfo>,
+    dataObj: Record<string, unknown>,
+  ): Partial<InstanceInfo> {
+    return {
+      ...base,
+      software: "misskey",
+      version: typeof dataObj.version === "string" ? dataObj.version : undefined,
+      description: typeof dataObj.description === "string" ? dataObj.description : undefined,
+    };
+  }
+
+  /**
+   * Transforms NodeInfo response to our schema.
+   */
+  private transformNodeInfo(
+    base: Partial<InstanceInfo>,
+    dataObj: Record<string, unknown>,
+  ): Partial<InstanceInfo> {
+    const software =
+      typeof dataObj.software === "object" && dataObj.software !== null
+        ? (dataObj.software as Record<string, unknown>)
+        : {};
+    const metadata =
+      typeof dataObj.metadata === "object" && dataObj.metadata !== null
+        ? (dataObj.metadata as Record<string, unknown>)
+        : {};
+
+    return {
+      ...base,
+      software: typeof software.name === "string" ? software.name : undefined,
+      version: typeof software.version === "string" ? software.version : undefined,
+      description:
+        typeof metadata.nodeDescription === "string" ? metadata.nodeDescription : undefined,
+    };
+  }
+
+  /**
+   * Transform different instance API responses to our schema.
+   *
+   * @param domain - The instance domain
+   * @param data - The raw API response data
+   * @param endpoint - The endpoint that was called
+   * @returns Partial instance info
    */
   private transformInstanceInfo(
     domain: string,
@@ -436,67 +557,15 @@ export class RemoteActivityPubClient {
     const dataObj = data as Record<string, unknown>;
 
     if (endpoint.includes("/api/v1/instance")) {
-      // Mastodon/Pleroma format
-      return {
-        ...base,
-        software:
-          typeof dataObj.version === "string" && dataObj.version.includes("Pleroma")
-            ? "pleroma"
-            : "mastodon",
-        version: typeof dataObj.version === "string" ? dataObj.version : undefined,
-        description: typeof dataObj.description === "string" ? dataObj.description : undefined,
-        languages: Array.isArray(dataObj.languages) ? (dataObj.languages as string[]) : undefined,
-        registrations:
-          typeof dataObj.registrations === "boolean" ? dataObj.registrations : undefined,
-        approval_required:
-          typeof dataObj.approval_required === "boolean" ? dataObj.approval_required : undefined,
-        contact_account:
-          typeof dataObj.contact_account === "object"
-            ? (dataObj.contact_account as {
-                id: string;
-                username: string;
-                display_name?: string;
-              })
-            : undefined,
-        stats:
-          typeof dataObj.stats === "object"
-            ? (dataObj.stats as {
-                user_count?: number;
-                status_count?: number;
-                domain_count?: number;
-              })
-            : undefined,
-      };
+      return this.transformMastodonInfo(base, dataObj);
     }
 
     if (endpoint.includes("/api/meta")) {
-      // Misskey format
-      return {
-        ...base,
-        software: "misskey",
-        version: typeof dataObj.version === "string" ? dataObj.version : undefined,
-        description: typeof dataObj.description === "string" ? dataObj.description : undefined,
-      };
+      return this.transformMisskeyInfo(base, dataObj);
     }
 
     if (endpoint.includes("/nodeinfo")) {
-      // NodeInfo format
-      const software =
-        typeof dataObj.software === "object" && dataObj.software !== null
-          ? (dataObj.software as Record<string, unknown>)
-          : {};
-      const metadata =
-        typeof dataObj.metadata === "object" && dataObj.metadata !== null
-          ? (dataObj.metadata as Record<string, unknown>)
-          : {};
-
-      return {
-        ...base,
-        software: typeof software.name === "string" ? software.name : undefined,
-        version: typeof software.version === "string" ? software.version : undefined,
-        description:
-          typeof metadata.nodeDescription === "string" ? metadata.nodeDescription : undefined,
-      };
+      return this.transformNodeInfo(base, dataObj);
     }
 
     return base;

@@ -3,6 +3,12 @@
  */
 
 import { getLogger } from "@logtape/logtape";
+import {
+  HEALTH_CHECK_TIMEOUT,
+  HEALTH_CHECK_URL,
+  MEMORY_WARN_THRESHOLD_MB,
+  MEMORY_WARN_THRESHOLD_PERCENT,
+} from "./config.js";
 import { performanceMonitor } from "./performance-monitor.js";
 
 const logger = getLogger("activitypub-mcp:health");
@@ -40,9 +46,9 @@ export interface HealthCheckResult {
 }
 
 class HealthChecker {
-  private healthCheckEnabled: boolean;
-  private version: string;
-  private startTime: number;
+  private readonly healthCheckEnabled: boolean;
+  private readonly version: string;
+  private readonly startTime: number;
 
   constructor() {
     this.healthCheckEnabled = process.env.HEALTH_CHECK_ENABLED === "true";
@@ -142,12 +148,12 @@ class HealthChecker {
       let status: "pass" | "warn" | "fail";
       let message: string;
 
-      if (heapUsedMB > 500) {
+      if (heapUsedMB > MEMORY_WARN_THRESHOLD_MB) {
         status = "fail";
-        message = `High memory usage: ${heapUsedMB.toFixed(2)}MB`;
-      } else if (usagePercent > 80) {
+        message = `High memory usage: ${heapUsedMB.toFixed(2)}MB (threshold: ${MEMORY_WARN_THRESHOLD_MB}MB)`;
+      } else if (usagePercent > MEMORY_WARN_THRESHOLD_PERCENT) {
         status = "warn";
-        message = `Memory usage at ${usagePercent.toFixed(1)}%`;
+        message = `Memory usage at ${usagePercent.toFixed(1)}% (threshold: ${MEMORY_WARN_THRESHOLD_PERCENT}%)`;
       } else {
         status = "pass";
         message = `Memory usage normal: ${heapUsedMB.toFixed(2)}MB`;
@@ -229,11 +235,11 @@ class HealthChecker {
     const startTime = Date.now();
 
     try {
-      // Test connectivity to a well-known fediverse instance
+      // Test connectivity to configurable fediverse instance
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT);
 
-      const response = await fetch("https://mastodon.social/.well-known/nodeinfo", {
+      const response = await fetch(HEALTH_CHECK_URL, {
         method: "HEAD",
         signal: controller.signal,
       });

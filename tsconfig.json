@@ -10,7 +10,13 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+
+    // Strict type-checking options
     "strict": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,

@@ -28,15 +28,16 @@ export const DomainSchema = z
 
 /**
  * Actor identifier validation schema
- * Format: user@domain.com
+ * Format: user@domain.com or @user@domain.com
+ * Max length based on email spec (320 chars)
  */
 export const ActorIdentifierSchema = z
   .string()
   .min(3, "Identifier too short")
-  .max(255, "Identifier too long")
+  .max(320, "Identifier too long")
   .regex(
-    /^[a-zA-Z0-9._-]+@[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/,
-    "Invalid identifier format. Expected: user@domain.com",
+    /^@?[a-zA-Z0-9._-]+@[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/,
+    "Invalid identifier format. Expected: user@domain.com or @user@domain.com",
   );
 
 /**

@@ -69,7 +69,7 @@ class PerformanceMonitor {
   startRequest(operation: string, metadata?: Record<string, unknown>): string {
     if (!this.metricsEnabled) return "";
 
-    const requestId = `${operation}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const requestId = `${operation}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     const request: RequestMetrics = {
       operation,
       startTime: Date.now(),

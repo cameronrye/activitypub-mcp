@@ -1,14 +1,32 @@
-# ActivityPub MCP Server - Fediverse Client
+<p align="center">
+  <img src="public/logo.svg" alt="ActivityPub MCP Logo" width="200" />
+</p>
 
-![ActivityPub MCP Logo](public/logo.svg)
+<h1 align="center">ActivityPub MCP Server</h1>
 
-A comprehensive **Model Context Protocol (MCP)** server that enables LLMs like Claude to **explore and interact with the existing Fediverse** through standardized MCP tools, resources, and prompts.
+<p align="center">
+  <strong>Fediverse Client for LLMs</strong>
+</p>
+
+<p align="center">
+  A comprehensive <strong>Model Context Protocol (MCP)</strong> server that enables LLMs like Claude to <strong>explore and interact with the existing Fediverse</strong> through standardized MCP tools, resources, and prompts.
+</p>
 
 <!-- Trigger CI -->
 
-[![npm version](https://badge.fury.io/js/activitypub-mcp.svg)](https://badge.fury.io/js/activitypub-mcp)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+<p align="center">
+  <a href="https://badge.fury.io/js/activitypub-mcp"><img src="https://badge.fury.io/js/activitypub-mcp.svg" alt="npm version" /></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white" alt="TypeScript" /></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white" alt="Node.js" /></a>
+  <a href="https://modelcontextprotocol.io/"><img src="https://img.shields.io/badge/MCP-Compatible-blueviolet" alt="MCP Compatible" /></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/cameronrye/activitypub-mcp/actions"><img src="https://github.com/cameronrye/activitypub-mcp/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://www.npmjs.com/package/activitypub-mcp"><img src="https://img.shields.io/npm/dm/activitypub-mcp.svg" alt="npm downloads" /></a>
+  <a href="https://github.com/cameronrye/activitypub-mcp"><img src="https://img.shields.io/github/stars/cameronrye/activitypub-mcp?style=social" alt="GitHub stars" /></a>
+</p>
 
 ## Features
 
@@ -624,4 +642,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-Made by [Cameron Rye](https://rye.dev/)
+Made with ❤️ by [Cameron Rye](https://rye.dev/)

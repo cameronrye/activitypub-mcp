@@ -1,32 +1,25 @@
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
-import { REQUEST_TIMEOUT, USER_AGENT } from "./config.js";
+import { CACHE_MAX_SIZE, CACHE_TTL, REQUEST_TIMEOUT, USER_AGENT } from "./config.js";
+import { LRUCache } from "./utils/lru-cache.js";
+import { validateExternalUrl } from "./utils.js";
+import { ActorIdentifierSchema } from "./validation/schemas.js";
 
 const logger = getLogger("activitypub-mcp");
-
-// Actor identifier validation schema
-const ActorIdentifierSchema = z
-  .string()
-  .min(3, "Identifier too short")
-  .max(320, "Identifier too long") // Max email length
-  .regex(
-    /^@?[a-zA-Z0-9._-]+@[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
-    "Invalid identifier format. Expected: user@domain.com",
-  );
 
 // WebFinger response schema
 const WebFingerResponseSchema = z.object({
   subject: z.string(),
   aliases: z.array(z.string()).optional(),
-  properties: z.record(z.string()).optional(),
+  properties: z.record(z.string(), z.string()).optional(),
   links: z.array(
     z.object({
       rel: z.string(),
       type: z.string().optional(),
       href: z.string().optional(),
       template: z.string().optional(),
-      titles: z.record(z.string()).optional(),
-      properties: z.record(z.string()).optional(),
+      titles: z.record(z.string(), z.string()).optional(),
+      properties: z.record(z.string(), z.string()).optional(),
     }),
   ),
 });
@@ -77,12 +70,23 @@ export type ActivityPubActor = z.infer<typeof ActivityPubActorSchema>;
 
 /**
  * WebFinger client for discovering ActivityPub actors across the fediverse
+ * Uses LRU caching with TTL to prevent unbounded memory growth.
  */
 export class WebFingerClient {
-  private cache = new Map<string, { data: WebFingerResponse; timestamp: number }>();
-  private actorCache = new Map<string, { data: ActivityPubActor; timestamp: number }>();
-  private readonly cacheTimeout = 5 * 60 * 1000; // 5 minutes
+  private readonly cache: LRUCache<string, WebFingerResponse>;
+  private readonly actorCache: LRUCache<string, ActivityPubActor>;
   private readonly requestTimeout = REQUEST_TIMEOUT;
+
+  constructor() {
+    this.cache = new LRUCache<string, WebFingerResponse>({
+      maxSize: CACHE_MAX_SIZE,
+      ttl: CACHE_TTL,
+    });
+    this.actorCache = new LRUCache<string, ActivityPubActor>({
+      maxSize: CACHE_MAX_SIZE,
+      ttl: CACHE_TTL,
+    });
+  }
 
   /**
    * Discover an ActivityPub actor using WebFinger
@@ -92,13 +96,13 @@ export class WebFingerClient {
   async discoverActor(identifier: string): Promise<ActivityPubActor> {
     const normalizedIdentifier = this.normalizeIdentifier(identifier);
 
-    // Check actor cache first
+    // Check actor cache first (LRU cache handles TTL internally)
     const cachedActor = this.actorCache.get(normalizedIdentifier);
-    if (cachedActor && !this.isExpired(cachedActor.timestamp)) {
+    if (cachedActor) {
       logger.debug("Returning cached actor", {
         identifier: normalizedIdentifier,
       });
-      return cachedActor.data;
+      return cachedActor;
     }
 
     // Perform WebFinger discovery
@@ -113,11 +117,8 @@ export class WebFingerClient {
     // Fetch the actor
     const actor = await this.fetchActor(actorUrl);
 
-    // Cache the result
-    this.actorCache.set(normalizedIdentifier, {
-      data: actor,
-      timestamp: Date.now(),
-    });
+    // Cache the result (LRU cache handles eviction and TTL)
+    this.actorCache.set(normalizedIdentifier, actor);
 
     return actor;
   }
@@ -126,11 +127,11 @@ export class WebFingerClient {
    * Perform WebFinger lookup
    */
   private async performWebFingerLookup(identifier: string): Promise<WebFingerResponse> {
-    // Check cache first
+    // Check cache first (LRU cache handles TTL internally)
     const cached = this.cache.get(identifier);
-    if (cached && !this.isExpired(cached.timestamp)) {
+    if (cached) {
       logger.debug("Returning cached WebFinger response", { identifier });
-      return cached.data;
+      return cached;
     }
 
     const [username, domain] = identifier.replace(/^@/, "").split("@");
@@ -139,6 +140,9 @@ export class WebFingerClient {
     }
 
     const webfingerUrl = `https://${domain}/.well-known/webfinger?resource=acct:${username}@${domain}`;
+
+    // SSRF protection: validate URL with async DNS resolution for rebinding detection
+    await validateExternalUrl(webfingerUrl);
 
     logger.info("Performing WebFinger lookup", {
       identifier,
@@ -167,11 +171,8 @@ export class WebFingerClient {
       const data = await response.json();
       const webfingerResponse = WebFingerResponseSchema.parse(data);
 
-      // Cache the result
-      this.cache.set(identifier, {
-        data: webfingerResponse,
-        timestamp: Date.now(),
-      });
+      // Cache the result (LRU cache handles eviction and TTL)
+      this.cache.set(identifier, webfingerResponse);
 
       return webfingerResponse;
     } catch (error) {
@@ -200,6 +201,9 @@ export class WebFingerClient {
    * Fetch ActivityPub actor from URL
    */
   private async fetchActor(actorUrl: string): Promise<ActivityPubActor> {
+    // SSRF protection: validate URL with async DNS resolution for rebinding detection
+    await validateExternalUrl(actorUrl);
+
     logger.info("Fetching ActivityPub actor", { url: actorUrl });
 
     try {
@@ -243,13 +247,6 @@ export class WebFingerClient {
     const normalized = validIdentifier.replace(/^@/, "");
 
     return normalized;
-  }
-
-  /**
-   * Check if cached data is expired
-   */
-  private isExpired(timestamp: number): boolean {
-    return Date.now() - timestamp > this.cacheTimeout;
   }
 
   /**
