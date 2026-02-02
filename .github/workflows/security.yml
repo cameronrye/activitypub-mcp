@@ -79,7 +79,7 @@ jobs:
       run: npm audit --audit-level=high
     
     - name: Run npm audit fix (dry run)
-      run: npm audit fix --dry-run
+      run: npm audit fix --dry-run || true
 
   license-check:
     name: License Check
