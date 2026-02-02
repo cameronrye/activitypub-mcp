@@ -73,6 +73,7 @@
     "test:legacy:comprehensive": "tsx ./tests/test-client-comprehensive.ts",
     "test:legacy:errors": "tsx ./tests/test-error-scenarios.ts",
     "test:legacy:edge": "tsx ./tests/test-edge-cases.ts",
+    "test:all": "vitest run",
     "test:coverage": "vitest run --coverage",
     "coverage": "vitest run --coverage",
     "lint": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" biome check .",
