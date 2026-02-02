@@ -121,7 +121,7 @@ jobs:
           dist/*.js.map
     
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: release-build-v${{ steps.get_version.outputs.VERSION }}
         path: |
