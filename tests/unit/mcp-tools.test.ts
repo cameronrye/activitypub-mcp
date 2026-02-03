@@ -2,8 +2,8 @@
  * Tests for MCP tool handlers
  */
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { registerTools } from "../../src/mcp/tools.js";
 import { RateLimiter } from "../../src/server/rate-limiter.js";
 
@@ -29,7 +29,12 @@ vi.mock("../../src/remote-client.js", () => ({
 vi.mock("../../src/instance-discovery.js", () => ({
   instanceDiscovery: {
     getPopularInstances: vi.fn().mockReturnValue([
-      { domain: "mastodon.social", description: "General instance", users: "1M+", software: "mastodon" },
+      {
+        domain: "mastodon.social",
+        description: "General instance",
+        users: "1M+",
+        software: "mastodon",
+      },
     ]),
     searchInstancesByTopic: vi.fn().mockReturnValue([]),
     getInstancesBySize: vi.fn().mockReturnValue([]),
@@ -86,9 +91,9 @@ vi.mock("../../src/performance-monitor.js", () => ({
       successRate: 0.9,
       averageResponseTime: 45,
     }),
-    getRequestHistory: vi.fn().mockReturnValue([
-      { operation: "discover-actor", duration: 50, success: true },
-    ]),
+    getRequestHistory: vi
+      .fn()
+      .mockReturnValue([{ operation: "discover-actor", duration: 50, success: true }]),
   },
 }));
 
@@ -101,17 +106,20 @@ vi.mock("@logtape/logtape", () => ({
   }),
 }));
 
-// Import mocked modules
-import { remoteClient } from "../../src/remote-client.js";
-import { instanceDiscovery } from "../../src/instance-discovery.js";
 import { dynamicInstanceDiscovery } from "../../src/dynamic-instance-discovery.js";
 import { healthChecker } from "../../src/health-check.js";
+import { instanceDiscovery } from "../../src/instance-discovery.js";
 import { performanceMonitor } from "../../src/performance-monitor.js";
+// Import mocked modules
+import { remoteClient } from "../../src/remote-client.js";
 
 describe("MCP Tools", () => {
   let mcpServer: McpServer;
   let rateLimiter: RateLimiter;
-  let registeredTools: Map<string, { handler: (...args: unknown[]) => Promise<unknown>; config: unknown }>;
+  let registeredTools: Map<
+    string,
+    { handler: (...args: unknown[]) => Promise<unknown>; config: unknown }
+  >;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -119,9 +127,11 @@ describe("MCP Tools", () => {
     // Create a real MCP server and capture tool registrations
     registeredTools = new Map();
     mcpServer = {
-      registerTool: vi.fn((name: string, config: unknown, handler: (...args: unknown[]) => Promise<unknown>) => {
-        registeredTools.set(name, { handler, config });
-      }),
+      registerTool: vi.fn(
+        (name: string, config: unknown, handler: (...args: unknown[]) => Promise<unknown>) => {
+          registeredTools.set(name, { handler, config });
+        },
+      ),
     } as unknown as McpServer;
 
     rateLimiter = new RateLimiter({ enabled: false, maxRequests: 100, windowMs: 60000 });
@@ -183,10 +193,12 @@ describe("MCP Tools", () => {
       const tool = registeredTools.get("discover-actor");
       expect(tool).toBeDefined();
 
-      const result = await tool!.handler({ identifier: "testuser@example.social" });
+      const result = await tool?.handler({ identifier: "testuser@example.social" });
 
       expect(result).toHaveProperty("content");
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Successfully discovered actor");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Successfully discovered actor",
+      );
       expect(remoteClient.fetchRemoteActor).toHaveBeenCalledWith("testuser@example.social");
     });
 
@@ -194,10 +206,12 @@ describe("MCP Tools", () => {
       (remoteClient.fetchRemoteActor as Mock).mockRejectedValue(new Error("Network error"));
 
       const tool = registeredTools.get("discover-actor");
-      const result = await tool!.handler({ identifier: "testuser@example.social" });
+      const result = await tool?.handler({ identifier: "testuser@example.social" });
 
       expect((result as { isError: boolean }).isError).toBe(true);
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Failed to discover actor");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Failed to discover actor",
+      );
     });
   });
 
@@ -215,13 +229,17 @@ describe("MCP Tools", () => {
       });
 
       const tool = registeredTools.get("fetch-timeline");
-      const result = await tool!.handler({
+      const result = await tool?.handler({
         identifier: "testuser@example.social",
         limit: 20,
       });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Successfully fetched timeline");
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Next page cursor");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Successfully fetched timeline",
+      );
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Next page cursor",
+      );
     });
 
     it("should handle empty timeline", async () => {
@@ -233,9 +251,11 @@ describe("MCP Tools", () => {
       });
 
       const tool = registeredTools.get("fetch-timeline");
-      const result = await tool!.handler({ identifier: "testuser@example.social" });
+      const result = await tool?.handler({ identifier: "testuser@example.social" });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Posts retrieved: 0");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Posts retrieved: 0",
+      );
     });
   });
 
@@ -246,14 +266,20 @@ describe("MCP Tools", () => {
       });
 
       const tool = registeredTools.get("search-instance");
-      const result = await tool!.handler({
+      const result = await tool?.handler({
         domain: "mastodon.social",
         query: "test",
         type: "accounts",
       });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Search results");
-      expect(remoteClient.searchInstance).toHaveBeenCalledWith("mastodon.social", "test", "accounts");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Search results",
+      );
+      expect(remoteClient.searchInstance).toHaveBeenCalledWith(
+        "mastodon.social",
+        "test",
+        "accounts",
+      );
     });
   });
 
@@ -279,19 +305,25 @@ describe("MCP Tools", () => {
       });
 
       const tool = registeredTools.get("get-instance-info");
-      const result = await tool!.handler({ domain: "mastodon.social" });
+      const result = await tool?.handler({ domain: "mastodon.social" });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Instance Information");
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("mastodon.social");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Instance Information",
+      );
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "mastodon.social",
+      );
     });
   });
 
   describe("discover-instances tool", () => {
     it("should return popular instances", async () => {
       const tool = registeredTools.get("discover-instances");
-      const result = await tool!.handler({});
+      const result = await tool?.handler({});
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("fediverse instances");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "fediverse instances",
+      );
       expect(instanceDiscovery.getPopularInstances).toHaveBeenCalled();
     });
 
@@ -301,14 +333,14 @@ describe("MCP Tools", () => {
       ]);
 
       const tool = registeredTools.get("discover-instances");
-      await tool!.handler({ topic: "technology" });
+      await tool?.handler({ topic: "technology" });
 
       expect(instanceDiscovery.searchInstancesByTopic).toHaveBeenCalledWith("technology");
     });
 
     it("should filter by size", async () => {
       const tool = registeredTools.get("discover-instances");
-      await tool!.handler({ size: "large" });
+      await tool?.handler({ size: "large" });
 
       expect(instanceDiscovery.getInstancesBySize).toHaveBeenCalledWith("large");
     });
@@ -317,9 +349,11 @@ describe("MCP Tools", () => {
   describe("discover-instances-live tool", () => {
     it("should fetch live instance data", async () => {
       const tool = registeredTools.get("discover-instances-live");
-      const result = await tool!.handler({ limit: 10 });
+      const result = await tool?.handler({ limit: 10 });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Live Instance Discovery");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Live Instance Discovery",
+      );
       expect(dynamicInstanceDiscovery.searchInstances).toHaveBeenCalled();
     });
   });
@@ -327,23 +361,35 @@ describe("MCP Tools", () => {
   describe("recommend-instances tool", () => {
     it("should return instance recommendations based on interests", async () => {
       (instanceDiscovery.getInstanceRecommendations as Mock).mockReturnValue([
-        { domain: "fosstodon.org", description: "FOSS enthusiasts", users: "50K", software: "mastodon" },
+        {
+          domain: "fosstodon.org",
+          description: "FOSS enthusiasts",
+          users: "50K",
+          software: "mastodon",
+        },
       ]);
 
       const tool = registeredTools.get("recommend-instances");
-      const result = await tool!.handler({ interests: ["opensource", "linux"] });
+      const result = await tool?.handler({ interests: ["opensource", "linux"] });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("recommended fediverse instances");
-      expect(instanceDiscovery.getInstanceRecommendations).toHaveBeenCalledWith(["opensource", "linux"]);
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "recommended fediverse instances",
+      );
+      expect(instanceDiscovery.getInstanceRecommendations).toHaveBeenCalledWith([
+        "opensource",
+        "linux",
+      ]);
     });
   });
 
   describe("health-check tool", () => {
     it("should return health status", async () => {
       const tool = registeredTools.get("health-check");
-      const result = await tool!.handler({ includeMetrics: false });
+      const result = await tool?.handler({ includeMetrics: false });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Server Health Check");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Server Health Check",
+      );
       expect((result as { content: { text: string }[] }).content[0].text).toContain("HEALTHY");
       expect(healthChecker.performHealthCheck).toHaveBeenCalledWith(false);
     });
@@ -363,9 +409,11 @@ describe("MCP Tools", () => {
       });
 
       const tool = registeredTools.get("health-check");
-      const result = await tool!.handler({ includeMetrics: true });
+      const result = await tool?.handler({ includeMetrics: true });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Performance Metrics");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Performance Metrics",
+      );
       expect(healthChecker.performHealthCheck).toHaveBeenCalledWith(true);
     });
   });
@@ -373,17 +421,21 @@ describe("MCP Tools", () => {
   describe("performance-metrics tool", () => {
     it("should return overall metrics", async () => {
       const tool = registeredTools.get("performance-metrics");
-      const result = await tool!.handler({});
+      const result = await tool?.handler({});
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Overall Performance Metrics");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Overall Performance Metrics",
+      );
       expect(performanceMonitor.getMetrics).toHaveBeenCalled();
     });
 
     it("should return metrics for specific operation", async () => {
       const tool = registeredTools.get("performance-metrics");
-      const result = await tool!.handler({ operation: "discover-actor" });
+      const result = await tool?.handler({ operation: "discover-actor" });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain('Performance Metrics for "discover-actor"');
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        'Performance Metrics for "discover-actor"',
+      );
       expect(performanceMonitor.getOperationMetrics).toHaveBeenCalledWith("discover-actor");
     });
   });
@@ -391,14 +443,19 @@ describe("MCP Tools", () => {
   describe("get-post-thread tool", () => {
     it("should fetch post thread", async () => {
       (remoteClient.fetchPostThread as Mock).mockResolvedValue({
-        post: { content: "Original post", id: "1", url: "https://example.social/1", published: "2024-01-01" },
+        post: {
+          content: "Original post",
+          id: "1",
+          url: "https://example.social/1",
+          published: "2024-01-01",
+        },
         ancestors: [],
         replies: [{ content: "A reply", id: "2" }],
         totalReplies: 1,
       });
 
       const tool = registeredTools.get("get-post-thread");
-      const result = await tool!.handler({ postUrl: "https://example.social/@user/123" });
+      const result = await tool?.handler({ postUrl: "https://example.social/@user/123" });
 
       expect((result as { content: { text: string }[] }).content[0].text).toContain("Post Thread");
       expect(remoteClient.fetchPostThread).toHaveBeenCalled();
@@ -415,9 +472,11 @@ describe("MCP Tools", () => {
       });
 
       const tool = registeredTools.get("get-trending-hashtags");
-      const result = await tool!.handler({ domain: "mastodon.social", limit: 10 });
+      const result = await tool?.handler({ domain: "mastodon.social", limit: 10 });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Trending Hashtags");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Trending Hashtags",
+      );
       expect((result as { content: { text: string }[] }).content[0].text).toContain("#test");
     });
   });
@@ -437,9 +496,11 @@ describe("MCP Tools", () => {
       });
 
       const tool = registeredTools.get("get-trending-posts");
-      const result = await tool!.handler({ domain: "mastodon.social" });
+      const result = await tool?.handler({ domain: "mastodon.social" });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Trending Posts");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Trending Posts",
+      );
     });
   });
 
@@ -460,9 +521,11 @@ describe("MCP Tools", () => {
       });
 
       const tool = registeredTools.get("get-local-timeline");
-      const result = await tool!.handler({ domain: "mastodon.social" });
+      const result = await tool?.handler({ domain: "mastodon.social" });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Local Timeline");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Local Timeline",
+      );
     });
   });
 
@@ -482,9 +545,11 @@ describe("MCP Tools", () => {
       });
 
       const tool = registeredTools.get("get-federated-timeline");
-      const result = await tool!.handler({ domain: "mastodon.social" });
+      const result = await tool?.handler({ domain: "mastodon.social" });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Federated Timeline");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Federated Timeline",
+      );
     });
   });
 
@@ -505,32 +570,42 @@ describe("MCP Tools", () => {
       });
 
       const tool = registeredTools.get("search-accounts");
-      const result = await tool!.handler({ domain: "mastodon.social", query: "test" });
+      const result = await tool?.handler({ domain: "mastodon.social", query: "test" });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Account Search Results");
-      expect(remoteClient.searchInstance).toHaveBeenCalledWith("mastodon.social", "test", "accounts");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Account Search Results",
+      );
+      expect(remoteClient.searchInstance).toHaveBeenCalledWith(
+        "mastodon.social",
+        "test",
+        "accounts",
+      );
     });
   });
 
   describe("search-hashtags tool", () => {
     it("should search for hashtags", async () => {
       (remoteClient.searchInstance as Mock).mockResolvedValue({
-        hashtags: [
-          { name: "test", history: [{ uses: "50" }] },
-        ],
+        hashtags: [{ name: "test", history: [{ uses: "50" }] }],
       });
 
       const tool = registeredTools.get("search-hashtags");
-      const result = await tool!.handler({ domain: "mastodon.social", query: "test" });
+      const result = await tool?.handler({ domain: "mastodon.social", query: "test" });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Hashtag Search Results");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Hashtag Search Results",
+      );
     });
 
     it("should strip leading # from query", async () => {
       const tool = registeredTools.get("search-hashtags");
-      await tool!.handler({ domain: "mastodon.social", query: "#test" });
+      await tool?.handler({ domain: "mastodon.social", query: "#test" });
 
-      expect(remoteClient.searchInstance).toHaveBeenCalledWith("mastodon.social", "test", "hashtags");
+      expect(remoteClient.searchInstance).toHaveBeenCalledWith(
+        "mastodon.social",
+        "test",
+        "hashtags",
+      );
     });
   });
 
@@ -550,9 +625,11 @@ describe("MCP Tools", () => {
       });
 
       const tool = registeredTools.get("search-posts");
-      const result = await tool!.handler({ domain: "mastodon.social", query: "test" });
+      const result = await tool?.handler({ domain: "mastodon.social", query: "test" });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Post Search Results");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Post Search Results",
+      );
     });
   });
 
@@ -565,9 +642,11 @@ describe("MCP Tools", () => {
       });
 
       const tool = registeredTools.get("search");
-      const result = await tool!.handler({ query: "test" });
+      const result = await tool?.handler({ query: "test" });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Search Results");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Search Results",
+      );
     });
   });
 
@@ -580,9 +659,11 @@ describe("MCP Tools", () => {
       });
 
       const tool = registeredTools.get("convert-url");
-      const result = await tool!.handler({ url: "https://example.social/@testuser" });
+      const result = await tool?.handler({ url: "https://example.social/@testuser" });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("URL Conversion");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "URL Conversion",
+      );
     });
 
     it("should convert ActivityPub URI to web URL", async () => {
@@ -593,12 +674,14 @@ describe("MCP Tools", () => {
       });
 
       const tool = registeredTools.get("convert-url");
-      const result = await tool!.handler({
+      const result = await tool?.handler({
         url: "https://example.social/users/testuser",
         direction: "to-web",
       });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("URL Conversion");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "URL Conversion",
+      );
     });
   });
 
@@ -606,19 +689,27 @@ describe("MCP Tools", () => {
     it("should batch fetch multiple actors", async () => {
       (remoteClient.batchFetchActors as Mock).mockResolvedValue({
         results: [
-          { identifier: "user1@example.social", actor: { preferredUsername: "user1", name: "User 1" } },
-          { identifier: "user2@example.social", actor: { preferredUsername: "user2", name: "User 2" } },
+          {
+            identifier: "user1@example.social",
+            actor: { preferredUsername: "user1", name: "User 1" },
+          },
+          {
+            identifier: "user2@example.social",
+            actor: { preferredUsername: "user2", name: "User 2" },
+          },
         ],
         successful: 2,
         failed: 0,
       });
 
       const tool = registeredTools.get("batch-fetch-actors");
-      const result = await tool!.handler({
+      const result = await tool?.handler({
         identifiers: ["user1@example.social", "user2@example.social"],
       });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Batch Actor Fetch Results");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Batch Actor Fetch Results",
+      );
       expect((result as { content: { text: string }[] }).content[0].text).toContain("2 successful");
     });
   });
@@ -635,11 +726,13 @@ describe("MCP Tools", () => {
       });
 
       const tool = registeredTools.get("batch-fetch-posts");
-      const result = await tool!.handler({
+      const result = await tool?.handler({
         postUrls: ["https://example.social/1", "https://example.social/2"],
       });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("Batch Post Fetch Results");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Batch Post Fetch Results",
+      );
       expect((result as { content: { text: string }[] }).content[0].text).toContain("2 successful");
     });
   });
@@ -648,9 +741,11 @@ describe("MCP Tools", () => {
     it("should throw McpError when rate limit exceeded on same identifier", async () => {
       const strictRateLimiter = new RateLimiter({ enabled: true, maxRequests: 1, windowMs: 60000 });
       const strictServer = {
-        registerTool: vi.fn((name: string, config: unknown, handler: (...args: unknown[]) => Promise<unknown>) => {
-          registeredTools.set(`strict-${name}`, { handler, config });
-        }),
+        registerTool: vi.fn(
+          (name: string, config: unknown, handler: (...args: unknown[]) => Promise<unknown>) => {
+            registeredTools.set(`strict-${name}`, { handler, config });
+          },
+        ),
       } as unknown as McpServer;
 
       registerTools(strictServer, strictRateLimiter);
@@ -658,14 +753,17 @@ describe("MCP Tools", () => {
       // First call should succeed
       (remoteClient.fetchRemoteActor as Mock).mockResolvedValue({ preferredUsername: "test" });
       const tool = registeredTools.get("strict-discover-actor");
-      const result1 = await tool!.handler({ identifier: "user@example.social" });
+      const result1 = await tool?.handler({ identifier: "user@example.social" });
 
       // Verify first call worked
-      expect((result1 as { content: { text: string }[] }).content[0].text).toContain("Successfully discovered actor");
+      expect((result1 as { content: { text: string }[] }).content[0].text).toContain(
+        "Successfully discovered actor",
+      );
 
       // Second call with SAME identifier should throw McpError
-      await expect(tool!.handler({ identifier: "user@example.social" }))
-        .rejects.toThrow("Rate limit exceeded");
+      await expect(tool?.handler({ identifier: "user@example.social" })).rejects.toThrow(
+        "Rate limit exceeded",
+      );
 
       strictRateLimiter.stop();
     });

@@ -2,10 +2,10 @@
  * Tests for MCP resource handlers
  */
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { McpError } from "@modelcontextprotocol/sdk/types.js";
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
-import { registerResources, type ResourceConfig } from "../../src/mcp/resources.js";
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { type ResourceConfig, registerResources } from "../../src/mcp/resources.js";
 import { RateLimiter } from "../../src/server/rate-limiter.js";
 
 // Mock dependencies
@@ -38,11 +38,14 @@ import { remoteClient } from "../../src/remote-client.js";
 describe("MCP Resources", () => {
   let mcpServer: McpServer;
   let rateLimiter: RateLimiter;
-  let registeredResources: Map<string, {
-    handler: (uri: URL, params: Record<string, string | string[]>) => Promise<unknown>;
-    template: unknown;
-    config: unknown;
-  }>;
+  let registeredResources: Map<
+    string,
+    {
+      handler: (uri: URL, params: Record<string, string | string[]>) => Promise<unknown>;
+      template: unknown;
+      config: unknown;
+    }
+  >;
 
   const defaultConfig: ResourceConfig = {
     serverName: "test-server",
@@ -59,14 +62,16 @@ describe("MCP Resources", () => {
     // Create a mock MCP server that captures resource registrations
     registeredResources = new Map();
     mcpServer = {
-      registerResource: vi.fn((
-        name: string,
-        template: unknown,
-        config: unknown,
-        handler: (uri: URL, params: Record<string, string | string[]>) => Promise<unknown>
-      ) => {
-        registeredResources.set(name, { handler, template, config });
-      }),
+      registerResource: vi.fn(
+        (
+          name: string,
+          template: unknown,
+          config: unknown,
+          handler: (uri: URL, params: Record<string, string | string[]>) => Promise<unknown>,
+        ) => {
+          registeredResources.set(name, { handler, template, config });
+        },
+      ),
     } as unknown as McpServer;
 
     rateLimiter = new RateLimiter({ enabled: false, maxRequests: 100, windowMs: 60000 });
@@ -95,7 +100,10 @@ describe("MCP Resources", () => {
       ];
 
       for (const resourceName of expectedResources) {
-        expect(registeredResources.has(resourceName), `Resource ${resourceName} should be registered`).toBe(true);
+        expect(
+          registeredResources.has(resourceName),
+          `Resource ${resourceName} should be registered`,
+        ).toBe(true);
       }
     });
   });
@@ -106,7 +114,7 @@ describe("MCP Resources", () => {
       expect(resource).toBeDefined();
 
       const uri = new URL("activitypub://server-info");
-      const result = await resource!.handler(uri, {});
+      const result = await resource?.handler(uri, {});
 
       const contents = (result as { contents: { text: string }[] }).contents;
       expect(contents).toHaveLength(1);
@@ -130,7 +138,7 @@ describe("MCP Resources", () => {
 
       const resource = registeredResources.get("remote-actor");
       const uri = new URL("activitypub://remote-actor/testuser@example.social");
-      const result = await resource!.handler(uri, { identifier: "testuser@example.social" });
+      const result = await resource?.handler(uri, { identifier: "testuser@example.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
       expect(contents).toHaveLength(1);
@@ -146,8 +154,9 @@ describe("MCP Resources", () => {
       const resource = registeredResources.get("remote-actor");
       const uri = new URL("activitypub://remote-actor/testuser@example.social");
 
-      await expect(resource!.handler(uri, { identifier: "testuser@example.social" }))
-        .rejects.toThrow(McpError);
+      await expect(
+        resource?.handler(uri, { identifier: "testuser@example.social" }),
+      ).rejects.toThrow(McpError);
     });
 
     it("should handle array identifiers", async () => {
@@ -157,7 +166,7 @@ describe("MCP Resources", () => {
 
       const resource = registeredResources.get("remote-actor");
       const uri = new URL("activitypub://remote-actor/testuser@example.social");
-      await resource!.handler(uri, { identifier: ["testuser@example.social", "ignored"] });
+      await resource?.handler(uri, { identifier: ["testuser@example.social", "ignored"] });
 
       expect(remoteClient.fetchRemoteActor).toHaveBeenCalledWith("testuser@example.social");
     });
@@ -168,14 +177,12 @@ describe("MCP Resources", () => {
       (remoteClient.fetchActorOutbox as Mock).mockResolvedValue({
         type: "OrderedCollection",
         totalItems: 42,
-        orderedItems: [
-          { type: "Note", content: "Hello world" },
-        ],
+        orderedItems: [{ type: "Note", content: "Hello world" }],
       });
 
       const resource = registeredResources.get("remote-timeline");
       const uri = new URL("activitypub://remote-timeline/testuser@example.social");
-      const result = await resource!.handler(uri, { identifier: "testuser@example.social" });
+      const result = await resource?.handler(uri, { identifier: "testuser@example.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
       const timeline = JSON.parse(contents[0].text);
@@ -189,8 +196,9 @@ describe("MCP Resources", () => {
       const resource = registeredResources.get("remote-timeline");
       const uri = new URL("activitypub://remote-timeline/testuser@example.social");
 
-      await expect(resource!.handler(uri, { identifier: "testuser@example.social" }))
-        .rejects.toThrow("Failed to fetch timeline data");
+      await expect(
+        resource?.handler(uri, { identifier: "testuser@example.social" }),
+      ).rejects.toThrow("Failed to fetch timeline data");
     });
 
     it("should normalize timeline data with items instead of orderedItems", async () => {
@@ -200,7 +208,7 @@ describe("MCP Resources", () => {
 
       const resource = registeredResources.get("remote-timeline");
       const uri = new URL("activitypub://remote-timeline/testuser@example.social");
-      const result = await resource!.handler(uri, { identifier: "testuser@example.social" });
+      const result = await resource?.handler(uri, { identifier: "testuser@example.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
       const timeline = JSON.parse(contents[0].text);
@@ -217,7 +225,7 @@ describe("MCP Resources", () => {
 
       const resource = registeredResources.get("remote-followers");
       const uri = new URL("activitypub://remote-followers/testuser@example.social");
-      const result = await resource!.handler(uri, { identifier: "testuser@example.social" });
+      const result = await resource?.handler(uri, { identifier: "testuser@example.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
       const followers = JSON.parse(contents[0].text);
@@ -235,7 +243,7 @@ describe("MCP Resources", () => {
 
       const resource = registeredResources.get("remote-following");
       const uri = new URL("activitypub://remote-following/testuser@example.social");
-      const result = await resource!.handler(uri, { identifier: "testuser@example.social" });
+      const result = await resource?.handler(uri, { identifier: "testuser@example.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
       const following = JSON.parse(contents[0].text);
@@ -255,7 +263,7 @@ describe("MCP Resources", () => {
 
       const resource = registeredResources.get("instance-info");
       const uri = new URL("activitypub://instance-info/mastodon.social");
-      const result = await resource!.handler(uri, { domain: "mastodon.social" });
+      const result = await resource?.handler(uri, { domain: "mastodon.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
       const instanceInfo = JSON.parse(contents[0].text);
@@ -267,8 +275,7 @@ describe("MCP Resources", () => {
       const resource = registeredResources.get("instance-info");
       const uri = new URL("activitypub://instance-info/invalid");
 
-      await expect(resource!.handler(uri, { domain: "invalid" }))
-        .rejects.toThrow();
+      await expect(resource?.handler(uri, { domain: "invalid" })).rejects.toThrow();
     });
   });
 
@@ -283,7 +290,7 @@ describe("MCP Resources", () => {
 
       const resource = registeredResources.get("trending");
       const uri = new URL("activitypub://trending/mastodon.social");
-      const result = await resource!.handler(uri, { domain: "mastodon.social" });
+      const result = await resource?.handler(uri, { domain: "mastodon.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
       const trending = JSON.parse(contents[0].text);
@@ -300,7 +307,7 @@ describe("MCP Resources", () => {
 
       const resource = registeredResources.get("trending");
       const uri = new URL("activitypub://trending/mastodon.social");
-      const result = await resource!.handler(uri, { domain: "mastodon.social" });
+      const result = await resource?.handler(uri, { domain: "mastodon.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
       const trending = JSON.parse(contents[0].text);
@@ -320,7 +327,7 @@ describe("MCP Resources", () => {
 
       const resource = registeredResources.get("local-timeline");
       const uri = new URL("activitypub://local-timeline/mastodon.social");
-      const result = await resource!.handler(uri, { domain: "mastodon.social" });
+      const result = await resource?.handler(uri, { domain: "mastodon.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
       const timeline = JSON.parse(contents[0].text);
@@ -339,7 +346,7 @@ describe("MCP Resources", () => {
 
       const resource = registeredResources.get("federated-timeline");
       const uri = new URL("activitypub://federated-timeline/mastodon.social");
-      const result = await resource!.handler(uri, { domain: "mastodon.social" });
+      const result = await resource?.handler(uri, { domain: "mastodon.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
       const timeline = JSON.parse(contents[0].text);
@@ -360,7 +367,7 @@ describe("MCP Resources", () => {
       const resource = registeredResources.get("post-thread");
       const encodedUrl = encodeURIComponent("https://mastodon.social/@user/123");
       const uri = new URL(`activitypub://post-thread/${encodedUrl}`);
-      const result = await resource!.handler(uri, { postUrl: "https://mastodon.social/@user/123" });
+      const result = await resource?.handler(uri, { postUrl: "https://mastodon.social/@user/123" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
       const thread = JSON.parse(contents[0].text);
@@ -379,11 +386,11 @@ describe("MCP Resources", () => {
       const resource = registeredResources.get("post-thread");
       const encodedUrl = encodeURIComponent("https://mastodon.social/@user/123");
       const uri = new URL(`activitypub://post-thread/${encodedUrl}`);
-      await resource!.handler(uri, { postUrl: encodedUrl });
+      await resource?.handler(uri, { postUrl: encodedUrl });
 
       expect(remoteClient.fetchPostThread).toHaveBeenCalledWith(
         "https://mastodon.social/@user/123",
-        { depth: 2, maxReplies: 50 }
+        { depth: 2, maxReplies: 50 },
       );
     });
 
@@ -391,25 +398,31 @@ describe("MCP Resources", () => {
       const resource = registeredResources.get("post-thread");
       const uri = new URL("activitypub://post-thread/invalid");
 
-      await expect(resource!.handler(uri, { postUrl: "not-a-valid-url" }))
-        .rejects.toThrow("Invalid post URL");
+      await expect(resource?.handler(uri, { postUrl: "not-a-valid-url" })).rejects.toThrow(
+        "Invalid post URL",
+      );
     });
   });
 
   describe("rate limiting", () => {
     it("should throw error when rate limit exceeded", async () => {
       const strictRateLimiter = new RateLimiter({ enabled: true, maxRequests: 1, windowMs: 60000 });
-      const strictResources = new Map<string, { handler: (uri: URL, params: Record<string, string | string[]>) => Promise<unknown> }>();
+      const strictResources = new Map<
+        string,
+        { handler: (uri: URL, params: Record<string, string | string[]>) => Promise<unknown> }
+      >();
 
       const strictServer = {
-        registerResource: vi.fn((
-          name: string,
-          template: unknown,
-          config: unknown,
-          handler: (uri: URL, params: Record<string, string | string[]>) => Promise<unknown>
-        ) => {
-          strictResources.set(name, { handler });
-        }),
+        registerResource: vi.fn(
+          (
+            name: string,
+            _template: unknown,
+            _config: unknown,
+            handler: (uri: URL, params: Record<string, string | string[]>) => Promise<unknown>,
+          ) => {
+            strictResources.set(name, { handler });
+          },
+        ),
       } as unknown as McpServer;
 
       registerResources(strictServer, strictRateLimiter, defaultConfig);
@@ -420,11 +433,12 @@ describe("MCP Resources", () => {
       const uri = new URL("activitypub://remote-actor/testuser@example.social");
 
       // First call should succeed
-      await resource!.handler(uri, { identifier: "testuser@example.social" });
+      await resource?.handler(uri, { identifier: "testuser@example.social" });
 
       // Second call should fail due to rate limit
-      await expect(resource!.handler(uri, { identifier: "testuser@example.social" }))
-        .rejects.toThrow("Rate limit exceeded");
+      await expect(
+        resource?.handler(uri, { identifier: "testuser@example.social" }),
+      ).rejects.toThrow("Rate limit exceeded");
 
       strictRateLimiter.stop();
     });

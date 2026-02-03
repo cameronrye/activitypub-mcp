@@ -2,30 +2,26 @@
  * Tests for Instance Discovery Service
  */
 
-import { http, HttpResponse } from "msw";
+import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "../mocks/server.js";
 
 // Mock the file system and logger before importing the module
 vi.mock("node:fs", () => ({
-  readFileSync: vi.fn().mockReturnValue(JSON.stringify({
-    mastodon: [
-      { domain: "mastodon.social", description: "General-purpose instance", users: "1M+" },
-      { domain: "fosstodon.org", description: "FOSS enthusiasts", users: "50K" },
-      { domain: "techhub.social", description: "Tech community", users: "10K" },
-    ],
-    pleroma: [
-      { domain: "pleroma.social", description: "Lightweight fediverse", users: "5K" },
-    ],
-    pixelfed: [
-      { domain: "pixelfed.social", description: "Photo sharing", users: "100K" },
-    ],
-    lemmy: [
-      { domain: "lemmy.world", description: "Link aggregation", users: "200K" },
-    ],
-    misskey: [],
-    peertube: [],
-  })),
+  readFileSync: vi.fn().mockReturnValue(
+    JSON.stringify({
+      mastodon: [
+        { domain: "mastodon.social", description: "General-purpose instance", users: "1M+" },
+        { domain: "fosstodon.org", description: "FOSS enthusiasts", users: "50K" },
+        { domain: "techhub.social", description: "Tech community", users: "10K" },
+      ],
+      pleroma: [{ domain: "pleroma.social", description: "Lightweight fediverse", users: "5K" }],
+      pixelfed: [{ domain: "pixelfed.social", description: "Photo sharing", users: "100K" }],
+      lemmy: [{ domain: "lemmy.world", description: "Link aggregation", users: "200K" }],
+      misskey: [],
+      peertube: [],
+    }),
+  ),
 }));
 
 vi.mock("@logtape/logtape", () => ({
@@ -164,7 +160,7 @@ describe("InstanceDiscoveryService", () => {
       server.use(
         http.head("https://healthy.social/api/v1/instance", () => {
           return new HttpResponse(null, { status: 200 });
-        })
+        }),
       );
 
       const result = await service.checkInstanceHealth("healthy.social");
@@ -176,7 +172,7 @@ describe("InstanceDiscoveryService", () => {
       server.use(
         http.head("https://unhealthy.social/api/v1/instance", () => {
           return new HttpResponse(null, { status: 500 });
-        })
+        }),
       );
 
       const result = await service.checkInstanceHealth("unhealthy.social");
@@ -187,7 +183,7 @@ describe("InstanceDiscoveryService", () => {
       server.use(
         http.head("https://network-fail.social/api/v1/instance", () => {
           return HttpResponse.error();
-        })
+        }),
       );
 
       const result = await service.checkInstanceHealth("network-fail.social");
@@ -210,7 +206,7 @@ describe("InstanceDiscoveryService", () => {
             languages: ["en"],
             registrations: true,
           });
-        })
+        }),
       );
 
       const result = await service.getInstanceStats("stats.social");
@@ -226,7 +222,7 @@ describe("InstanceDiscoveryService", () => {
           return HttpResponse.json({
             version: "2.5.0 Pleroma",
           });
-        })
+        }),
       );
 
       const result = await service.getInstanceStats("pleroma-instance.social");
@@ -237,7 +233,7 @@ describe("InstanceDiscoveryService", () => {
       server.use(
         http.get("https://offline.social/api/v1/instance", () => {
           return new HttpResponse(null, { status: 500 });
-        })
+        }),
       );
 
       const result = await service.getInstanceStats("offline.social");
@@ -248,7 +244,7 @@ describe("InstanceDiscoveryService", () => {
       server.use(
         http.get("https://network-error.social/api/v1/instance", () => {
           throw new Error("Network failure");
-        })
+        }),
       );
 
       const result = await service.getInstanceStats("network-error.social");
@@ -279,7 +275,7 @@ describe("InstanceDiscoveryService", () => {
       const recommendations1 = service.getInstanceRecommendations(["TECH"]);
       const recommendations2 = service.getInstanceRecommendations(["tech"]);
       expect(recommendations1.map((r) => r.domain).sort()).toEqual(
-        recommendations2.map((r) => r.domain).sort()
+        recommendations2.map((r) => r.domain).sort(),
       );
     });
 

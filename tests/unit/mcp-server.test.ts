@@ -3,7 +3,7 @@
  * Tests the exported class structure and basic functionality
  */
 
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock all dependencies before importing the module
 vi.mock("@modelcontextprotocol/sdk/server/mcp.js", () => ({

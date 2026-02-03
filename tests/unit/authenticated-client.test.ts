@@ -2,11 +2,11 @@
  * Tests for AuthenticatedClient
  */
 
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { http, HttpResponse } from "msw";
+import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
-import { AuthenticatedClient } from "../../src/auth/authenticated-client.js";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { accountManager } from "../../src/auth/account-manager.js";
+import { AuthenticatedClient } from "../../src/auth/authenticated-client.js";
 
 // Mock logtape
 vi.mock("@logtape/logtape", () => ({
@@ -754,7 +754,11 @@ describe("AuthenticatedClient", () => {
         }),
       );
 
-      const result = await client.getHomeTimeline({ limit: 10, maxId: "post-1", sinceId: "post-0" });
+      const result = await client.getHomeTimeline({
+        limit: 10,
+        maxId: "post-1",
+        sinceId: "post-0",
+      });
       expect(result).toHaveLength(1);
     });
   });
