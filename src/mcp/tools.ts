@@ -16,7 +16,7 @@ import { performanceMonitor } from "../performance-monitor.js";
 import { remoteClient } from "../remote-client.js";
 import { validateActorIdentifier, validateDomain, validateQuery } from "../server/index.js";
 import type { RateLimiter } from "../server/rate-limiter.js";
-import { formatErrorWithSuggestion, getErrorMessage } from "../utils.js";
+import { formatErrorWithSuggestion, getErrorMessage, stripHtmlTags } from "../utils.js";
 import { ActorIdentifierSchema, DomainSchema, QuerySchema } from "../validation/schemas.js";
 import { registerExportTools } from "./tools-export.js";
 import { registerWriteTools } from "./tools-write.js";
@@ -1160,7 +1160,7 @@ function registerGetTrendingPostsTool(mcpServer: McpServer, rateLimiter: RateLim
         const postsList = result.posts
           .slice(0, 10)
           .map((post, i) => {
-            const content = post.content?.replace(/<[^>]*>/g, "") || "No content";
+            const content = stripHtmlTags(post.content || "") || "No content";
             const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
             const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
             return `${i + 1}. **@${post.account.username}** (${post.account.display_name || post.account.username})
@@ -1252,7 +1252,7 @@ function registerGetLocalTimelineTool(mcpServer: McpServer, rateLimiter: RateLim
         const postsList = result.posts
           .slice(0, 15)
           .map((post, i) => {
-            const content = post.content?.replace(/<[^>]*>/g, "") || "No content";
+            const content = stripHtmlTags(post.content || "") || "No content";
             const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
             const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
             return `${i + 1}. **@${post.account.username}**
@@ -1345,7 +1345,7 @@ function registerGetFederatedTimelineTool(mcpServer: McpServer, rateLimiter: Rat
         const postsList = result.posts
           .slice(0, 15)
           .map((post, i) => {
-            const content = post.content?.replace(/<[^>]*>/g, "") || "No content";
+            const content = stripHtmlTags(post.content || "") || "No content";
             const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
             const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
             return `${i + 1}. **@${post.account.username}**
@@ -1454,7 +1454,7 @@ function registerSearchAccountsTool(mcpServer: McpServer, rateLimiter: RateLimit
         const accountsList = accounts
           .slice(0, 15)
           .map((acc, i) => {
-            const note = acc.note?.replace(/<[^>]*>/g, "") || "No bio";
+            const note = stripHtmlTags(acc.note || "") || "No bio";
             const truncatedNote = note.length > 100 ? `${note.slice(0, 100)}...` : note;
             return `${i + 1}. **@${acc.acct}** (${acc.display_name || acc.username})
    ${truncatedNote}
@@ -1659,7 +1659,7 @@ function registerSearchPostsTool(mcpServer: McpServer, rateLimiter: RateLimiter)
         const postsList = statuses
           .slice(0, 10)
           .map((post, i) => {
-            const content = post.content?.replace(/<[^>]*>/g, "") || "No content";
+            const content = stripHtmlTags(post.content || "") || "No content";
             const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
             const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
             return `${i + 1}. **@${post.account.acct}** (${post.account.display_name || post.account.username})
@@ -1774,7 +1774,7 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
           if (accounts.length > 0) {
             const accountsList = accounts
               .map((acc, i) => {
-                const note = acc.note?.replace(/<[^>]*>/g, "") || "";
+                const note = stripHtmlTags(acc.note || "");
                 const truncatedNote = note.length > 80 ? `${note.slice(0, 80)}...` : note;
                 return `${i + 1}. **@${acc.acct}** (${acc.display_name || acc.username})
    👥 ${acc.followers_count || 0} followers | ${truncatedNote}`;
@@ -1807,7 +1807,7 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
           if (posts.length > 0) {
             const postsList = posts
               .map((post, i) => {
-                const content = post.content?.replace(/<[^>]*>/g, "") || "No content";
+                const content = stripHtmlTags(post.content || "") || "No content";
                 const truncated = content.length > 150 ? `${content.slice(0, 150)}...` : content;
                 const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
                 return `${i + 1}. **@${post.account.acct}**
@@ -2124,7 +2124,7 @@ function registerBatchFetchPostsTool(mcpServer: McpServer, rateLimiter: RateLimi
           )
           .map((r, i) => {
             const post = r.post;
-            const content = (post.content || post.summary || "No content").replace(/<[^>]*>/g, "");
+            const content = stripHtmlTags(post.content || post.summary || "No content");
             const truncated = content.length > 150 ? `${content.slice(0, 150)}...` : content;
             return `${i + 1}. ✅ ${truncated}`;
           })

@@ -12,7 +12,7 @@ import { z } from "zod";
 import { accountManager, authenticatedClient } from "../auth/index.js";
 import { performanceMonitor } from "../performance-monitor.js";
 import type { RateLimiter } from "../server/rate-limiter.js";
-import { formatErrorWithSuggestion, getErrorMessage } from "../utils.js";
+import { formatErrorWithSuggestion, getErrorMessage, stripHtmlTags } from "../utils.js";
 
 const logger = getLogger("activitypub-mcp:tools-write");
 
@@ -366,7 +366,7 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
               type: "text",
               text: `✅ **Post Created!**
 
-📝 ${status.content.replace(/<[^>]*>/g, "").slice(0, 200)}${status.content.length > 200 ? "..." : ""}
+📝 ${stripHtmlTags(status.content).slice(0, 200)}${status.content.length > 200 ? "..." : ""}
 
 🆔 ID: ${status.id}
 🔗 ${status.url || status.uri}
@@ -450,7 +450,7 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
               type: "text",
               text: `✅ **Reply Posted!**
 
-📝 ${status.content.replace(/<[^>]*>/g, "").slice(0, 200)}
+📝 ${stripHtmlTags(status.content).slice(0, 200)}
 
 🆔 ID: ${status.id}
 🔗 ${status.url || status.uri}
@@ -1310,7 +1310,7 @@ function registerGetHomeTimelineTool(mcpServer: McpServer, rateLimiter: RateLimi
         const postsList = posts
           .slice(0, 15)
           .map((post, i) => {
-            const content = post.content.replace(/<[^>]*>/g, "");
+            const content = stripHtmlTags(post.content);
             const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
             const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
             return `${i + 1}. **@${post.account.acct}**
@@ -1415,7 +1415,7 @@ function registerGetNotificationsTool(mcpServer: McpServer, rateLimiter: RateLim
           .map((n) => {
             const emoji = typeEmoji[n.type] || "🔔";
             const statusPreview = n.status
-              ? `\n   "${n.status.content.replace(/<[^>]*>/g, "").slice(0, 100)}..."`
+              ? `\n   "${stripHtmlTags(n.status.content).slice(0, 100)}..."`
               : "";
             return `${emoji} **${n.type}** from @${n.account.acct}${statusPreview}`;
           })
@@ -1479,7 +1479,7 @@ function registerGetBookmarksTool(mcpServer: McpServer, rateLimiter: RateLimiter
         const bookmarkList = bookmarks
           .slice(0, 15)
           .map((post, i) => {
-            const content = post.content.replace(/<[^>]*>/g, "");
+            const content = stripHtmlTags(post.content);
             const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
             return `${i + 1}. **@${post.account.acct}**
    ${truncated}`;
@@ -1544,7 +1544,7 @@ function registerGetFavouritesTool(mcpServer: McpServer, rateLimiter: RateLimite
         const favouriteList = favourites
           .slice(0, 15)
           .map((post, i) => {
-            const content = post.content.replace(/<[^>]*>/g, "");
+            const content = stripHtmlTags(post.content);
             const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
             return `${i + 1}. **@${post.account.acct}**
    ${truncated}`;

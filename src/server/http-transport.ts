@@ -85,9 +85,9 @@ export class HttpTransportServer {
 
       res.writeHead(statusCode, { "Content-Type": "application/json" });
       res.end(JSON.stringify(health, null, 2));
-    } catch (error) {
+    } catch {
       res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ status: "error", error: String(error) }));
+      res.end(JSON.stringify({ status: "error", error: "Internal server error" }));
     }
   }
 
@@ -99,9 +99,9 @@ export class HttpTransportServer {
       const metrics = performanceMonitor.getMetrics();
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(metrics, null, 2));
-    } catch (error) {
+    } catch {
       res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: String(error) }));
+      res.end(JSON.stringify({ error: "Internal server error" }));
     }
   }
 

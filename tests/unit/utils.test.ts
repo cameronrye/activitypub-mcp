@@ -9,6 +9,7 @@ import {
   isPrivateIP,
   isPrivateIPv4,
   isPrivateIPv6,
+  stripHtmlTags,
   validateExternalUrlSync,
 } from "../../src/utils.js";
 
@@ -190,5 +191,49 @@ describe("validateExternalUrlSync", () => {
   it("should throw on invalid URLs", () => {
     expect(() => validateExternalUrlSync("not-a-url")).toThrow();
     expect(() => validateExternalUrlSync("")).toThrow();
+  });
+});
+
+describe("stripHtmlTags", () => {
+  it("should remove simple HTML tags", () => {
+    expect(stripHtmlTags("<p>Hello</p>")).toBe("Hello");
+    expect(stripHtmlTags("<div>Test</div>")).toBe("Test");
+    expect(stripHtmlTags("<span class='test'>Content</span>")).toBe("Content");
+  });
+
+  it("should remove multiple tags", () => {
+    expect(stripHtmlTags("<p>Hello</p><p>World</p>")).toBe("HelloWorld");
+    expect(stripHtmlTags("<div><span>Nested</span></div>")).toBe("Nested");
+  });
+
+  it("should handle self-closing tags", () => {
+    expect(stripHtmlTags("Hello<br/>World")).toBe("HelloWorld");
+    expect(stripHtmlTags("Text<img src='test.jpg'/>More")).toBe("TextMore");
+  });
+
+  it("should handle nested/malformed tags that could bypass single-pass sanitization", () => {
+    // The iterative approach ensures all tag-like patterns are removed
+    // <scr<script>ipt> is treated as a tag, leaving ipt>alert('xss')</script>
+    // Then </script> is removed, leaving ipt>alert('xss')
+    expect(stripHtmlTags("<scr<script>ipt>alert('xss')</script>")).toBe("ipt>alert('xss')");
+    // Similar logic for other malformed constructs
+    expect(stripHtmlTags("<div<div>>content</div></div>")).toBe(">content");
+    expect(stripHtmlTags("<<script>script>alert()</script>")).toBe("script>alert()");
+  });
+
+  it("should return empty string for empty input", () => {
+    expect(stripHtmlTags("")).toBe("");
+  });
+
+  it("should return text without tags unchanged", () => {
+    expect(stripHtmlTags("Plain text")).toBe("Plain text");
+    expect(stripHtmlTags("Hello, world!")).toBe("Hello, world!");
+    // In real HTML, < and > would be encoded as &lt; and &gt;
+    expect(stripHtmlTags("5 &lt; 10")).toBe("5 &lt; 10");
+  });
+
+  it("should handle tags with attributes", () => {
+    expect(stripHtmlTags('<a href="https://example.com">Link</a>')).toBe("Link");
+    expect(stripHtmlTags('<div class="container" id="main">Content</div>')).toBe("Content");
   });
 });

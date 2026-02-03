@@ -13,7 +13,7 @@ import { performanceMonitor } from "../performance-monitor.js";
 import { remoteClient } from "../remote-client.js";
 import { validateActorIdentifier, validateDomain } from "../server/index.js";
 import type { RateLimiter } from "../server/rate-limiter.js";
-import { formatErrorWithSuggestion, getErrorMessage } from "../utils.js";
+import { formatErrorWithSuggestion, getErrorMessage, stripHtmlTags } from "../utils.js";
 
 const logger = getLogger("activitypub-mcp:tools-export");
 
@@ -56,7 +56,7 @@ function formatPost(
   format: ExportFormat,
 ): string {
   const content = post.content || post.summary || "No content";
-  const cleanContent = content.replace(/<[^>]*>/g, "");
+  const cleanContent = stripHtmlTags(content);
   const published = post.published || "Unknown date";
   const url = post.url || post.id || "No URL";
   const author = post.attributedTo || "Unknown author";
@@ -340,10 +340,7 @@ function registerExportThreadTool(mcpServer: McpServer, rateLimiter: RateLimiter
           if (includeAncestors && thread.ancestors.length > 0) {
             parts.push("## Context (Parent Posts)\n");
             for (const ancestor of thread.ancestors) {
-              const content = (ancestor.content || ancestor.summary || "No content").replace(
-                /<[^>]*>/g,
-                "",
-              );
+              const content = stripHtmlTags(ancestor.content || ancestor.summary || "No content");
               parts.push(`> **${ancestor.attributedTo || "Unknown"}** (${ancestor.published || "Unknown date"})
 > ${content}
 
@@ -354,9 +351,8 @@ function registerExportThreadTool(mcpServer: McpServer, rateLimiter: RateLimiter
 
           // Main post
           parts.push("## Original Post\n");
-          const mainContent = (thread.post.content || thread.post.summary || "No content").replace(
-            /<[^>]*>/g,
-            "",
+          const mainContent = stripHtmlTags(
+            thread.post.content || thread.post.summary || "No content",
           );
           const cw =
             thread.post.summary && thread.post.content ? `**CW:** ${thread.post.summary}\n\n` : "";
@@ -376,10 +372,7 @@ ${cw}${mainContent}
             );
             for (let i = 0; i < thread.replies.length; i++) {
               const reply = thread.replies[i];
-              const replyContent = (reply.content || reply.summary || "No content").replace(
-                /<[^>]*>/g,
-                "",
-              );
+              const replyContent = stripHtmlTags(reply.content || reply.summary || "No content");
               const replyCw = reply.summary && reply.content ? `**CW:** ${reply.summary}\n` : "";
               parts.push(`### Reply ${i + 1}
 
@@ -679,7 +672,7 @@ function registerExportHashtagTool(mcpServer: McpServer, rateLimiter: RateLimite
                   }
                   return field;
                 };
-                const content = post.content.replace(/<[^>]*>/g, "");
+                const content = stripHtmlTags(post.content);
                 return `${post.id},${escapeCSV(post.account.acct)},${post.created_at},${escapeCSV(content)},${post.url},${post.favourites_count},${post.reblogs_count},${post.replies_count}`;
               })
               .join("\n");
@@ -700,7 +693,7 @@ function registerExportHashtagTool(mcpServer: McpServer, rateLimiter: RateLimite
             const markdownPosts = posts
               .slice(0, limit)
               .map((post, i) => {
-                const content = post.content.replace(/<[^>]*>/g, "");
+                const content = stripHtmlTags(post.content);
                 const cw = post.spoiler_text ? `**CW:** ${post.spoiler_text}\n\n` : "";
                 return `## Post ${i + 1}
 
