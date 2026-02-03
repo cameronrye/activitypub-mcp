@@ -2,7 +2,12 @@
  * Unit tests for configuration module.
  */
 
+import { createRequire } from "node:module";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// Read version from package.json to keep test in sync
+const require = createRequire(import.meta.url);
+const packageJson = require("../../package.json");
 
 describe("config", () => {
   const originalEnv = process.env;
@@ -26,7 +31,7 @@ describe("config", () => {
     const config = await import("../../src/config.js");
 
     expect(config.SERVER_NAME).toBe("activitypub-mcp");
-    expect(config.SERVER_VERSION).toBe("1.1.0");
+    expect(config.SERVER_VERSION).toBe(packageJson.version);
     expect(config.REQUEST_TIMEOUT).toBe(10000);
     expect(config.CACHE_TTL).toBe(300000);
     expect(config.MAX_RETRIES).toBe(3);
