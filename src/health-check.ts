@@ -8,6 +8,7 @@ import {
   HEALTH_CHECK_URL,
   MEMORY_WARN_THRESHOLD_MB,
   MEMORY_WARN_THRESHOLD_PERCENT,
+  SERVER_VERSION,
 } from "./config.js";
 import { performanceMonitor } from "./performance-monitor.js";
 
@@ -52,7 +53,7 @@ class HealthChecker {
 
   constructor() {
     this.healthCheckEnabled = process.env.HEALTH_CHECK_ENABLED === "true";
-    this.version = process.env.MCP_SERVER_VERSION || "1.0.0";
+    this.version = SERVER_VERSION;
     this.startTime = Date.now();
   }
 

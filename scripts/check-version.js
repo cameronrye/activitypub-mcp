@@ -20,17 +20,17 @@ const packageJsonPath = join(rootDir, "package.json");
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
 const packageVersion = packageJson.version;
 
-// Read mcp-server.ts to find MCP_SERVER_VERSION default
-const mcpServerPath = join(rootDir, "src", "mcp-server.ts");
-const mcpServerContent = readFileSync(mcpServerPath, "utf-8");
+// Read config.ts to find MCP_SERVER_VERSION default
+const configPath = join(rootDir, "src", "config.ts");
+const configContent = readFileSync(configPath, "utf-8");
 
-// Extract the default version from: serverVersion: process.env.MCP_SERVER_VERSION || "1.0.0"
-const versionMatch = mcpServerContent.match(
-  /serverVersion:\s*process\.env\.MCP_SERVER_VERSION\s*\|\|\s*["']([^"']+)["']/,
+// Extract the default version from: SERVER_VERSION = process.env.MCP_SERVER_VERSION || "1.1.0"
+const versionMatch = configContent.match(
+  /SERVER_VERSION\s*=\s*process\.env\.MCP_SERVER_VERSION\s*\|\|\s*["']([^"']+)["']/,
 );
 
 if (!versionMatch) {
-  console.error("❌ Could not find MCP_SERVER_VERSION default in src/mcp-server.ts");
+  console.error("❌ Could not find MCP_SERVER_VERSION default in src/config.ts");
   process.exit(1);
 }
 
@@ -51,7 +51,7 @@ if (packageVersion === codeVersion) {
   console.error("");
   console.error("Please update one of the following:");
   console.error(`  1. package.json version to "${codeVersion}"`);
-  console.error(`  2. MCP_SERVER_VERSION default in src/mcp-server.ts to "${packageVersion}"`);
+  console.error(`  2. SERVER_VERSION default in src/config.ts to "${packageVersion}"`);
   console.error("");
   process.exit(1);
 }
