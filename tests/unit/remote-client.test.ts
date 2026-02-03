@@ -95,6 +95,104 @@ describe("RemoteActivityPubClient", () => {
     });
   });
 
+  describe("fetchActorOutboxPaginated", () => {
+    it("should fetch paginated outbox with default options", async () => {
+      const result = await client.fetchActorOutboxPaginated("testuser@example.social");
+
+      expect(result.items).toBeDefined();
+      expect(result.collectionId).toBeDefined();
+      expect(typeof result.hasMore).toBe("boolean");
+    });
+
+    it("should fetch paginated outbox with limit", async () => {
+      const result = await client.fetchActorOutboxPaginated("testuser@example.social", {
+        limit: 10,
+      });
+
+      expect(result.items).toBeDefined();
+    });
+
+    it("should handle cursor-based pagination", async () => {
+      server.use(
+        http.get("https://paginated.social/.well-known/webfinger", () => {
+          return HttpResponse.json({
+            subject: "acct:user@paginated.social",
+            links: [
+              {
+                rel: "self",
+                type: "application/activity+json",
+                href: "https://paginated.social/users/user",
+              },
+            ],
+          });
+        }),
+        http.get("https://paginated.social/users/user", () => {
+          return HttpResponse.json({
+            id: "https://paginated.social/users/user",
+            type: "Person",
+            preferredUsername: "user",
+            inbox: "https://paginated.social/users/user/inbox",
+            outbox: "https://paginated.social/users/user/outbox",
+          });
+        }),
+        http.get("https://paginated.social/users/user/outbox", ({ request }) => {
+          const url = new URL(request.url);
+          const page = url.searchParams.get("page");
+
+          if (page === "2") {
+            return HttpResponse.json({
+              id: "https://paginated.social/users/user/outbox?page=2",
+              type: "OrderedCollectionPage",
+              totalItems: 100,
+              orderedItems: [{ type: "Note", content: "Page 2 post" }],
+              prev: "https://paginated.social/users/user/outbox?page=1",
+            });
+          }
+
+          return HttpResponse.json({
+            id: "https://paginated.social/users/user/outbox",
+            type: "OrderedCollection",
+            totalItems: 100,
+            first: "https://paginated.social/users/user/outbox?page=1",
+            orderedItems: [{ type: "Note", content: "First post" }],
+            next: "https://paginated.social/users/user/outbox?page=2",
+          });
+        }),
+      );
+
+      const result = await client.fetchActorOutboxPaginated("user@paginated.social");
+
+      expect(result.hasMore).toBe(true);
+      expect(result.nextCursor).toBeDefined();
+    });
+
+    it("should support minId parameter", async () => {
+      const result = await client.fetchActorOutboxPaginated("testuser@example.social", {
+        minId: "12345",
+      });
+
+      expect(result.items).toBeDefined();
+    });
+
+    it("should support maxId parameter", async () => {
+      const result = await client.fetchActorOutboxPaginated("testuser@example.social", {
+        maxId: "67890",
+      });
+
+      expect(result.items).toBeDefined();
+    });
+
+    it("should throw on invalid limit", async () => {
+      await expect(
+        client.fetchActorOutboxPaginated("testuser@example.social", { limit: 0 }),
+      ).rejects.toThrow("Limit must be between 1 and 100");
+
+      await expect(
+        client.fetchActorOutboxPaginated("testuser@example.social", { limit: 101 }),
+      ).rejects.toThrow("Limit must be between 1 and 100");
+    });
+  });
+
   describe("fetchActorFollowers", () => {
     it("should throw when actor has no followers collection", async () => {
       server.use(

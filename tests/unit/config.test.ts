@@ -26,7 +26,7 @@ describe("config", () => {
     const config = await import("../../src/config.js");
 
     expect(config.SERVER_NAME).toBe("activitypub-mcp");
-    expect(config.SERVER_VERSION).toBe("1.0.3");
+    expect(config.SERVER_VERSION).toBe("1.1.0");
     expect(config.REQUEST_TIMEOUT).toBe(10000);
     expect(config.CACHE_TTL).toBe(300000);
     expect(config.MAX_RETRIES).toBe(3);

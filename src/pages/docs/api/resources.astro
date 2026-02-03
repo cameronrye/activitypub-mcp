@@ -238,6 +238,137 @@ const description =
       </section>
 
       <section class="resources-section">
+        <h2>Timeline Resources</h2>
+        <p>New resources for accessing public timelines and trending content.</p>
+
+        <div class="resource-reference">
+          <h3><code>activitypub://trending/{"{domain}"}</code></h3>
+          <p>Get trending hashtags and posts from a fediverse instance.</p>
+
+          <div class="resource-details">
+            <div class="resource-content-example">
+              <h4>URI Template</h4>
+              <p><code>activitypub://trending/{"{domain}"}</code></p>
+              <p>Replace <code>{"{domain}"}</code> with the instance domain (e.g., mastodon.social)</p>
+
+              <h4>Content Structure</h4>
+              <p>Returns trending content including:</p>
+              <ul>
+                <li>Array of trending hashtags with usage counts</li>
+                <li>Array of trending posts with engagement metrics</li>
+                <li>Timestamp of when data was fetched</li>
+              </ul>
+            </div>
+
+            <div class="usage-examples">
+              <h4>Usage Examples</h4>
+              <div class="example-item">
+                <h5>Get Trending Content</h5>
+                <p>URI: <code>activitypub://trending/mastodon.social</code></p>
+                <blockquote>"What's trending on mastodon.social right now?"</blockquote>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="resource-reference">
+          <h3><code>activitypub://local-timeline/{"{domain}"}</code></h3>
+          <p>Get the local public timeline from a fediverse instance (posts from local users only).</p>
+
+          <div class="resource-details">
+            <div class="resource-content-example">
+              <h4>URI Template</h4>
+              <p><code>activitypub://local-timeline/{"{domain}"}</code></p>
+              <p>Replace <code>{"{domain}"}</code> with the instance domain</p>
+
+              <h4>Content Structure</h4>
+              <p>Returns local timeline data including:</p>
+              <ul>
+                <li>Array of recent posts from local users</li>
+                <li>Post content, author, and engagement metrics</li>
+                <li>Pagination information (hasMore, nextMaxId)</li>
+              </ul>
+            </div>
+
+            <div class="usage-examples">
+              <h4>Usage Examples</h4>
+              <div class="example-item">
+                <h5>Browse Local Timeline</h5>
+                <p>URI: <code>activitypub://local-timeline/fosstodon.org</code></p>
+                <blockquote>"Show me what people on fosstodon.org are posting"</blockquote>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="resource-reference">
+          <h3><code>activitypub://federated-timeline/{"{domain}"}</code></h3>
+          <p>Get the federated public timeline from a fediverse instance (posts from all connected instances).</p>
+
+          <div class="resource-details">
+            <div class="resource-content-example">
+              <h4>URI Template</h4>
+              <p><code>activitypub://federated-timeline/{"{domain}"}</code></p>
+              <p>Replace <code>{"{domain}"}</code> with the instance domain</p>
+
+              <h4>Content Structure</h4>
+              <p>Returns federated timeline data including:</p>
+              <ul>
+                <li>Array of posts from all connected instances</li>
+                <li>Post content, author, and engagement metrics</li>
+                <li>Pagination information (hasMore, nextMaxId)</li>
+              </ul>
+            </div>
+
+            <div class="usage-examples">
+              <h4>Usage Examples</h4>
+              <div class="example-item">
+                <h5>Explore Federated Content</h5>
+                <p>URI: <code>activitypub://federated-timeline/mastodon.social</code></p>
+                <blockquote>"Show me the federated timeline from mastodon.social"</blockquote>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="resources-section">
+        <h2>Content Resources</h2>
+        <p>Resources for accessing specific content and threads.</p>
+
+        <div class="resource-reference">
+          <h3><code>activitypub://post-thread/{"{postUrl}"}</code></h3>
+          <p>Get a post and its full conversation thread including replies and parent posts.</p>
+
+          <div class="resource-details">
+            <div class="resource-content-example">
+              <h4>URI Template</h4>
+              <p><code>activitypub://post-thread/{"{postUrl}"}</code></p>
+              <p>Replace <code>{"{postUrl}"}</code> with the URL-encoded post URL</p>
+
+              <h4>Content Structure</h4>
+              <p>Returns thread data including:</p>
+              <ul>
+                <li>The main post content and metadata</li>
+                <li>Array of ancestor posts (conversation context)</li>
+                <li>Array of reply posts</li>
+                <li>Total reply count</li>
+              </ul>
+            </div>
+
+            <div class="usage-examples">
+              <h4>Usage Examples</h4>
+              <div class="example-item">
+                <h5>View Conversation Thread</h5>
+                <p>URI: <code>activitypub://post-thread/https%3A%2F%2Fmastodon.social%2F%40user%2F123456</code></p>
+                <blockquote>"Show me the full conversation for this post"</blockquote>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="resources-section">
         <h2>Resource Access Patterns</h2>
 
         <div class="access-patterns">
@@ -248,7 +379,10 @@ const description =
 GET activitypub://server-info
 
 # Access actor profile
-GET activitypub://remote-actor/user@mastodon.social</code></pre>
+GET activitypub://remote-actor/user@mastodon.social
+
+# Get trending content (new)
+GET activitypub://trending/mastodon.social</code></pre>
           </div>
 
           <div class="pattern-card">

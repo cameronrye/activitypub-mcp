@@ -41,12 +41,23 @@ export function registerResources(
   rateLimiter: RateLimiter,
   config: ResourceConfig,
 ): void {
+  // Server resources
   registerServerInfoResource(mcpServer, config);
+
+  // Actor resources
   registerRemoteActorResource(mcpServer, rateLimiter);
   registerRemoteTimelineResource(mcpServer, rateLimiter);
-  registerInstanceInfoResource(mcpServer, rateLimiter);
   registerRemoteFollowersResource(mcpServer, rateLimiter);
   registerRemoteFollowingResource(mcpServer, rateLimiter);
+
+  // Instance resources
+  registerInstanceInfoResource(mcpServer, rateLimiter);
+  registerTrendingResource(mcpServer, rateLimiter);
+  registerLocalTimelineResource(mcpServer, rateLimiter);
+  registerFederatedTimelineResource(mcpServer, rateLimiter);
+
+  // Content resources
+  registerPostThreadResource(mcpServer, rateLimiter);
 }
 
 /**
@@ -89,23 +100,60 @@ function registerServerInfoResource(mcpServer: McpServer, config: ResourceConfig
           "A Model Context Protocol server for exploring and interacting with the existing Fediverse",
         capabilities: {
           resources: [
+            "server-info",
             "remote-actor",
             "remote-timeline",
-            "instance-info",
             "remote-followers",
             "remote-following",
+            "instance-info",
+            "trending",
+            "local-timeline",
+            "federated-timeline",
+            "post-thread",
           ],
-          tools: [
-            "discover-actor",
-            "fetch-timeline",
-            "search-instance",
-            "get-instance-info",
-            "discover-instances",
-            "recommend-instances",
-            "health-check",
-            "performance-metrics",
+          tools: {
+            discovery: [
+              "discover-actor",
+              "discover-instances",
+              "discover-instances-live",
+              "recommend-instances",
+            ],
+            content: [
+              "fetch-timeline",
+              "get-post-thread",
+              "search-instance",
+              "search-accounts",
+              "search-hashtags",
+              "search-posts",
+            ],
+            timelines: [
+              "get-trending-hashtags",
+              "get-trending-posts",
+              "get-local-timeline",
+              "get-federated-timeline",
+            ],
+            instance: ["get-instance-info"],
+            utility: ["convert-url", "batch-fetch-actors", "batch-fetch-posts"],
+            system: ["health-check", "performance-metrics"],
+          },
+          prompts: [
+            "explore-fediverse",
+            "discover-content",
+            "compare-instances",
+            "compare-accounts",
+            "analyze-user-activity",
+            "find-experts",
+            "summarize-trending",
           ],
-          prompts: ["explore-fediverse", "compare-instances", "discover-content"],
+        },
+        features: {
+          auditLogging: true,
+          instanceBlocklist: true,
+          contentWarnings: true,
+          batchOperations: true,
+          trendingContent: true,
+          threadSupport: true,
+          urlConversion: true,
         },
         configuration: {
           rateLimitEnabled: config.rateLimitEnabled,
@@ -452,6 +500,312 @@ function registerRemoteFollowingResource(mcpServer: McpServer, rateLimiter: Rate
         throw new McpError(
           ErrorCode.InternalError,
           `Failed to fetch remote following: ${getErrorMessage(error)}`,
+        );
+      }
+    },
+  );
+}
+
+/**
+ * Trending resource - get trending hashtags and posts from an instance.
+ */
+function registerTrendingResource(mcpServer: McpServer, rateLimiter: RateLimiter): void {
+  mcpServer.registerResource(
+    "trending",
+    new ResourceTemplate("activitypub://trending/{domain}", {
+      list: async () => ({
+        resources: [
+          {
+            uri: "activitypub://trending/{domain}",
+            name: "trending",
+            description: "Get trending hashtags and posts from a fediverse instance",
+            mimeType: "application/json",
+          },
+        ],
+      }),
+    }),
+    {
+      title: "Instance Trending Content",
+      description:
+        "Get trending hashtags and posts from a fediverse instance (e.g., mastodon.social)",
+      mimeType: "application/json",
+    },
+    async (uri, { domain }) => {
+      try {
+        const domainStr = extractSingleValue(domain);
+        const validDomain = DomainSchema.parse(domainStr);
+
+        checkRateLimit(rateLimiter, validDomain);
+
+        logger.info("Fetching trending content", { domain: validDomain });
+
+        // Fetch both trending hashtags and posts in parallel
+        const [hashtagsResult, postsResult] = await Promise.allSettled([
+          remoteClient.fetchTrendingHashtags(validDomain, { limit: 10 }),
+          remoteClient.fetchTrendingPosts(validDomain, { limit: 10 }),
+        ]);
+
+        const trendingData = {
+          domain: validDomain,
+          timestamp: new Date().toISOString(),
+          hashtags: hashtagsResult.status === "fulfilled" ? hashtagsResult.value.hashtags : [],
+          posts: postsResult.status === "fulfilled" ? postsResult.value.posts : [],
+          errors: {
+            hashtags:
+              hashtagsResult.status === "rejected" ? getErrorMessage(hashtagsResult.reason) : null,
+            posts: postsResult.status === "rejected" ? getErrorMessage(postsResult.reason) : null,
+          },
+        };
+
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: "application/json",
+              text: JSON.stringify(trendingData, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        logger.error("Failed to fetch trending content", {
+          domain,
+          error: getErrorMessage(error),
+        });
+
+        if (error instanceof McpError) {
+          throw error;
+        }
+
+        throw new McpError(
+          ErrorCode.InternalError,
+          `Failed to fetch trending content: ${getErrorMessage(error)}`,
+        );
+      }
+    },
+  );
+}
+
+/**
+ * Local timeline resource - get the local public timeline from an instance.
+ */
+function registerLocalTimelineResource(mcpServer: McpServer, rateLimiter: RateLimiter): void {
+  mcpServer.registerResource(
+    "local-timeline",
+    new ResourceTemplate("activitypub://local-timeline/{domain}", {
+      list: async () => ({
+        resources: [
+          {
+            uri: "activitypub://local-timeline/{domain}",
+            name: "local-timeline",
+            description: "Get the local public timeline from a fediverse instance",
+            mimeType: "application/json",
+          },
+        ],
+      }),
+    }),
+    {
+      title: "Instance Local Timeline",
+      description:
+        "Get the local public timeline from a fediverse instance (posts from local users only)",
+      mimeType: "application/json",
+    },
+    async (uri, { domain }) => {
+      try {
+        const domainStr = extractSingleValue(domain);
+        const validDomain = DomainSchema.parse(domainStr);
+
+        checkRateLimit(rateLimiter, validDomain);
+
+        logger.info("Fetching local timeline", { domain: validDomain });
+
+        const timelineData = await remoteClient.fetchLocalTimeline(validDomain, { limit: 20 });
+
+        const resourceData = {
+          domain: validDomain,
+          type: "local",
+          timestamp: new Date().toISOString(),
+          posts: timelineData.posts,
+          hasMore: timelineData.hasMore,
+          nextMaxId: timelineData.nextMaxId,
+        };
+
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: "application/json",
+              text: JSON.stringify(resourceData, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        logger.error("Failed to fetch local timeline", {
+          domain,
+          error: getErrorMessage(error),
+        });
+
+        if (error instanceof McpError) {
+          throw error;
+        }
+
+        throw new McpError(
+          ErrorCode.InternalError,
+          `Failed to fetch local timeline: ${getErrorMessage(error)}`,
+        );
+      }
+    },
+  );
+}
+
+/**
+ * Federated timeline resource - get the federated public timeline from an instance.
+ */
+function registerFederatedTimelineResource(mcpServer: McpServer, rateLimiter: RateLimiter): void {
+  mcpServer.registerResource(
+    "federated-timeline",
+    new ResourceTemplate("activitypub://federated-timeline/{domain}", {
+      list: async () => ({
+        resources: [
+          {
+            uri: "activitypub://federated-timeline/{domain}",
+            name: "federated-timeline",
+            description: "Get the federated public timeline from a fediverse instance",
+            mimeType: "application/json",
+          },
+        ],
+      }),
+    }),
+    {
+      title: "Instance Federated Timeline",
+      description:
+        "Get the federated public timeline from a fediverse instance (posts from all connected instances)",
+      mimeType: "application/json",
+    },
+    async (uri, { domain }) => {
+      try {
+        const domainStr = extractSingleValue(domain);
+        const validDomain = DomainSchema.parse(domainStr);
+
+        checkRateLimit(rateLimiter, validDomain);
+
+        logger.info("Fetching federated timeline", { domain: validDomain });
+
+        const timelineData = await remoteClient.fetchFederatedTimeline(validDomain, { limit: 20 });
+
+        const resourceData = {
+          domain: validDomain,
+          type: "federated",
+          timestamp: new Date().toISOString(),
+          posts: timelineData.posts,
+          hasMore: timelineData.hasMore,
+          nextMaxId: timelineData.nextMaxId,
+        };
+
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: "application/json",
+              text: JSON.stringify(resourceData, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        logger.error("Failed to fetch federated timeline", {
+          domain,
+          error: getErrorMessage(error),
+        });
+
+        if (error instanceof McpError) {
+          throw error;
+        }
+
+        throw new McpError(
+          ErrorCode.InternalError,
+          `Failed to fetch federated timeline: ${getErrorMessage(error)}`,
+        );
+      }
+    },
+  );
+}
+
+/**
+ * Post thread resource - get a post and its full conversation thread.
+ */
+function registerPostThreadResource(mcpServer: McpServer, rateLimiter: RateLimiter): void {
+  mcpServer.registerResource(
+    "post-thread",
+    new ResourceTemplate("activitypub://post-thread/{postUrl}", {
+      list: async () => ({
+        resources: [
+          {
+            uri: "activitypub://post-thread/{postUrl}",
+            name: "post-thread",
+            description: "Get a post and its full conversation thread (replies and ancestors)",
+            mimeType: "application/json",
+          },
+        ],
+      }),
+    }),
+    {
+      title: "Post Thread",
+      description: "Get a post and its full conversation thread including replies and parent posts",
+      mimeType: "application/json",
+    },
+    async (uri, { postUrl }) => {
+      try {
+        const postUrlStr = extractSingleValue(postUrl);
+
+        // Validate URL format
+        let parsedUrl: URL;
+        try {
+          // Handle URL-encoded post URLs
+          const decodedUrl = decodeURIComponent(postUrlStr);
+          parsedUrl = new URL(decodedUrl);
+        } catch {
+          throw new McpError(ErrorCode.InvalidParams, `Invalid post URL: ${postUrlStr}`);
+        }
+
+        checkRateLimit(rateLimiter, parsedUrl.hostname);
+
+        logger.info("Fetching post thread", { postUrl: postUrlStr });
+
+        const threadData = await remoteClient.fetchPostThread(parsedUrl.href, {
+          depth: 2,
+          maxReplies: 50,
+        });
+
+        const resourceData = {
+          postUrl: parsedUrl.href,
+          timestamp: new Date().toISOString(),
+          post: threadData.post,
+          ancestors: threadData.ancestors,
+          replies: threadData.replies,
+          totalReplies: threadData.totalReplies,
+        };
+
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: "application/json",
+              text: JSON.stringify(resourceData, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        logger.error("Failed to fetch post thread", {
+          postUrl,
+          error: getErrorMessage(error),
+        });
+
+        if (error instanceof McpError) {
+          throw error;
+        }
+
+        throw new McpError(
+          ErrorCode.InternalError,
+          `Failed to fetch post thread: ${getErrorMessage(error)}`,
         );
       }
     },

@@ -374,6 +374,622 @@ search-instance pixelfed.social "photography" --type hashtags</code></pre>
         </section>
 
         <section class="tools-section">
+          <h2>Timeline Tools</h2>
+          <p>Tools for accessing public timelines and trending content from fediverse instances.</p>
+
+          <div class="tool-reference">
+            <h3><code>get-trending-hashtags</code></h3>
+            <p>Get currently trending hashtags on a fediverse instance.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>domain</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Instance domain (e.g., "mastodon.social")</td>
+                    </tr>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of hashtags to fetch (default: 20, max: 40)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Get trending hashtags
+get-trending-hashtags mastodon.social
+
+# Limit results
+get-trending-hashtags fosstodon.org --limit 10</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>get-trending-posts</code></h3>
+            <p>Get currently trending posts on a fediverse instance.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>domain</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Instance domain (e.g., "mastodon.social")</td>
+                    </tr>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of posts to fetch (default: 20, max: 40)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Get trending posts
+get-trending-posts mastodon.social</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>get-local-timeline</code></h3>
+            <p>Get the local public timeline from a fediverse instance (posts from local users only).</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>domain</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Instance domain (e.g., "mastodon.social")</td>
+                    </tr>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of posts to fetch (default: 20, max: 40)</td>
+                    </tr>
+                    <tr>
+                      <td><code>maxId</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Return results older than this ID (for pagination)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Get local timeline
+get-local-timeline fosstodon.org
+
+# Paginate results
+get-local-timeline fosstodon.org --maxId 123456789</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>get-federated-timeline</code></h3>
+            <p>Get the federated public timeline from a fediverse instance (posts from all connected instances).</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>domain</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Instance domain (e.g., "mastodon.social")</td>
+                    </tr>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of posts to fetch (default: 20, max: 40)</td>
+                    </tr>
+                    <tr>
+                      <td><code>maxId</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Return results older than this ID (for pagination)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Get federated timeline
+get-federated-timeline mastodon.social</code></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tools-section">
+          <h2>Content Tools</h2>
+          <p>Tools for fetching and searching content in the fediverse.</p>
+
+          <div class="tool-reference">
+            <h3><code>get-post-thread</code></h3>
+            <p>Fetch a post and its full conversation thread including replies and parent posts.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>postUrl</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>The URL of the post to fetch the thread for</td>
+                    </tr>
+                    <tr>
+                      <td><code>depth</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>How many levels of nested replies to fetch (default: 2, max: 5)</td>
+                    </tr>
+                    <tr>
+                      <td><code>maxReplies</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Maximum number of replies to fetch (default: 50, max: 100)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Get post thread
+get-post-thread https://mastodon.social/@user/123456789
+
+# Get deeper thread
+get-post-thread https://mastodon.social/@user/123456789 --depth 3 --maxReplies 100</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>search-accounts</code></h3>
+            <p>Search for accounts/users on a fediverse instance.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>domain</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Instance domain to search</td>
+                    </tr>
+                    <tr>
+                      <td><code>query</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Search query (username or display name)</td>
+                    </tr>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of results (default: 20, max: 40)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Search for accounts
+search-accounts mastodon.social "developer"</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>search-hashtags</code></h3>
+            <p>Search for hashtags on a fediverse instance.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>domain</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Instance domain to search</td>
+                    </tr>
+                    <tr>
+                      <td><code>query</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Search query (hashtag name without #)</td>
+                    </tr>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of results (default: 20, max: 40)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Search for hashtags
+search-hashtags mastodon.social "programming"</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>search-posts</code></h3>
+            <p>Search for posts/statuses on a fediverse instance.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>domain</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Instance domain to search</td>
+                    </tr>
+                    <tr>
+                      <td><code>query</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Search query (keywords or hashtag)</td>
+                    </tr>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of results (default: 20, max: 40)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Search for posts
+search-posts mastodon.social "typescript tutorial"</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>search</code> <span class="new-badge">NEW</span></h3>
+            <p>Unified search across accounts, posts, and hashtags in a single query. Combines all search types with optional filtering.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>domain</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Instance domain to search</td>
+                    </tr>
+                    <tr>
+                      <td><code>query</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Search query</td>
+                    </tr>
+                    <tr>
+                      <td><code>type</code></td>
+                      <td>enum</td>
+                      <td>No</td>
+                      <td>Filter results: "all", "accounts", "posts", "hashtags" (default: "all")</td>
+                    </tr>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Results per type (default: 20, max: 40)</td>
+                    </tr>
+                    <tr>
+                      <td><code>resolve</code></td>
+                      <td>boolean</td>
+                      <td>No</td>
+                      <td>Attempt WebFinger lookup for remote accounts</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Search everything
+search mastodon.social "programming"
+
+# Search only accounts
+search mastodon.social "developer" --type accounts
+
+# Search with remote lookup
+search fosstodon.org "@user@mastodon.social" --resolve true</code></pre>
+              </div>
+
+              <div class="response">
+                <h4>Response</h4>
+                <p>Returns combined results with:</p>
+                <ul>
+                  <li>Accounts section with profile summaries</li>
+                  <li>Posts section with content previews</li>
+                  <li>Hashtags section with usage statistics</li>
+                  <li>Result counts for each category</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tools-section">
+          <h2>Batch Tools</h2>
+          <p>Tools for fetching multiple items in a single request.</p>
+
+          <div class="tool-reference">
+            <h3><code>batch-fetch-actors</code></h3>
+            <p>Fetch multiple actors in a single request for efficiency.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>identifiers</code></td>
+                      <td>array</td>
+                      <td>Yes</td>
+                      <td>Array of actor identifiers (e.g., ["user1@mastodon.social", "user2@fosstodon.org"])</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Fetch multiple actors
+batch-fetch-actors --identifiers ["user1@mastodon.social", "user2@fosstodon.org"]</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>batch-fetch-posts</code></h3>
+            <p>Fetch multiple posts in a single request for efficiency.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>urls</code></td>
+                      <td>array</td>
+                      <td>Yes</td>
+                      <td>Array of post URLs</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Fetch multiple posts
+batch-fetch-posts --urls ["https://mastodon.social/@user/123", "https://fosstodon.org/@user/456"]</code></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tools-section">
+          <h2>Live Discovery Tools</h2>
+          <p>Tools for real-time discovery using external APIs.</p>
+
+          <div class="tool-reference">
+            <h3><code>discover-instances-live</code></h3>
+            <p>Discover fediverse instances in real-time using the instances.social API with advanced filtering.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>software</code></td>
+                      <td>enum</td>
+                      <td>No</td>
+                      <td>Filter by software: "mastodon", "pleroma", "misskey", "pixelfed", "lemmy", "peertube", "any"</td>
+                    </tr>
+                    <tr>
+                      <td><code>language</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Filter by language code (e.g., "en", "de", "ja")</td>
+                    </tr>
+                    <tr>
+                      <td><code>minUsers</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Minimum number of users</td>
+                    </tr>
+                    <tr>
+                      <td><code>maxUsers</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Maximum number of users</td>
+                    </tr>
+                    <tr>
+                      <td><code>openRegistrations</code></td>
+                      <td>boolean</td>
+                      <td>No</td>
+                      <td>Only show instances with open registrations</td>
+                    </tr>
+                    <tr>
+                      <td><code>sortBy</code></td>
+                      <td>enum</td>
+                      <td>No</td>
+                      <td>Sort by: "users", "statuses", "connections", "name"</td>
+                    </tr>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of results (default: 20, max: 50)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Find Mastodon instances
+discover-instances-live --software mastodon
+
+# Find large English instances with open registration
+discover-instances-live --language en --minUsers 10000 --openRegistrations true
+
+# Find small community instances
+discover-instances-live --maxUsers 5000 --sortBy users</code></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tools-section">
           <h2>Utility Tools</h2>
           <p>Additional tools for server management and debugging.</p>
 
@@ -472,6 +1088,1241 @@ performance-metrics --operation discover-actor</code></pre>
                   <li>Cache hit rates</li>
                   <li>Resource utilization</li>
                 </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tools-section">
+          <h2>Authenticated Write Tools <span class="new-badge">v1.1.0</span></h2>
+          <p>Tools for authenticated write operations. Requires OAuth token configuration. See the <a href={`${baseURL}docs/setup/config-guide/`}>Configuration Guide</a> for setup instructions.</p>
+
+          <h3 class="subsection-header">Account Management</h3>
+
+          <div class="tool-reference">
+            <h3><code>list-accounts</code></h3>
+            <p>List all configured accounts with their authentication status.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <p>None required.</p>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># List all configured accounts
+list-accounts</code></pre>
+              </div>
+
+              <div class="response">
+                <h4>Response</h4>
+                <p>Returns array of configured accounts with:</p>
+                <ul>
+                  <li>Account ID and instance domain</li>
+                  <li>Username</li>
+                  <li>Active status indicator</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>switch-account</code></h3>
+            <p>Switch the active account for subsequent authenticated operations.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>accountId</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>The ID of the account to switch to</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Switch to work account
+switch-account --accountId work
+
+# Switch to personal account
+switch-account --accountId personal</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>verify-account</code></h3>
+            <p>Verify the credentials and permissions of the active account.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <p>None required. Uses the currently active account.</p>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Verify current account credentials
+verify-account</code></pre>
+              </div>
+
+              <div class="response">
+                <h4>Response</h4>
+                <p>Returns verification status with:</p>
+                <ul>
+                  <li>Account details (username, display name)</li>
+                  <li>Instance information</li>
+                  <li>Granted OAuth scopes</li>
+                  <li>Token validity status</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="subsection-header">Posting Tools</h3>
+
+          <div class="tool-reference">
+            <h3><code>post-status</code></h3>
+            <p>Create a new post/status on the fediverse.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>content</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>The text content of the post</td>
+                    </tr>
+                    <tr>
+                      <td><code>visibility</code></td>
+                      <td>enum</td>
+                      <td>No</td>
+                      <td>Post visibility: "public", "unlisted", "private", "direct" (default: "public")</td>
+                    </tr>
+                    <tr>
+                      <td><code>spoilerText</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Content warning/spoiler text</td>
+                    </tr>
+                    <tr>
+                      <td><code>sensitive</code></td>
+                      <td>boolean</td>
+                      <td>No</td>
+                      <td>Mark media as sensitive</td>
+                    </tr>
+                    <tr>
+                      <td><code>language</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>ISO 639-1 language code (e.g., "en")</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Simple public post
+post-status --content "Hello fediverse!"
+
+# Post with content warning
+post-status --content "Spoiler discussion here" --spoilerText "Movie spoilers"
+
+# Unlisted post
+post-status --content "Only visible to followers" --visibility unlisted</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>reply-to-post</code></h3>
+            <p>Reply to an existing post.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>postUrl</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>URL of the post to reply to</td>
+                    </tr>
+                    <tr>
+                      <td><code>content</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>The reply content</td>
+                    </tr>
+                    <tr>
+                      <td><code>visibility</code></td>
+                      <td>enum</td>
+                      <td>No</td>
+                      <td>Reply visibility (defaults to original post's visibility)</td>
+                    </tr>
+                    <tr>
+                      <td><code>spoilerText</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Content warning/spoiler text</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Reply to a post
+reply-to-post --postUrl "https://mastodon.social/@user/123456" --content "Great point!"</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>delete-post</code></h3>
+            <p>Delete one of your own posts.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>postId</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>ID of the post to delete</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Delete a post
+delete-post --postId "123456789"</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="subsection-header">Interaction Tools</h3>
+
+          <div class="tool-reference">
+            <h3><code>boost-post</code> / <code>unboost-post</code></h3>
+            <p>Boost (reblog) or unboost a post to share it with your followers.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>postUrl</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>URL of the post to boost/unboost</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Boost a post
+boost-post --postUrl "https://mastodon.social/@user/123456"
+
+# Remove boost
+unboost-post --postUrl "https://mastodon.social/@user/123456"</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>favourite-post</code> / <code>unfavourite-post</code></h3>
+            <p>Favourite (like) or unfavourite a post.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>postUrl</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>URL of the post to favourite/unfavourite</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Favourite a post
+favourite-post --postUrl "https://mastodon.social/@user/123456"
+
+# Remove favourite
+unfavourite-post --postUrl "https://mastodon.social/@user/123456"</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>bookmark-post</code> / <code>unbookmark-post</code></h3>
+            <p>Bookmark or unbookmark a post for later reference.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>postUrl</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>URL of the post to bookmark/unbookmark</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Bookmark a post
+bookmark-post --postUrl "https://mastodon.social/@user/123456"
+
+# Remove bookmark
+unbookmark-post --postUrl "https://mastodon.social/@user/123456"</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="subsection-header">Relationship Tools</h3>
+
+          <div class="tool-reference">
+            <h3><code>get-relationship</code> <span class="new-badge">NEW</span></h3>
+            <p>Check your relationship status with one or more accounts (following, followed_by, blocking, muting, etc.).</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>accountIds</code></td>
+                      <td>array</td>
+                      <td>Yes</td>
+                      <td>Array of account IDs to check relationship status</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Check relationship with accounts
+get-relationship --accountIds ["12345", "67890"]</code></pre>
+              </div>
+
+              <div class="response">
+                <h4>Response</h4>
+                <p>Returns relationship status for each account:</p>
+                <ul>
+                  <li>following - Whether you follow them</li>
+                  <li>followed_by - Whether they follow you</li>
+                  <li>blocking - Whether you've blocked them</li>
+                  <li>muting - Whether you've muted them</li>
+                  <li>requested - Whether you've sent a follow request</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>follow-account</code> / <code>unfollow-account</code></h3>
+            <p>Follow or unfollow another account.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>identifier</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Account identifier (@user@domain or URL)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Follow an account
+follow-account --identifier "@user@mastodon.social"
+
+# Unfollow an account
+unfollow-account --identifier "@user@mastodon.social"</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>mute-account</code> / <code>unmute-account</code></h3>
+            <p>Mute or unmute an account (hide their posts without unfollowing).</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>identifier</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Account identifier (@user@domain or URL)</td>
+                    </tr>
+                    <tr>
+                      <td><code>duration</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Mute duration in seconds (0 for permanent, mute-account only)</td>
+                    </tr>
+                    <tr>
+                      <td><code>notifications</code></td>
+                      <td>boolean</td>
+                      <td>No</td>
+                      <td>Also mute notifications (default: true, mute-account only)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Mute an account permanently
+mute-account --identifier "@user@mastodon.social"
+
+# Mute for 24 hours
+mute-account --identifier "@user@mastodon.social" --duration 86400
+
+# Unmute an account
+unmute-account --identifier "@user@mastodon.social"</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>block-account</code> / <code>unblock-account</code></h3>
+            <p>Block or unblock an account (prevents all interactions).</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>identifier</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Account identifier (@user@domain or URL)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Block an account
+block-account --identifier "@user@mastodon.social"
+
+# Unblock an account
+unblock-account --identifier "@user@mastodon.social"</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="subsection-header">Authenticated Timelines</h3>
+
+          <div class="tool-reference">
+            <h3><code>get-home-timeline</code></h3>
+            <p>Get your authenticated home timeline (posts from followed accounts).</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of posts to fetch (default: 20, max: 40)</td>
+                    </tr>
+                    <tr>
+                      <td><code>maxId</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Return results older than this ID (pagination)</td>
+                    </tr>
+                    <tr>
+                      <td><code>sinceId</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Return results newer than this ID</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Get home timeline
+get-home-timeline
+
+# Paginate through timeline
+get-home-timeline --maxId "123456789" --limit 40</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>get-notifications</code></h3>
+            <p>Get your notifications (mentions, follows, boosts, favourites).</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of notifications (default: 20, max: 40)</td>
+                    </tr>
+                    <tr>
+                      <td><code>types</code></td>
+                      <td>array</td>
+                      <td>No</td>
+                      <td>Filter by type: "mention", "reblog", "favourite", "follow", "poll", "follow_request"</td>
+                    </tr>
+                    <tr>
+                      <td><code>excludeTypes</code></td>
+                      <td>array</td>
+                      <td>No</td>
+                      <td>Exclude specific notification types</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Get all notifications
+get-notifications
+
+# Get only mentions
+get-notifications --types ["mention"]
+
+# Exclude follow notifications
+get-notifications --excludeTypes ["follow", "follow_request"]</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>get-bookmarks</code></h3>
+            <p>Get your bookmarked posts.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of bookmarks (default: 20, max: 40)</td>
+                    </tr>
+                    <tr>
+                      <td><code>maxId</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Return results older than this ID</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Get bookmarks
+get-bookmarks --limit 40</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>get-favourites</code></h3>
+            <p>Get posts you have favourited.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of favourites (default: 20, max: 40)</td>
+                    </tr>
+                    <tr>
+                      <td><code>maxId</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Return results older than this ID</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Get favourited posts
+get-favourites --limit 40</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="subsection-header">Poll Tools <span class="new-badge">NEW</span></h3>
+
+          <div class="tool-reference">
+            <h3><code>vote-on-poll</code></h3>
+            <p>Vote on a poll attached to a post. Supports single and multiple choice polls.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>pollId</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>The ID of the poll to vote on</td>
+                    </tr>
+                    <tr>
+                      <td><code>choices</code></td>
+                      <td>array</td>
+                      <td>Yes</td>
+                      <td>Array of choice indices (0-based). Single choice polls accept one index, multiple choice can accept several.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Vote for option 1 (index 0)
+vote-on-poll --pollId "123456" --choices [0]
+
+# Vote for multiple options in a multi-choice poll
+vote-on-poll --pollId "123456" --choices [0, 2]</code></pre>
+              </div>
+
+              <div class="response">
+                <h4>Response</h4>
+                <p>Returns the updated poll with:</p>
+                <ul>
+                  <li>Current vote counts for each option</li>
+                  <li>Visual bar chart of results</li>
+                  <li>Your vote confirmation</li>
+                  <li>Poll expiration time</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="subsection-header">Media Tools <span class="new-badge">NEW</span></h3>
+
+          <div class="tool-reference">
+            <h3><code>upload-media</code></h3>
+            <p>Upload media files (images, videos, audio) to use in posts. Supports alt text for accessibility.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>filePath</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Local file path or URL of the media to upload</td>
+                    </tr>
+                    <tr>
+                      <td><code>description</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Alt text description for accessibility (highly recommended)</td>
+                    </tr>
+                    <tr>
+                      <td><code>focus</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Focal point as "x,y" where each value is -1.0 to 1.0 (determines crop center)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Upload image with alt text
+upload-media --filePath "/path/to/image.jpg" --description "A sunset over mountains"
+
+# Upload with focal point for cropping
+upload-media --filePath "/path/to/photo.png" --description "Portrait photo" --focus "0.0,0.5"
+
+# Upload from URL
+upload-media --filePath "https://example.com/image.jpg" --description "External image"</code></pre>
+              </div>
+
+              <div class="response">
+                <h4>Response</h4>
+                <p>Returns media attachment details:</p>
+                <ul>
+                  <li>Media ID (use in post-status --mediaIds)</li>
+                  <li>Media type (image, video, audio, gifv)</li>
+                  <li>Preview URL</li>
+                  <li>Blurhash for placeholders</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="subsection-header">Scheduling Tools <span class="new-badge">NEW</span></h3>
+
+          <div class="tool-reference">
+            <h3><code>get-scheduled-posts</code></h3>
+            <p>List all your pending scheduled posts.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of scheduled posts to fetch (default: 20, max: 40)</td>
+                    </tr>
+                    <tr>
+                      <td><code>maxId</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Return results older than this ID (pagination)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Get all scheduled posts
+get-scheduled-posts
+
+# Get with limit
+get-scheduled-posts --limit 10</code></pre>
+              </div>
+
+              <div class="response">
+                <h4>Response</h4>
+                <p>Returns list of scheduled posts with:</p>
+                <ul>
+                  <li>Scheduled post ID</li>
+                  <li>Scheduled publication time</li>
+                  <li>Post content and parameters</li>
+                  <li>Attached media (if any)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>update-scheduled-post</code></h3>
+            <p>Reschedule a pending post to a new time.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>scheduledPostId</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>ID of the scheduled post to update</td>
+                    </tr>
+                    <tr>
+                      <td><code>scheduledAt</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>New scheduled time in ISO 8601 format (e.g., "2026-02-14T18:00:00.000Z")</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Reschedule a post
+update-scheduled-post --scheduledPostId "123" --scheduledAt "2026-02-14T18:00:00.000Z"</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>cancel-scheduled-post</code></h3>
+            <p>Cancel a scheduled post before it's published.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>scheduledPostId</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>ID of the scheduled post to cancel</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Cancel a scheduled post
+cancel-scheduled-post --scheduledPostId "123"</code></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tools-section">
+          <h2>Content Export Tools <span class="new-badge">v1.1.0</span></h2>
+          <p>Tools for exporting fediverse content in various formats (JSON, Markdown, CSV).</p>
+
+          <div class="tool-reference">
+            <h3><code>export-timeline</code></h3>
+            <p>Export an actor's timeline to a file in your chosen format.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>identifier</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Actor identifier (@user@domain or URL)</td>
+                    </tr>
+                    <tr>
+                      <td><code>format</code></td>
+                      <td>enum</td>
+                      <td>No</td>
+                      <td>Export format: "json", "markdown", "csv" (default: "json")</td>
+                    </tr>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of posts to export (default: 100, max: 500)</td>
+                    </tr>
+                    <tr>
+                      <td><code>includeBoosts</code></td>
+                      <td>boolean</td>
+                      <td>No</td>
+                      <td>Include boosted posts (default: true)</td>
+                    </tr>
+                    <tr>
+                      <td><code>includeReplies</code></td>
+                      <td>boolean</td>
+                      <td>No</td>
+                      <td>Include replies (default: true)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Export timeline as JSON
+export-timeline --identifier "@user@mastodon.social"
+
+# Export as Markdown, original posts only
+export-timeline --identifier "@user@mastodon.social" --format markdown --includeBoosts false --includeReplies false
+
+# Export as CSV with limit
+export-timeline --identifier "@user@mastodon.social" --format csv --limit 200</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>export-thread</code></h3>
+            <p>Export a post thread with all ancestors and replies.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>postUrl</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>URL of the post</td>
+                    </tr>
+                    <tr>
+                      <td><code>format</code></td>
+                      <td>enum</td>
+                      <td>No</td>
+                      <td>Export format: "json", "markdown", "csv" (default: "json")</td>
+                    </tr>
+                    <tr>
+                      <td><code>depth</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Max reply depth (default: 3, max: 10)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Export thread as JSON
+export-thread --postUrl "https://mastodon.social/@user/123456"
+
+# Export as readable Markdown
+export-thread --postUrl "https://mastodon.social/@user/123456" --format markdown --depth 5</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>export-account-info</code></h3>
+            <p>Export comprehensive account information including profile, stats, and recent activity.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>identifier</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Account identifier (@user@domain or URL)</td>
+                    </tr>
+                    <tr>
+                      <td><code>format</code></td>
+                      <td>enum</td>
+                      <td>No</td>
+                      <td>Export format: "json", "markdown" (default: "json")</td>
+                    </tr>
+                    <tr>
+                      <td><code>includeTimeline</code></td>
+                      <td>boolean</td>
+                      <td>No</td>
+                      <td>Include recent posts (default: false)</td>
+                    </tr>
+                    <tr>
+                      <td><code>timelineLimit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of posts if includeTimeline is true (default: 50)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Export account info as JSON
+export-account-info --identifier "@user@mastodon.social"
+
+# Export with timeline as Markdown
+export-account-info --identifier "@user@mastodon.social" --format markdown --includeTimeline true</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="tool-reference">
+            <h3><code>export-hashtag</code></h3>
+            <p>Export posts containing a specific hashtag from an instance.</p>
+
+            <div class="tool-details">
+              <div class="parameters">
+                <h4>Parameters</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Required</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>domain</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Instance domain to search</td>
+                    </tr>
+                    <tr>
+                      <td><code>hashtag</code></td>
+                      <td>string</td>
+                      <td>Yes</td>
+                      <td>Hashtag to export (without #)</td>
+                    </tr>
+                    <tr>
+                      <td><code>format</code></td>
+                      <td>enum</td>
+                      <td>No</td>
+                      <td>Export format: "json", "markdown", "csv" (default: "json")</td>
+                    </tr>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of posts (default: 100, max: 500)</td>
+                    </tr>
+                    <tr>
+                      <td><code>local</code></td>
+                      <td>boolean</td>
+                      <td>No</td>
+                      <td>Only local posts (default: false)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="examples">
+                <h4>Examples</h4>
+                <pre><code># Export hashtag posts as JSON
+export-hashtag --domain mastodon.social --hashtag "programming"
+
+# Export local posts only as Markdown
+export-hashtag --domain fosstodon.org --hashtag "opensource" --format markdown --local true
+
+# Export as CSV for analysis
+export-hashtag --domain mastodon.social --hashtag "rust" --format csv --limit 200</code></pre>
               </div>
             </div>
           </div>
@@ -748,5 +2599,27 @@ performance-metrics --operation discover-actor</code></pre>
     color: var(--text-secondary);
     line-height: var(--leading-relaxed);
     margin: 0;
+  }
+
+  .new-badge {
+    display: inline-block;
+    background: var(--color-success, #10b981);
+    color: white;
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-full, 9999px);
+    vertical-align: middle;
+    margin-left: var(--space-2);
+  }
+
+  .subsection-header {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-top: var(--space-8);
+    margin-bottom: var(--space-4);
+    padding-left: var(--space-2);
+    border-left: 3px solid var(--color-primary);
   }
 </style>

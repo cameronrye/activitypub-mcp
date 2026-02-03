@@ -1,6 +1,6 @@
 {
   "name": "activitypub-mcp",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "A Model Context Protocol server for exploring and interacting with the existing Fediverse",
   "main": "dist/mcp-main.js",
   "bin": {
@@ -67,12 +67,6 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:integration": "vitest run --config vitest.config.integration.ts",
-    "test:legacy": "tsx ./tests/test-mcp.ts",
-    "test:legacy:all": "run-s test:legacy test:legacy:integration test:legacy:comprehensive test:legacy:errors test:legacy:edge",
-    "test:legacy:integration": "tsx ./tests/test-integration.ts",
-    "test:legacy:comprehensive": "tsx ./tests/test-client-comprehensive.ts",
-    "test:legacy:errors": "tsx ./tests/test-error-scenarios.ts",
-    "test:legacy:edge": "tsx ./tests/test-edge-cases.ts",
     "test:all": "vitest run",
     "test:coverage": "vitest run --coverage",
     "coverage": "vitest run --coverage",

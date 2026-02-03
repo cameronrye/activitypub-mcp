@@ -14,6 +14,7 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
 <BaseLayout title={title} description={description}>
   <div class="hero-section">
     <div class="hero-content">
+      <div class="version-badge">v1.1.0 - Now with Full Write Support!</div>
       <img src={`${baseURL}logo.svg`} alt="ActivityPub MCP Logo" class="hero-logo" width="120" height="120">
       <h1 class="hero-title">
         Connect LLMs to the <span class="text-primary">Fediverse</span>
@@ -21,6 +22,11 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
       <p class="hero-description">
         A comprehensive <strong>Model Context Protocol (MCP)</strong> server that enables LLMs like Claude to <strong>explore and interact with the existing Fediverse</strong> through standardized MCP tools, resources, and prompts.
       </p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-number">53</span><span class="stat-label">Tools</span></div>
+        <div class="stat"><span class="stat-number">10</span><span class="stat-label">Resources</span></div>
+        <div class="stat"><span class="stat-number">11</span><span class="stat-label">Prompts</span></div>
+      </div>
       <div class="hero-actions">
         <a href="#quick-start" class="btn btn-primary btn-lg">Get Started</a>
         <a href={`${baseURL}docs/`} class="btn btn-outline btn-lg">Documentation</a>
@@ -30,6 +36,88 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
       </div>
     </div>
   </div>
+
+  <section class="whats-new-section">
+    <div class="container">
+      <h2>What's New in v1.1.0</h2>
+      <p class="section-subtitle">The biggest release yet - now with full write capabilities and enterprise-ready features</p>
+
+      <div class="new-features-grid">
+        <div class="new-feature-card highlight">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </div>
+          <h3>Full Write Support</h3>
+          <p>Post, reply, boost, favourite, and bookmark directly from your LLM. Complete social interactions without leaving your AI workflow.</p>
+        </div>
+
+        <div class="new-feature-card highlight">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <h3>Multi-Account</h3>
+          <p>Manage multiple fediverse accounts with secure credential storage. Switch between work, personal, and project accounts seamlessly.</p>
+        </div>
+
+        <div class="new-feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21,15 16,10 5,21"></polyline>
+            </svg>
+          </div>
+          <h3>Media Upload</h3>
+          <p>Upload images with alt text for accessibility. Support for focal points and multiple media formats.</p>
+        </div>
+
+        <div class="new-feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </div>
+          <h3>Scheduled Posts</h3>
+          <p>Schedule posts for the perfect time. Manage, update, and cancel scheduled content easily.</p>
+        </div>
+
+        <div class="new-feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7,10 12,15 17,10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </div>
+          <h3>Data Export</h3>
+          <p>Export timelines, threads, and accounts to JSON, Markdown, or CSV formats. Your data, your way.</p>
+        </div>
+
+        <div class="new-feature-card">
+          <div class="feature-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
+          <h3>HTTP Transport</h3>
+          <p>Production-ready HTTP/SSE mode for enterprise deployments with built-in health checks and metrics.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section class="features-section" id="quick-start">
     <div class="container">

@@ -652,6 +652,207 @@ for (const account of techAccounts.slice(0, 10)) {
 }
 ```
 
+## Authenticated Write Tools Examples (v1.1.0+)
+
+These examples demonstrate the authenticated write operations. Configuration requires OAuth tokens in environment variables.
+
+### Unified Search (NEW)
+
+Search across accounts, posts, and hashtags in a single query:
+
+**Request:**
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "search",
+    "arguments": {
+      "domain": "mastodon.social",
+      "query": "rust programming",
+      "type": "all",
+      "limit": 10
+    }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "accounts": [
+    {"id": "123", "username": "rustdev", "display_name": "Rust Developer"}
+  ],
+  "posts": [
+    {"id": "456", "content": "Just released a new Rust crate..."}
+  ],
+  "hashtags": [
+    {"name": "rust", "url": "https://mastodon.social/tags/rust"}
+  ],
+  "summary": "Found 5 accounts, 10 posts, 3 hashtags"
+}
+```
+
+### Check Relationship Status (NEW)
+
+Check your relationship with other accounts:
+
+**Request:**
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "get-relationship",
+    "arguments": {
+      "accountIds": ["123456789", "987654321"]
+    }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "relationships": [
+    {
+      "id": "123456789",
+      "following": true,
+      "followed_by": false,
+      "blocking": false,
+      "muting": false,
+      "requested": false
+    }
+  ]
+}
+```
+
+### Vote on Poll (NEW)
+
+Vote on a poll attached to a post:
+
+**Request:**
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "vote-on-poll",
+    "arguments": {
+      "pollId": "12345",
+      "choices": [0, 2]
+    }
+  }
+}
+```
+
+**Response:**
+```
+Successfully voted on poll!
+
+Poll Results:
+Option 1: ████████████ 45% (90 votes) ← Your vote
+Option 2: ██████ 25% (50 votes)
+Option 3: ███████████ 30% (60 votes) ← Your vote
+
+Total votes: 200
+Expires: 2026-02-03T18:00:00Z
+```
+
+### Upload Media (NEW)
+
+Upload an image with alt text:
+
+**Request:**
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "upload-media",
+    "arguments": {
+      "filePath": "/path/to/sunset.jpg",
+      "description": "A beautiful sunset over the ocean with orange and purple hues",
+      "focus": "0.0,0.3"
+    }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "mediaAttachment": {
+    "id": "110123456789",
+    "type": "image",
+    "url": "https://files.mastodon.social/media/...",
+    "previewUrl": "https://files.mastodon.social/preview/...",
+    "description": "A beautiful sunset over the ocean with orange and purple hues"
+  },
+  "hint": "Use this media ID with post-status --mediaIds"
+}
+```
+
+### Manage Scheduled Posts (NEW)
+
+List all scheduled posts:
+
+**Request:**
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "get-scheduled-posts",
+    "arguments": {
+      "limit": 10
+    }
+  }
+}
+```
+
+**Response:**
+```
+Found 3 scheduled posts:
+
+1. ID: 123
+   Scheduled: 2026-02-14T18:00:00Z (Valentine's Day)
+   Content: "Happy Valentine's Day, fediverse! 💕"
+   Visibility: public
+
+2. ID: 124
+   Scheduled: 2026-02-15T09:00:00Z
+   Content: "New blog post coming..."
+   Visibility: unlisted
+```
+
+Reschedule a post:
+
+**Request:**
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "update-scheduled-post",
+    "arguments": {
+      "scheduledPostId": "123",
+      "scheduledAt": "2026-02-14T20:00:00.000Z"
+    }
+  }
+}
+```
+
+Cancel a scheduled post:
+
+**Request:**
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "cancel-scheduled-post",
+    "arguments": {
+      "scheduledPostId": "124"
+    }
+  }
+}
+```
+
 ## Natural Language Usage with Claude
 
 When using this MCP server with Claude Desktop, you can interact naturally:

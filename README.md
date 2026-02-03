@@ -28,9 +28,39 @@
   <a href="https://github.com/cameronrye/activitypub-mcp"><img src="https://img.shields.io/github/stars/cameronrye/activitypub-mcp?style=social" alt="GitHub stars" /></a>
 </p>
 
+---
+
+<h2 align="center">What's New in v1.1.0</h2>
+
+<p align="center">
+  <strong>The biggest release yet!</strong> Now with full write capabilities, multi-account support, and enterprise-ready features.
+</p>
+
+<table align="center">
+  <tr>
+    <td align="center"><strong>Post & Interact</strong><br/>Create posts, reply, boost, favourite, and bookmark directly from your LLM</td>
+    <td align="center"><strong>Multi-Account</strong><br/>Manage multiple fediverse accounts with secure credential storage</td>
+    <td align="center"><strong>Media & Polls</strong><br/>Upload images with alt text, vote on polls, schedule posts</td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Export Anywhere</strong><br/>Export timelines, threads, and accounts to JSON, Markdown, or CSV</td>
+    <td align="center"><strong>HTTP Transport</strong><br/>Production-ready HTTP/SSE mode for enterprise deployments</td>
+    <td align="center"><strong>53 Tools</strong><br/>21 read-only + 28 authenticated + 4 export tools</td>
+  </tr>
+</table>
+
+<p align="center">
+  <a href="#authenticated-write-tools-v110">See Authenticated Tools</a> |
+  <a href="#content-export-tools-v110">See Export Tools</a> |
+  <a href="CHANGELOG.md">Full Changelog</a>
+</p>
+
+---
+
 ## Features
 
 ### Core Capabilities
+
 - **Fediverse Client**: Interact with existing ActivityPub servers (Mastodon, Pleroma, Misskey, etc.)
 - **WebFinger Discovery**: Find and discover actors across the fediverse
 - **MCP Protocol**: Complete MCP server with resources, tools, and prompts
@@ -38,23 +68,47 @@
 - **TypeScript**: Fully typed with modern TypeScript and ESM
 - **High Performance**: Efficient resource management and caching
 - **Secure**: Built-in security features and input validation
+- **Dual Transport**: Supports both stdio (Claude Desktop) and HTTP transport modes
 
 ### Fediverse Interaction Features
+
 - **Remote Actor Discovery**: Find users on any fediverse instance
-- **Timeline Fetching**: Get posts from any user's timeline
-- **Instance Discovery**: Find and explore fediverse instances
+- **Timeline Fetching**: Get posts from any user's timeline with pagination support
+- **Trending Content**: Access trending hashtags and posts
+- **Instance Discovery**: Find and explore fediverse instances via live API
 - **Instance Information**: Get detailed info about any server
-- **Search Capabilities**: Search for content across instances
+- **Search Capabilities**: Search for accounts, hashtags, and posts across instances
+- **Post Threads**: Fetch complete conversation threads with replies
 - **WebFinger Support**: Resolve actor identifiers across the network
 - **Multi-Platform Support**: Works with Mastodon, Pleroma, Misskey, and more
 - **Follower/Following Lists**: Access social connections
+- **Batch Operations**: Fetch multiple actors or posts in a single request
 
 ### MCP Features
-- **Resources**: Access remote ActivityPub data (actors, timelines, instance info)
-- **Tools**: Discover and interact with fediverse content
-- **Prompts**: Templates for fediverse exploration and discovery
-- **Monitoring**: Built-in logging and performance metrics
+
+- **Resources** (10 total): Access remote ActivityPub data (actors, timelines, trending, instance info)
+- **Tools** (53 total): Discover, interact, and create content in the fediverse
+  - 21 read-only tools for discovery and exploration (including unified search)
+  - 28 authenticated tools for posting, interactions, polls, media, and scheduling
+  - 4 export tools for data export in JSON, Markdown, or CSV formats
+- **Prompts** (11 total): Templates for fediverse exploration, content strategy, and community analysis
+- **Monitoring**: Built-in logging, audit trails, and performance metrics
 - **Health Checks**: Server health monitoring and diagnostics
+
+### Authenticated Features (v1.1.0)
+
+- **Multi-Account Support**: Manage multiple fediverse accounts with secure credential storage
+- **Posting Operations**: Create, reply to, and delete posts
+- **Social Interactions**: Boost, favourite, bookmark, follow, mute, and block
+- **Authenticated Timelines**: Access home timeline, notifications, bookmarks, and favourites
+- **Content Export**: Export timelines, threads, and account data in multiple formats
+
+### Security & Administration
+
+- **Instance Blocklist**: Block specific instances by domain or wildcard pattern
+- **Audit Logging**: Comprehensive logging of all tool invocations and resource access
+- **Content Warnings**: Respect and display content warnings from posts
+- **Rate Limiting**: Protect against abuse with configurable rate limits
 
 ## Quick Start
 
@@ -211,12 +265,24 @@ activitypub://server-info
 ```json
 {
   "name": "activitypub-mcp",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "A Model Context Protocol server for exploring and interacting with the existing Fediverse",
   "capabilities": {
-    "resources": ["remote-actor", "remote-timeline", "instance-info", "remote-followers", "remote-following"],
-    "tools": ["discover-actor", "fetch-timeline", "search-instance", "get-instance-info", "discover-instances", "recommend-instances", "health-check", "performance-metrics"],
-    "prompts": ["explore-fediverse", "compare-instances", "discover-content"]
+    "resources": ["server-info", "remote-actor", "remote-timeline", "remote-followers", "remote-following", "instance-info", "trending", "local-timeline", "federated-timeline", "post-thread"],
+    "tools": {
+      "discovery": ["discover-actor", "discover-instances", "discover-instances-live", "recommend-instances"],
+      "content": ["fetch-timeline", "get-post-thread", "search-instance", "search-accounts", "search-hashtags", "search-posts"],
+      "timelines": ["get-trending-hashtags", "get-trending-posts", "get-local-timeline", "get-federated-timeline"],
+      "utility": ["convert-url", "batch-fetch-actors", "batch-fetch-posts"],
+      "system": ["health-check", "performance-metrics"]
+    },
+    "prompts": ["explore-fediverse", "discover-content", "compare-instances", "compare-accounts", "analyze-user-activity", "find-experts", "summarize-trending"]
+  },
+  "features": {
+    "auditLogging": true,
+    "instanceBlocklist": true,
+    "contentWarnings": true,
+    "batchOperations": true
   }
 }
 ```
@@ -306,6 +372,38 @@ activitypub://remote-followers/{identifier}
 activitypub://remote-following/{identifier}
 ```
 
+#### Trending Resource (New)
+
+Get trending hashtags and posts from an instance:
+
+```uri
+activitypub://trending/{domain}
+```
+
+#### Local Timeline Resource (New)
+
+Get the local public timeline from an instance:
+
+```uri
+activitypub://local-timeline/{domain}
+```
+
+#### Federated Timeline Resource (New)
+
+Get the federated public timeline from an instance:
+
+```uri
+activitypub://federated-timeline/{domain}
+```
+
+#### Post Thread Resource (New)
+
+Get a post and its full conversation thread:
+
+```uri
+activitypub://post-thread/{postUrl}
+```
+
 ### MCP Tools
 
 Tools enable LLMs to discover and interact with the fediverse. All tools return structured responses with success/error information.
@@ -328,21 +426,28 @@ Discover and get information about any actor in the fediverse:
 
 #### Fetch Timeline
 
-Fetch recent posts from any actor's timeline:
+Fetch posts from any actor's timeline with pagination support:
 
 ```json
 {
   "name": "fetch-timeline",
   "arguments": {
     "identifier": "user@mastodon.social",
-    "limit": 20
+    "limit": 20,
+    "cursor": null,
+    "maxId": null
   }
 }
 ```
 
 **Parameters:**
+
 - `identifier` (string, required): Fediverse handle
 - `limit` (number, optional): Number of posts to fetch (1-50, default: 20)
+- `cursor` (string, optional): Pagination cursor from previous response
+- `minId` (string, optional): Return results newer than this ID
+- `maxId` (string, optional): Return results older than this ID
+- `sinceId` (string, optional): Return results since this ID
 
 #### Get Instance Info
 
@@ -416,7 +521,177 @@ Get personalized instance recommendations based on interests:
 ```
 
 **Parameters:**
+
 - `interests` (array, required): List of your interests or topics
+
+#### Discover Instances Live (New)
+
+Real-time instance discovery via instances.social API:
+
+```json
+{
+  "name": "discover-instances-live",
+  "arguments": {
+    "software": "mastodon",
+    "language": "en",
+    "minUsers": 1000,
+    "openRegistrations": true,
+    "limit": 20
+  }
+}
+```
+
+**Parameters:**
+
+- `software` (enum, optional): Filter by software type (mastodon, pleroma, misskey, pixelfed, lemmy, peertube, any)
+- `language` (string, optional): Filter by language code (e.g., "en", "de", "ja")
+- `minUsers` (number, optional): Minimum number of users
+- `maxUsers` (number, optional): Maximum number of users
+- `openRegistrations` (boolean, optional): Only show instances with open registrations
+- `sortBy` (enum, optional): Sort by "users", "statuses", "connections", or "name"
+- `limit` (number, optional): Number of results (default: 20)
+
+#### Get Trending Hashtags (New)
+
+Get currently trending hashtags on an instance:
+
+```json
+{
+  "name": "get-trending-hashtags",
+  "arguments": {
+    "domain": "mastodon.social",
+    "limit": 20
+  }
+}
+```
+
+#### Get Trending Posts (New)
+
+Get currently trending posts on an instance:
+
+```json
+{
+  "name": "get-trending-posts",
+  "arguments": {
+    "domain": "mastodon.social",
+    "limit": 20
+  }
+}
+```
+
+#### Get Local Timeline (New)
+
+Get the local public timeline from an instance:
+
+```json
+{
+  "name": "get-local-timeline",
+  "arguments": {
+    "domain": "mastodon.social",
+    "limit": 20
+  }
+}
+```
+
+#### Get Federated Timeline (New)
+
+Get the federated public timeline from an instance:
+
+```json
+{
+  "name": "get-federated-timeline",
+  "arguments": {
+    "domain": "mastodon.social",
+    "limit": 20
+  }
+}
+```
+
+#### Get Post Thread (New)
+
+Fetch a post and its full conversation thread:
+
+```json
+{
+  "name": "get-post-thread",
+  "arguments": {
+    "postUrl": "https://mastodon.social/@user/123456789",
+    "depth": 2,
+    "maxReplies": 50
+  }
+}
+```
+
+#### Search Accounts (New)
+
+Search for accounts on an instance:
+
+```json
+{
+  "name": "search-accounts",
+  "arguments": {
+    "domain": "mastodon.social",
+    "query": "developer",
+    "limit": 20
+  }
+}
+```
+
+#### Search Hashtags (New)
+
+Search for hashtags on an instance:
+
+```json
+{
+  "name": "search-hashtags",
+  "arguments": {
+    "domain": "mastodon.social",
+    "query": "programming",
+    "limit": 20
+  }
+}
+```
+
+#### Search Posts (New)
+
+Search for posts on an instance:
+
+```json
+{
+  "name": "search-posts",
+  "arguments": {
+    "domain": "mastodon.social",
+    "query": "typescript",
+    "limit": 20
+  }
+}
+```
+
+#### Batch Fetch Actors (New)
+
+Fetch multiple actors in a single request:
+
+```json
+{
+  "name": "batch-fetch-actors",
+  "arguments": {
+    "identifiers": ["user1@mastodon.social", "user2@fosstodon.org"]
+  }
+}
+```
+
+#### Batch Fetch Posts (New)
+
+Fetch multiple posts in a single request:
+
+```json
+{
+  "name": "batch-fetch-posts",
+  "arguments": {
+    "urls": ["https://mastodon.social/@user/123", "https://fosstodon.org/@user/456"]
+  }
+}
+```
 
 #### Health Check
 
@@ -473,6 +748,7 @@ Get performance metrics for the MCP server:
 ```
 
 #### Discover Content
+
 ```json
 {
   "name": "discover-content",
@@ -483,31 +759,341 @@ Get performance metrics for the MCP server:
 }
 ```
 
+#### Compare Accounts (New)
+
+```json
+{
+  "name": "compare-accounts",
+  "arguments": {
+    "accounts": "user1@mastodon.social, user2@fosstodon.org",
+    "aspects": "posting frequency, topics, engagement"
+  }
+}
+```
+
+#### Analyze User Activity (New)
+
+```json
+{
+  "name": "analyze-user-activity",
+  "arguments": {
+    "identifier": "user@mastodon.social",
+    "depth": "standard"
+  }
+}
+```
+
+#### Find Experts (New)
+
+```json
+{
+  "name": "find-experts",
+  "arguments": {
+    "topic": "machine learning",
+    "instances": "mastodon.social, fosstodon.org"
+  }
+}
+```
+
+#### Summarize Trending (New)
+
+```json
+{
+  "name": "summarize-trending",
+  "arguments": {
+    "instances": "mastodon.social",
+    "focus": "tech"
+  }
+}
+```
+
+#### Content Strategy (v1.1.0)
+
+Plan your fediverse content strategy based on trending topics:
+
+```json
+{
+  "name": "content-strategy",
+  "arguments": {
+    "topics": "programming, open source",
+    "targetAudience": "developers",
+    "postingFrequency": "several-per-week"
+  }
+}
+```
+
+#### Community Health (v1.1.0)
+
+Analyze instance moderation and community health:
+
+```json
+{
+  "name": "community-health",
+  "arguments": {
+    "instance": "fosstodon.org",
+    "concerns": "moderation, spam"
+  }
+}
+```
+
+#### Migration Helper (v1.1.0)
+
+Get help planning a migration to a new fediverse instance:
+
+```json
+{
+  "name": "migration-helper",
+  "arguments": {
+    "currentInstance": "mastodon.social",
+    "targetInstance": "fosstodon.org",
+    "priorities": "moderation, privacy, community focus"
+  }
+}
+```
+
+#### Thread Composer (v1.1.0)
+
+Help compose well-structured threaded posts:
+
+```json
+{
+  "name": "thread-composer",
+  "arguments": {
+    "topic": "Introduction to the Fediverse",
+    "keyPoints": "What is ActivityPub, Popular instances, Getting started",
+    "tone": "informative",
+    "targetLength": "medium"
+  }
+}
+```
+
+### Authenticated Write Tools (v1.1.0)
+
+These tools require authentication via environment variables. See [Configuration](#environment-variables) for setup.
+
+#### Account Management
+
+- `list-accounts` - List configured accounts
+- `switch-account` - Switch active account
+- `verify-account` - Verify account credentials
+
+#### Posting Operations
+
+```json
+{
+  "name": "post-status",
+  "arguments": {
+    "content": "Hello Fediverse!",
+    "visibility": "public",
+    "contentWarning": "optional CW"
+  }
+}
+```
+
+- `post-status` - Create a new post
+- `reply-to-post` - Reply to an existing post
+- `delete-post` - Delete your own post
+
+#### Social Interactions
+
+- `boost-post` / `unboost-post` - Boost (reblog) posts
+- `favourite-post` / `unfavourite-post` - Favourite posts
+- `bookmark-post` / `unbookmark-post` - Bookmark posts
+- `follow-account` / `unfollow-account` - Follow/unfollow accounts
+- `mute-account` / `unmute-account` - Mute accounts
+- `block-account` / `unblock-account` - Block accounts
+
+#### Authenticated Timelines
+
+- `get-home-timeline` - Your home timeline
+- `get-notifications` - Your notifications
+- `get-bookmarks` - Your bookmarked posts
+- `get-favourites` - Your favourited posts
+
+#### Unified Search (NEW)
+
+Search across accounts, posts, and hashtags in a single query:
+
+```json
+{
+  "name": "search",
+  "arguments": {
+    "domain": "mastodon.social",
+    "query": "typescript programming",
+    "type": "all",
+    "limit": 20
+  }
+}
+```
+
+**Parameters:**
+
+- `domain` (string, required): Instance domain to search
+- `query` (string, required): Search query
+- `type` (string, optional): "all", "accounts", "posts", or "hashtags" (default: "all")
+- `limit` (number, optional): Results per type (1-40, default: 20)
+- `resolve` (boolean, optional): Attempt WebFinger lookup for remote accounts
+
+#### Relationship Checking (NEW)
+
+Check your relationship status with other accounts:
+
+```json
+{
+  "name": "get-relationship",
+  "arguments": {
+    "accountIds": ["12345", "67890"]
+  }
+}
+```
+
+**Parameters:**
+
+- `accountIds` (array, required): Account IDs to check relationship status
+
+**Returns:** Following, followed_by, blocking, muting, and other relationship statuses.
+
+#### Poll Voting (NEW)
+
+Vote on polls in posts:
+
+```json
+{
+  "name": "vote-on-poll",
+  "arguments": {
+    "pollId": "123456",
+    "choices": [0, 2]
+  }
+}
+```
+
+**Parameters:**
+
+- `pollId` (string, required): The poll ID to vote on
+- `choices` (array, required): Array of choice indices (0-based)
+
+**Returns:** Updated poll with current results and visual bar chart.
+
+#### Media Upload (NEW)
+
+Upload media files with alt text descriptions:
+
+```json
+{
+  "name": "upload-media",
+  "arguments": {
+    "filePath": "/path/to/image.jpg",
+    "description": "A beautiful sunset over the ocean",
+    "focus": "0.0,0.5"
+  }
+}
+```
+
+**Parameters:**
+
+- `filePath` (string, required): Local file path or URL to upload
+- `description` (string, optional): Alt text for accessibility (recommended)
+- `focus` (string, optional): Focal point as "x,y" (-1.0 to 1.0)
+
+**Supported types:** Images (jpg, png, gif, webp), Videos (mp4, webm), Audio (mp3, ogg)
+
+#### Scheduled Posts (NEW)
+
+Manage scheduled posts:
+
+```json
+{
+  "name": "get-scheduled-posts",
+  "arguments": {
+    "limit": 20
+  }
+}
+```
+
+```json
+{
+  "name": "update-scheduled-post",
+  "arguments": {
+    "scheduledPostId": "123",
+    "scheduledAt": "2026-02-14T18:00:00.000Z"
+  }
+}
+```
+
+```json
+{
+  "name": "cancel-scheduled-post",
+  "arguments": {
+    "scheduledPostId": "123"
+  }
+}
+```
+
+- `get-scheduled-posts` - List all pending scheduled posts
+- `update-scheduled-post` - Change the scheduled time
+- `cancel-scheduled-post` - Cancel a scheduled post
+
+### Content Export Tools (v1.1.0)
+
+Export fediverse content in multiple formats (JSON, Markdown, CSV):
+
+```json
+{
+  "name": "export-timeline",
+  "arguments": {
+    "identifier": "user@mastodon.social",
+    "format": "markdown",
+    "limit": 50
+  }
+}
+```
+
+- `export-timeline` - Export actor timeline
+- `export-thread` - Export post thread with replies
+- `export-account-info` - Comprehensive account data export
+- `export-hashtag` - Export posts with a specific hashtag
+
 ## Architecture
 
 ### Project Structure
+
 ```
 activitypub-mcp/
-├── src/                     # Source code
-│   ├── mcp-main.ts          # MCP server entry point
-│   ├── mcp-server.ts        # MCP server implementation
-│   ├── webfinger.ts         # WebFinger discovery client
-│   ├── remote-client.ts     # Remote ActivityPub client
-│   ├── instance-discovery.ts # Instance discovery service
-│   ├── health-check.ts      # Health monitoring
-│   ├── performance-monitor.ts # Performance tracking
-│   ├── config.ts            # Configuration constants
-│   └── logging.ts           # Logging configuration
-├── docs/                    # Documentation
-│   ├── setup/               # Installation & configuration guides
-│   ├── guides/              # User guides & examples
-│   ├── development/         # Development documentation
-│   └── specifications/      # Protocol specifications
-├── scripts/                 # Installation & setup scripts
-├── tests/                   # Test files
-├── dist/                    # Built JavaScript files
-├── package.json             # Dependencies and scripts
-└── README.md               # This file
+├── src/                           # Source code
+│   ├── mcp-main.ts                # MCP server entry point
+│   ├── mcp-server.ts              # MCP server implementation
+│   ├── webfinger.ts               # WebFinger discovery client
+│   ├── remote-client.ts           # Remote ActivityPub client
+│   ├── instance-discovery.ts      # Static instance discovery
+│   ├── dynamic-instance-discovery.ts # Live API instance discovery
+│   ├── instance-blocklist.ts      # Instance blocklist manager
+│   ├── audit-logger.ts            # Audit logging infrastructure
+│   ├── health-check.ts            # Health monitoring
+│   ├── performance-monitor.ts     # Performance tracking
+│   ├── config.ts                  # Configuration constants
+│   ├── logging.ts                 # Logging configuration
+│   ├── auth/                      # Authentication (v1.1.0)
+│   │   ├── account-manager.ts     # Multi-account management
+│   │   ├── authenticated-client.ts # Authenticated API client
+│   │   └── index.ts               # Auth module exports
+│   ├── mcp/                       # MCP handlers
+│   │   ├── tools.ts               # Read-only tool implementations
+│   │   ├── tools-write.ts         # Write operation tools (v1.1.0)
+│   │   ├── tools-export.ts        # Export tools (v1.1.0)
+│   │   ├── resources.ts           # Resource implementations
+│   │   └── prompts.ts             # Prompt implementations
+│   └── server/                    # Server infrastructure
+│       ├── http-transport.ts      # HTTP/SSE transport
+│       ├── adaptive-rate-limiter.ts # Per-instance rate limiting (v1.1.0)
+│       └── rate-limiter.ts        # Rate limiting
+├── docs/                          # Documentation
+├── scripts/                       # Installation & setup scripts
+├── tests/                         # Test files
+│   ├── unit/                      # Unit tests
+│   └── integration/               # Integration tests
+├── dist/                          # Built JavaScript files
+├── package.json                   # Dependencies and scripts
+└── README.md                      # This file
 ```
 
 ### Technology Stack
@@ -546,11 +1132,19 @@ See the [Documentation Index](docs/README.md) for a complete overview.
 - `npm run build` - Build TypeScript
 
 ### Environment Variables
+
 Create a `.env` file:
+
 ```env
 # MCP Server configuration
 MCP_SERVER_NAME=activitypub-mcp
-MCP_SERVER_VERSION=1.0.0
+MCP_SERVER_VERSION=1.1.0
+
+# Transport configuration (stdio or http)
+MCP_TRANSPORT_MODE=stdio
+MCP_HTTP_PORT=3000
+MCP_HTTP_HOST=127.0.0.1
+MCP_HTTP_CORS_ENABLED=false
 
 # Rate limiting
 RATE_LIMIT_ENABLED=true
@@ -559,6 +1153,45 @@ RATE_LIMIT_WINDOW=900000
 
 # Logging
 LOG_LEVEL=info
+
+# Audit logging
+AUDIT_LOG_ENABLED=true
+AUDIT_LOG_MAX_ENTRIES=10000
+
+# Instance blocklist (comma-separated domains)
+BLOCKED_INSTANCES=
+INSTANCE_BLOCKING_ENABLED=true
+
+# Dynamic instance discovery
+INSTANCES_SOCIAL_TOKEN=
+DYNAMIC_INSTANCE_CACHE_TTL=3600000
+
+# Content warnings
+RESPECT_CONTENT_WARNINGS=true
+SHOW_CONTENT_WARNINGS=true
+
+# Authentication (for write operations - v1.1.0)
+ACTIVITYPUB_DEFAULT_INSTANCE=mastodon.social
+ACTIVITYPUB_DEFAULT_TOKEN=your-oauth-access-token
+ACTIVITYPUB_DEFAULT_USERNAME=your-username
+
+# Multi-account configuration (JSON format)
+# ACTIVITYPUB_ACCOUNTS='[{"id":"work","instance":"fosstodon.org","token":"token1","username":"work_account"},{"id":"personal","instance":"mastodon.social","token":"token2","username":"personal_account"}]'
+```
+
+### HTTP Transport Mode
+
+For production deployments, you can run the server in HTTP mode:
+
+```bash
+# Start with HTTP transport
+MCP_TRANSPORT_MODE=http MCP_HTTP_PORT=8080 npm run mcp
+
+# The server exposes:
+# - /mcp    - MCP protocol endpoint
+# - /health - Health check endpoint
+# - /metrics - Performance metrics
+# - /       - Server info
 ```
 
 ### Testing

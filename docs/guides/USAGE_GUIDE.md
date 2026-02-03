@@ -79,12 +79,32 @@ Edit `.env` file to customize your setup:
 ```bash
 # MCP Server Configuration
 MCP_SERVER_NAME=activitypub-mcp
-MCP_SERVER_VERSION=1.0.0
+MCP_SERVER_VERSION=1.1.0
+
+# Transport Mode (stdio or http)
+MCP_TRANSPORT_MODE=stdio
+
+# HTTP Transport (when using http mode)
+MCP_HTTP_PORT=3000
+MCP_HTTP_HOST=127.0.0.1
+MCP_HTTP_CORS_ENABLED=false
 
 # Security & Performance
 RATE_LIMIT_ENABLED=true
 RATE_LIMIT_MAX=100
 RATE_LIMIT_WINDOW=900000
+
+# Instance Blocklist
+BLOCKED_INSTANCES=spam.example.com,malicious.example.org
+INSTANCE_BLOCKING_ENABLED=true
+
+# Audit Logging
+AUDIT_LOG_ENABLED=true
+AUDIT_LOG_MAX_ENTRIES=10000
+
+# Content Warnings
+RESPECT_CONTENT_WARNINGS=true
+SHOW_CONTENT_WARNINGS=true
 
 # Logging
 LOG_LEVEL=info
@@ -100,6 +120,42 @@ npm run test:comprehensive
 npm run test              # Basic MCP tests
 npm run test:integration  # Integration tests
 ```
+
+## Transport Modes
+
+The server supports two transport modes: **stdio** (default) and **HTTP**.
+
+### Stdio Mode (Default)
+
+Standard input/output transport for direct integration with MCP clients:
+
+```bash
+npm run mcp
+```
+
+### HTTP Mode
+
+HTTP/SSE transport for web-based clients and production deployments:
+
+```bash
+# Basic HTTP mode
+MCP_TRANSPORT_MODE=http npm run mcp
+
+# Custom port and host
+MCP_TRANSPORT_MODE=http MCP_HTTP_PORT=8080 MCP_HTTP_HOST=0.0.0.0 npm run mcp
+
+# With CORS enabled for web clients
+MCP_TRANSPORT_MODE=http MCP_HTTP_CORS_ENABLED=true MCP_HTTP_CORS_ORIGINS=https://myapp.com npm run mcp
+```
+
+**HTTP Endpoints:**
+
+| Endpoint | Description |
+|----------|-------------|
+| `/mcp` | MCP protocol endpoint (for MCP clients) |
+| `/health` | Health check endpoint (returns server health status) |
+| `/metrics` | Performance metrics endpoint |
+| `/` | Server info (name, version, available endpoints) |
 
 ## MCP Resources
 
@@ -171,6 +227,7 @@ const instanceInfo = await client.readResource({
 - Instance description and policies
 
 ### Remote Followers/Following
+
 Access social connection lists:
 
 ```typescript
@@ -184,6 +241,65 @@ const following = await client.readResource({
   uri: "activitypub://remote-following/user@example.social"
 });
 ```
+
+### Trending Content (New in v1.1.0)
+
+Get trending hashtags and posts from an instance:
+
+```typescript
+const trending = await client.readResource({
+  uri: "activitypub://trending/mastodon.social"
+});
+```
+
+**Returns:**
+- Trending hashtags with usage statistics
+- Trending posts with engagement metrics
+- Time-based trend data
+
+### Local Timeline (New in v1.1.0)
+
+Access the local public timeline of an instance:
+
+```typescript
+const localTimeline = await client.readResource({
+  uri: "activitypub://local-timeline/fosstodon.org"
+});
+```
+
+**Returns:**
+- Recent posts from local users only
+- Public posts visible on the instance
+
+### Federated Timeline (New in v1.1.0)
+
+Access the federated public timeline:
+
+```typescript
+const federatedTimeline = await client.readResource({
+  uri: "activitypub://federated-timeline/mastodon.social"
+});
+```
+
+**Returns:**
+- Posts from all federated instances
+- Broader view of fediverse activity
+
+### Post Thread (New in v1.1.0)
+
+Get a post with its full conversation thread:
+
+```typescript
+const thread = await client.readResource({
+  uri: "activitypub://post-thread/https%3A%2F%2Fmastodon.social%2F%40Gargron%2F123456"
+});
+```
+
+**Returns:**
+- Original post
+- Parent posts (ancestors)
+- Reply posts (descendants)
+- Full conversation context
 
 ## MCP Tools
 
@@ -208,6 +324,7 @@ const result = await client.callTool({
 - Exploring social connections
 
 ### Fetch Timeline
+
 Retrieve recent posts from any actor's public timeline:
 
 ```typescript
@@ -215,16 +332,22 @@ const result = await client.callTool({
   name: "fetch-timeline",
   arguments: {
     identifier: "Gargron@mastodon.social",  // Required
-    limit: 20                                // Optional: 1-50, default 20
+    limit: 20,                               // Optional: 1-50, default 20
+    cursor: "next_page_cursor",              // Optional: pagination cursor
+    minId: "12345",                          // Optional: return results newer than this ID
+    maxId: "67890",                          // Optional: return results older than this ID
+    sinceId: "11111"                         // Optional: return results since this ID
   }
 });
 ```
 
 **Use Cases:**
+
 - Monitoring specific accounts
 - Analyzing posting patterns
 - Discovering content topics
 - Tracking community discussions
+- Paginating through historical posts
 
 ### Search Instance
 Search for content on a specific fediverse instance:
@@ -317,6 +440,7 @@ const result = await client.callTool({
 ```
 
 ### Performance Metrics
+
 Get detailed performance metrics:
 
 ```typescript
@@ -324,6 +448,224 @@ const result = await client.callTool({
   name: "performance-metrics",
   arguments: {
     operation: "discover-actor"  // Optional: specific operation
+  }
+});
+```
+
+### Get Trending Hashtags (New in v1.1.0)
+
+Get trending hashtags from an instance:
+
+```typescript
+const result = await client.callTool({
+  name: "get-trending-hashtags",
+  arguments: {
+    domain: "mastodon.social",  // Required
+    limit: 10                    // Optional: default 10
+  }
+});
+```
+
+### Get Trending Posts (New in v1.1.0)
+
+Get trending posts from an instance:
+
+```typescript
+const result = await client.callTool({
+  name: "get-trending-posts",
+  arguments: {
+    domain: "mastodon.social",  // Required
+    limit: 20                    // Optional: default 20
+  }
+});
+```
+
+### Get Local Timeline (New in v1.1.0)
+
+Get the local public timeline from an instance:
+
+```typescript
+const result = await client.callTool({
+  name: "get-local-timeline",
+  arguments: {
+    domain: "fosstodon.org",    // Required
+    limit: 20                    // Optional: default 20
+  }
+});
+```
+
+### Get Federated Timeline (New in v1.1.0)
+
+Get the federated public timeline from an instance:
+
+```typescript
+const result = await client.callTool({
+  name: "get-federated-timeline",
+  arguments: {
+    domain: "mastodon.social",  // Required
+    limit: 20                    // Optional: default 20
+  }
+});
+```
+
+### Get Post Thread (New in v1.1.0)
+
+Fetch a post with its full conversation thread:
+
+```typescript
+const result = await client.callTool({
+  name: "get-post-thread",
+  arguments: {
+    postUrl: "https://mastodon.social/@Gargron/123456"  // Required
+  }
+});
+```
+
+**Returns:**
+
+- The original post
+- Ancestor posts (parents in the thread)
+- Descendant posts (replies)
+
+### Search Accounts (New in v1.1.0)
+
+Specialized account search:
+
+```typescript
+const result = await client.callTool({
+  name: "search-accounts",
+  arguments: {
+    domain: "mastodon.social",  // Required
+    query: "developer",          // Required
+    limit: 20                    // Optional: default 20
+  }
+});
+```
+
+### Search Hashtags (New in v1.1.0)
+
+Specialized hashtag search:
+
+```typescript
+const result = await client.callTool({
+  name: "search-hashtags",
+  arguments: {
+    domain: "mastodon.social",  // Required
+    query: "programming",        // Required
+    limit: 20                    // Optional: default 20
+  }
+});
+```
+
+### Search Posts (New in v1.1.0)
+
+Specialized post/status search:
+
+```typescript
+const result = await client.callTool({
+  name: "search-posts",
+  arguments: {
+    domain: "mastodon.social",  // Required
+    query: "typescript tips",    // Required
+    limit: 20                    // Optional: default 20
+  }
+});
+```
+
+### Unified Search (NEW)
+
+Search across accounts, posts, and hashtags in a single query:
+
+```typescript
+const result = await client.callTool({
+  name: "search",
+  arguments: {
+    domain: "mastodon.social",   // Required: instance to search
+    query: "programming",         // Required: search query
+    type: "all",                  // Optional: all|accounts|posts|hashtags
+    limit: 20,                    // Optional: results per type (1-40)
+    resolve: true                 // Optional: attempt WebFinger lookup for remote accounts
+  }
+});
+```
+
+**Use Cases:**
+
+- Quick discovery across all content types
+- Finding accounts, posts, and hashtags in one request
+- Resolving remote account handles
+
+### Discover Instances Live (New in v1.1.0)
+
+Real-time instance discovery with advanced filters:
+
+```typescript
+const result = await client.callTool({
+  name: "discover-instances-live",
+  arguments: {
+    software: "mastodon",        // Optional: filter by software
+    language: "en",              // Optional: filter by language
+    minUsers: 1000,              // Optional: minimum user count
+    allowsRegistration: true,    // Optional: only open registration
+    limit: 20                    // Optional: default 20
+  }
+});
+```
+
+**Data Sources:**
+
+- instances.social API (primary)
+- Fediverse Observer GraphQL API (fallback)
+
+### Batch Fetch Actors (New in v1.1.0)
+
+Fetch multiple actors in a single request:
+
+```typescript
+const result = await client.callTool({
+  name: "batch-fetch-actors",
+  arguments: {
+    identifiers: [
+      "Gargron@mastodon.social",
+      "admin@fosstodon.org",
+      "user@hachyderm.io"
+    ]
+  }
+});
+```
+
+**Use Cases:**
+
+- Bulk profile lookups
+- Comparing multiple accounts
+- Building follow lists
+
+### Batch Fetch Posts (New in v1.1.0)
+
+Fetch multiple posts in a single request:
+
+```typescript
+const result = await client.callTool({
+  name: "batch-fetch-posts",
+  arguments: {
+    postUrls: [
+      "https://mastodon.social/@Gargron/123",
+      "https://fosstodon.org/@admin/456"
+    ]
+  }
+});
+```
+
+### Convert URL (New in v1.1.0)
+
+URL conversion utility for ActivityPub URLs:
+
+```typescript
+const result = await client.callTool({
+  name: "convert-url",
+  arguments: {
+    url: "https://mastodon.social/@Gargron/123456",
+    targetFormat: "activitypub"  // or "web"
   }
 });
 ```
@@ -371,6 +713,7 @@ const prompt = await client.getPrompt({
 - Making informed decisions
 
 ### Discover Content
+
 Get recommendations for discovering content:
 
 ```typescript
@@ -384,14 +727,541 @@ const prompt = await client.getPrompt({
 ```
 
 **Generated prompt helps with:**
+
 - Finding relevant accounts
 - Discovering hashtags
 - Exploring topics
 - Building a following list
 
-## Security & Rate Limiting
+### Compare Accounts (New in v1.1.0)
+
+Compare multiple fediverse accounts side by side:
+
+```typescript
+const prompt = await client.getPrompt({
+  name: "compare-accounts",
+  arguments: {
+    accounts: "Gargron@mastodon.social, admin@fosstodon.org"  // Required: comma-separated
+  }
+});
+```
+
+**Generated prompt helps with:**
+
+- Comparing posting frequency
+- Analyzing content focus
+- Understanding engagement patterns
+- Evaluating account activity
+
+### Analyze User Activity (New in v1.1.0)
+
+Get detailed analysis of a user's activity:
+
+```typescript
+const prompt = await client.getPrompt({
+  name: "analyze-user-activity",
+  arguments: {
+    identifier: "Gargron@mastodon.social"  // Required
+  }
+});
+```
+
+**Generated prompt helps with:**
+
+- Understanding posting patterns
+- Identifying topics of interest
+- Analyzing engagement metrics
+- Profiling user behavior
+
+### Find Experts (New in v1.1.0)
+
+Find experts on specific topics in the fediverse:
+
+```typescript
+const prompt = await client.getPrompt({
+  name: "find-experts",
+  arguments: {
+    topic: "rust programming",      // Required
+    instance: "fosstodon.org"       // Optional: limit to specific instance
+  }
+});
+```
+
+**Generated prompt helps with:**
+
+- Discovering thought leaders
+- Finding domain experts
+- Building curated follow lists
+- Research and learning
+
+### Summarize Trending (New in v1.1.0)
+
+Get a summary of what's trending:
+
+```typescript
+const prompt = await client.getPrompt({
+  name: "summarize-trending",
+  arguments: {
+    domain: "mastodon.social",  // Required
+    category: "hashtags"         // Optional: hashtags|posts|all
+  }
+});
+```
+
+**Generated prompt helps with:**
+
+- Understanding current discussions
+- Identifying hot topics
+- Tracking community trends
+- Content discovery
+
+### Content Strategy (New in v1.1.0)
+
+Plan your fediverse content strategy:
+
+```typescript
+const prompt = await client.getPrompt({
+  name: "content-strategy",
+  arguments: {
+    topics: "programming, open source",    // Required
+    targetAudience: "developers",          // Optional
+    postingFrequency: "several-per-week",  // Optional: daily|several-per-week|weekly|occasional
+    instances: "fosstodon.org"             // Optional: instances to analyze
+  }
+});
+```
+
+**Generated prompt helps with:**
+
+- Content pillar development
+- Hashtag strategy
+- Optimal posting times
+- Audience engagement
+
+### Community Health (New in v1.1.0)
+
+Analyze instance moderation and community health:
+
+```typescript
+const prompt = await client.getPrompt({
+  name: "community-health",
+  arguments: {
+    instance: "fosstodon.org",             // Required
+    concerns: "moderation, spam"           // Optional: specific concerns to investigate
+  }
+});
+```
+
+**Generated prompt helps with:**
+
+- Instance moderation assessment
+- Community culture analysis
+- Red/green flag identification
+- Instance selection decisions
+
+### Migration Helper (New in v1.1.0)
+
+Plan a migration to a new fediverse instance:
+
+```typescript
+const prompt = await client.getPrompt({
+  name: "migration-helper",
+  arguments: {
+    currentInstance: "mastodon.social",     // Optional
+    targetInstance: "fosstodon.org",        // Optional
+    priorities: "moderation, privacy",      // Required
+    currentFollowers: 500                   // Optional
+  }
+});
+```
+
+**Generated prompt helps with:**
+
+- Instance comparison
+- Migration planning
+- Pre-migration checklist
+- Follower preservation
+
+### Thread Composer (New in v1.1.0)
+
+Compose well-structured threaded posts:
+
+```typescript
+const prompt = await client.getPrompt({
+  name: "thread-composer",
+  arguments: {
+    topic: "Introduction to the Fediverse",              // Required
+    keyPoints: "What is ActivityPub, Getting started",   // Required
+    tone: "informative",                                  // Optional: informative|casual|professional|persuasive|storytelling
+    targetLength: "medium",                               // Optional: short (3-5)|medium (6-10)|long (11+)
+    includeHashtags: true,                                // Optional
+    contentWarning: "tech discussion"                     // Optional
+  }
+});
+```
+
+**Generated prompt helps with:**
+
+- Thread structure planning
+- Post length management
+- Hashtag recommendations
+- Content warning usage
+
+## Authenticated Write Operations (New in v1.1.0)
+
+The authenticated tools enable write operations on your fediverse account. Configure authentication via environment variables.
+
+### Authentication Setup
+
+```bash
+# Single account configuration
+ACTIVITYPUB_DEFAULT_INSTANCE=mastodon.social
+ACTIVITYPUB_DEFAULT_TOKEN=your-oauth-access-token
+ACTIVITYPUB_DEFAULT_USERNAME=your-username
+
+# Multi-account configuration (JSON format)
+ACTIVITYPUB_ACCOUNTS='[{"id":"work","instance":"fosstodon.org","token":"token1","username":"work_account"},{"id":"personal","instance":"mastodon.social","token":"token2","username":"personal_account"}]'
+```
+
+### Account Management Tools
+
+```typescript
+// List configured accounts
+const result = await client.callTool({
+  name: "list-accounts",
+  arguments: {}
+});
+
+// Switch active account
+const result = await client.callTool({
+  name: "switch-account",
+  arguments: {
+    accountId: "work"  // Account ID from configuration
+  }
+});
+
+// Verify account credentials
+const result = await client.callTool({
+  name: "verify-account",
+  arguments: {}
+});
+```
+
+### Posting Tools
+
+```typescript
+// Create a new post
+const result = await client.callTool({
+  name: "post-status",
+  arguments: {
+    content: "Hello Fediverse!",     // Required: post content
+    visibility: "public",            // Optional: public|unlisted|private|direct
+    contentWarning: "Tech talk",     // Optional: CW/spoiler text
+    sensitive: false,                // Optional: mark media as sensitive
+    language: "en"                   // Optional: ISO 639-1 language code
+  }
+});
+
+// Reply to a post
+const result = await client.callTool({
+  name: "reply-to-post",
+  arguments: {
+    postId: "123456789",             // Required: ID of post to reply to
+    content: "Great post!",          // Required: reply content
+    visibility: "public"             // Optional
+  }
+});
+
+// Delete your own post
+const result = await client.callTool({
+  name: "delete-post",
+  arguments: {
+    postId: "123456789"              // Required: ID of post to delete
+  }
+});
+```
+
+### Interaction Tools
+
+```typescript
+// Boost/reblog a post
+const result = await client.callTool({
+  name: "boost-post",
+  arguments: { postId: "123456789" }
+});
+
+// Unboost a post
+const result = await client.callTool({
+  name: "unboost-post",
+  arguments: { postId: "123456789" }
+});
+
+// Favourite a post
+const result = await client.callTool({
+  name: "favourite-post",
+  arguments: { postId: "123456789" }
+});
+
+// Bookmark a post
+const result = await client.callTool({
+  name: "bookmark-post",
+  arguments: { postId: "123456789" }
+});
+```
+
+### Relationship Tools
+
+```typescript
+// Check relationship status with accounts (NEW)
+const result = await client.callTool({
+  name: "get-relationship",
+  arguments: {
+    accountIds: ["123456789", "987654321"]  // Required: array of account IDs
+  }
+});
+// Returns: following, followed_by, blocking, muting, requested status for each
+
+// Follow an account
+const result = await client.callTool({
+  name: "follow-account",
+  arguments: {
+    accountId: "123456789",          // Required: account ID to follow
+    reblogs: true,                   // Optional: show reblogs in home timeline
+    notify: false                    // Optional: receive notifications for posts
+  }
+});
+
+// Unfollow an account
+const result = await client.callTool({
+  name: "unfollow-account",
+  arguments: { accountId: "123456789" }
+});
+
+// Mute an account
+const result = await client.callTool({
+  name: "mute-account",
+  arguments: {
+    accountId: "123456789",
+    notifications: true,             // Optional: also mute notifications
+    duration: 86400                  // Optional: mute duration in seconds
+  }
+});
+
+// Block an account
+const result = await client.callTool({
+  name: "block-account",
+  arguments: { accountId: "123456789" }
+});
+```
+
+### Poll Tools (NEW)
+
+```typescript
+// Vote on a poll
+const result = await client.callTool({
+  name: "vote-on-poll",
+  arguments: {
+    pollId: "123456789",       // Required: poll ID
+    choices: [0, 2]            // Required: array of choice indices (0-based)
+  }
+});
+// Returns: updated poll with vote counts and visual bar chart
+```
+
+### Media Tools (NEW)
+
+```typescript
+// Upload media file
+const result = await client.callTool({
+  name: "upload-media",
+  arguments: {
+    filePath: "/path/to/image.jpg",           // Required: file path or URL
+    description: "A sunset over mountains",   // Optional: alt text (recommended)
+    focus: "0.0,0.5"                          // Optional: focal point x,y (-1.0 to 1.0)
+  }
+});
+// Returns: media attachment with ID to use in post-status
+```
+
+### Scheduling Tools (NEW)
+
+```typescript
+// Get all scheduled posts
+const result = await client.callTool({
+  name: "get-scheduled-posts",
+  arguments: {
+    limit: 20,                       // Optional: number of posts (default: 20)
+    maxId: "123456789"               // Optional: for pagination
+  }
+});
+
+// Update scheduled post time
+const result = await client.callTool({
+  name: "update-scheduled-post",
+  arguments: {
+    scheduledPostId: "123456789",                    // Required: scheduled post ID
+    scheduledAt: "2026-02-14T18:00:00.000Z"         // Required: new ISO 8601 datetime
+  }
+});
+
+// Cancel a scheduled post
+const result = await client.callTool({
+  name: "cancel-scheduled-post",
+  arguments: {
+    scheduledPostId: "123456789"     // Required: scheduled post ID to cancel
+  }
+});
+```
+
+### Authenticated Timelines
+
+```typescript
+// Get home timeline
+const result = await client.callTool({
+  name: "get-home-timeline",
+  arguments: {
+    limit: 20,                       // Optional: number of posts (default: 20)
+    maxId: "123456789"               // Optional: for pagination
+  }
+});
+
+// Get notifications
+const result = await client.callTool({
+  name: "get-notifications",
+  arguments: {
+    limit: 20,
+    types: ["mention", "favourite"]  // Optional: filter by type
+  }
+});
+
+// Get bookmarks
+const result = await client.callTool({
+  name: "get-bookmarks",
+  arguments: { limit: 20 }
+});
+
+// Get favourites
+const result = await client.callTool({
+  name: "get-favourites",
+  arguments: { limit: 20 }
+});
+```
+
+## Content Export Tools (New in v1.1.0)
+
+Export fediverse content in multiple formats for backup, analysis, or archival purposes.
+
+### Export Timeline
+
+```typescript
+const result = await client.callTool({
+  name: "export-timeline",
+  arguments: {
+    identifier: "user@mastodon.social",  // Required: actor identifier
+    format: "markdown",                   // Optional: json|markdown|csv (default: json)
+    limit: 50,                            // Optional: number of posts (default: 20)
+    includeMedia: false                   // Optional: include media URLs
+  }
+});
+```
+
+### Export Thread
+
+```typescript
+const result = await client.callTool({
+  name: "export-thread",
+  arguments: {
+    postUrl: "https://mastodon.social/@user/123456",  // Required
+    format: "markdown",                                // Optional: json|markdown|csv
+    includeContext: true                               // Optional: include ancestors
+  }
+});
+```
+
+### Export Account Info
+
+```typescript
+const result = await client.callTool({
+  name: "export-account-info",
+  arguments: {
+    identifier: "user@mastodon.social",  // Required
+    format: "json",                       // Optional: json|markdown
+    includeStats: true                    // Optional: include follower/following counts
+  }
+});
+```
+
+### Export Hashtag
+
+```typescript
+const result = await client.callTool({
+  name: "export-hashtag",
+  arguments: {
+    domain: "mastodon.social",           // Required: instance to search
+    hashtag: "programming",               // Required: hashtag (without #)
+    format: "csv",                        // Optional: json|markdown|csv
+    limit: 100                            // Optional: number of posts
+  }
+});
+```
+
+## Security & Administration
+
+### Instance Blocklist (New in v1.1.0)
+
+Block specific fediverse instances by domain:
+
+```bash
+# Configure via environment variable
+BLOCKED_INSTANCES=spam.example.com,malicious.example.org
+INSTANCE_BLOCKING_ENABLED=true
+```
+
+**Features:**
+
+- Block by exact domain or wildcard pattern (e.g., `*.badnetwork.example`)
+- Multiple block reasons: policy, user, safety, spam, federation, custom
+- Expiration support for temporary blocks
+- Import/export blocklist as JSON
+
+### Audit Logging (New in v1.1.0)
+
+Comprehensive logging of all operations:
+
+```bash
+# Enable audit logging
+AUDIT_LOG_ENABLED=true
+AUDIT_LOG_MAX_ENTRIES=10000
+```
+
+**Tracked Events:**
+
+- `tool_invocation` - Tool calls and their results
+- `resource_access` - Resource reads
+- `rate_limit_exceeded` - Rate limit violations
+- `blocked_instance` - Blocked instance access attempts
+- `ssrf_blocked` - SSRF protection triggers
+- `error` - Error events
+
+**Sensitive Data Handling:**
+
+The audit logger automatically redacts sensitive fields containing:
+- password, token, secret, key, auth, credential
+
+### Content Warnings (New in v1.1.0)
+
+Configure how content warnings are handled:
+
+```bash
+# Respect content warnings in output
+RESPECT_CONTENT_WARNINGS=true
+
+# Include content warnings in responses
+SHOW_CONTENT_WARNINGS=true
+```
 
 ### Rate Limiting
+
 Protects against abuse with configurable limits:
 
 - **Default**: 100 requests per 15 minutes per identifier
@@ -579,7 +1449,8 @@ Configuration is added to `claude_desktop_config.json`:
 ```
 
 ### Custom Client Integration
-For custom MCP clients:
+
+For custom MCP clients using stdio transport:
 
 ```typescript
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -589,6 +1460,25 @@ const transport = new StdioClientTransport({
   command: "npx",
   args: ["activitypub-mcp"]
 });
+
+const client = new Client({
+  name: "my-activitypub-client",
+  version: "1.0.0"
+});
+
+await client.connect(transport);
+```
+
+For HTTP transport (New in v1.1.0):
+
+```typescript
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+
+// Start server with: MCP_TRANSPORT_MODE=http npm run mcp
+const transport = new SSEClientTransport(
+  new URL("http://localhost:3000/mcp")
+);
 
 const client = new Client({
   name: "my-activitypub-client",

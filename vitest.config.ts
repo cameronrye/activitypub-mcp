@@ -12,7 +12,7 @@ export default defineConfig({
     include: ["tests/**/*.test.ts", "tests/**/*.spec.ts"],
 
     // Exclude patterns
-    exclude: ["node_modules", "dist", "tests/test-*.ts"],
+    exclude: ["node_modules", "dist", "tests/test-*.ts", "tests/integration/**"],
 
     // Coverage configuration
     coverage: {

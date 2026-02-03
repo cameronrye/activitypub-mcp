@@ -37,7 +37,7 @@ function parseBoolEnv(value: string | undefined, defaultValue: boolean): boolean
 export const SERVER_NAME = process.env.MCP_SERVER_NAME || "activitypub-mcp";
 
 /** MCP Server version */
-export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "1.0.3";
+export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "1.1.0";
 
 /** Log level for the application */
 export const LOG_LEVEL = process.env.LOG_LEVEL || "info";
@@ -138,6 +138,83 @@ export const MEMORY_WARN_THRESHOLD_PERCENT = parseIntEnv(
 
 /** Maximum request history entries to keep */
 export const MAX_REQUEST_HISTORY = parseIntEnv(process.env.MAX_REQUEST_HISTORY, 1000);
+
+// =============================================================================
+// HTTP Transport Configuration
+// =============================================================================
+
+/** Transport mode: 'stdio' or 'http' (default: stdio) */
+export const TRANSPORT_MODE = (process.env.MCP_TRANSPORT_MODE || "stdio") as "stdio" | "http";
+
+/** HTTP server port (default: 3000) */
+export const HTTP_PORT = parseIntEnv(process.env.MCP_HTTP_PORT, 3000);
+
+/** HTTP server host (default: 127.0.0.1 for security) */
+export const HTTP_HOST = process.env.MCP_HTTP_HOST || "127.0.0.1";
+
+/** Enable CORS for HTTP transport (default: false) */
+export const HTTP_CORS_ENABLED = parseBoolEnv(process.env.MCP_HTTP_CORS_ENABLED, false);
+
+/** CORS allowed origins (comma-separated, default: *) */
+export const HTTP_CORS_ORIGINS = process.env.MCP_HTTP_CORS_ORIGINS || "*";
+
+// =============================================================================
+// Dynamic Instance Discovery Configuration
+// =============================================================================
+
+/** instances.social API token (optional, for higher rate limits) */
+export const INSTANCES_SOCIAL_TOKEN = process.env.INSTANCES_SOCIAL_TOKEN || "";
+
+/** Cache TTL for dynamic instance data in milliseconds (default: 1 hour) */
+export const DYNAMIC_INSTANCE_CACHE_TTL = parseIntEnv(
+  process.env.DYNAMIC_INSTANCE_CACHE_TTL,
+  3600000,
+);
+
+/** Maximum instances to fetch from external API */
+export const MAX_DYNAMIC_INSTANCES = parseIntEnv(process.env.MAX_DYNAMIC_INSTANCES, 100);
+
+// =============================================================================
+// Audit Logging Configuration
+// =============================================================================
+
+/** Whether audit logging is enabled (default: true) */
+export const AUDIT_LOG_ENABLED = parseBoolEnv(process.env.AUDIT_LOG_ENABLED, true);
+
+/** Maximum audit log entries to keep in memory */
+export const AUDIT_LOG_MAX_ENTRIES = parseIntEnv(process.env.AUDIT_LOG_MAX_ENTRIES, 10000);
+
+// =============================================================================
+// Instance Blocklist Configuration
+// =============================================================================
+
+/**
+ * Parse blocked instances from environment variable.
+ * Expects comma-separated list of domains.
+ */
+function parseBlockedInstances(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((d) => d.trim().toLowerCase())
+    .filter((d) => d.length > 0);
+}
+
+/** Blocked instances (comma-separated list in env var) */
+export const BLOCKED_INSTANCES = parseBlockedInstances(process.env.BLOCKED_INSTANCES);
+
+/** Whether instance blocking is enabled (default: true) */
+export const INSTANCE_BLOCKING_ENABLED = parseBoolEnv(process.env.INSTANCE_BLOCKING_ENABLED, true);
+
+// =============================================================================
+// Content Warning Configuration
+// =============================================================================
+
+/** Whether to respect content warnings in output (default: true) */
+export const RESPECT_CONTENT_WARNINGS = parseBoolEnv(process.env.RESPECT_CONTENT_WARNINGS, true);
+
+/** Whether to include content warnings in responses (default: true) */
+export const SHOW_CONTENT_WARNINGS = parseBoolEnv(process.env.SHOW_CONTENT_WARNINGS, true);
 
 // =============================================================================
 // Configuration Validation

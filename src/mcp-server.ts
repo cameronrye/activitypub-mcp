@@ -12,15 +12,18 @@ import { getLogger } from "@logtape/logtape";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
+  HTTP_HOST,
+  HTTP_PORT,
   LOG_LEVEL,
   RATE_LIMIT_ENABLED,
   RATE_LIMIT_MAX,
   RATE_LIMIT_WINDOW,
   SERVER_NAME,
   SERVER_VERSION,
+  TRANSPORT_MODE,
 } from "./config.js";
 import { registerPrompts, registerResources, registerTools } from "./mcp/index.js";
-import { RateLimiter } from "./server/index.js";
+import { HttpTransportServer, RateLimiter } from "./server/index.js";
 
 const logger = getLogger("activitypub-mcp");
 
@@ -34,6 +37,9 @@ const CONFIG = {
   rateLimitEnabled: RATE_LIMIT_ENABLED,
   rateLimitMax: RATE_LIMIT_MAX,
   rateLimitWindow: RATE_LIMIT_WINDOW,
+  transportMode: TRANSPORT_MODE,
+  httpPort: HTTP_PORT,
+  httpHost: HTTP_HOST,
 };
 
 /**
@@ -63,6 +69,7 @@ function setupGlobalErrorHandlers(): void {
 class ActivityPubMCPServer {
   private readonly mcpServer: McpServer;
   private readonly rateLimiter: RateLimiter;
+  private httpServer: HttpTransportServer | null = null;
   private isShuttingDown = false;
 
   /**
@@ -141,19 +148,67 @@ class ActivityPubMCPServer {
    */
   async stop(): Promise<void> {
     logger.info("Stopping ActivityPub MCP Server...");
+
+    // Stop HTTP server if running
+    if (this.httpServer) {
+      await this.httpServer.stop();
+      this.httpServer = null;
+    }
+
     this.rateLimiter.stop();
     logger.info("ActivityPub MCP Server stopped");
   }
 
   /**
-   * Starts the MCP server using stdio transport.
+   * Starts the MCP server using the configured transport.
+   *
+   * @param transportMode - Override the transport mode ('stdio' or 'http')
    */
-  async start(): Promise<void> {
+  async start(transportMode?: "stdio" | "http"): Promise<void> {
+    const mode = transportMode ?? CONFIG.transportMode;
+
+    if (mode === "http") {
+      await this.startHttpTransport();
+    } else {
+      await this.startStdioTransport();
+    }
+  }
+
+  /**
+   * Starts the server with stdio transport.
+   */
+  private async startStdioTransport(): Promise<void> {
     const transport = new StdioServerTransport();
     await this.mcpServer.connect(transport);
-    logger.info("ActivityPub MCP Server started", {
+    logger.info("ActivityPub MCP Server started (stdio transport)", {
       name: CONFIG.serverName,
       version: CONFIG.serverVersion,
+    });
+  }
+
+  /**
+   * Starts the server with HTTP transport.
+   */
+  private async startHttpTransport(): Promise<void> {
+    this.httpServer = new HttpTransportServer({
+      port: CONFIG.httpPort,
+      host: CONFIG.httpHost,
+    });
+
+    const transport = await this.httpServer.start();
+    await this.mcpServer.connect(transport);
+
+    const address = this.httpServer.getAddress();
+    logger.info("ActivityPub MCP Server started (HTTP transport)", {
+      name: CONFIG.serverName,
+      version: CONFIG.serverVersion,
+      host: address?.host,
+      port: address?.port,
+      endpoints: {
+        mcp: `http://${address?.host}:${address?.port}/mcp`,
+        health: `http://${address?.host}:${address?.port}/health`,
+        metrics: `http://${address?.host}:${address?.port}/metrics`,
+      },
     });
   }
 }

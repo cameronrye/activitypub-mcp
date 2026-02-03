@@ -17,8 +17,8 @@ export default defineConfig({
     // Longer timeout for integration tests
     testTimeout: 60000,
 
-    // Setup files
-    setupFiles: ["./tests/setup.ts"],
+    // Setup files - uses integration-specific setup (no MSW mocking)
+    setupFiles: ["./tests/integration/setup.ts"],
 
     // Run tests sequentially for integration tests
     fileParallelism: false,
