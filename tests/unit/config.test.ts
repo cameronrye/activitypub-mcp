@@ -84,3 +84,34 @@ describe("config", () => {
     expect(config.MEMORY_WARN_THRESHOLD_PERCENT).toBe(80);
   });
 });
+
+describe("Thread traversal config (M3)", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("MCP_THREAD_MAX_DEPTH defaults to 5", async () => {
+    delete process.env.MCP_THREAD_MAX_DEPTH;
+    const mod = await import("../../src/config.js");
+    expect(mod.THREAD_MAX_DEPTH).toBe(5);
+  });
+
+  it("MCP_THREAD_MAX_REPLIES defaults to 50", async () => {
+    delete process.env.MCP_THREAD_MAX_REPLIES;
+    const mod = await import("../../src/config.js");
+    expect(mod.THREAD_MAX_REPLIES).toBe(50);
+  });
+
+  it("MCP_THREAD_CROSS_ORIGIN_FETCH defaults to false", async () => {
+    delete process.env.MCP_THREAD_CROSS_ORIGIN_FETCH;
+    const mod = await import("../../src/config.js");
+    expect(mod.THREAD_CROSS_ORIGIN_FETCH).toBe(false);
+  });
+});

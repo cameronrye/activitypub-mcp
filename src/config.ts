@@ -140,6 +140,26 @@ export const MEMORY_WARN_THRESHOLD_PERCENT = parseIntEnv(
 export const MAX_REQUEST_HISTORY = parseIntEnv(process.env.MAX_REQUEST_HISTORY, 1000);
 
 // =============================================================================
+// Thread Traversal Configuration (M3)
+// =============================================================================
+
+/** Maximum recursion depth when fetching a post thread (default: 5) */
+export const THREAD_MAX_DEPTH = parseIntEnv(process.env.MCP_THREAD_MAX_DEPTH, 5);
+
+/** Maximum total replies fetched per thread, across all depths (default: 50) */
+export const THREAD_MAX_REPLIES = parseIntEnv(process.env.MCP_THREAD_MAX_REPLIES, 50);
+
+/**
+ * Whether to follow replies whose origin differs from the root post.
+ * Default: false — replies from other origins are returned as stubs.
+ * Set to true to restore v1 unrestricted fan-out behavior.
+ */
+export const THREAD_CROSS_ORIGIN_FETCH = parseBoolEnv(
+  process.env.MCP_THREAD_CROSS_ORIGIN_FETCH,
+  false,
+);
+
+// =============================================================================
 // HTTP Transport Configuration
 // =============================================================================
 
