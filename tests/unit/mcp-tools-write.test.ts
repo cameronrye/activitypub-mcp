@@ -170,6 +170,13 @@ vi.mock("../../src/performance-monitor.js", () => ({
   },
 }));
 
+const auditLoggerMock = vi.hoisted(() => ({
+  logToolInvocation: vi.fn(),
+}));
+vi.mock("../../src/audit-logger.js", () => ({
+  auditLogger: auditLoggerMock,
+}));
+
 vi.mock("@logtape/logtape", () => ({
   getLogger: vi.fn().mockReturnValue({
     info: vi.fn(),
@@ -653,6 +660,40 @@ describe("MCP Write Tools", () => {
         "Scheduled Post Updated",
       );
       expect(authenticatedClient.updateScheduledPost).toHaveBeenCalled();
+    });
+  });
+
+  describe("post-status audit logging (L2)", () => {
+    beforeEach(() => {
+      auditLoggerMock.logToolInvocation.mockClear();
+    });
+
+    it("calls auditLogger.logToolInvocation on success", async () => {
+      const tool = registeredTools.get("post-status");
+      expect(tool).toBeDefined();
+      const result = await tool?.handler({ content: "hi" });
+      expect((result as { isError?: boolean }).isError).toBeFalsy();
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "post-status",
+        expect.objectContaining({ content: "hi" }),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("calls auditLogger.logToolInvocation on failure (no account)", async () => {
+      // Force the "no account configured" branch
+      const { accountManager } = await import("../../src/auth/index.js");
+      (accountManager.getActiveAccount as Mock).mockReturnValueOnce(undefined);
+      (accountManager.getAccount as Mock).mockReturnValueOnce(undefined);
+
+      const tool = registeredTools.get("post-status");
+      const result = await tool?.handler({ content: "hi" });
+      expect((result as { isError?: boolean }).isError).toBe(true);
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "post-status",
+        expect.objectContaining({ content: "hi" }),
+        expect.objectContaining({ success: false }),
+      );
     });
   });
 });

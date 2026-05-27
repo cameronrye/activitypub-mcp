@@ -9,6 +9,7 @@ import { getLogger } from "@logtape/logtape";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { auditLogger } from "../audit-logger.js";
 import { accountManager, authenticatedClient } from "../auth/index.js";
 import { performanceMonitor } from "../performance-monitor.js";
 import type { RateLimiter } from "../server/rate-limiter.js";
@@ -325,12 +326,19 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
     },
     async ({ content, visibility = "public", spoilerText, sensitive, language, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { content, visibility, spoilerText, sensitive, language, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("post-status", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured for posting." }],
           isError: true,
@@ -359,6 +367,10 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
         );
 
         performanceMonitor.endRequest(requestId, true);
+        auditLogger.logToolInvocation("post-status", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -379,11 +391,17 @@ Posted as @${status.account.username}`,
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = getErrorMessage(error);
+        auditLogger.logToolInvocation("post-status", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
               type: "text",
-              text: `❌ Failed to create post: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+              text: `❌ Failed to create post: ${formatErrorWithSuggestion(message)}`,
             },
           ],
           isError: true,
