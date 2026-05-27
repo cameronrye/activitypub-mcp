@@ -229,6 +229,8 @@ describe("verifyAccount SSRF protection (M8)", () => {
     const { AccountManager } = await import("../../src/auth/account-manager.js");
     const manager = new AccountManager();
 
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
     manager.addAccount({
       id: "internal",
       instance: "10.0.0.1",
@@ -240,11 +242,15 @@ describe("verifyAccount SSRF protection (M8)", () => {
 
     const result = await manager.verifyAccount("internal");
     expect(result).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
   });
 
   it("refuses to send credentials to localhost", async () => {
     const { AccountManager } = await import("../../src/auth/account-manager.js");
     const manager = new AccountManager();
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
 
     manager.addAccount({
       id: "local",
@@ -257,5 +263,7 @@ describe("verifyAccount SSRF protection (M8)", () => {
 
     const result = await manager.verifyAccount("local");
     expect(result).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
   });
 });
