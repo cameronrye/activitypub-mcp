@@ -7,6 +7,9 @@
 
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
+import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT } from "../config.js";
+import { readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { validateExternalUrl } from "../utils.js";
 
 const logger = getLogger("activitypub-mcp:account-manager");
 
@@ -268,30 +271,42 @@ export class AccountManager {
       return null;
     }
 
+    const url = `https://${account.instance}/api/v1/accounts/verify_credentials`;
+
     try {
-      const response = await fetch(
-        `https://${account.instance}/api/v1/accounts/verify_credentials`,
-        {
-          headers: {
-            Authorization: `${account.tokenType} ${account.accessToken}`,
-            Accept: "application/json",
-          },
+      await validateExternalUrl(url);
+    } catch (error) {
+      logger.error("Account verification refused (URL validation failed)", {
+        id: accountId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `${account.tokenType} ${account.accessToken}`,
+          Accept: "application/json",
         },
-      );
+        signal: controller.signal,
+      });
 
       if (!response.ok) {
-        logger.warn("Account verification failed", {
-          id: accountId,
-          status: response.status,
-        });
+        logger.warn("Account verification failed", { id: accountId, status: response.status });
         return null;
       }
 
-      const data = await response.json();
+      const data = await readJsonWithLimit<unknown>(response, MAX_RESPONSE_SIZE);
       return AccountInfoSchema.parse(data);
     } catch (error) {
       logger.error("Account verification error", { id: accountId, error });
       return null;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 

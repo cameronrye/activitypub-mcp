@@ -209,3 +209,53 @@ describe("AccountManager", () => {
     expect((exported[0] as Record<string, unknown>).accessToken).toBeUndefined();
   });
 });
+
+describe("verifyAccount SSRF protection (M8)", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+    delete process.env.ACTIVITYPUB_DEFAULT_INSTANCE;
+    delete process.env.ACTIVITYPUB_DEFAULT_TOKEN;
+    delete process.env.ACTIVITYPUB_ACCOUNTS;
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("refuses to send credentials to a private-network instance", async () => {
+    const { AccountManager } = await import("../../src/auth/account-manager.js");
+    const manager = new AccountManager();
+
+    manager.addAccount({
+      id: "internal",
+      instance: "10.0.0.1",
+      username: "user",
+      accessToken: "tok",
+      tokenType: "Bearer",
+      scopes: ["read"],
+    });
+
+    const result = await manager.verifyAccount("internal");
+    expect(result).toBeNull();
+  });
+
+  it("refuses to send credentials to localhost", async () => {
+    const { AccountManager } = await import("../../src/auth/account-manager.js");
+    const manager = new AccountManager();
+
+    manager.addAccount({
+      id: "local",
+      instance: "localhost",
+      username: "user",
+      accessToken: "tok",
+      tokenType: "Bearer",
+      scopes: ["read"],
+    });
+
+    const result = await manager.verifyAccount("local");
+    expect(result).toBeNull();
+  });
+});
