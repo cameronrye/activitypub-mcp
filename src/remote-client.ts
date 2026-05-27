@@ -12,6 +12,7 @@ import {
   USER_AGENT,
 } from "./config.js";
 import { instanceBlocklist } from "./instance-blocklist.js";
+import { readJsonWithLimit } from "./utils/fetch-helpers.js";
 import { LRUCache } from "./utils/lru-cache.js";
 import { getErrorMessage, validateExternalUrl } from "./utils.js";
 import { DomainSchema } from "./validation/schemas.js";
@@ -498,7 +499,7 @@ export class RemoteActivityPubClient {
           throw new Error(`HTTP ${response.status}`);
         }
 
-        const data = await response.json();
+        const data = await readJsonWithLimit<Record<string, unknown>>(response, MAX_RESPONSE_SIZE);
         return { endpoint, data };
       }),
     );
@@ -603,7 +604,7 @@ export class RemoteActivityPubClient {
     url: string,
     schema: z.ZodSchema<T>,
   ): Promise<T> {
-    const data = await response.json();
+    const data = await readJsonWithLimit<unknown>(response, MAX_RESPONSE_SIZE);
     const validated = schema.parse(data);
 
     // Cache response with ETag if present
@@ -709,14 +710,6 @@ export class RemoteActivityPubClient {
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
-
-      // Check response size to prevent DoS attacks
-      const contentLength = response.headers.get("content-length");
-      if (contentLength && Number.parseInt(contentLength, 10) > MAX_RESPONSE_SIZE) {
-        throw new Error(
-          `Response too large: ${contentLength} bytes (max: ${MAX_RESPONSE_SIZE} bytes)`,
-        );
-      }
 
       return response;
     } catch (error) {
@@ -978,7 +971,7 @@ export class RemoteActivityPubClient {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await readJsonWithLimit<unknown>(response, MAX_RESPONSE_SIZE);
       return { hashtags: Array.isArray(data) ? data : [] };
     } catch (error) {
       logger.error("Failed to fetch trending hashtags", {
@@ -1027,7 +1020,7 @@ export class RemoteActivityPubClient {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await readJsonWithLimit<unknown>(response, MAX_RESPONSE_SIZE);
       return { posts: Array.isArray(data) ? data : [] };
     } catch (error) {
       logger.error("Failed to fetch trending posts", {
@@ -1083,7 +1076,7 @@ export class RemoteActivityPubClient {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await readJsonWithLimit<unknown>(response, MAX_RESPONSE_SIZE);
       const posts = Array.isArray(data) ? data : [];
 
       return {
@@ -1145,7 +1138,7 @@ export class RemoteActivityPubClient {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await readJsonWithLimit<unknown>(response, MAX_RESPONSE_SIZE);
       const posts = Array.isArray(data) ? data : [];
 
       return {
@@ -1351,7 +1344,7 @@ export class RemoteActivityPubClient {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await readJsonWithLimit<Record<string, unknown>>(response, MAX_RESPONSE_SIZE);
         if (data.id) {
           const type = data.type?.toLowerCase().includes("person") ? "actor" : "post";
           return { activityPubUri: data.id, type, domain };

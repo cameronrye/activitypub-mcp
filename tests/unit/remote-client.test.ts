@@ -3,7 +3,7 @@
  */
 
 import { HttpResponse, http } from "msw";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RemoteActivityPubClient } from "../../src/remote-client.js";
 import { server } from "../mocks/server.js";
 
@@ -478,5 +478,40 @@ describe("RemoteActivityPubClient", () => {
       expect(outbox.id).toBe("https://retry.social/users/user/outbox");
       expect(outboxAttempts).toBe(3);
     });
+  });
+});
+
+describe("RemoteActivityPubClient response size cap (M2)", () => {
+  const originalEnv = process.env;
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("aborts fetch when streamed body exceeds MAX_RESPONSE_SIZE without Content-Length", async () => {
+    vi.resetModules();
+    process.env = { ...originalEnv, MAX_RESPONSE_SIZE: "100" };
+    const { RemoteActivityPubClient: Client } = await import("../../src/remote-client.js");
+    const { ResponseTooLargeError } = await import("../../src/utils/fetch-helpers.js");
+    const huge = "x".repeat(500);
+    server.use(
+      http.get(
+        "https://example.test/actor",
+        () =>
+          new HttpResponse(
+            new ReadableStream({
+              start(c) {
+                c.enqueue(new TextEncoder().encode(JSON.stringify({ name: huge })));
+                c.close();
+              },
+            }),
+            { headers: { "Content-Type": "application/activity+json" } },
+          ),
+      ),
+    );
+    const client = new Client();
+    await expect(client.fetchObject("https://example.test/actor")).rejects.toBeInstanceOf(
+      ResponseTooLargeError,
+    );
   });
 });
