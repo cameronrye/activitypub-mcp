@@ -36,6 +36,10 @@ vi.mock("../../src/utils.js", () => ({
 // Create MSW server
 const server = setupServer();
 
+// Start and stop MSW server at file scope so all describe blocks share it.
+beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
+afterAll(() => server.close());
+
 // Mock account credentials
 const mockAccount = {
   id: "test-account",
@@ -49,14 +53,6 @@ const mockAccount = {
 
 describe("AuthenticatedClient", () => {
   let client: AuthenticatedClient;
-
-  beforeAll(() => {
-    server.listen({ onUnhandledRequest: "bypass" });
-  });
-
-  afterAll(() => {
-    server.close();
-  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -1004,5 +1000,56 @@ describe("AuthenticatedClient", () => {
       const result = await client.updateScheduledPost("scheduled-1", "2024-12-26T10:00:00Z");
       expect(result.scheduled_at).toBe("2024-12-26T10:00:00Z");
     });
+  });
+});
+
+describe("AuthenticatedClient response size cap (M2)", () => {
+  afterEach(() => server.resetHandlers());
+
+  it("aborts createPost when remote body exceeds MAX_RESPONSE_SIZE without Content-Length", async () => {
+    vi.resetModules();
+
+    // Mock config to set a tiny cap before the fresh import resolves it.
+    vi.doMock("../../src/config.js", async (importOriginal) => {
+      const original = await importOriginal<typeof import("../../src/config.js")>();
+      return { ...original, MAX_RESPONSE_SIZE: 100 };
+    });
+
+    const { AuthenticatedClient } = await import("../../src/auth/authenticated-client.js");
+    const { ResponseTooLargeError } = await import("../../src/utils/fetch-helpers.js");
+
+    // Configure the fresh accountManager mock (re-imported after resetModules).
+    const { accountManager: freshMgr } = await import("../../src/auth/account-manager.js");
+    vi.mocked(freshMgr.getActiveAccount).mockReturnValue({
+      id: "test-size-cap",
+      instance: "example.test",
+      accessToken: "tok",
+      tokenType: "Bearer",
+      username: "sizecapuser",
+      scopes: ["read", "write"],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    });
+
+    server.use(
+      http.post(
+        "https://example.test/api/v1/statuses",
+        () =>
+          new HttpResponse(
+            new ReadableStream({
+              start(c) {
+                c.enqueue(new TextEncoder().encode(JSON.stringify({ id: "x".repeat(500) })));
+                c.close();
+              },
+            }),
+            { headers: { "Content-Type": "application/json" } },
+          ),
+      ),
+    );
+
+    const client = new AuthenticatedClient();
+    await expect(client.createPost({ content: "hi", visibility: "public" })).rejects.toBeInstanceOf(
+      ResponseTooLargeError,
+    );
   });
 });

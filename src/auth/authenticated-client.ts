@@ -8,6 +8,7 @@
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
+import { readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { validateExternalUrl } from "../utils.js";
 import { type AccountCredentials, accountManager } from "./account-manager.js";
 
@@ -208,12 +209,6 @@ export class AuthenticatedClient {
 
       clearTimeout(timeoutId);
 
-      // Check response size
-      const contentLength = response.headers.get("content-length");
-      if (contentLength && Number.parseInt(contentLength, 10) > MAX_RESPONSE_SIZE) {
-        throw new Error(`Response too large: ${contentLength} bytes`);
-      }
-
       return response;
     } catch (error) {
       clearTimeout(timeoutId);
@@ -293,7 +288,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to create post: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return StatusSchema.parse(data);
   }
 
@@ -332,7 +327,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to boost post: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return StatusSchema.parse(data);
   }
 
@@ -357,7 +352,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to unboost post: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return StatusSchema.parse(data);
   }
 
@@ -382,7 +377,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to favourite post: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return StatusSchema.parse(data);
   }
 
@@ -407,7 +402,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to unfavourite post: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return StatusSchema.parse(data);
   }
 
@@ -432,7 +427,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to bookmark post: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return StatusSchema.parse(data);
   }
 
@@ -457,7 +452,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to unbookmark post: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return StatusSchema.parse(data);
   }
 
@@ -492,7 +487,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to follow account: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return RelationshipSchema.parse(data);
   }
 
@@ -517,7 +512,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to unfollow account: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return RelationshipSchema.parse(data);
   }
 
@@ -551,7 +546,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to mute account: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return RelationshipSchema.parse(data);
   }
 
@@ -576,7 +571,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to unmute account: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return RelationshipSchema.parse(data);
   }
 
@@ -601,7 +596,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to block account: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return RelationshipSchema.parse(data);
   }
 
@@ -626,7 +621,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to unblock account: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return RelationshipSchema.parse(data);
   }
 
@@ -651,7 +646,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to get relationship: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error("No relationship data returned");
     }
@@ -683,7 +678,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to lookup account: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return data;
   }
 
@@ -712,7 +707,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to get bookmarks: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return z.array(StatusSchema).parse(data);
   }
 
@@ -741,7 +736,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to get favourites: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return z.array(StatusSchema).parse(data);
   }
 
@@ -771,7 +766,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to get home timeline: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return z.array(StatusSchema).parse(data);
   }
 
@@ -824,7 +819,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to get notifications: HTTP ${response.status} - ${errorText}`);
     }
 
-    return await response.json();
+    return await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
   }
 
   /**
@@ -870,7 +865,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to vote on poll: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return PollSchema.parse(data);
   }
 
@@ -891,7 +886,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to get poll: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return PollSchema.parse(data);
   }
 
@@ -955,7 +950,7 @@ export class AuthenticatedClient {
         throw new Error(`Failed to upload media: HTTP ${response.status} - ${errorText}`);
       }
 
-      const data = await response.json();
+      const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
       return MediaAttachmentSchema.parse(data);
     } catch (error) {
       clearTimeout(timeoutId);
@@ -995,7 +990,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to update media: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return MediaAttachmentSchema.parse(data);
   }
 
@@ -1029,7 +1024,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to get scheduled posts: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return z.array(ScheduledStatusSchema).parse(data);
   }
 
@@ -1054,7 +1049,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to get scheduled post: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return ScheduledStatusSchema.parse(data);
   }
 
@@ -1088,7 +1083,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to update scheduled post: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return ScheduledStatusSchema.parse(data);
   }
 
@@ -1143,7 +1138,7 @@ export class AuthenticatedClient {
       throw new Error(`Failed to get relationships: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
     return z.array(RelationshipSchema).parse(data);
   }
 }
