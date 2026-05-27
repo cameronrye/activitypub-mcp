@@ -178,6 +178,13 @@ export const HTTP_CORS_ENABLED = parseBoolEnv(process.env.MCP_HTTP_CORS_ENABLED,
 /** CORS allowed origins (comma-separated, default: *) */
 export const HTTP_CORS_ORIGINS = process.env.MCP_HTTP_CORS_ORIGINS || "*";
 
+/**
+ * Shared secret required as Bearer token for HTTP transport requests.
+ * If unset, HTTP transport refuses to start (see http-transport.ts).
+ * stdio transport ignores this value.
+ */
+export const HTTP_SECRET = process.env.MCP_HTTP_SECRET || "";
+
 // =============================================================================
 // Dynamic Instance Discovery Configuration
 // =============================================================================
