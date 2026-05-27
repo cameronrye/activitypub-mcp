@@ -733,7 +733,7 @@ ${recommendations
          instance.description.toLowerCase().includes(i.toLowerCase()) ||
          instance.domain.toLowerCase().includes(i.toLowerCase()),
      ) || "general topics"
-   }`,
+}`,
   )
   .join("\n\n")}
 
