@@ -741,3 +741,31 @@ describe("fetchActorOutboxPaginated cursor vs id-filter (M1)", () => {
     expect(requestedUrl).toContain("max_id=Y");
   });
 });
+
+describe("ETag 304 without cache (H4)", () => {
+  it("re-fetches without If-None-Match when 304 comes back with no cache entry", async () => {
+    let callCount = 0;
+    server.use(
+      http.get("https://a.test/object", ({ request }) => {
+        callCount++;
+        // First call: client sends some ETag (or none) — return 304 to simulate
+        // the server insisting it's unchanged even though our cache is empty.
+        if (callCount === 1) {
+          return new HttpResponse(null, { status: 304 });
+        }
+        // Second call: client should retry without If-None-Match — return fresh data.
+        if (request.headers.get("if-none-match") !== null) {
+          // The retry should have stripped the If-None-Match header. If it's
+          // still present, this test will fail (a real regression — we want
+          // a clean retry).
+          return new HttpResponse(null, { status: 304 });
+        }
+        return HttpResponse.json({ id: "https://a.test/object", type: "Note", content: "hi" });
+      }),
+    );
+    const client = new RemoteActivityPubClient();
+    const obj = await client.fetchObject("https://a.test/object");
+    expect(obj.id).toBe("https://a.test/object");
+    expect(callCount).toBe(2); // proves we did the retry
+  });
+});

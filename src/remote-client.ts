@@ -679,10 +679,25 @@ export class RemoteActivityPubClient {
       try {
         const response = await this.fetchWithTimeout(url, fetchOptions);
 
-        // Handle 304 Not Modified - return cached data
-        if (response.status === 304 && cached) {
-          logger.debug("Using cached response (304 Not Modified)", { url });
-          return cached.data;
+        // Handle 304 Not Modified
+        if (response.status === 304) {
+          if (cached) {
+            logger.debug("Using cached response (304 Not Modified)", { url });
+            return cached.data;
+          }
+          // 304 with no cache entry — server insists it's unchanged but we have nothing.
+          // Re-fetch once without If-None-Match.
+          logger.debug("304 received but no cache entry; re-fetching", { url });
+          const freshHeaders = new Headers(options.headers);
+          freshHeaders.delete("If-None-Match");
+          const freshResponse = await this.fetchWithTimeout(url, {
+            ...options,
+            headers: freshHeaders,
+          });
+          if (!freshResponse.ok) {
+            throw new Error(`HTTP ${freshResponse.status}: ${freshResponse.statusText}`);
+          }
+          return await this.processResponse(freshResponse, url, schema);
         }
 
         if (!response.ok) {
