@@ -1590,12 +1590,19 @@ function registerGetHomeTimelineTool(mcpServer: McpServer, rateLimiter: RateLimi
     },
     async ({ limit = 20, maxId, sinceId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { limit, maxId, sinceId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("get-home-timeline", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1622,6 +1629,11 @@ function registerGetHomeTimelineTool(mcpServer: McpServer, rateLimiter: RateLimi
           })
           .join("\n\n");
 
+        auditLogger.logToolInvocation("get-home-timeline", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -1635,6 +1647,12 @@ ${posts.length > 0 ? `📄 Use maxId: "${posts[posts.length - 1].id}" for next p
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("get-home-timeline", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1682,12 +1700,19 @@ function registerGetNotificationsTool(mcpServer: McpServer, rateLimiter: RateLim
     },
     async ({ limit = 20, types, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { limit, types, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("get-notifications", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1724,6 +1749,11 @@ function registerGetNotificationsTool(mcpServer: McpServer, rateLimiter: RateLim
           })
           .join("\n\n");
 
+        auditLogger.logToolInvocation("get-notifications", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -1735,6 +1765,12 @@ ${notificationList || "No notifications"}`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("get-notifications", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1762,12 +1798,19 @@ function registerGetBookmarksTool(mcpServer: McpServer, rateLimiter: RateLimiter
     },
     async ({ limit = 20, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { limit, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("get-bookmarks", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1789,6 +1832,11 @@ function registerGetBookmarksTool(mcpServer: McpServer, rateLimiter: RateLimiter
           })
           .join("\n\n");
 
+        auditLogger.logToolInvocation("get-bookmarks", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -1800,6 +1848,12 @@ ${bookmarkList || "No bookmarks found"}`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("get-bookmarks", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1827,12 +1881,19 @@ function registerGetFavouritesTool(mcpServer: McpServer, rateLimiter: RateLimite
     },
     async ({ limit = 20, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { limit, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("get-favourites", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1854,6 +1915,11 @@ function registerGetFavouritesTool(mcpServer: McpServer, rateLimiter: RateLimite
           })
           .join("\n\n");
 
+        auditLogger.logToolInvocation("get-favourites", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -1865,6 +1931,12 @@ ${favouriteList || "No favourites found"}`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("get-favourites", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -2010,12 +2082,19 @@ function registerVoteOnPollTool(mcpServer: McpServer, rateLimiter: RateLimiter):
     },
     async ({ pollId, choices, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { pollId, choices, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("vote-on-poll", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -2054,6 +2133,11 @@ function registerVoteOnPollTool(mcpServer: McpServer, rateLimiter: RateLimiter):
             ? `⏰ Expires: ${new Date(poll.expires_at).toLocaleString()}`
             : "";
 
+        auditLogger.logToolInvocation("vote-on-poll", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -2070,6 +2154,12 @@ ${expiryText}`,
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("vote-on-poll", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -2119,12 +2209,19 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
     },
     async ({ filePath, description, focusX, focusY, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { filePath, description, focusX, focusY, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("upload-media", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -2157,6 +2254,10 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
         );
 
         performanceMonitor.endRequest(requestId, true);
+        auditLogger.logToolInvocation("upload-media", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -2181,6 +2282,12 @@ post-status content="Your post" mediaIds=["${media.id}"]
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("upload-media", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -2212,12 +2319,19 @@ function registerGetScheduledPostsTool(mcpServer: McpServer, rateLimiter: RateLi
     },
     async ({ limit = 20, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { limit, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("get-scheduled-posts", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -2234,6 +2348,11 @@ function registerGetScheduledPostsTool(mcpServer: McpServer, rateLimiter: RateLi
       try {
         const scheduled = await authenticatedClient.getScheduledPosts({ limit }, accountId);
         performanceMonitor.endRequest(requestId, true);
+
+        auditLogger.logToolInvocation("get-scheduled-posts", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         if (scheduled.length === 0) {
           return {
@@ -2284,6 +2403,12 @@ ${postsList}
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("get-scheduled-posts", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -2311,12 +2436,19 @@ function registerCancelScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
     },
     async ({ scheduledId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { scheduledId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("cancel-scheduled-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -2333,6 +2465,10 @@ function registerCancelScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
       try {
         await authenticatedClient.cancelScheduledPost(scheduledId, accountId);
         performanceMonitor.endRequest(requestId, true);
+        auditLogger.logToolInvocation("cancel-scheduled-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -2346,6 +2482,12 @@ The scheduled post \`${scheduledId}\` has been canceled and will not be publishe
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("cancel-scheduled-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -2376,12 +2518,19 @@ function registerUpdateScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
     },
     async ({ scheduledId, scheduledAt, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { scheduledId, scheduledAt, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("update-scheduled-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -2403,6 +2552,10 @@ function registerUpdateScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
           accountId,
         );
         performanceMonitor.endRequest(requestId, true);
+        auditLogger.logToolInvocation("update-scheduled-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         const newDate = new Date(updated.scheduled_at).toLocaleString();
 
@@ -2418,6 +2571,12 @@ Post \`${scheduledId}\` is now scheduled for: **${newDate}**`,
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("update-scheduled-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {

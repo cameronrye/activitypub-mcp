@@ -871,6 +871,116 @@ describe("MCP Write Tools", () => {
     });
   });
 
+  describe("media/poll/timeline tool audit logging (L2)", () => {
+    it("upload-media: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("upload-media");
+      expect(tool).toBeDefined();
+      await tool?.handler({ filePath: "/Users/cameron/Developer/activitypub-mcp/package.json" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "upload-media",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("vote-on-poll: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("vote-on-poll");
+      expect(tool).toBeDefined();
+      await tool?.handler({ pollId: "poll-1", choices: [0] });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "vote-on-poll",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("get-home-timeline: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("get-home-timeline");
+      expect(tool).toBeDefined();
+      await tool?.handler({});
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "get-home-timeline",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("get-notifications: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("get-notifications");
+      expect(tool).toBeDefined();
+      await tool?.handler({});
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "get-notifications",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("get-bookmarks: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("get-bookmarks");
+      expect(tool).toBeDefined();
+      await tool?.handler({});
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "get-bookmarks",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("get-favourites: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("get-favourites");
+      expect(tool).toBeDefined();
+      await tool?.handler({});
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "get-favourites",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("get-scheduled-posts: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("get-scheduled-posts");
+      expect(tool).toBeDefined();
+      await tool?.handler({});
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "get-scheduled-posts",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("cancel-scheduled-post: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("cancel-scheduled-post");
+      expect(tool).toBeDefined();
+      await tool?.handler({ scheduledId: "scheduled-1" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "cancel-scheduled-post",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("update-scheduled-post: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("update-scheduled-post");
+      expect(tool).toBeDefined();
+      await tool?.handler({ scheduledId: "scheduled-1", scheduledAt: "2099-01-01T00:00:00Z" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "update-scheduled-post",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+  });
+
   describe("post-status audit logging (L2)", () => {
     beforeEach(() => {
       auditLoggerMock.logToolInvocation.mockClear();
