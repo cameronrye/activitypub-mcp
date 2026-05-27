@@ -3,6 +3,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getLogger } from "@logtape/logtape";
 import { REQUEST_TIMEOUT, USER_AGENT } from "./config.js";
+import { validateExternalUrl } from "./utils.js";
+import { DomainSchema } from "./validation/schemas.js";
 
 const logger = getLogger("activitypub-mcp");
 
@@ -172,24 +174,35 @@ export class InstanceDiscoveryService {
     version?: string;
     error?: string;
   }> {
-    const startTime = Date.now();
+    const validDomain = DomainSchema.safeParse(domain);
+    if (!validDomain.success) {
+      return {
+        online: false,
+        error: validDomain.error.issues[0]?.message ?? "Invalid domain",
+      };
+    }
+    const url = `https://${validDomain.data}/api/v1/instance`;
+    try {
+      await validateExternalUrl(url);
+    } catch (error) {
+      return { online: false, error: error instanceof Error ? error.message : String(error) };
+    }
 
+    const startTime = Date.now();
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
       // Try to fetch the instance's nodeinfo or API endpoint
-      const response = await fetch(`https://${domain}/api/v1/instance`, {
+      const response = await fetch(url, {
         method: "HEAD",
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
-      const responseTime = Date.now() - startTime;
-
       return {
         online: response.ok,
-        responseTime,
+        responseTime: Date.now() - startTime,
       };
     } catch (error) {
       return {
@@ -213,11 +226,22 @@ export class InstanceDiscoveryService {
     languages?: string[];
     registrations?: boolean;
   }> {
+    const validDomain = DomainSchema.safeParse(domain);
+    if (!validDomain.success) {
+      return { domain, online: false };
+    }
+    const url = `https://${validDomain.data}/api/v1/instance`;
+    try {
+      await validateExternalUrl(url);
+    } catch (error) {
+      return { domain, online: false };
+    }
+
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
-      const response = await fetch(`https://${domain}/api/v1/instance`, {
+      const response = await fetch(url, {
         headers: {
           Accept: "application/json",
           "User-Agent": USER_AGENT,

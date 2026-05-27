@@ -316,6 +316,43 @@ describe("InstanceDiscoveryService", () => {
   });
 });
 
+describe("InstanceDiscoveryService SSRF defence (L4)", () => {
+  const service = new InstanceDiscoveryService();
+
+  it("checkInstanceHealth refuses private IP", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const r = await service.checkInstanceHealth("10.0.0.1");
+    expect(r.online).toBe(false);
+    expect(r.error).toMatch(/IP|private|invalid/i);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it("checkInstanceHealth refuses localhost", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const r = await service.checkInstanceHealth("localhost");
+    expect(r.online).toBe(false);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it("getInstanceStats refuses link-local address", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const r = await service.getInstanceStats("169.254.169.254");
+    expect(r.online).toBe(false);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it("getInstanceStats refuses single-label domain", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const r = await service.getInstanceStats("not-a-domain");
+    expect(r.online).toBe(false);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+});
+
 describe("InstanceDiscoveryService - Edge Cases", () => {
   let service: InstanceDiscoveryService;
 
