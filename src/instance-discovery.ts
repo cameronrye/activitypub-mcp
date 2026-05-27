@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getLogger } from "@logtape/logtape";
-import { REQUEST_TIMEOUT, USER_AGENT } from "./config.js";
+import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "./config.js";
+import { readJsonWithLimit } from "./utils/fetch-helpers.js";
 import { validateExternalUrl } from "./utils.js";
 import { DomainSchema } from "./validation/schemas.js";
 
@@ -255,7 +256,8 @@ export class InstanceDiscoveryService {
         return { domain, online: false };
       }
 
-      const data = await response.json();
+      // biome-ignore lint/suspicious/noExplicitAny: Mastodon /api/v1/instance returns untyped JSON
+      const data = await readJsonWithLimit<any>(response, MAX_RESPONSE_SIZE);
 
       return {
         domain,

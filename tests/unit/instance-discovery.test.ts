@@ -370,3 +370,45 @@ describe("InstanceDiscoveryService - Edge Cases", () => {
     expect(results).toEqual([]);
   });
 });
+
+describe("InstanceDiscoveryService response size cap (M2 followup)", () => {
+  const originalEnv = process.env;
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("getInstanceStats returns online:false when body exceeds MAX_RESPONSE_SIZE without Content-Length", async () => {
+    vi.resetModules();
+    process.env = { ...originalEnv, MAX_RESPONSE_SIZE: "10" };
+
+    const { InstanceDiscoveryService: Service } = await import("../../src/instance-discovery.js");
+
+    const huge = "x".repeat(500);
+    server.use(
+      http.get(
+        "https://toobig.social/api/v1/instance",
+        () =>
+          new HttpResponse(
+            new ReadableStream({
+              start(c) {
+                c.enqueue(
+                  new TextEncoder().encode(JSON.stringify({ version: "4.2.0", description: huge })),
+                );
+                c.close();
+              },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+      ),
+    );
+
+    const svc = new Service();
+    const result = await svc.getInstanceStats("toobig.social");
+
+    expect(result.online).toBe(false);
+    // No data fields should be populated on failure
+    expect((result as { users?: unknown }).users).toBeUndefined();
+    expect((result as { posts?: unknown }).posts).toBeUndefined();
+  });
+});
