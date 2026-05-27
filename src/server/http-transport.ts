@@ -16,11 +16,13 @@ import {
   HTTP_CORS_ORIGINS,
   HTTP_HOST,
   HTTP_PORT,
+  HTTP_SECRET,
   SERVER_NAME,
   SERVER_VERSION,
 } from "../config.js";
 import { healthChecker } from "../health-check.js";
 import { performanceMonitor } from "../performance-monitor.js";
+import { checkBearerAuth } from "./auth-middleware.js";
 
 const logger = getLogger("activitypub-mcp:http");
 
@@ -133,6 +135,15 @@ export class HttpTransportServer {
    * Create and start the HTTP server
    */
   async start(): Promise<Transport> {
+    // Read from env at runtime so tests can set the variable after module load.
+    // Fall back to the module-level constant for production use.
+    const secret = process.env.MCP_HTTP_SECRET || HTTP_SECRET;
+    if (!secret || secret.length < 16) {
+      throw new Error(
+        "MCP_HTTP_SECRET is required for HTTP transport. Set it to a random " +
+          "string of at least 16 characters (32+ recommended).",
+      );
+    }
     return new Promise((resolve, reject) => {
       // Create the streamable HTTP transport
       this.transport = new StreamableHTTPServerTransport({
@@ -164,6 +175,7 @@ export class HttpTransportServer {
         }
 
         if (pathname === "/metrics" || pathname === "/metrics/") {
+          if (!checkBearerAuth(req, res, secret)) return;
           this.handleMetrics(res);
           return;
         }
@@ -175,6 +187,7 @@ export class HttpTransportServer {
 
         // MCP endpoint - delegate to transport
         if (pathname === "/mcp" || pathname === "/mcp/") {
+          if (!checkBearerAuth(req, res, secret)) return;
           try {
             if (this.transport) {
               await this.transport.handleRequest(req, res);
