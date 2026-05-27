@@ -678,7 +678,12 @@ export class AuthenticatedClient {
       throw new Error(`Failed to lookup account: HTTP ${response.status} - ${errorText}`);
     }
 
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
+    const data = await readJsonWithLimit<{
+      id: string;
+      username: string;
+      acct: string;
+      url: string;
+    }>(response, MAX_RESPONSE_SIZE);
     return data;
   }
 

@@ -1344,7 +1344,10 @@ export class RemoteActivityPubClient {
       });
 
       if (response.ok) {
-        const data = await readJsonWithLimit<Record<string, unknown>>(response, MAX_RESPONSE_SIZE);
+        const data = await readJsonWithLimit<{ id?: string; type?: string }>(
+          response,
+          MAX_RESPONSE_SIZE,
+        );
         if (data.id) {
           const type = data.type?.toLowerCase().includes("person") ? "actor" : "post";
           return { activityPubUri: data.id, type, domain };

@@ -1004,7 +1004,11 @@ describe("AuthenticatedClient", () => {
 });
 
 describe("AuthenticatedClient response size cap (M2)", () => {
-  afterEach(() => server.resetHandlers());
+  afterEach(() => {
+    server.resetHandlers();
+    vi.doUnmock("../../src/config.js");
+    vi.resetModules();
+  });
 
   it("aborts createPost when remote body exceeds MAX_RESPONSE_SIZE without Content-Length", async () => {
     vi.resetModules();
