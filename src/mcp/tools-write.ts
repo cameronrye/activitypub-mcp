@@ -430,12 +430,19 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
     },
     async ({ statusId, content, visibility, spoilerText, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, content, visibility, spoilerText, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("reply-to-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -461,6 +468,10 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
         );
 
         performanceMonitor.endRequest(requestId, true);
+        auditLogger.logToolInvocation("reply-to-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -478,6 +489,12 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("reply-to-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -505,12 +522,19 @@ function registerDeletePostTool(mcpServer: McpServer, rateLimiter: RateLimiter):
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("delete-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -527,6 +551,10 @@ function registerDeletePostTool(mcpServer: McpServer, rateLimiter: RateLimiter):
       try {
         await authenticatedClient.deletePost(statusId, accountId);
         performanceMonitor.endRequest(requestId, true);
+        auditLogger.logToolInvocation("delete-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -540,6 +568,12 @@ Post ${statusId} has been deleted.`,
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("delete-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -571,12 +605,19 @@ function registerBoostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter): 
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("boost-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -593,6 +634,10 @@ function registerBoostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter): 
       try {
         const status = await authenticatedClient.boostPost(statusId, accountId);
         performanceMonitor.endRequest(requestId, true);
+        auditLogger.logToolInvocation("boost-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -608,6 +653,12 @@ You boosted a post by @${status.account.username}
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("boost-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -635,12 +686,19 @@ function registerUnboostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("unboost-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -651,6 +709,10 @@ function registerUnboostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
 
       try {
         await authenticatedClient.unboostPost(statusId, accountId);
+        auditLogger.logToolInvocation("unboost-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -663,6 +725,12 @@ Your boost has been removed from post ${statusId}.`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("unboost-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -690,12 +758,19 @@ function registerFavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimite
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("favourite-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -706,6 +781,10 @@ function registerFavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimite
 
       try {
         const status = await authenticatedClient.favouritePost(statusId, accountId);
+        auditLogger.logToolInvocation("favourite-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -720,6 +799,12 @@ You favourited a post by @${status.account.username}
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("favourite-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -747,12 +832,19 @@ function registerUnfavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimi
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("unfavourite-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -763,6 +855,10 @@ function registerUnfavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimi
 
       try {
         await authenticatedClient.unfavouritePost(statusId, accountId);
+        auditLogger.logToolInvocation("unfavourite-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -775,6 +871,12 @@ Post ${statusId} has been removed from your favourites.`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("unfavourite-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -802,12 +904,19 @@ function registerBookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimiter
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("bookmark-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -818,6 +927,10 @@ function registerBookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimiter
 
       try {
         const status = await authenticatedClient.bookmarkPost(statusId, accountId);
+        auditLogger.logToolInvocation("bookmark-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -832,6 +945,12 @@ Saved post by @${status.account.username}
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("bookmark-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -859,12 +978,19 @@ function registerUnbookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimit
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("unbookmark-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -875,6 +1001,10 @@ function registerUnbookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimit
 
       try {
         await authenticatedClient.unbookmarkPost(statusId, accountId);
+        auditLogger.logToolInvocation("unbookmark-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -887,6 +1017,12 @@ Post ${statusId} has been removed from your bookmarks.`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("unbookmark-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {

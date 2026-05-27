@@ -663,6 +663,104 @@ describe("MCP Write Tools", () => {
     });
   });
 
+  describe("post manipulation tool audit logging (L2)", () => {
+    it("reply-to-post: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("reply-to-post");
+      expect(tool).toBeDefined();
+      await tool?.handler({ statusId: "status-1", content: "ok" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "reply-to-post",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("delete-post: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("delete-post");
+      expect(tool).toBeDefined();
+      await tool?.handler({ statusId: "status-1" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "delete-post",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("boost-post: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("boost-post");
+      expect(tool).toBeDefined();
+      await tool?.handler({ statusId: "status-1" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "boost-post",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("unboost-post: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("unboost-post");
+      expect(tool).toBeDefined();
+      await tool?.handler({ statusId: "status-1" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "unboost-post",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("favourite-post: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("favourite-post");
+      expect(tool).toBeDefined();
+      await tool?.handler({ statusId: "status-1" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "favourite-post",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("unfavourite-post: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("unfavourite-post");
+      expect(tool).toBeDefined();
+      await tool?.handler({ statusId: "status-1" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "unfavourite-post",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("bookmark-post: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("bookmark-post");
+      expect(tool).toBeDefined();
+      await tool?.handler({ statusId: "status-1" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "bookmark-post",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("unbookmark-post: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("unbookmark-post");
+      expect(tool).toBeDefined();
+      await tool?.handler({ statusId: "status-1" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "unbookmark-post",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+  });
+
   describe("post-status audit logging (L2)", () => {
     beforeEach(() => {
       auditLoggerMock.logToolInvocation.mockClear();
