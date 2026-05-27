@@ -761,6 +761,116 @@ describe("MCP Write Tools", () => {
     });
   });
 
+  describe("account relationship tool audit logging (L2)", () => {
+    it("switch-account: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("switch-account");
+      expect(tool).toBeDefined();
+      await tool?.handler({ accountId: "1" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "switch-account",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("verify-account: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("verify-account");
+      expect(tool).toBeDefined();
+      await tool?.handler({});
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "verify-account",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("follow-account: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("follow-account");
+      expect(tool).toBeDefined();
+      await tool?.handler({ acct: "u@example.social" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "follow-account",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("unfollow-account: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("unfollow-account");
+      expect(tool).toBeDefined();
+      await tool?.handler({ acct: "u@example.social" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "unfollow-account",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("mute-account: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("mute-account");
+      expect(tool).toBeDefined();
+      await tool?.handler({ acct: "u@example.social" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "mute-account",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("unmute-account: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("unmute-account");
+      expect(tool).toBeDefined();
+      await tool?.handler({ acct: "u@example.social" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "unmute-account",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("block-account: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("block-account");
+      expect(tool).toBeDefined();
+      await tool?.handler({ acct: "u@example.social" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "block-account",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("unblock-account: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("unblock-account");
+      expect(tool).toBeDefined();
+      await tool?.handler({ acct: "u@example.social" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "unblock-account",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+
+    it("get-relationship: calls auditLogger.logToolInvocation on success", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("get-relationship");
+      expect(tool).toBeDefined();
+      await tool?.handler({ acct: "u@example.social" });
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "get-relationship",
+        expect.anything(),
+        expect.objectContaining({ success: true }),
+      );
+    });
+  });
+
   describe("post-status audit logging (L2)", () => {
     beforeEach(() => {
       auditLoggerMock.logToolInvocation.mockClear();
