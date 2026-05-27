@@ -481,6 +481,142 @@ describe("RemoteActivityPubClient", () => {
   });
 });
 
+describe("extractNextCursor semantics (M12)", () => {
+  let client: RemoteActivityPubClient;
+
+  beforeEach(() => {
+    client = new RemoteActivityPubClient();
+  });
+
+  it("returns hasMore=false when collection has neither items nor a next link", async () => {
+    server.use(
+      http.get("https://m12.test/.well-known/webfinger", () =>
+        HttpResponse.json({
+          subject: "acct:user@m12.test",
+          links: [
+            {
+              rel: "self",
+              type: "application/activity+json",
+              href: "https://m12.test/users/user",
+            },
+          ],
+        }),
+      ),
+      http.get("https://m12.test/users/user", () =>
+        HttpResponse.json({
+          id: "https://m12.test/users/user",
+          type: "Person",
+          preferredUsername: "user",
+          inbox: "https://m12.test/users/user/inbox",
+          outbox: "https://m12.test/users/user/outbox",
+        }),
+      ),
+      http.get("https://m12.test/users/user/outbox", () =>
+        HttpResponse.json({
+          id: "https://m12.test/users/user/outbox",
+          type: "OrderedCollection",
+          totalItems: 0,
+          // No orderedItems, no next, no first
+        }),
+      ),
+    );
+
+    const result = await client.fetchActorOutboxPaginated("user@m12.test");
+    expect(result.hasMore).toBe(false);
+    expect(result.nextCursor).toBeUndefined();
+  });
+
+  it("follows `first` to data page when root has no items and no cursor was supplied", async () => {
+    server.use(
+      http.get("https://m12first.test/.well-known/webfinger", () =>
+        HttpResponse.json({
+          subject: "acct:user@m12first.test",
+          links: [
+            {
+              rel: "self",
+              type: "application/activity+json",
+              href: "https://m12first.test/users/user",
+            },
+          ],
+        }),
+      ),
+      http.get("https://m12first.test/users/user", () =>
+        HttpResponse.json({
+          id: "https://m12first.test/users/user",
+          type: "Person",
+          preferredUsername: "user",
+          inbox: "https://m12first.test/users/user/inbox",
+          outbox: "https://m12first.test/users/user/outbox",
+        }),
+      ),
+      http.get("https://m12first.test/users/user/outbox", ({ request }) => {
+        const url = new URL(request.url);
+        // Only serve the root collection at the bare outbox URL (no page param)
+        if (!url.searchParams.has("page")) {
+          return HttpResponse.json({
+            id: "https://m12first.test/users/user/outbox",
+            type: "OrderedCollection",
+            totalItems: 5,
+            first: "https://m12first.test/users/user/outbox/page-1",
+            // No orderedItems inline
+          });
+        }
+        // Should not be called with page param in this test
+        return new HttpResponse(null, { status: 404 });
+      }),
+    );
+
+    const result = await client.fetchActorOutboxPaginated("user@m12first.test");
+    // The root collection has no inline items but has `first`.
+    // With the fix, nextCursor should be the first-page URL so the caller can descend.
+    expect(result.nextCursor).toBe("https://m12first.test/users/user/outbox/page-1");
+    expect(result.hasMore).toBe(true);
+  });
+
+  it("does NOT loop back to `first` once on a CollectionPage with no `next`", async () => {
+    server.use(
+      http.get("https://m12loop.test/.well-known/webfinger", () =>
+        HttpResponse.json({
+          subject: "acct:user@m12loop.test",
+          links: [
+            {
+              rel: "self",
+              type: "application/activity+json",
+              href: "https://m12loop.test/users/user",
+            },
+          ],
+        }),
+      ),
+      http.get("https://m12loop.test/users/user", () =>
+        HttpResponse.json({
+          id: "https://m12loop.test/users/user",
+          type: "Person",
+          preferredUsername: "user",
+          inbox: "https://m12loop.test/users/user/inbox",
+          outbox: "https://m12loop.test/users/user/outbox",
+        }),
+      ),
+      http.get("https://m12loop.test/users/user/outbox/page-1", () =>
+        HttpResponse.json({
+          id: "https://m12loop.test/users/user/outbox/page-1",
+          type: "OrderedCollectionPage",
+          orderedItems: [{ type: "Note", content: "a post" }],
+          // Has `first` pointing back to itself — no `next`
+          first: "https://m12loop.test/users/user/outbox/page-1",
+        }),
+      ),
+    );
+
+    // Provide page-1 as the cursor (simulating "already on a data page")
+    const result = await client.fetchActorOutboxPaginated("user@m12loop.test", {
+      cursor: "https://m12loop.test/users/user/outbox/page-1",
+    });
+    // Should NOT return first as nextCursor — we're already on a page, no `next` means done
+    expect(result.nextCursor).toBeUndefined();
+    expect(result.hasMore).toBe(false);
+  });
+});
+
 describe("RemoteActivityPubClient response size cap (M2)", () => {
   const originalEnv = process.env;
 

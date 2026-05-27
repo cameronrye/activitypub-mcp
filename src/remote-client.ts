@@ -314,7 +314,16 @@ export class RemoteActivityPubClient {
     const items = collection.orderedItems || collection.items || [];
 
     // Determine pagination cursors
-    const nextCursor = this.extractNextCursor(collection);
+    let nextCursor: string | undefined;
+    if (items.length > 0) {
+      // Items present — use the explicit `next` link only
+      nextCursor = this.extractNextCursor(collection);
+    } else if (!cursor) {
+      // Root collection with no inline items — follow `first` to descend into the data page
+      nextCursor = this.extractFirstPageCursor(collection);
+    }
+    // else: already on a CollectionPage that ran out — hasMore: false
+
     const prevCursor = this.extractPrevCursor(collection);
 
     return {
@@ -328,27 +337,32 @@ export class RemoteActivityPubClient {
   }
 
   /**
-   * Extract next page cursor from collection
+   * Extract the "next page" cursor from a collection.
+   *
+   * Returns `collection.next` only. Does NOT fall back to `collection.first` —
+   * that's a separate concept (initial descent into the data page), exposed via
+   * extractFirstPageCursor.
    */
   private extractNextCursor(collection: ActivityPubCollection): string | undefined {
-    // Check for explicit next link
-    if (collection.next) {
-      return collection.next;
-    }
+    return typeof collection.next === "string" ? collection.next : undefined;
+  }
 
-    // Check for first page link (when at root collection)
-    if (collection.first) {
-      if (typeof collection.first === "string") {
-        return collection.first;
-      }
-      if (typeof collection.first === "object" && collection.first !== null) {
-        const firstObj = collection.first as unknown as Record<string, unknown>;
-        if ("id" in firstObj && typeof firstObj.id === "string") {
-          return firstObj.id;
-        }
+  /**
+   * Extract the "first page" cursor from a root collection.
+   *
+   * When a root OrderedCollection has no inline items, callers follow this to
+   * descend into the data page. Subsequent pagination uses `next` only.
+   */
+  private extractFirstPageCursor(collection: ActivityPubCollection): string | undefined {
+    if (typeof collection.first === "string") {
+      return collection.first;
+    }
+    if (typeof collection.first === "object" && collection.first !== null) {
+      const firstObj = collection.first as unknown as Record<string, unknown>;
+      if ("id" in firstObj && typeof firstObj.id === "string") {
+        return firstObj.id;
       }
     }
-
     return undefined;
   }
 
