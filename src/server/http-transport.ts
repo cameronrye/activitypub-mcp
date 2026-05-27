@@ -144,6 +144,14 @@ export class HttpTransportServer {
           "string of at least 16 characters (32+ recommended).",
       );
     }
+
+    if (this.corsEnabled && this.corsOrigins.includes("*")) {
+      logger.warn(
+        "CORS is enabled with wildcard origin '*'. Auth still protects /mcp " +
+          "and /metrics, but explicit origins are strongly recommended.",
+      );
+    }
+
     return new Promise((resolve, reject) => {
       // Create the streamable HTTP transport
       this.transport = new StreamableHTTPServerTransport({

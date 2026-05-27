@@ -175,8 +175,13 @@ export const HTTP_HOST = process.env.MCP_HTTP_HOST || "127.0.0.1";
 /** Enable CORS for HTTP transport (default: false) */
 export const HTTP_CORS_ENABLED = parseBoolEnv(process.env.MCP_HTTP_CORS_ENABLED, false);
 
-/** CORS allowed origins (comma-separated, default: *) */
-export const HTTP_CORS_ORIGINS = process.env.MCP_HTTP_CORS_ORIGINS || "*";
+/**
+ * CORS allowed origins (comma-separated). Default: empty (no cross-origin
+ * requests allowed). Set explicitly to a list of origins or "*" to enable.
+ * Setting "*" logs a startup warning since auth is the only thing keeping
+ * arbitrary web pages from talking to the local server.
+ */
+export const HTTP_CORS_ORIGINS = process.env.MCP_HTTP_CORS_ORIGINS ?? "";
 
 /**
  * Shared secret required as Bearer token for HTTP transport requests.

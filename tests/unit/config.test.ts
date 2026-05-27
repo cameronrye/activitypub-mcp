@@ -115,3 +115,22 @@ describe("Thread traversal config (M3)", () => {
     expect(mod.THREAD_CROSS_ORIGIN_FETCH).toBe(false);
   });
 });
+
+describe("CORS defaults (H1)", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("HTTP_CORS_ORIGINS defaults to empty string (no origins)", async () => {
+    delete process.env.MCP_HTTP_CORS_ORIGINS;
+    const mod = await import("../../src/config.js");
+    expect(mod.HTTP_CORS_ORIGINS).toBe("");
+  });
+});
