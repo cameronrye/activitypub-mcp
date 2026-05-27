@@ -9,6 +9,9 @@ import {
   REQUEST_TIMEOUT,
   RETRY_BASE_DELAY,
   RETRY_MAX_DELAY,
+  THREAD_CROSS_ORIGIN_FETCH,
+  THREAD_MAX_DEPTH,
+  THREAD_MAX_REPLIES,
   USER_AGENT,
 } from "./config.js";
 import { instanceBlocklist } from "./instance-blocklist.js";
@@ -848,7 +851,18 @@ export class RemoteActivityPubClient {
   }> {
     const { depth = 2, maxReplies = 50 } = options;
 
-    logger.info("Fetching post thread", { url: postUrl, depth, maxReplies });
+    // Clamp caller-supplied values to the configured hard caps
+    const effectiveDepth = Math.min(depth, THREAD_MAX_DEPTH);
+    const effectiveMaxReplies = Math.min(maxReplies, THREAD_MAX_REPLIES);
+
+    logger.info("Fetching post thread", {
+      url: postUrl,
+      depth: effectiveDepth,
+      maxReplies: effectiveMaxReplies,
+    });
+
+    // Compute the origin of the root post once, used for cross-origin gating
+    const rootOrigin = new URL(postUrl).origin;
 
     // Fetch the main post
     const post = await this.fetchObject(postUrl);
@@ -895,11 +909,34 @@ export class RemoteActivityPubClient {
           totalReplies = repliesCollection.totalItems || 0;
           const items = repliesCollection.orderedItems || repliesCollection.items || [];
 
-          // Fetch reply objects (they might be URLs)
-          for (const item of items.slice(0, maxReplies)) {
+          // Fetch reply objects (they might be URLs), applying origin gate and reply cap
+          for (const item of items) {
+            if (replies.length >= effectiveMaxReplies) break;
+
+            const itemUrl = typeof item === "string" ? item : (item as ActivityPubObject)?.id;
+            if (!itemUrl) continue;
+
+            let sameOrigin = false;
+            try {
+              sameOrigin = new URL(itemUrl).origin === rootOrigin;
+            } catch {
+              continue; // skip unparseable URLs
+            }
+
+            if (!sameOrigin && !THREAD_CROSS_ORIGIN_FETCH) {
+              // Return a stub instead of fetching cross-origin content
+              replies.push({
+                id: itemUrl,
+                type: "Note",
+                crossOrigin: true,
+                fetched: false,
+              } as unknown as ActivityPubObject);
+              continue;
+            }
+
             try {
               if (typeof item === "string") {
-                const reply = await this.fetchObject(item);
+                const reply = await this.fetchObject(itemUrl);
                 replies.push(reply);
               } else if (item && typeof item === "object") {
                 replies.push(item as ActivityPubObject);
@@ -910,13 +947,23 @@ export class RemoteActivityPubClient {
           }
 
           // Recursively fetch nested replies if depth > 1
-          if (depth > 1) {
+          if (effectiveDepth > 1) {
             for (const reply of replies.slice()) {
-              if (reply.replies && replies.length < maxReplies) {
+              if (reply.replies && replies.length < effectiveMaxReplies) {
+                // Apply origin gate before recursing into nested replies
+                let replyOrigin = "";
+                try {
+                  replyOrigin = new URL(reply.id).origin;
+                } catch {
+                  continue;
+                }
+                if (replyOrigin !== rootOrigin && !THREAD_CROSS_ORIGIN_FETCH) {
+                  continue;
+                }
                 try {
                   const nestedThread = await this.fetchPostThread(reply.id, {
-                    depth: depth - 1,
-                    maxReplies: Math.min(10, maxReplies - replies.length),
+                    depth: effectiveDepth - 1,
+                    maxReplies: Math.min(10, effectiveMaxReplies - replies.length),
                   });
                   replies.push(...nestedThread.replies);
                 } catch {
@@ -933,7 +980,7 @@ export class RemoteActivityPubClient {
 
     return {
       post,
-      replies: replies.slice(0, maxReplies),
+      replies: replies.slice(0, effectiveMaxReplies),
       ancestors,
       totalReplies,
     };
