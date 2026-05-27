@@ -39,4 +39,15 @@ describe("readJsonWithLimit (M2)", () => {
     const res = makeResponse("not valid json");
     await expect(readJsonWithLimit(res, 1024)).rejects.toThrow(/JSON/i);
   });
+
+  it("throws when multi-byte UTF-8 body exceeds byte limit in null-body fallback", async () => {
+    // Build a payload of 50 CJK characters — each is 3 UTF-8 bytes → 150 bytes total,
+    // well above a 100-byte cap, but String.length would only report 50.
+    const cjk50 = "日".repeat(50); // 50 chars, 150 UTF-8 bytes
+    const payload = JSON.stringify({ v: cjk50 });
+    const res = makeResponse(payload);
+    // Force the null-body fallback path
+    Object.defineProperty(res, "body", { value: null, writable: false });
+    await expect(readJsonWithLimit(res, 100)).rejects.toBeInstanceOf(ResponseTooLargeError);
+  });
 });

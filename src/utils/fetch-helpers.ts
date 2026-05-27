@@ -38,8 +38,9 @@ export async function readJsonWithLimit<T = unknown>(
 
   if (!response.body) {
     const text = await response.text();
-    if (text.length > maxBytes) {
-      throw new ResponseTooLargeError(text.length, maxBytes);
+    const byteLength = new TextEncoder().encode(text).length;
+    if (byteLength > maxBytes) {
+      throw new ResponseTooLargeError(byteLength, maxBytes);
     }
     return JSON.parse(text) as T;
   }
