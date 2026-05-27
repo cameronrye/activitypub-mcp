@@ -651,3 +651,93 @@ describe("RemoteActivityPubClient response size cap (M2)", () => {
     );
   });
 });
+
+describe("fetchActorOutboxPaginated cursor vs id-filter (M1)", () => {
+  let client: RemoteActivityPubClient;
+
+  beforeEach(() => {
+    client = new RemoteActivityPubClient();
+  });
+
+  it("preserves cursor query params and ignores caller-supplied maxId", async () => {
+    let requestedUrl: string | null = null;
+    server.use(
+      http.get("https://a.test/.well-known/webfinger", () =>
+        HttpResponse.json({
+          subject: "acct:u@a.test",
+          links: [
+            {
+              rel: "self",
+              type: "application/activity+json",
+              href: "https://a.test/users/u",
+            },
+          ],
+        }),
+      ),
+      http.get("https://a.test/users/u", () =>
+        HttpResponse.json({
+          id: "https://a.test/users/u",
+          type: "Person",
+          preferredUsername: "u",
+          inbox: "https://a.test/users/u/inbox",
+          outbox: "https://a.test/users/u/outbox",
+        }),
+      ),
+      http.get("https://a.test/users/u/outbox/page", ({ request }) => {
+        requestedUrl = request.url;
+        return HttpResponse.json({
+          id: "https://a.test/users/u/outbox/page",
+          type: "OrderedCollectionPage",
+          orderedItems: [],
+        });
+      }),
+    );
+
+    await client.fetchActorOutboxPaginated("u@a.test", {
+      cursor: "https://a.test/users/u/outbox/page?max_id=X",
+      maxId: "Y", // should be ignored
+    });
+
+    expect(requestedUrl).toContain("max_id=X");
+    expect(requestedUrl).not.toContain("max_id=Y");
+  });
+
+  it("applies caller's maxId when no cursor is provided", async () => {
+    let requestedUrl: string | null = null;
+    server.use(
+      http.get("https://a.test/.well-known/webfinger", () =>
+        HttpResponse.json({
+          subject: "acct:u@a.test",
+          links: [
+            {
+              rel: "self",
+              type: "application/activity+json",
+              href: "https://a.test/users/u",
+            },
+          ],
+        }),
+      ),
+      http.get("https://a.test/users/u", () =>
+        HttpResponse.json({
+          id: "https://a.test/users/u",
+          type: "Person",
+          preferredUsername: "u",
+          inbox: "https://a.test/users/u/inbox",
+          outbox: "https://a.test/users/u/outbox",
+        }),
+      ),
+      http.get("https://a.test/users/u/outbox", ({ request }) => {
+        requestedUrl = request.url;
+        return HttpResponse.json({
+          id: "https://a.test/users/u/outbox",
+          type: "OrderedCollection",
+          orderedItems: [],
+        });
+      }),
+    );
+
+    await client.fetchActorOutboxPaginated("u@a.test", { maxId: "Y" });
+
+    expect(requestedUrl).toContain("max_id=Y");
+  });
+});

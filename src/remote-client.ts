@@ -286,11 +286,15 @@ export class RemoteActivityPubClient {
       fetchUrl = outboxUrl;
     }
 
-    // Set pagination parameters
-    fetchUrl.searchParams.set("limit", limit.toString());
-    if (minId) fetchUrl.searchParams.set("min_id", minId);
-    if (maxId) fetchUrl.searchParams.set("max_id", maxId);
-    if (sinceId) fetchUrl.searchParams.set("since_id", sinceId);
+    // Apply caller-supplied filters only when no cursor was provided.
+    // Cursor URLs already encode their own pagination state; overriding them
+    // would corrupt the server-side pagination sequence.
+    if (!cursor) {
+      fetchUrl.searchParams.set("limit", limit.toString());
+      if (minId) fetchUrl.searchParams.set("min_id", minId);
+      if (maxId) fetchUrl.searchParams.set("max_id", maxId);
+      if (sinceId) fetchUrl.searchParams.set("since_id", sinceId);
+    }
 
     logger.info("Fetching actor outbox with pagination", {
       identifier,
