@@ -262,21 +262,90 @@ activitypub://server-info
 
 **Example Response:**
 
+> **Note:** The `capabilities` block is dynamically generated from the live registry; the example below is illustrative.
+
 ```json
 {
   "name": "activitypub-mcp",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "A Model Context Protocol server for exploring and interacting with the existing Fediverse",
   "capabilities": {
-    "resources": ["server-info", "remote-actor", "remote-timeline", "remote-followers", "remote-following", "instance-info", "trending", "local-timeline", "federated-timeline", "post-thread"],
-    "tools": {
-      "discovery": ["discover-actor", "discover-instances", "discover-instances-live", "recommend-instances"],
-      "content": ["fetch-timeline", "get-post-thread", "search-instance", "search-accounts", "search-hashtags", "search-posts"],
-      "timelines": ["get-trending-hashtags", "get-trending-posts", "get-local-timeline", "get-federated-timeline"],
-      "utility": ["convert-url", "batch-fetch-actors", "batch-fetch-posts"],
-      "system": ["health-check", "performance-metrics"]
-    },
-    "prompts": ["explore-fediverse", "discover-content", "compare-instances", "compare-accounts", "analyze-user-activity", "find-experts", "summarize-trending"]
+    "tools": [
+      "batch-fetch-actors",
+      "batch-fetch-posts",
+      "block-account",
+      "bookmark-post",
+      "boost-post",
+      "cancel-scheduled-post",
+      "convert-url",
+      "delete-post",
+      "discover-actor",
+      "discover-instances",
+      "discover-instances-live",
+      "favourite-post",
+      "fetch-timeline",
+      "follow-account",
+      "get-bookmarks",
+      "get-favourites",
+      "get-federated-timeline",
+      "get-home-timeline",
+      "get-instance-info",
+      "get-local-timeline",
+      "get-notifications",
+      "get-post-thread",
+      "get-relationship",
+      "get-scheduled-posts",
+      "get-trending-hashtags",
+      "get-trending-posts",
+      "health-check",
+      "list-accounts",
+      "mute-account",
+      "performance-metrics",
+      "post-status",
+      "recommend-instances",
+      "reply-to-post",
+      "search",
+      "search-accounts",
+      "search-hashtags",
+      "search-instance",
+      "search-posts",
+      "switch-account",
+      "unblock-account",
+      "unbookmark-post",
+      "unboost-post",
+      "unfavourite-post",
+      "unfollow-account",
+      "unmute-account",
+      "update-scheduled-post",
+      "upload-media",
+      "verify-account",
+      "vote-on-poll"
+    ],
+    "resources": [
+      "federated-timeline",
+      "instance-info",
+      "local-timeline",
+      "post-thread",
+      "remote-actor",
+      "remote-followers",
+      "remote-following",
+      "remote-timeline",
+      "server-info",
+      "trending"
+    ],
+    "prompts": [
+      "analyze-user-activity",
+      "community-health",
+      "compare-accounts",
+      "compare-instances",
+      "content-strategy",
+      "discover-content",
+      "explore-fediverse",
+      "find-experts",
+      "migration-helper",
+      "summarize-trending",
+      "thread-composer"
+    ]
   },
   "features": {
     "auditLogging": true,
@@ -401,8 +470,11 @@ activitypub://federated-timeline/{domain}
 Get a post and its full conversation thread:
 
 ```uri
-activitypub://post-thread/{postUrl}
+activitypub://post-thread/{domain}/{statusId}
 ```
+
+> **Note:** The legacy form `activitypub://post-thread/{postUrl}` is still accepted with a
+> deprecation warning and will be removed in 2.1.0.
 
 ### MCP Tools
 

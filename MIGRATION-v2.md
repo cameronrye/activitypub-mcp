@@ -166,7 +166,7 @@ it is. The Zod schema rejects the legacy name with a clear error:
 { "name": "cancel-scheduled-post", "arguments": { "scheduledPostId": "123" } }
 ```
 
-Reference commit: `<H3b commit SHA>` — `fix!(tools): rename scheduledId to scheduledPostId (H3b)`
+Reference commit: `5428c32` — `fix!(tools): rename scheduledId to scheduledPostId (H3b)`
 
 ## Removed env vars
 
@@ -208,7 +208,13 @@ which is the Mastodon-compatible ActivityPub URL. Non-Mastodon instances
 (Pleroma, Misskey, etc.) that do not support this path can continue using the
 legacy `{postUrl}` form until 2.1.0.
 
-Reference commit: `<L10 commit SHA>`
+> **Note:** The new `{domain}/{statusId}` template constructs a Mastodon-style URL
+> (`https://{domain}/web/statuses/{statusId}`). Non-Mastodon ActivityPub implementations
+> (Pleroma, Akkoma, Misskey, etc.) have different status URL shapes and may not resolve
+> via this form. For non-Mastodon instances, continue using the legacy `{postUrl}` form
+> until instance-software detection lands in a future release.
+
+Reference commit: `a6f8049`
 
 ## Sections to be filled by future plans
 
