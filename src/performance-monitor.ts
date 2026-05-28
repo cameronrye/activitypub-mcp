@@ -237,6 +237,7 @@ class PerformanceMonitor {
       this.updateSystemMetrics();
       this.logMetrics();
     }, interval);
+    this.metricsInterval.unref();
   }
 
   /**

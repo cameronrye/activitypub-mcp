@@ -23,6 +23,7 @@ import {
   TRANSPORT_MODE,
 } from "./config.js";
 import { registerPrompts, registerResources, registerTools } from "./mcp/index.js";
+import { performanceMonitor } from "./performance-monitor.js";
 import { HttpTransportServer, RateLimiter } from "./server/index.js";
 
 const logger = getLogger("activitypub-mcp");
@@ -130,7 +131,8 @@ class ActivityPubMCPServer {
       try {
         await this.stop();
         logger.info("Graceful shutdown completed");
-        process.exit(0);
+        // No process.exit(0) — let the event loop drain naturally.
+        // If the process hangs here, that's a leak we want to surface, not paper over.
       } catch (error) {
         logger.error("Error during shutdown", {
           error: error instanceof Error ? error.message : String(error),
@@ -156,6 +158,7 @@ class ActivityPubMCPServer {
     }
 
     this.rateLimiter.stop();
+    performanceMonitor.stop();
     logger.info("ActivityPub MCP Server stopped");
   }
 
