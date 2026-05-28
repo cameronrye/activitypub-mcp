@@ -34,7 +34,7 @@ vi.mock("@logtape/logtape", () => ({
 }));
 
 // Import after mocks are set up
-const { InstanceDiscoveryService } = await import("../../src/instance-discovery.js");
+const { InstanceDiscoveryService } = await import("../../src/discovery/instance-discovery.js");
 
 describe("InstanceDiscoveryService", () => {
   let service: InstanceDiscoveryService;
@@ -382,7 +382,9 @@ describe("InstanceDiscoveryService response size cap (M2 followup)", () => {
     vi.resetModules();
     process.env = { ...originalEnv, MAX_RESPONSE_SIZE: "10" };
 
-    const { InstanceDiscoveryService: Service } = await import("../../src/instance-discovery.js");
+    const { InstanceDiscoveryService: Service } = await import(
+      "../../src/discovery/instance-discovery.js"
+    );
 
     const huge = "x".repeat(500);
     server.use(

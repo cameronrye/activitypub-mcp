@@ -12,7 +12,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { DynamicInstanceDiscoveryService } from "../../src/dynamic-instance-discovery.js";
+import { DynamicInstanceDiscoveryService } from "../../src/discovery/dynamic-instance-discovery.js";
 
 describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)(
   "DynamicInstanceDiscoveryService - Live API Tests",

@@ -4,7 +4,7 @@
 
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
-import { WebFingerClient } from "../../src/webfinger.js";
+import { WebFingerClient } from "../../src/discovery/webfinger.js";
 import { server } from "../mocks/server.js";
 
 describe("WebFingerClient", () => {

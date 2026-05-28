@@ -26,7 +26,7 @@ vi.mock("../../src/remote-client.js", () => ({
   },
 }));
 
-vi.mock("../../src/instance-discovery.js", () => ({
+vi.mock("../../src/discovery/instance-discovery.js", () => ({
   instanceDiscovery: {
     getPopularInstances: vi.fn().mockReturnValue([
       {
@@ -44,7 +44,7 @@ vi.mock("../../src/instance-discovery.js", () => ({
   },
 }));
 
-vi.mock("../../src/dynamic-instance-discovery.js", () => ({
+vi.mock("../../src/discovery/dynamic-instance-discovery.js", () => ({
   dynamicInstanceDiscovery: {
     searchInstances: vi.fn().mockResolvedValue({
       instances: [{ domain: "test.social", users: 1000, software: "mastodon" }],
@@ -106,9 +106,9 @@ vi.mock("@logtape/logtape", () => ({
   }),
 }));
 
-import { dynamicInstanceDiscovery } from "../../src/dynamic-instance-discovery.js";
+import { dynamicInstanceDiscovery } from "../../src/discovery/dynamic-instance-discovery.js";
+import { instanceDiscovery } from "../../src/discovery/instance-discovery.js";
 import { healthChecker } from "../../src/health-check.js";
-import { instanceDiscovery } from "../../src/instance-discovery.js";
 import { performanceMonitor } from "../../src/performance-monitor.js";
 // Import mocked modules
 import { remoteClient } from "../../src/remote-client.js";

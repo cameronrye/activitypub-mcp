@@ -4,7 +4,7 @@
 
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
-import { DynamicInstanceDiscoveryService } from "../../src/dynamic-instance-discovery.js";
+import { DynamicInstanceDiscoveryService } from "../../src/discovery/dynamic-instance-discovery.js";
 import { server } from "../mocks/server.js";
 
 /**

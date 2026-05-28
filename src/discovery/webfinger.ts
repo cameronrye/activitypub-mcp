@@ -1,9 +1,9 @@
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
-import { CACHE_MAX_SIZE, CACHE_TTL, REQUEST_TIMEOUT, USER_AGENT } from "./config.js";
-import { LRUCache } from "./utils/lru-cache.js";
-import { validateExternalUrl } from "./utils.js";
-import { ActorIdentifierSchema } from "./validation/schemas.js";
+import { CACHE_MAX_SIZE, CACHE_TTL, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
+import { LRUCache } from "../utils/lru-cache.js";
+import { validateExternalUrl } from "../utils.js";
+import { ActorIdentifierSchema } from "../validation/schemas.js";
 
 const logger = getLogger("activitypub-mcp");
 
