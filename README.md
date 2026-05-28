@@ -753,7 +753,7 @@ Get performance metrics for the MCP server:
 {
   "name": "discover-content",
   "arguments": {
-    "topic": "artificial intelligence",
+    "topics": "artificial intelligence",
     "contentType": "people"
   }
 }
