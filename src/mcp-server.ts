@@ -219,17 +219,4 @@ class ActivityPubMCPServer {
 // Set up global error handlers at module level
 setupGlobalErrorHandlers();
 
-// Start the server if this file is run directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const server = new ActivityPubMCPServer();
-  try {
-    await server.start();
-  } catch (error) {
-    logger.error("Failed to start MCP server", {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    process.exit(1);
-  }
-}
-
 export default ActivityPubMCPServer;
