@@ -180,6 +180,36 @@ instead.
 
 Reference commit: `1c70764`
 
+## Resource URI changes
+
+### `post-thread` resource URI template
+
+The URI template changed from `activitypub://post-thread/{postUrl}` to
+`activitypub://post-thread/{domain}/{statusId}`. The new form is RFC 6570
+URI-template safe.
+
+v2.0.x continues to accept the legacy form with a deprecation warning.
+The legacy form will be removed in 2.1.0.
+
+**Before:**
+
+```text
+activitypub://post-thread/https%3A%2F%2Fmastodon.social%2F%40alice%2F123456
+```
+
+**After:**
+
+```text
+activitypub://post-thread/mastodon.social/123456
+```
+
+The new form constructs `https://{domain}/web/statuses/{statusId}` internally,
+which is the Mastodon-compatible ActivityPub URL. Non-Mastodon instances
+(Pleroma, Misskey, etc.) that do not support this path can continue using the
+legacy `{postUrl}` form until 2.1.0.
+
+Reference commit: `<L10 commit SHA>`
+
 ## Sections to be filled by future plans
 
 - **Plans B–F** (other v2 work areas) will append their own sections as they land.

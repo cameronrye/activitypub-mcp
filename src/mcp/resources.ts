@@ -692,17 +692,22 @@ function registerFederatedTimelineResource(mcpServer: McpServer, rateLimiter: Ra
 
 /**
  * Post thread resource - get a post and its full conversation thread.
+ *
+ * URI template (v2.0.x): activitypub://post-thread/{domain}/{statusId}
+ * Legacy form (deprecated, removed in 2.1.0): activitypub://post-thread/{postUrl}
  */
 function registerPostThreadResource(mcpServer: McpServer, rateLimiter: RateLimiter): void {
   mcpServer.registerResource(
     "post-thread",
-    new ResourceTemplate("activitypub://post-thread/{postUrl}", {
+    new ResourceTemplate("activitypub://post-thread/{domain}/{statusId}", {
       list: async () => ({
         resources: [
           {
-            uri: "activitypub://post-thread/{postUrl}",
+            uri: "activitypub://post-thread/{domain}/{statusId}",
             name: "post-thread",
-            description: "Get a post and its full conversation thread (replies and ancestors)",
+            description:
+              "Get a post and its full conversation thread (replies and ancestors). " +
+              "For Mastodon-compatible instances, addressable as {domain}/{statusId}.",
             mimeType: "application/json",
           },
         ],
@@ -713,23 +718,50 @@ function registerPostThreadResource(mcpServer: McpServer, rateLimiter: RateLimit
       description: "Get a post and its full conversation thread including replies and parent posts",
       mimeType: "application/json",
     },
-    async (uri, { postUrl }) => {
+    async (uri, params) => {
       try {
-        const postUrlStr = extractSingleValue(postUrl);
+        // The {domain} segment will look like a hostname for the new form
+        // (e.g. "mastodon.social") or an encoded URL for the legacy form
+        // (e.g. "https%3A%2F%2Fmastodon.social%2F%40user%2F123456").
+        const firstSegment = extractSingleValue(params.domain ?? "");
 
-        // Validate URL format
-        let parsedUrl: URL;
-        try {
-          // Handle URL-encoded post URLs
-          const decodedUrl = decodeURIComponent(postUrlStr);
-          parsedUrl = new URL(decodedUrl);
-        } catch {
-          throw new McpError(ErrorCode.InvalidParams, `Invalid post URL: ${postUrlStr}`);
+        let postUrl: string;
+        const looksLikeEncodedUrl =
+          firstSegment.includes("%3A%2F%2F") || firstSegment.includes("://");
+
+        if (looksLikeEncodedUrl) {
+          // Legacy form — still supported in 2.0.x with a deprecation warning.
+          logger.warn(
+            "post-thread URI template `{postUrl}` is deprecated; pass `{domain}/{statusId}` instead. Will be removed in 2.1.0.",
+            { receivedUri: uri.href },
+          );
+          try {
+            postUrl = new URL(decodeURIComponent(firstSegment)).href;
+          } catch {
+            throw new McpError(
+              ErrorCode.InvalidParams,
+              `Invalid post URL in legacy template: ${firstSegment}`,
+            );
+          }
+        } else {
+          // New form: {domain}/{statusId}
+          const domain = firstSegment;
+          const statusId = extractSingleValue(params.statusId ?? "");
+          if (!domain || !statusId) {
+            throw new McpError(
+              ErrorCode.InvalidParams,
+              "post-thread requires {domain} and {statusId} in the URI (e.g. activitypub://post-thread/mastodon.social/123456)",
+            );
+          }
+          // Mastodon-compatible URL — works for Mastodon and most Mastodon-API-compatible
+          // implementations. Non-Mastodon instances may need the legacy {postUrl} form.
+          postUrl = `https://${domain}/web/statuses/${statusId}`;
         }
 
+        const parsedUrl = new URL(postUrl);
         checkRateLimit(rateLimiter, parsedUrl.hostname);
 
-        logger.info("Fetching post thread", { postUrl: postUrlStr });
+        logger.info("Fetching post thread", { postUrl, legacyForm: looksLikeEncodedUrl });
 
         const threadData = await remoteClient.fetchPostThread(parsedUrl.href, {
           depth: 2,
@@ -755,18 +787,13 @@ function registerPostThreadResource(mcpServer: McpServer, rateLimiter: RateLimit
           ],
         };
       } catch (error) {
-        logger.error("Failed to fetch post thread", {
-          postUrl,
-          error: getErrorMessage(error),
-        });
-
         if (error instanceof McpError) {
           throw error;
         }
 
         throw new McpError(
           ErrorCode.InternalError,
-          `Failed to fetch post thread: ${getErrorMessage(error)}`,
+          `Failed to fetch post thread: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     },

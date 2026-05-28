@@ -367,9 +367,8 @@ describe("MCP Resources", () => {
       });
 
       const resource = registeredResources.get("post-thread");
-      const encodedUrl = encodeURIComponent("https://mastodon.social/@user/123");
-      const uri = new URL(`activitypub://post-thread/${encodedUrl}`);
-      const result = await resource?.handler(uri, { postUrl: "https://mastodon.social/@user/123" });
+      const uri = new URL("activitypub://post-thread/mastodon.social/123");
+      const result = await resource?.handler(uri, { domain: "mastodon.social", statusId: "123" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
       const thread = JSON.parse(contents[0].text);
@@ -377,7 +376,7 @@ describe("MCP Resources", () => {
       expect(thread.replies).toHaveLength(1);
     });
 
-    it("should handle URL-encoded post URLs", async () => {
+    it("should construct the correct Mastodon URL from {domain}/{statusId}", async () => {
       (remoteClient.fetchPostThread as Mock).mockResolvedValue({
         post: { content: "Test" },
         ancestors: [],
@@ -386,23 +385,68 @@ describe("MCP Resources", () => {
       });
 
       const resource = registeredResources.get("post-thread");
-      const encodedUrl = encodeURIComponent("https://mastodon.social/@user/123");
-      const uri = new URL(`activitypub://post-thread/${encodedUrl}`);
-      await resource?.handler(uri, { postUrl: encodedUrl });
+      const uri = new URL("activitypub://post-thread/mastodon.social/123");
+      await resource?.handler(uri, { domain: "mastodon.social", statusId: "123" });
 
       expect(remoteClient.fetchPostThread).toHaveBeenCalledWith(
-        "https://mastodon.social/@user/123",
+        "https://mastodon.social/web/statuses/123",
         { depth: 2, maxReplies: 50 },
       );
     });
 
-    it("should reject invalid post URLs", async () => {
+    it("should reject missing domain or statusId", async () => {
       const resource = registeredResources.get("post-thread");
-      const uri = new URL("activitypub://post-thread/invalid");
+      const uri = new URL("activitypub://post-thread/mastodon.social/123");
 
-      await expect(resource?.handler(uri, { postUrl: "not-a-valid-url" })).rejects.toThrow(
-        "Invalid post URL",
+      await expect(resource?.handler(uri, { domain: "", statusId: "" })).rejects.toThrow(
+        "post-thread requires {domain} and {statusId}",
       );
+    });
+  });
+
+  describe("post-thread URI template (L10)", () => {
+    it("accepts the new {domain}/{statusId} form", async () => {
+      (remoteClient.fetchPostThread as Mock).mockResolvedValue({
+        post: { content: "Hello from mastodon" },
+        ancestors: [],
+        replies: [],
+        totalReplies: 0,
+      });
+
+      const resource = registeredResources.get("post-thread");
+      const uri = new URL("activitypub://post-thread/mastodon.social/123456");
+      const result = await resource?.handler(uri, {
+        domain: "mastodon.social",
+        statusId: "123456",
+      });
+
+      expect(result).toBeDefined();
+      const contents = (result as { contents: { text: string }[] }).contents;
+      const thread = JSON.parse(contents[0].text);
+      expect(thread.postUrl).toBe("https://mastodon.social/web/statuses/123456");
+    });
+
+    it("logs a deprecation warning and still works for the legacy {postUrl} form", async () => {
+      (remoteClient.fetchPostThread as Mock).mockResolvedValue({
+        post: { content: "Legacy post" },
+        ancestors: [],
+        replies: [],
+        totalReplies: 0,
+      });
+
+      const { getLogger } = await import("@logtape/logtape");
+      const mockLogger = getLogger("activitypub-mcp:resources");
+      const warnSpy = vi.spyOn(mockLogger, "warn");
+
+      const resource = registeredResources.get("post-thread");
+      const encodedPostUrl = encodeURIComponent("https://mastodon.social/@user/123456");
+      const uri = new URL(`activitypub://post-thread/${encodedPostUrl}`);
+      const result = await resource?.handler(uri, { domain: encodedPostUrl });
+
+      expect(result).toBeDefined();
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringMatching(/deprecat/i), expect.anything());
+
+      warnSpy.mockRestore();
     });
   });
 
