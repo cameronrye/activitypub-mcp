@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`search-instance` returns prose output** matching the other search tools (was raw JSON in v1).
 - **`fetch-timeline` renders all posts** (was capped at 10) and truncates per-post content to 500 chars.
 - **Dynamic `server-info` capabilities.** The `activitypub://server-info` resource now lists tools/resources/prompts from a live registry — no more hand-maintained arrays that drift.
-- **Thread traversal caps.** `fetch-post-thread` caps recursion depth at 5 and total replies at 50 (configurable via `MCP_THREAD_MAX_DEPTH` and `MCP_THREAD_MAX_REPLIES`).
+- **Thread traversal caps.** `get-post-thread` caps recursion depth at 5 and total replies at 50 (configurable via `MCP_THREAD_MAX_DEPTH` and `MCP_THREAD_MAX_REPLIES`).
 - **Cross-origin thread gate.** Replies whose origin differs from the root post are returned as stubs by default (set `MCP_THREAD_CROSS_ORIGIN_FETCH=true` to opt in to v1 fetch-everything behavior).
 - **Audit logging wired into every write tool.** `auditLogger.logToolInvocation` fires on success and failure across all 27 write-effect handlers.
 - **`post-thread` resource URI template.** New form `activitypub://post-thread/{domain}/{statusId}` (Mastodon-compatible). Legacy `{postUrl}` form still accepted with a deprecation warning; removed in 2.1.0.
@@ -58,6 +58,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`LRUCache.has()` method** (see Changed).
 - **Six unused placeholder directories** under `src/` (`async/`, `security/`, `streaming/`, `errors/`, `translation/`, `media/`).
 - **Dead double-start guard** in `src/mcp-server.ts`.
+- **`src/main.ts`** — informational entrypoint never exposed publicly.
+- **`src/utils/index.ts`** — barrel export replaced by direct imports.
+- **`src/resilience/adaptive-rate-limiter.ts`** — was never wired into any tool.
 
 ### Security
 

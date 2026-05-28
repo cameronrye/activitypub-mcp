@@ -1172,8 +1172,7 @@ activitypub-mcp/
 │   ├── policy/                       # Instance blocklist
 │   │   └── instance-blocklist.ts
 │   ├── resilience/                   # Rate limiting
-│   │   ├── rate-limiter.ts
-│   │   └── adaptive-rate-limiter.ts
+│   │   └── rate-limiter.ts
 │   ├── telemetry/                    # Health, metrics, logging
 │   │   ├── health-check.ts
 │   │   ├── performance-monitor.ts
@@ -1284,7 +1283,7 @@ DYNAMIC_INSTANCE_CACHE_TTL=3600000
 RESPECT_CONTENT_WARNINGS=true
 SHOW_CONTENT_WARNINGS=true
 
-# Thread traversal caps (v2 — applies to fetch-post-thread)
+# Thread traversal caps (v2 — applies to get-post-thread)
 # MCP_THREAD_MAX_DEPTH=5
 # MCP_THREAD_MAX_REPLIES=50
 # MCP_THREAD_CROSS_ORIGIN_FETCH=false  # true restores v1 fetch-everything behavior

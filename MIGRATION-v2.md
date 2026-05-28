@@ -99,7 +99,7 @@ Configure log destination via existing `LOGTAPE_*` env vars.
 
 ### Thread traversal limits and cross-origin gating
 
-`fetch-post-thread` now caps recursion depth at 5 and total replies
+`get-post-thread` now caps recursion depth at 5 and total replies
 at 50 by default. Replies whose origin differs from the root post
 are returned as stubs (not fetched) by default. To restore v1
 unrestricted behavior:
@@ -233,8 +233,10 @@ The new layout, for anyone curious:
 | `src/server/http-transport.ts` | `src/transport/http.ts` |
 | `src/server/auth-middleware.ts` | `src/transport/auth-middleware.ts` |
 | `src/server/rate-limiter.ts` | `src/resilience/rate-limiter.ts` |
-| `src/server/adaptive-rate-limiter.ts` | `src/resilience/adaptive-rate-limiter.ts` |
+| `src/server/adaptive-rate-limiter.ts` | removed (was never wired into any tool) |
 | `src/server/validators.ts` | `src/validation/validators.ts` |
+| `src/main.ts` | removed (informational logger never exposed publicly) |
+| `src/utils/index.ts` | removed (barrel replaced by direct imports) |
 | `src/utils.ts` | 3-way split: `src/validation/url.ts` + `src/utils/errors.ts` + `src/utils/html.ts` |
 | `src/server/index.ts` | deleted; consumers use direct imports |
 

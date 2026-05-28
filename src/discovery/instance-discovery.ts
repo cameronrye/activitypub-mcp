@@ -1,45 +1,11 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { getLogger } from "@logtape/logtape";
 import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
 import { readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { DomainSchema } from "../validation/schemas.js";
 import { validateExternalUrl } from "../validation/url.js";
+import { POPULAR_INSTANCES } from "./data/instances.js";
 
 const logger = getLogger("activitypub-mcp");
-
-// Load instance data from external JSON file
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-interface InstanceData {
-  domain: string;
-  description: string;
-  users: string;
-}
-
-type PopularInstancesData = Record<string, InstanceData[]>;
-
-function loadInstanceData(): PopularInstancesData {
-  try {
-    const dataPath = join(__dirname, "data", "instances.json");
-    const data = readFileSync(dataPath, "utf-8");
-    return JSON.parse(data);
-  } catch (error) {
-    logger.warn("Failed to load instance data from file, using empty defaults", { error });
-    return {
-      mastodon: [],
-      pleroma: [],
-      misskey: [],
-      peertube: [],
-      pixelfed: [],
-      lemmy: [],
-    };
-  }
-}
-
-const POPULAR_INSTANCES = loadInstanceData();
 
 export interface FediverseInstance {
   domain: string;

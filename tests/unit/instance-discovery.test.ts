@@ -6,22 +6,21 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "../mocks/server.js";
 
-// Mock the file system and logger before importing the module
-vi.mock("node:fs", () => ({
-  readFileSync: vi.fn().mockReturnValue(
-    JSON.stringify({
-      mastodon: [
-        { domain: "mastodon.social", description: "General-purpose instance", users: "1M+" },
-        { domain: "fosstodon.org", description: "FOSS enthusiasts", users: "50K" },
-        { domain: "techhub.social", description: "Tech community", users: "10K" },
-      ],
-      pleroma: [{ domain: "pleroma.social", description: "Lightweight fediverse", users: "5K" }],
-      pixelfed: [{ domain: "pixelfed.social", description: "Photo sharing", users: "100K" }],
-      lemmy: [{ domain: "lemmy.world", description: "Link aggregation", users: "200K" }],
-      misskey: [],
-      peertube: [],
-    }),
-  ),
+// Mock the inlined instance data so tests are deterministic regardless of
+// curated-list updates in src/discovery/data/instances.ts.
+vi.mock("../../src/discovery/data/instances.js", () => ({
+  POPULAR_INSTANCES: {
+    mastodon: [
+      { domain: "mastodon.social", description: "General-purpose instance", users: "1M+" },
+      { domain: "fosstodon.org", description: "FOSS enthusiasts", users: "50K" },
+      { domain: "techhub.social", description: "Tech community", users: "10K" },
+    ],
+    pleroma: [{ domain: "pleroma.social", description: "Lightweight fediverse", users: "5K" }],
+    pixelfed: [{ domain: "pixelfed.social", description: "Photo sharing", users: "100K" }],
+    lemmy: [{ domain: "lemmy.world", description: "Link aggregation", users: "200K" }],
+    misskey: [],
+    peertube: [],
+  },
 }));
 
 vi.mock("@logtape/logtape", () => ({
