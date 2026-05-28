@@ -70,15 +70,27 @@ ACTIVITYPUB_ACCOUNTS=id1:inst1:tok1:user1:label1,id2:inst2:tok2:user2:label2
 ACTIVITYPUB_ACCOUNTS=id1|inst1|tok1|user1|label1,id2|inst2|tok2|user2|label2
 ```
 
-If you only have hostnames and ASCII tokens, a global replace works:
+To migrate the line, use a targeted `sed` that leaves the rest of your `.env` untouched:
 
 ```bash
-sed -i 's/:/|/g' .env   # Caveat: only safe if NO part of the value contains a literal :
+# Apply only to the ACTIVITYPUB_ACCOUNTS line; everything else is left untouched.
+# Still review afterward — if any field value (e.g., a token) contains a `:`,
+# the resulting `|` separators will be wrong inside that field.
+sed -i.bak '/^ACTIVITYPUB_ACCOUNTS=/{s/:/|/g}' .env
 ```
 
-Otherwise, edit by hand and replace the four field separators in each entry.
+**Important:** Even the targeted command above is unsafe if any field value
+(especially the token) contains a literal `:`. In that case, edit the line
+by hand and only replace the four field separators between
+`id|instance|token|username|label`.
 
 v2 will refuse to start if it sees a `:`-delimited value (no silent truncation).
+
+If you generate `ACTIVITYPUB_ACCOUNTS` programmatically (from a secret manager,
+provisioning script, or CI pipeline), update those generators to emit `|` as the
+field delimiter. The startup migration guard will catch silently-generated legacy
+format, but the diagnostic is much clearer if the generator emits the right format
+directly.
 
 Reference commit: `<H6 commit SHA>` — `fix!(auth): use pipe delimiter in ACTIVITYPUB_ACCOUNTS (H6)`
 
@@ -124,6 +136,11 @@ security-critical blocklist.
 
 If you have an existing JSON dump from v1 that includes malformed
 entries, clean them up before re-importing.
+
+Also note: the `reason` field is now constrained to one of `policy`, `user`,
+`safety`, `spam`, `federation`, `custom`. If your v1 JSON dump uses free-text
+reasons (e.g., `"offensive content"`), map them to one of these values before
+importing.
 
 Reference commit: `<L7 commit SHA>` — `fix(policy): runtime-validate instance-blocklist JSON imports (L7)`
 
