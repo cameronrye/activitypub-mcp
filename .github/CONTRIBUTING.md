@@ -201,24 +201,26 @@ docs(readme): update installation instructions
 
 ### Test Structure
 
-- **Unit tests**: Test individual functions and classes
-- **Integration tests**: Test MCP server integration
-- **Comprehensive tests**: Test full workflow scenarios
+- **Unit tests** (`tests/unit/*.test.ts`): Vitest + MSW. Test individual
+  modules in isolation with mocked HTTP. Always-on in CI.
+- **Integration tests** (`tests/integration/*.test.ts`): hit the live
+  fediverse. Gated by `RUN_INTEGRATION_TESTS=1`. Run nightly in CI.
 
 ### Writing Tests
 
 - **Test both success and failure cases**
 - **Use descriptive test names**
-- **Mock external dependencies**
+- **Mock external dependencies** with MSW handlers in `tests/mocks/`
 - **Keep tests focused and independent**
 
 ### Test Files
 
 ```
 tests/
-├── test-mcp.ts           # MCP server tests
-├── test-integration.ts   # Integration tests
-└── test-comprehensive.ts # End-to-end tests
+├── setup.ts              # Vitest setup (MSW init, env shim)
+├── mocks/                # MSW request handlers
+├── unit/                 # Vitest suites with mocked HTTP — always run in CI
+└── integration/          # Live-fediverse suites — opt-in via RUN_INTEGRATION_TESTS=1
 ```
 
 ## Documentation

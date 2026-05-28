@@ -42,9 +42,15 @@ METRICS_ENABLED=true
 # Metrics collection interval (milliseconds)
 METRICS_INTERVAL=60000
 
-# Enable health checks
-HEALTH_CHECK_ENABLED=true
+# Health checks are always enabled in v2. Set this to false to disable the
+# outbound connectivity probe to mastodon.social specifically:
+HEALTH_CHECK_EXTERNAL_PROBE=true
 ```
+
+> **v2 note:** the v1 `HEALTH_CHECK_ENABLED` flag was removed because no
+> code consumed it. Health checks are always on. Use
+> `HEALTH_CHECK_EXTERNAL_PROBE=false` if you want to skip only the
+> outbound probe (e.g., in air-gapped environments).
 
 ### Production Configuration
 
@@ -54,7 +60,7 @@ For production deployments, add to your `.env` file:
 # Performance Monitoring (Production)
 METRICS_ENABLED=true
 METRICS_INTERVAL=60000
-HEALTH_CHECK_ENABLED=true
+HEALTH_CHECK_EXTERNAL_PROBE=true
 
 # Optional: Metrics export
 METRICS_PORT=9090
@@ -133,11 +139,14 @@ Recent Requests (last 10):
 
 ### Health Check Endpoints
 
-The server provides health check capabilities that can be integrated with monitoring systems:
+The server provides health check capabilities that can be integrated with monitoring systems.
+For production, prefer the HTTP `/health` endpoint exposed by the HTTP transport
+(`MCP_TRANSPORT_MODE=http`). The in-process import below is for hacking inside the
+source tree; deep imports are not part of the published package's public API.
 
 ```javascript
-// Example: Custom health check integration
-import { healthChecker } from './src/health-check.js';
+// Example: Custom health check integration (development only)
+import { healthChecker } from './src/telemetry/health-check.js';
 
 // Simple health check
 const simpleHealth = await healthChecker.getSimpleHealth();
@@ -156,7 +165,7 @@ Export metrics for Prometheus monitoring:
 
 ```javascript
 // Example: Prometheus metrics export
-import { performanceMonitor } from './src/performance-monitor.js';
+import { performanceMonitor } from './src/telemetry/performance-monitor.js';
 
 function exportPrometheusMetrics() {
   const metrics = performanceMonitor.getMetrics();
@@ -303,17 +312,16 @@ npm run mcp:dev
 
 ### Docker Health Checks
 
+For HTTP transport, just curl the `/health` endpoint (which is unauthenticated by design):
+
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "
-    import('./src/health-check.js').then(({ healthChecker }) => {
-      healthChecker.getSimpleHealth().then(health => {
-        if (health.status === 'ok') process.exit(0);
-        else process.exit(1);
-      });
-    });
-  "
+  CMD curl -fsS http://localhost:${PORT:-3000}/health || exit 1
 ```
+
+If you must call the in-process API from inside the source tree, the import path is
+`./src/telemetry/health-check.js` (post-v2 layout). Deep imports are not part of the
+published package's public surface.
 
 ### Kubernetes Probes
 
@@ -328,7 +336,7 @@ spec:
         command:
         - node
         - -e
-        - "import('./src/health-check.js').then(({healthChecker}) => healthChecker.getSimpleHealth().then(h => h.status === 'ok' ? process.exit(0) : process.exit(1)));"
+        - "import('./src/telemetry/health-check.js').then(({healthChecker}) => healthChecker.getSimpleHealth().then(h => h.status === 'ok' ? process.exit(0) : process.exit(1)));"
       initialDelaySeconds: 30
       periodSeconds: 10
 ```

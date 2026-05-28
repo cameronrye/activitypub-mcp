@@ -37,10 +37,12 @@
 
 ---
 
-<h2 align="center">What's New in v1.1.0</h2>
+<h2 align="center">Highlights</h2>
 
 <p align="center">
-  <strong>The biggest release yet!</strong> Now with full write capabilities, multi-account support, and enterprise-ready features.
+  Full write capabilities, multi-account support, and HTTP transport — all of it
+  shipping in v2.0.0 with hardened security and a topic-organized source tree.
+  See <a href="MIGRATION-v2.md">MIGRATION-v2.md</a> if you are upgrading from v1.x.
 </p>
 
 <table align="center">
