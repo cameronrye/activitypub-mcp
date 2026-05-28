@@ -30,7 +30,7 @@ jobs:
       run: npm ci
     
     - name: Run tests
-      run: npm run test:all
+      run: npm test
     
     - name: Run linting
       run: npm run lint
@@ -118,7 +118,6 @@ jobs:
           dist/mcp-main.js
           dist/mcp-server.js
           dist/*.d.ts
-          dist/*.js.map
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v7

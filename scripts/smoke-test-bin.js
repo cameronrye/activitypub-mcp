@@ -7,7 +7,7 @@
  */
 
 import { execSync, spawnSync } from "node:child_process";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -59,7 +59,7 @@ function main() {
 
   console.log("Bin smoke test passed.");
   // Cleanup tarball file in the project dir
-  execSync(`rm -f "${tarballPath}"`);
+  rmSync(tarballPath, { force: true });
 }
 
 main();

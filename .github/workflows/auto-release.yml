@@ -91,7 +91,7 @@ jobs:
     
     - name: Run tests
       if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true' && steps.validate_version.outputs.valid == 'true'
-      run: npm run test:all
+      run: npm test
     
     - name: Run linting
       if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true' && steps.validate_version.outputs.valid == 'true'
