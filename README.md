@@ -59,8 +59,8 @@
 </table>
 
 <p align="center">
-  <a href="#authenticated-write-tools-v110">See Authenticated Tools</a> |
-  <a href="#content-export-tools-v110">See Export Tools</a> |
+  <a href="#authenticated-write-tools">See Authenticated Tools</a> |
+  <a href="#content-export-tools">See Export Tools</a> |
   <a href="CHANGELOG.md">Full Changelog</a>
 </p>
 
@@ -104,7 +104,7 @@
 - **Monitoring**: Built-in logging, audit trails, and performance metrics
 - **Health Checks**: Server health monitoring and diagnostics
 
-### Authenticated Features (v1.1.0)
+### Authenticated Features
 
 - **Multi-Account Support**: Manage multiple fediverse accounts with secure credential storage
 - **Posting Operations**: Create, reply to, and delete posts
@@ -241,6 +241,36 @@ To use this MCP server with Claude Desktop:
 ```
 
 3. **Restart Claude Desktop** to load the new server.
+
+### Cursor Integration
+
+To use this MCP server with [Cursor](https://cursor.sh):
+
+1. **Locate Cursor's MCP config file** (same on every platform):
+   - `~/.cursor/mcp.json`
+
+2. **Add the server configuration** (identical shape to Claude Desktop):
+
+```json
+{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"]
+    }
+  }
+}
+```
+
+3. **Restart Cursor**.
+
+### Try it
+
+After restarting your MCP client, ask it something like:
+
+> "Look up @gargron@mastodon.social on the fediverse and summarize their latest posts."
+
+The model will pick `discover-actor` to fetch the profile, then `fetch-timeline` to read recent posts.
 
 ## Documentation
 
@@ -889,7 +919,7 @@ Get performance metrics for the MCP server:
 }
 ```
 
-#### Content Strategy (v1.1.0)
+#### Content Strategy
 
 Plan your fediverse content strategy based on trending topics:
 
@@ -904,7 +934,7 @@ Plan your fediverse content strategy based on trending topics:
 }
 ```
 
-#### Community Health (v1.1.0)
+#### Community Health
 
 Analyze instance moderation and community health:
 
@@ -918,7 +948,7 @@ Analyze instance moderation and community health:
 }
 ```
 
-#### Migration Helper (v1.1.0)
+#### Migration Helper
 
 Get help planning a migration to a new fediverse instance:
 
@@ -933,7 +963,7 @@ Get help planning a migration to a new fediverse instance:
 }
 ```
 
-#### Thread Composer (v1.1.0)
+#### Thread Composer
 
 Help compose well-structured threaded posts:
 
@@ -949,7 +979,7 @@ Help compose well-structured threaded posts:
 }
 ```
 
-### Authenticated Write Tools (v1.1.0)
+### Authenticated Write Tools
 
 These tools require authentication via environment variables. See [Configuration](#environment-variables) for setup.
 
@@ -992,7 +1022,7 @@ These tools require authentication via environment variables. See [Configuration
 - `get-bookmarks` - Your bookmarked posts
 - `get-favourites` - Your favourited posts
 
-#### Unified Search (NEW)
+#### Unified Search
 
 Search across accounts, posts, and hashtags in a single query:
 
@@ -1016,7 +1046,7 @@ Search across accounts, posts, and hashtags in a single query:
 - `limit` (number, optional): Results per type (1-40, default: 20)
 - `resolve` (boolean, optional): Attempt WebFinger lookup for remote accounts
 
-#### Relationship Checking (NEW)
+#### Relationship Checking
 
 Check your relationship status with another account:
 
@@ -1038,7 +1068,7 @@ Check your relationship status with another account:
 
 **Returns:** Following, followed_by, blocking, muting, and other relationship statuses.
 
-#### Poll Voting (NEW)
+#### Poll Voting
 
 Vote on polls in posts:
 
@@ -1059,7 +1089,7 @@ Vote on polls in posts:
 
 **Returns:** Updated poll with current results and visual bar chart.
 
-#### Media Upload (NEW)
+#### Media Upload
 
 Upload media files with alt text descriptions:
 
@@ -1084,7 +1114,7 @@ Upload media files with alt text descriptions:
 
 **Supported types:** Images (jpg, png, gif, webp), Videos (mp4, webm), Audio (mp3, ogg)
 
-#### Scheduled Posts (NEW)
+#### Scheduled Posts
 
 Manage scheduled posts:
 
@@ -1120,7 +1150,7 @@ Manage scheduled posts:
 - `update-scheduled-post` - Change the scheduled time
 - `cancel-scheduled-post` - Cancel a scheduled post
 
-### Content Export Tools (v1.1.0)
+### Content Export Tools
 
 Export fediverse content in multiple formats (JSON, Markdown, CSV):
 

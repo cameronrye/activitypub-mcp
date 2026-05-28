@@ -103,5 +103,5 @@ body:
           required: true
         - label: I have provided all the requested information
           required: true
-        - label: I am using a supported Node.js version (18+)
+        - label: I am using a supported Node.js version (20+)
           required: true

@@ -26,12 +26,10 @@ const CONFIG_PATHS = {
     linux: path.join(os.homedir(), ".config/claude/claude_desktop_config.json"),
   },
   cursor: {
-    darwin: path.join(
-      os.homedir(),
-      "Library/Application Support/Cursor/User/globalStorage/mcp_config.json",
-    ),
-    win32: path.join(os.homedir(), "AppData/Roaming/Cursor/User/globalStorage/mcp_config.json"),
-    linux: path.join(os.homedir(), ".config/Cursor/User/globalStorage/mcp_config.json"),
+    // Current Cursor reads ~/.cursor/mcp.json on every platform.
+    darwin: path.join(os.homedir(), ".cursor/mcp.json"),
+    win32: path.join(os.homedir(), ".cursor/mcp.json"),
+    linux: path.join(os.homedir(), ".cursor/mcp.json"),
   },
 };
 
@@ -40,7 +38,6 @@ const SERVER_CONFIG = {
   command: "npx",
   args: ["-y", PACKAGE_NAME],
   env: {
-    ACTIVITYPUB_BASE_URL: "http://localhost:8000",
     LOG_LEVEL: "info",
   },
 };
@@ -74,7 +71,7 @@ class MCPInstaller {
       execSync("node --version", { stdio: "pipe" });
       this.log("Node.js is installed");
     } catch (_error) {
-      throw new Error("Node.js is not installed. Please install Node.js 18+ first.");
+      throw new Error("Node.js is not installed. Please install Node.js 20+ first.");
     }
 
     try {
@@ -257,8 +254,10 @@ class MCPInstaller {
       this.log("");
       this.log("Next steps:");
       this.log(`1. Restart ${this.client} to load the new MCP server`);
-      this.log("2. Start the ActivityPub server: npm run dev");
-      this.log("3. The MCP server will start automatically when needed");
+      this.log("2. Ask the assistant something like: 'Look up @gargron@mastodon.social'");
+      this.log(
+        "3. (optional) Add ACTIVITYPUB_DEFAULT_INSTANCE + ACTIVITYPUB_DEFAULT_TOKEN env vars to enable posting",
+      );
       this.log("");
       this.log("For more information, see: https://github.com/cameronrye/activitypub-mcp");
     } catch (error) {

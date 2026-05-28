@@ -17,11 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`ACTIVITYPUB_ACCOUNTS` delimiter changed.** Format is now `id|instance|token|username|label` (pipe), not colon. v2 refuses to start if it sees the legacy `:`-delimited value.
 - **`scheduledId` → `scheduledPostId`.** The `cancel-scheduled-post` and `update-scheduled-post` tools renamed their identifier parameter for clarity and to match the README.
 - **`HEALTH_CHECK_ENABLED` env var removed.** Replaced by the narrower `HEALTH_CHECK_EXTERNAL_PROBE` (default `true`) which gates only the outbound `mastodon.social` connectivity probe.
+- **`get-relationship` no longer accepts the legacy `accountIds` array.** The v1 README documented `accountIds: string[]`; the actual handler took `acct: string`. v2 makes `acct` (single string) authoritative and throws a helpful error if `accountIds` is passed. Callers scripting against the old README must update.
+- **Outbound URL scheme allow-list.** `validateExternalUrl` now rejects non-https schemes (`file:`, `data:`, `http:`, `ftp:`, …). Defence in depth — affects only callers that constructed non-https URLs (no v1 user code path did this), but flagged here for completeness.
 
 ### Added
 
 - **`post-status` now supports `mediaIds` and `scheduledAt`.** Round-trip flow with `upload-media` works end-to-end.
-- **`get-relationship` rejects legacy `accountIds` form with a helpful error.** The README previously documented `accountIds` (array); v2 makes the actual `acct` (single string) interface authoritative.
 - **`search-instance` returns prose output** matching the other search tools (was raw JSON in v1).
 - **`fetch-timeline` renders all posts** (was capped at 10) and truncates per-post content to 500 chars.
 - **Dynamic `server-info` capabilities.** The `activitypub://server-info` resource now lists tools/resources/prompts from a live registry — no more hand-maintained arrays that drift.

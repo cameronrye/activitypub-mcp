@@ -38,8 +38,8 @@ Please describe the tests you ran to verify your changes:
 
 - [ ] Unit tests pass (`npm run test`)
 - [ ] Integration tests pass (`npm run test:integration`)
-- [ ] Comprehensive tests pass (`npm run test:comprehensive`)
 - [ ] Linting passes (`npm run lint`)
+- [ ] Typecheck passes (`npm run typecheck`)
 - [ ] Build succeeds (`npm run build`)
 - [ ] Manual testing performed
 
@@ -66,14 +66,13 @@ Please check all that apply:
 ### Testing
 - [ ] I have added tests that prove my fix is effective or that my feature works
 - [ ] New and existing unit tests pass locally with my changes
-- [ ] I have tested the MCP server functionality
-- [ ] I have tested the ActivityPub server functionality
+- [ ] I have tested the MCP tool surface against a real client (Claude Desktop / Cursor)
 
 ### Documentation
 - [ ] I have made corresponding changes to the documentation
 - [ ] I have updated the README if necessary
 - [ ] I have updated the CHANGELOG.md if necessary
-- [ ] My changes are covered by examples in EXAMPLES.md
+- [ ] My changes are covered by examples in the docs site (src/pages/docs/guides/examples.astro)
 
 ### Dependencies
 - [ ] I have not introduced any new dependencies without discussion
