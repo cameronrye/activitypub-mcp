@@ -1124,5 +1124,13 @@ describe("MCP Write Tools", () => {
         schema.parse({ scheduledId: "sched-1" } as unknown as { scheduledPostId: string }),
       ).toThrow(/scheduledPostId|scheduledId|renamed|unrecognized/i);
     });
+
+    it("update-scheduled-post: rejects past scheduledAt", () => {
+      const tool = registeredTools.get("update-scheduled-post");
+      const schema = z.object((tool?.config?.inputSchema ?? {}) as Record<string, z.ZodTypeAny>);
+      expect(() =>
+        schema.parse({ scheduledPostId: "x", scheduledAt: "2020-01-01T00:00:00Z" }),
+      ).toThrow(/future|past/i);
+    });
   });
 });

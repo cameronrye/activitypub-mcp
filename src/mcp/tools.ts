@@ -240,8 +240,6 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
           })
           .join("\n\n");
 
-        const morePostsNote = "";
-
         return {
           content: [
             {
@@ -255,8 +253,7 @@ ${timeline.hasMore ? "ðŸ“„ More posts available (use cursor for next page)" : "ð
 
 ${paginationSection}
 **Recent posts:**
-${postsSection}
-${morePostsNote}`,
+${postsSection}`,
             },
           ],
         };

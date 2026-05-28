@@ -2565,6 +2565,10 @@ function registerUpdateScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
         scheduledPostId: z.string().describe("ID of the scheduled post to update"),
         scheduledAt: z
           .string()
+          .datetime({ message: "scheduledAt must be ISO 8601 (e.g., 2099-01-01T15:00:00Z)" })
+          .refine((d) => new Date(d).getTime() > Date.now(), {
+            message: "scheduledAt must be in the future",
+          })
           .describe("New scheduled time in ISO 8601 format (e.g., one hour from now in UTC)"),
         accountId: z.string().optional().describe("Account ID (defaults to active)"),
         // Legacy field detector — gives a clear error to anyone using the old name.
