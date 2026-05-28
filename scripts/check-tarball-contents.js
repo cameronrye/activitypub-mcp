@@ -9,6 +9,8 @@ import { execSync } from "node:child_process";
 
 const FORBIDDEN_PATTERNS = [
   /\.map$/, // source maps and declaration maps
+  /\.bak$/, // editor / sed -i.bak leftovers
+  /\.orig$/, // merge-conflict leftovers
   /^src\//, // source dirs should not ship
   /^tests\//,
   /^scripts\//,

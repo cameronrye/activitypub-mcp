@@ -243,7 +243,7 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
         const postsSection = posts
           .map((post: unknown, index: number) => {
             const p = post as { type?: string; content?: string; summary?: string; id?: string };
-            const content = p.content || p.summary || "No content";
+            const content = stripHtmlTags(p.content || p.summary || "") || "No content";
             const truncated = content.length > 500 ? `${content.slice(0, 500)}…` : content;
             const postType = p.type || "Post";
             return `${index + 1}. [${postType}] ${truncated}`;
@@ -1061,7 +1061,7 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
           thread.ancestors.length > 0
             ? `**Conversation Context** (${thread.ancestors.length} parent posts):\n${thread.ancestors
                 .map((a, i) => {
-                  const content = a.content || a.summary || "No content";
+                  const content = stripHtmlTags(a.content || a.summary || "") || "No content";
                   const truncated = content.length > 150 ? `${content.slice(0, 150)}...` : content;
                   return `${i + 1}. ${truncated}`;
                 })
@@ -1069,9 +1069,12 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
             : "";
 
         // Format main post
-        const postContent = thread.post.content || thread.post.summary || "No content";
+        const postContent =
+          stripHtmlTags(thread.post.content || thread.post.summary || "") || "No content";
         const spoilerText =
-          thread.post.summary && thread.post.content ? `⚠️ CW: ${thread.post.summary}\n` : "";
+          thread.post.summary && thread.post.content
+            ? `⚠️ CW: ${stripHtmlTags(thread.post.summary)}\n`
+            : "";
 
         // Format replies
         const repliesSection =
@@ -1083,9 +1086,9 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
                   if (stub.crossOrigin === true && stub.fetched === false) {
                     return `${i + 1}. _(cross-origin, not fetched)_ ${r.id}`;
                   }
-                  const content = r.content || r.summary || "No content";
+                  const content = stripHtmlTags(r.content || r.summary || "") || "No content";
                   const truncated = content.length > 150 ? `${content.slice(0, 150)}...` : content;
-                  const cw = r.summary && r.content ? `[CW: ${r.summary}] ` : "";
+                  const cw = r.summary && r.content ? `[CW: ${stripHtmlTags(r.summary)}] ` : "";
                   return `${i + 1}. ${cw}${truncated}`;
                 })
                 .join(

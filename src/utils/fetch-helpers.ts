@@ -1,11 +1,63 @@
 /**
- * Streaming response readers with safety caps.
+ * Streaming response readers with safety caps + safe redirect helper.
  *
  * Replaces the legacy Content-Length-only checks scattered across
  * remote-client.ts and auth/authenticated-client.ts. The streaming
  * reader aborts the body once `maxBytes` is exceeded, regardless of
  * whether the server sent an accurate Content-Length header.
  */
+
+/**
+ * Fetch wrapper that follows up to `maxHops` redirects, but re-runs the
+ * caller-supplied `validate` function on every redirect target before
+ * following. This closes the "public host 302s to a private IP" gap
+ * without breaking instances that legitimately redirect (Pleroma /
+ * Pixelfed / Cloudflare-fronted Mastodons routinely 30x normalize paths).
+ *
+ * The validate callback should throw on disallowed targets. Same-origin
+ * redirects are still validated — cheap, and protects against open
+ * redirects on the origin host.
+ */
+export async function fetchWithRedirectGuard(
+  url: string,
+  init: RequestInit,
+  validate: (target: string) => Promise<void> | void,
+  maxHops = 3,
+): Promise<Response> {
+  let currentUrl = url;
+
+  for (let hop = 0; hop <= maxHops; hop++) {
+    const response = await fetch(currentUrl, { ...init, redirect: "manual" });
+
+    // Not a redirect — return the response as-is.
+    if (response.status < 300 || response.status >= 400 || response.status === 304) {
+      return response;
+    }
+
+    if (hop === maxHops) {
+      throw new Error(`Too many redirects (>${maxHops}) starting at ${url}`);
+    }
+
+    const location = response.headers.get("location");
+    if (!location) {
+      throw new Error(`Redirect from ${currentUrl} missing Location header`);
+    }
+
+    // Resolve relative redirects against the current URL.
+    let nextUrl: string;
+    try {
+      nextUrl = new URL(location, currentUrl).toString();
+    } catch {
+      throw new Error(`Redirect from ${currentUrl} has malformed Location: ${location}`);
+    }
+
+    await validate(nextUrl);
+    currentUrl = nextUrl;
+  }
+
+  // Unreachable in practice — the loop either returns or throws.
+  throw new Error(`Too many redirects (>${maxHops}) starting at ${url}`);
+}
 
 export class ResponseTooLargeError extends Error {
   constructor(

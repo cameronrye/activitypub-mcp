@@ -9,7 +9,7 @@ import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
 import { instanceBlocklist } from "../policy/instance-blocklist.js";
-import { readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { validateExternalUrl } from "../validation/url.js";
 import { type AccountCredentials, accountManager } from "./account-manager.js";
 
@@ -199,18 +199,24 @@ export class AuthenticatedClient {
     const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
     try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-        redirect: "error",
-        headers: {
-          Authorization: this.getAuthHeader(account),
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          "User-Agent": USER_AGENT,
-          ...options.headers,
+      const response = await fetchWithRedirectGuard(
+        url,
+        {
+          ...options,
+          signal: controller.signal,
+          headers: {
+            Authorization: this.getAuthHeader(account),
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "User-Agent": USER_AGENT,
+            ...options.headers,
+          },
         },
-      });
+        async (target) => {
+          await validateExternalUrl(target);
+          instanceBlocklist.validateNotBlocked(new URL(target).hostname);
+        },
+      );
 
       clearTimeout(timeoutId);
 
@@ -942,18 +948,24 @@ export class AuthenticatedClient {
     const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout * 3); // Longer timeout for uploads
 
     try {
-      const response = await fetch(url, {
-        method: "POST",
-        signal: controller.signal,
-        redirect: "error",
-        headers: {
-          Authorization: this.getAuthHeader(account),
-          Accept: "application/json",
-          "User-Agent": USER_AGENT,
-          // Note: Don't set Content-Type for FormData - browser will set it with boundary
+      const response = await fetchWithRedirectGuard(
+        url,
+        {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            Authorization: this.getAuthHeader(account),
+            Accept: "application/json",
+            "User-Agent": USER_AGENT,
+            // Note: Don't set Content-Type for FormData - browser will set it with boundary
+          },
+          body: formData,
         },
-        body: formData,
-      });
+        async (target) => {
+          await validateExternalUrl(target);
+          instanceBlocklist.validateNotBlocked(new URL(target).hostname);
+        },
+      );
 
       clearTimeout(timeoutId);
 

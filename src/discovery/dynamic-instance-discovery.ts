@@ -16,7 +16,7 @@ import {
   REQUEST_TIMEOUT,
   USER_AGENT,
 } from "../config.js";
-import { readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
 import { validateExternalUrl } from "../validation/url.js";
 
@@ -278,11 +278,14 @@ export class DynamicInstanceDiscoveryService {
         headers.Authorization = `Bearer ${this.apiToken}`;
       }
 
-      const response = await fetch(url.toString(), {
-        headers,
-        signal: controller.signal,
-        redirect: "error",
-      });
+      const response = await fetchWithRedirectGuard(
+        url.toString(),
+        {
+          headers,
+          signal: controller.signal,
+        },
+        (target) => validateExternalUrl(target),
+      );
 
       clearTimeout(timeoutId);
 
@@ -351,17 +354,20 @@ export class DynamicInstanceDiscoveryService {
     const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
     try {
-      const response = await fetch(DynamicInstanceDiscoveryService.FEDIVERSE_OBSERVER_API, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          "User-Agent": USER_AGENT,
+      const response = await fetchWithRedirectGuard(
+        DynamicInstanceDiscoveryService.FEDIVERSE_OBSERVER_API,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "User-Agent": USER_AGENT,
+          },
+          body: JSON.stringify({ query }),
+          signal: controller.signal,
         },
-        body: JSON.stringify({ query }),
-        signal: controller.signal,
-        redirect: "error",
-      });
+        (target) => validateExternalUrl(target),
+      );
 
       clearTimeout(timeoutId);
 

@@ -17,7 +17,7 @@ import {
 import { type ActivityPubActor, webfingerClient } from "../discovery/webfinger.js";
 import { instanceBlocklist } from "../policy/instance-blocklist.js";
 import { getErrorMessage } from "../utils/errors.js";
-import { readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
 import { DomainSchema } from "../validation/schemas.js";
 import { validateExternalUrl } from "../validation/url.js";
@@ -733,13 +733,18 @@ export class RemoteActivityPubClient {
     const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
     try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-        // Reject redirects so a host that passed pre-flight SSRF validation
-        // cannot 302 to a private IP after the fact.
-        redirect: "error",
-      });
+      const response = await fetchWithRedirectGuard(
+        url,
+        { ...options, signal: controller.signal },
+        async (target) => {
+          // Re-validate every redirect hop so a host that passed the initial
+          // SSRF check cannot 302 us to a private IP after the fact.
+          await validateExternalUrl(target);
+          if (INSTANCE_BLOCKING_ENABLED) {
+            instanceBlocklist.validateNotBlocked(new URL(target).hostname);
+          }
+        },
+      );
       clearTimeout(timeoutId);
 
       return response;

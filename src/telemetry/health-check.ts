@@ -9,8 +9,11 @@ import {
   HEALTH_CHECK_URL,
   MEMORY_WARN_THRESHOLD_MB,
   MEMORY_WARN_THRESHOLD_PERCENT,
+  RATE_LIMIT_ENABLED,
   SERVER_VERSION,
 } from "../config.js";
+import { fetchWithRedirectGuard } from "../utils/fetch-helpers.js";
+import { validateExternalUrl } from "../validation/url.js";
 import { performanceMonitor } from "./performance-monitor.js";
 
 const logger = getLogger("activitypub-mcp:health");
@@ -222,11 +225,14 @@ class HealthChecker {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT);
 
-      const response = await fetch(HEALTH_CHECK_URL, {
-        method: "HEAD",
-        signal: controller.signal,
-        redirect: "error",
-      });
+      const response = await fetchWithRedirectGuard(
+        HEALTH_CHECK_URL,
+        {
+          method: "HEAD",
+          signal: controller.signal,
+        },
+        (target) => validateExternalUrl(target),
+      );
 
       clearTimeout(timeoutId);
 
@@ -282,13 +288,14 @@ class HealthChecker {
     const startTime = Date.now();
 
     try {
-      const rateLimitEnabled = process.env.RATE_LIMIT_ENABLED === "true";
-
+      // Use the parsed config value, not raw process.env. The default for
+      // RATE_LIMIT_ENABLED is true; the raw process.env path would always
+      // report 'disabled' unless the operator explicitly set the var.
       checks.rateLimiting = {
         status: "pass",
-        message: rateLimitEnabled ? "Rate limiting enabled" : "Rate limiting disabled",
+        message: RATE_LIMIT_ENABLED ? "Rate limiting enabled" : "Rate limiting disabled",
         duration: Date.now() - startTime,
-        metadata: { enabled: rateLimitEnabled },
+        metadata: { enabled: RATE_LIMIT_ENABLED },
       };
     } catch (error) {
       checks.rateLimiting = {

@@ -561,7 +561,7 @@ function registerExportAccountInfoTool(mcpServer: McpServer, rateLimiter: RateLi
               text: `👤 **Account Export Complete**
 
 **Account:** ${validIdentifier}
-**Name:** ${actor.name || actor.preferredUsername || "Unknown"}
+**Name:** ${stripHtmlTags(actor.name || actor.preferredUsername || "") || "Unknown"}
 **URL:** ${actor.url || actor.id}
 
 **Included Data:**

@@ -28,7 +28,7 @@ const description =
             <span class="release-type stable">Stable Release</span>
           </div>
           <div class="release-content">
-            <p><strong>Security &amp; correctness focused release.</strong> See the <a href="https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v2.md" target="_blank" rel="noopener">v2 Migration Guide</a> for full breaking-change details, and <a href="https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md" target="_blank" rel="noopener">CHANGELOG.md</a> for the complete entry.</p>
+            <p><strong>Security &amp; correctness focused release.</strong> See the <a href="https://github.com/cameronrye/activitypub-mcp/blob/master/MIGRATION-v2.md" target="_blank" rel="noopener">v2 Migration Guide</a> for full breaking-change details, and <a href="https://github.com/cameronrye/activitypub-mcp/blob/master/CHANGELOG.md" target="_blank" rel="noopener">CHANGELOG.md</a> for the complete entry.</p>
 
             <div class="change-category">
               <h4>Breaking</h4>
@@ -78,182 +78,26 @@ const description =
 
         <div class="release">
           <div class="release-header">
-            <h3>v1.0.0 - 2025-01-15</h3>
-            <span class="release-type stable">Stable Release</span>
+            <h3>Earlier releases</h3>
+            <span class="release-type stable">v1.x</span>
           </div>
           <div class="release-content">
-            <div class="change-category">
-              <h4>Added</h4>
-              <ul>
-                <li>Initial stable release of ActivityPub MCP Server</li>
-                <li>Complete MCP (Model Context Protocol) implementation</li>
-                <li>ActivityPub actor discovery and information retrieval</li>
-                <li>Fediverse instance discovery and metadata collection</li>
-                <li>WebFinger protocol support for actor resolution</li>
-                <li>Comprehensive caching system with configurable TTL</li>
-                <li>Rate limiting and request throttling</li>
-                <li>Health check and server monitoring tools</li>
-                <li>Complete TypeScript implementation with type safety</li>
-                <li>Comprehensive error handling and logging</li>
-              </ul>
-            </div>
-
-            <div class="change-category">
-              <h4>Tools</h4>
-              <ul>
-                <li><code>discover-actor</code> - Find and analyze fediverse actors</li>
-                <li><code>discover-instances</code> - Search for instances by topic or keyword</li>
-                <li><code>get-instance-info</code> - Retrieve detailed instance information</li>
-                <li><code>fetch-timeline</code> - Get recent posts from actor timelines</li>
-                <li><code>search-content</code> - Search for content across the fediverse</li>
-                <li><code>get-post-details</code> - Retrieve detailed post information</li>
-                <li><code>health-check</code> - Monitor server health and performance</li>
-                <li><code>clear-cache</code> - Clear cached data for fresh requests</li>
-                <li><code>validate-actor</code> - Verify actor accessibility and validity</li>
-              </ul>
-            </div>
-
-            <div class="change-category">
-              <h4>Resources</h4>
-              <ul>
-                <li><code>activitypub://server-info</code> - Server status and configuration</li>
-                <li><code>activitypub://actor-cache</code> - Cached actor information</li>
-                <li><code>activitypub://instance-cache</code> - Cached instance data</li>
-                <li><code>activitypub://timeline-cache</code> - Cached timeline content</li>
-                <li><code>activitypub://instance-directory</code> - Instance discovery data</li>
-                <li><code>activitypub://discovery-stats</code> - Discovery operation statistics</li>
-              </ul>
-            </div>
-
-            <div class="change-category">
-              <h4>Security</h4>
-              <ul>
-                <li>Input validation and sanitization for all user inputs</li>
-                <li>Rate limiting to prevent abuse and DoS attacks</li>
-                <li>Secure HTTP client configuration with timeout limits</li>
-                <li>Privacy-focused design - only accesses public data</li>
-                <li>Comprehensive error handling to prevent information leakage</li>
-                <li>Configurable user agent and request headers</li>
-              </ul>
-            </div>
-
-            <div class="change-category">
-              <h4>⚡ Performance</h4>
-              <ul>
-                <li>Multi-level caching with configurable TTL values</li>
-                <li>Concurrent request handling with connection pooling</li>
-                <li>Optimized JSON parsing and data transformation</li>
-                <li>Memory-efficient data structures and algorithms</li>
-                <li>Configurable request timeouts and retry logic</li>
-                <li>Performance monitoring and metrics collection</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <div class="release">
-          <div class="release-header">
-            <h3>v0.9.0 - 2025-01-10</h3>
-            <span class="release-type beta">Beta Release</span>
-          </div>
-          <div class="release-content">
-            <div class="change-category">
-              <h4>Added</h4>
-              <ul>
-                <li>Beta release with core functionality</li>
-                <li>Basic MCP protocol implementation</li>
-                <li>ActivityPub actor discovery</li>
-                <li>Instance information retrieval</li>
-                <li>Simple caching mechanism</li>
-                <li>Basic error handling</li>
-              </ul>
-            </div>
-
-            <div class="change-category">
-              <h4>Changed</h4>
-              <ul>
-                <li>Improved error messages and logging</li>
-                <li>Enhanced cache performance</li>
-                <li>Better TypeScript type definitions</li>
-                <li>Optimized HTTP request handling</li>
-              </ul>
-            </div>
-
-            <div class="change-category">
-              <h4>Fixed</h4>
-              <ul>
-                <li>Fixed memory leaks in cache implementation</li>
-                <li>Resolved timeout issues with slow instances</li>
-                <li>Fixed JSON parsing errors for malformed responses</li>
-                <li>Corrected WebFinger resolution edge cases</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <div class="release">
-          <div class="release-header">
-            <h3>v0.5.0 - 2025-01-05</h3>
-            <span class="release-type alpha">Alpha Release</span>
-          </div>
-          <div class="release-content">
-            <div class="change-category">
-              <h4>Added</h4>
-              <ul>
-                <li>Initial alpha release</li>
-                <li>Basic actor discovery functionality</li>
-                <li>Simple instance information retrieval</li>
-                <li>Proof-of-concept MCP integration</li>
-                <li>Basic TypeScript implementation</li>
-              </ul>
-            </div>
-
-            <div class="change-category">
-              <h4>Known Issues</h4>
-              <ul>
-                <li>Limited error handling</li>
-                <li>No caching implementation</li>
-                <li>Basic rate limiting only</li>
-                <li>Limited instance compatibility</li>
-              </ul>
-            </div>
+            <p>
+              For v1.0.0 and v1.1.0 release notes (initial public release and the
+              authenticated-write-tools / multi-account additions), see the canonical
+              <a href="https://github.com/cameronrye/activitypub-mcp/blob/master/CHANGELOG.md" target="_blank" rel="noopener">CHANGELOG.md</a>
+              in the repository.
+            </p>
           </div>
         </div>
       </div>
-
-
-      <section class="changelog-section">
-        <h2>Release Statistics</h2>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <h3>Total Releases</h3>
-            <div class="stat-number">3</div>
-            <p>Including alpha, beta, and stable releases</p>
-          </div>
-          <div class="stat-card">
-            <h3>Features Added</h3>
-            <div class="stat-number">25+</div>
-            <p>Major features and capabilities</p>
-          </div>
-          <div class="stat-card">
-            <h3>Tools Available</h3>
-            <div class="stat-number">9</div>
-            <p>MCP tools for fediverse exploration</p>
-          </div>
-          <div class="stat-card">
-            <h3>Resources Provided</h3>
-            <div class="stat-number">6</div>
-            <p>MCP resources for data access</p>
-          </div>
-        </div>
-      </section>
 
       <section class="changelog-section">
         <h2>Migration Guides</h2>
         <div class="migration-guides">
           <div class="migration-card">
             <h3>Upgrading to v2.0.0</h3>
-            <p>v2 introduces several breaking changes — most around security defaults and config formats. See the full <a href="https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v2.md" target="_blank" rel="noopener">v2 Migration Guide</a> for before/after snippets covering:</p>
+            <p>v2 introduces several breaking changes — most around security defaults and config formats. See the full <a href="https://github.com/cameronrye/activitypub-mcp/blob/master/MIGRATION-v2.md" target="_blank" rel="noopener">v2 Migration Guide</a> for before/after snippets covering:</p>
             <ul>
               <li>Setting <code>MCP_HTTP_SECRET</code> + an explicit <code>MCP_HTTP_CORS_ORIGINS</code> for HTTP transport</li>
               <li>Migrating <code>ACTIVITYPUB_ACCOUNTS</code> from colon (<code>:</code>) to pipe (<code>|</code>) delimiter</li>

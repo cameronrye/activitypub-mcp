@@ -1,5 +1,11 @@
+import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
-import { ResponseTooLargeError, readJsonWithLimit } from "../../src/utils/fetch-helpers.js";
+import {
+  fetchWithRedirectGuard,
+  ResponseTooLargeError,
+  readJsonWithLimit,
+} from "../../src/utils/fetch-helpers.js";
+import { server } from "../mocks/server.js";
 
 function makeResponse(body: string, headers: Record<string, string> = {}): Response {
   return new Response(body, {
@@ -49,5 +55,80 @@ describe("readJsonWithLimit (M2)", () => {
     // Force the null-body fallback path
     Object.defineProperty(res, "body", { value: null, writable: false });
     await expect(readJsonWithLimit(res, 100)).rejects.toBeInstanceOf(ResponseTooLargeError);
+  });
+});
+
+describe("fetchWithRedirectGuard", () => {
+  it("follows a same-origin 302 after re-running validate", async () => {
+    const seen: string[] = [];
+    server.use(
+      http.get("https://redir.example/start", () => {
+        return new HttpResponse(null, {
+          status: 302,
+          headers: { Location: "https://redir.example/landing" },
+        });
+      }),
+      http.get("https://redir.example/landing", () => {
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+
+    const response = await fetchWithRedirectGuard(
+      "https://redir.example/start",
+      {},
+      async (target) => {
+        seen.push(target);
+      },
+    );
+    expect(response.status).toBe(200);
+    expect(seen).toEqual(["https://redir.example/landing"]);
+  });
+
+  it("throws when validate rejects the redirect target", async () => {
+    server.use(
+      http.get("https://safe.example/start", () => {
+        return new HttpResponse(null, {
+          status: 302,
+          // Hostile redirect target — the validator below should refuse.
+          headers: { Location: "http://192.168.1.1/admin" },
+        });
+      }),
+    );
+
+    await expect(
+      fetchWithRedirectGuard("https://safe.example/start", {}, async (target) => {
+        if (target.includes("192.168.")) {
+          throw new Error(`refused redirect to ${target}`);
+        }
+      }),
+    ).rejects.toThrow(/refused redirect/);
+  });
+
+  it("throws on missing Location header", async () => {
+    server.use(
+      http.get("https://noloc.example/", () => {
+        return new HttpResponse(null, { status: 302 });
+      }),
+    );
+    await expect(fetchWithRedirectGuard("https://noloc.example/", {}, () => {})).rejects.toThrow(
+      /missing Location/,
+    );
+  });
+
+  it("caps redirect chain length", async () => {
+    server.use(
+      http.get("https://chain.example/", ({ request }) => {
+        const next = new URL(request.url);
+        const hop = Number.parseInt(next.searchParams.get("hop") ?? "0", 10);
+        next.searchParams.set("hop", String(hop + 1));
+        return new HttpResponse(null, {
+          status: 302,
+          headers: { Location: next.toString() },
+        });
+      }),
+    );
+    await expect(fetchWithRedirectGuard("https://chain.example/", {}, () => {}, 2)).rejects.toThrow(
+      /Too many redirects/,
+    );
   });
 });

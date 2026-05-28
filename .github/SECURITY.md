@@ -4,10 +4,11 @@
 
 We actively support the following versions of ActivityPub MCP Server with security updates:
 
-| Version | Supported |
-| ------- | --------- |
-| 1.x.x   | Yes       |
-| < 1.0   | No        |
+| Version | Supported                                       |
+| ------- | ----------------------------------------------- |
+| 2.x.x   | Yes                                             |
+| 1.x.x   | No (EOL — please upgrade; see MIGRATION-v2.md)  |
+| < 1.0   | No                                              |
 
 ## Reporting a Vulnerability
 
@@ -27,7 +28,7 @@ Choose one of these methods to report security issues:
 3. Fill out the security advisory form with details
 
 #### Email
-Send an email to the maintainers with:
+Send an email to `c@meron.io` with:
 - **Subject**: `[SECURITY] ActivityPub MCP Server - [Brief Description]`
 - **Details**: Full description of the vulnerability
 - **Impact**: Potential impact and affected versions

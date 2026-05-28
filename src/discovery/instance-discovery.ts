@@ -1,6 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
-import { readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { DomainSchema } from "../validation/schemas.js";
 import { validateExternalUrl } from "../validation/url.js";
 import { POPULAR_INSTANCES } from "./data/instances.js";
@@ -161,11 +161,14 @@ export class InstanceDiscoveryService {
       const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
       // Try to fetch the instance's nodeinfo or API endpoint
-      const response = await fetch(url, {
-        method: "HEAD",
-        signal: controller.signal,
-        redirect: "error",
-      });
+      const response = await fetchWithRedirectGuard(
+        url,
+        {
+          method: "HEAD",
+          signal: controller.signal,
+        },
+        (target) => validateExternalUrl(target),
+      );
 
       clearTimeout(timeoutId);
       return {
@@ -209,14 +212,17 @@ export class InstanceDiscoveryService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
-      const response = await fetch(url, {
-        headers: {
-          Accept: "application/json",
-          "User-Agent": USER_AGENT,
+      const response = await fetchWithRedirectGuard(
+        url,
+        {
+          headers: {
+            Accept: "application/json",
+            "User-Agent": USER_AGENT,
+          },
+          signal: controller.signal,
         },
-        signal: controller.signal,
-        redirect: "error",
-      });
+        (target) => validateExternalUrl(target),
+      );
 
       clearTimeout(timeoutId);
 

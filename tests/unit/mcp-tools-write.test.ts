@@ -320,7 +320,7 @@ describe("MCP Write Tools", () => {
 
       const tool = registeredTools.get("verify-account");
       await expect(tool?.handler({})).rejects.toThrow(
-        "This write operation requires authentication",
+        "This tool requires an authenticated account",
       );
     });
 

@@ -8,7 +8,7 @@ import {
   USER_AGENT,
 } from "../config.js";
 import { instanceBlocklist } from "../policy/instance-blocklist.js";
-import { readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
 import { ActorIdentifierSchema } from "../validation/schemas.js";
 import { validateExternalUrl } from "../validation/url.js";
@@ -187,15 +187,22 @@ export class WebFingerClient {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
-      const response = await fetch(webfingerUrl, {
-        method: "GET",
-        headers: {
-          Accept: "application/jrd+json, application/json",
-          "User-Agent": USER_AGENT,
+      const response = await fetchWithRedirectGuard(
+        webfingerUrl,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/jrd+json, application/json",
+            "User-Agent": USER_AGENT,
+          },
+          signal: controller.signal,
         },
-        signal: controller.signal,
-        redirect: "error",
-      });
+        async (target) => {
+          await validateExternalUrl(target);
+          const targetHost = new URL(target).hostname;
+          instanceBlocklist.validateNotBlocked(targetHost);
+        },
+      );
 
       clearTimeout(timeoutId);
 
@@ -256,16 +263,23 @@ export class WebFingerClient {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
-      const response = await fetch(actorUrl, {
-        method: "GET",
-        headers: {
-          Accept:
-            'application/activity+json, application/ld+json; profile="https://www.w3.org/ns/activitystreams"',
-          "User-Agent": USER_AGENT,
+      const response = await fetchWithRedirectGuard(
+        actorUrl,
+        {
+          method: "GET",
+          headers: {
+            Accept:
+              'application/activity+json, application/ld+json; profile="https://www.w3.org/ns/activitystreams"',
+            "User-Agent": USER_AGENT,
+          },
+          signal: controller.signal,
         },
-        signal: controller.signal,
-        redirect: "error",
-      });
+        async (target) => {
+          await validateExternalUrl(target);
+          const targetHost = new URL(target).hostname;
+          instanceBlocklist.validateNotBlocked(targetHost);
+        },
+      );
 
       clearTimeout(timeoutId);
 

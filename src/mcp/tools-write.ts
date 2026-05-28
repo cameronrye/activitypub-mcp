@@ -142,7 +142,7 @@ Write operations are currently disabled. To enable write operations, configure a
 2. Set the name and required scopes (read, write, follow)
 3. Copy the "Your access token" value
 
-💡 For multiple accounts, use \`ACTIVITYPUB_ACCOUNTS=id1:instance1:token1:username1,id2:instance2:token2:username2\``,
+💡 For multiple accounts, use \`ACTIVITYPUB_ACCOUNTS=id1|instance1|token1|username1|label1,id2|instance2|token2|username2|label2\` (pipe-delimited; v2 changed from colon to avoid conflict with colons in tokens).`,
             },
           ],
         };
@@ -251,7 +251,7 @@ function registerVerifyAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
       },
     },
     async ({ accountId }) => {
-      requireWriteEnabled();
+      requireAuthEnabled();
       const startTime = Date.now();
       const auditParams = { accountId };
 

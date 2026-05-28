@@ -76,7 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Topic-dir refactor.** `src/` reorganized into 11 topic directories. `src/utils.ts` split into `src/validation/url.ts`, `src/utils/errors.ts`, `src/utils/html.ts`. `src/server/` removed (re-exports inlined). See `MIGRATION-v2.md` § "Internal refactor (FYI, not breaking)".
 - **Stricter TypeScript and Biome flags** enabled: `noUnusedLocals`, `noUnusedParameters`, Biome `noUnusedVariables`.
 - **`files` whitelist** in `package.json` controls npm publish contents. Source maps and declaration maps no longer ship.
-- **628 unit tests** (up from 533 at v2 start) covering every behavior change.
+- **624 unit tests** (up from 533 at v2 start) covering every behavior change.
 
 ## [1.1.0] - 2026-02-02
 

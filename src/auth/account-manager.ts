@@ -9,7 +9,7 @@ import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT } from "../config.js";
 import { instanceBlocklist } from "../policy/instance-blocklist.js";
-import { readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { validateExternalUrl } from "../validation/url.js";
 
 const logger = getLogger("activitypub-mcp:account-manager");
@@ -302,14 +302,20 @@ export class AccountManager {
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
     try {
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `${account.tokenType} ${account.accessToken}`,
-          Accept: "application/json",
+      const response = await fetchWithRedirectGuard(
+        url,
+        {
+          headers: {
+            Authorization: `${account.tokenType} ${account.accessToken}`,
+            Accept: "application/json",
+          },
+          signal: controller.signal,
         },
-        signal: controller.signal,
-        redirect: "error",
-      });
+        async (target) => {
+          await validateExternalUrl(target);
+          instanceBlocklist.validateNotBlocked(new URL(target).hostname);
+        },
+      );
 
       if (!response.ok) {
         logger.warn("Account verification failed", { id: accountId, status: response.status });
