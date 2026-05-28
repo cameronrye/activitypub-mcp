@@ -363,12 +363,43 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
         sensitive: z.boolean().optional().describe("Mark media as sensitive"),
         language: z.string().optional().describe("Language code (ISO 639-1, e.g., 'en')"),
         accountId: z.string().optional().describe("Account ID to post from (defaults to active)"),
+        mediaIds: z
+          .array(z.string())
+          .max(4, "post-status accepts at most 4 media IDs")
+          .optional()
+          .describe("Media IDs from upload-media (max 4)"),
+        scheduledAt: z
+          .string()
+          .datetime({ message: "scheduledAt must be ISO 8601 (e.g., 2026-06-01T15:00:00Z)" })
+          .refine((d) => new Date(d).getTime() > Date.now(), {
+            message: "scheduledAt must be in the future",
+          })
+          .optional()
+          .describe("ISO 8601 datetime to schedule the post (e.g., one hour from now in ISO 8601)"),
       },
     },
-    async ({ content, visibility = "public", spoilerText, sensitive, language, accountId }) => {
+    async ({
+      content,
+      visibility = "public",
+      spoilerText,
+      sensitive,
+      language,
+      accountId,
+      mediaIds,
+      scheduledAt,
+    }) => {
       requireWriteEnabled();
       const startTime = Date.now();
-      const auditParams = { content, visibility, spoilerText, sensitive, language, accountId };
+      const auditParams = {
+        content,
+        visibility,
+        spoilerText,
+        sensitive,
+        language,
+        accountId,
+        mediaIds,
+        scheduledAt,
+      };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
@@ -403,6 +434,8 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
             spoilerText,
             sensitive,
             language,
+            mediaIds,
+            scheduledAt,
           },
           accountId,
         );

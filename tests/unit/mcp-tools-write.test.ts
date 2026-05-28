@@ -1014,4 +1014,59 @@ describe("MCP Write Tools", () => {
       );
     });
   });
+
+  describe("post-status mediaIds and scheduledAt (H2)", () => {
+    beforeEach(() => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      (authenticatedClient.createPost as Mock).mockClear();
+    });
+
+    it("passes mediaIds through to authenticatedClient.createPost", async () => {
+      const tool = registeredTools.get("post-status");
+      expect(tool).toBeDefined();
+      await tool?.handler({ content: "look at this", mediaIds: ["m1", "m2"] });
+      expect(authenticatedClient.createPost).toHaveBeenCalledWith(
+        expect.objectContaining({ content: "look at this", mediaIds: ["m1", "m2"] }),
+        undefined,
+      );
+    });
+
+    it("passes scheduledAt through to authenticatedClient.createPost", async () => {
+      const tool = registeredTools.get("post-status");
+      const future = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+      await tool?.handler({ content: "later", scheduledAt: future });
+      expect(authenticatedClient.createPost).toHaveBeenCalledWith(
+        expect.objectContaining({ content: "later", scheduledAt: future }),
+        undefined,
+      );
+    });
+
+    it("rejects scheduledAt in the past via Zod refinement", () => {
+      // The handler is invoked directly, bypassing the SDK's Zod wrapper.
+      // We exercise the schema explicitly to prove bad input is rejected.
+      const tool = registeredTools.get("post-status");
+      const { z } = require("zod");
+      const inputSchemaShape = (
+        tool?.config as { inputSchema: Record<string, import("zod").ZodTypeAny> }
+      ).inputSchema;
+      const schema = z.object(inputSchemaShape);
+      const past = "2020-01-01T00:00:00Z";
+      expect(() => schema.parse({ content: "no time machine", scheduledAt: past })).toThrow(
+        /scheduledAt|future|past/i,
+      );
+    });
+
+    it("rejects more than 4 mediaIds via Zod max(4)", () => {
+      // Same approach: validate directly against the schema shape.
+      const tool = registeredTools.get("post-status");
+      const { z } = require("zod");
+      const inputSchemaShape = (
+        tool?.config as { inputSchema: Record<string, import("zod").ZodTypeAny> }
+      ).inputSchema;
+      const schema = z.object(inputSchemaShape);
+      expect(() =>
+        schema.parse({ content: "too much", mediaIds: ["a", "b", "c", "d", "e"] }),
+      ).toThrow(/4|max/i);
+    });
+  });
 });
