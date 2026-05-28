@@ -7,7 +7,7 @@ import { McpError } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { capabilitiesRegistry } from "../../src/mcp/capabilities.js";
 import { type ResourceConfig, registerResources } from "../../src/mcp/resources.js";
-import { RateLimiter } from "../../src/server/rate-limiter.js";
+import { RateLimiter } from "../../src/resilience/rate-limiter.js";
 
 // Mock dependencies
 vi.mock("../../src/activitypub/remote-client.js", () => ({

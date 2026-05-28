@@ -15,7 +15,7 @@ describe("AdaptiveRateLimiter", () => {
   });
 
   it("should allow requests when no limit info exists", async () => {
-    const { AdaptiveRateLimiter } = await import("../../src/server/adaptive-rate-limiter.js");
+    const { AdaptiveRateLimiter } = await import("../../src/resilience/adaptive-rate-limiter.js");
     const limiter = new AdaptiveRateLimiter();
 
     const result = limiter.checkLimit("mastodon.social");
@@ -24,7 +24,7 @@ describe("AdaptiveRateLimiter", () => {
   });
 
   it("should parse rate limit headers correctly", async () => {
-    const { AdaptiveRateLimiter } = await import("../../src/server/adaptive-rate-limiter.js");
+    const { AdaptiveRateLimiter } = await import("../../src/resilience/adaptive-rate-limiter.js");
     const limiter = new AdaptiveRateLimiter();
 
     const headers = new Headers({
@@ -42,7 +42,7 @@ describe("AdaptiveRateLimiter", () => {
   });
 
   it("should detect rate limiting from headers", async () => {
-    const { AdaptiveRateLimiter } = await import("../../src/server/adaptive-rate-limiter.js");
+    const { AdaptiveRateLimiter } = await import("../../src/resilience/adaptive-rate-limiter.js");
     const limiter = new AdaptiveRateLimiter();
 
     const headers = new Headers({
@@ -58,7 +58,7 @@ describe("AdaptiveRateLimiter", () => {
   });
 
   it("should handle retry-after header", async () => {
-    const { AdaptiveRateLimiter } = await import("../../src/server/adaptive-rate-limiter.js");
+    const { AdaptiveRateLimiter } = await import("../../src/resilience/adaptive-rate-limiter.js");
     const limiter = new AdaptiveRateLimiter();
 
     const headers = new Headers({
@@ -72,7 +72,7 @@ describe("AdaptiveRateLimiter", () => {
   });
 
   it("should decrement remaining on checkLimit", async () => {
-    const { AdaptiveRateLimiter } = await import("../../src/server/adaptive-rate-limiter.js");
+    const { AdaptiveRateLimiter } = await import("../../src/resilience/adaptive-rate-limiter.js");
     const limiter = new AdaptiveRateLimiter();
 
     // Set up initial limit info
@@ -94,7 +94,7 @@ describe("AdaptiveRateLimiter", () => {
   });
 
   it("should block requests when rate limited", async () => {
-    const { AdaptiveRateLimiter } = await import("../../src/server/adaptive-rate-limiter.js");
+    const { AdaptiveRateLimiter } = await import("../../src/resilience/adaptive-rate-limiter.js");
     const limiter = new AdaptiveRateLimiter();
 
     // Set up rate limited state
@@ -111,7 +111,7 @@ describe("AdaptiveRateLimiter", () => {
   });
 
   it("should reset limits after reset time", async () => {
-    const { AdaptiveRateLimiter } = await import("../../src/server/adaptive-rate-limiter.js");
+    const { AdaptiveRateLimiter } = await import("../../src/resilience/adaptive-rate-limiter.js");
     const limiter = new AdaptiveRateLimiter();
 
     // Set up rate limited state with reset in 1 second
@@ -135,7 +135,7 @@ describe("AdaptiveRateLimiter", () => {
   });
 
   it("should handle rate limit errors", async () => {
-    const { AdaptiveRateLimiter } = await import("../../src/server/adaptive-rate-limiter.js");
+    const { AdaptiveRateLimiter } = await import("../../src/resilience/adaptive-rate-limiter.js");
     const limiter = new AdaptiveRateLimiter();
 
     limiter.handleRateLimitError("mastodon.social", 60);
@@ -147,7 +147,7 @@ describe("AdaptiveRateLimiter", () => {
   });
 
   it("should track multiple instances independently", async () => {
-    const { AdaptiveRateLimiter } = await import("../../src/server/adaptive-rate-limiter.js");
+    const { AdaptiveRateLimiter } = await import("../../src/resilience/adaptive-rate-limiter.js");
     const limiter = new AdaptiveRateLimiter();
 
     // Set up different limits for different instances
@@ -177,7 +177,7 @@ describe("AdaptiveRateLimiter", () => {
   });
 
   it("should get all limited instances", async () => {
-    const { AdaptiveRateLimiter } = await import("../../src/server/adaptive-rate-limiter.js");
+    const { AdaptiveRateLimiter } = await import("../../src/resilience/adaptive-rate-limiter.js");
     const limiter = new AdaptiveRateLimiter();
 
     // Set up one limited, one not limited
@@ -202,7 +202,7 @@ describe("AdaptiveRateLimiter", () => {
   });
 
   it("should calculate recommended delay", async () => {
-    const { AdaptiveRateLimiter } = await import("../../src/server/adaptive-rate-limiter.js");
+    const { AdaptiveRateLimiter } = await import("../../src/resilience/adaptive-rate-limiter.js");
     const limiter = new AdaptiveRateLimiter();
 
     // No info = no delay
@@ -230,7 +230,7 @@ describe("AdaptiveRateLimiter", () => {
   });
 
   it("should get stats", async () => {
-    const { AdaptiveRateLimiter } = await import("../../src/server/adaptive-rate-limiter.js");
+    const { AdaptiveRateLimiter } = await import("../../src/resilience/adaptive-rate-limiter.js");
     const limiter = new AdaptiveRateLimiter();
 
     limiter.parseHeaders("instance1.social", new Headers({ "x-ratelimit-remaining": "100" }));
@@ -242,7 +242,7 @@ describe("AdaptiveRateLimiter", () => {
   });
 
   it("should clear instance and all limits", async () => {
-    const { AdaptiveRateLimiter } = await import("../../src/server/adaptive-rate-limiter.js");
+    const { AdaptiveRateLimiter } = await import("../../src/resilience/adaptive-rate-limiter.js");
     const limiter = new AdaptiveRateLimiter();
 
     limiter.parseHeaders("instance1.social", new Headers({ "x-ratelimit-remaining": "100" }));

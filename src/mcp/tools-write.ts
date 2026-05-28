@@ -11,7 +11,7 @@ import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { auditLogger } from "../audit/logger.js";
 import { accountManager, authenticatedClient } from "../auth/index.js";
-import type { RateLimiter } from "../server/rate-limiter.js";
+import type { RateLimiter } from "../resilience/rate-limiter.js";
 import { performanceMonitor } from "../telemetry/performance-monitor.js";
 import { formatErrorWithSuggestion, getErrorMessage, stripHtmlTags } from "../utils.js";
 import { trackedMcpServer } from "./capabilities.js";
