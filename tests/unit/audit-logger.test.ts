@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { AuditLogger } from "../../src/audit-logger.js";
+import { AuditLogger } from "../../src/audit/logger.js";
 
 describe("AuditLogger", () => {
   let auditLogger: AuditLogger;

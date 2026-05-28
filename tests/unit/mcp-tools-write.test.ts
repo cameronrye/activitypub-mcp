@@ -174,7 +174,7 @@ vi.mock("../../src/performance-monitor.js", () => ({
 const auditLoggerMock = vi.hoisted(() => ({
   logToolInvocation: vi.fn(),
 }));
-vi.mock("../../src/audit-logger.js", () => ({
+vi.mock("../../src/audit/logger.js", () => ({
   auditLogger: auditLoggerMock,
 }));
 

@@ -9,7 +9,7 @@ import { getLogger } from "@logtape/logtape";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { auditLogger } from "../audit-logger.js";
+import { auditLogger } from "../audit/logger.js";
 import { accountManager, authenticatedClient } from "../auth/index.js";
 import { performanceMonitor } from "../performance-monitor.js";
 import type { RateLimiter } from "../server/rate-limiter.js";

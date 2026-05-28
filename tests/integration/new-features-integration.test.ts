@@ -11,7 +11,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { AuditLogger } from "../../src/audit-logger.js";
+import { AuditLogger } from "../../src/audit/logger.js";
 import { DynamicInstanceDiscoveryService } from "../../src/dynamic-instance-discovery.js";
 import { InstanceBlocklist } from "../../src/instance-blocklist.js";
 

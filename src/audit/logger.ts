@@ -6,7 +6,7 @@
  */
 
 import { getLogger } from "@logtape/logtape";
-import { AUDIT_LOG_ENABLED, AUDIT_LOG_MAX_ENTRIES } from "./config.js";
+import { AUDIT_LOG_ENABLED, AUDIT_LOG_MAX_ENTRIES } from "../config.js";
 
 const logger = getLogger("activitypub-mcp:audit");
 
