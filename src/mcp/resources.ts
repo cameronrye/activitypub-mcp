@@ -11,9 +11,9 @@ import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { remoteClient } from "../activitypub/remote-client.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
-import { extractSingleValue, validateActorIdentifier } from "../server/index.js";
 import { getErrorMessage } from "../utils/errors.js";
 import { DomainSchema } from "../validation/schemas.js";
+import { extractSingleValue, validateActorIdentifier } from "../validation/validators.js";
 import { capabilitiesRegistry, trackedMcpServer } from "./capabilities.js";
 
 const logger = getLogger("activitypub-mcp:resources");

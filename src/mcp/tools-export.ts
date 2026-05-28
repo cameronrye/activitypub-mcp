@@ -11,10 +11,10 @@ import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { remoteClient } from "../activitypub/remote-client.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
-import { validateActorIdentifier, validateDomain } from "../server/index.js";
 import { performanceMonitor } from "../telemetry/performance-monitor.js";
 import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
 import { stripHtmlTags } from "../utils/html.js";
+import { validateActorIdentifier, validateDomain } from "../validation/validators.js";
 import { trackedMcpServer } from "./capabilities.js";
 
 const logger = getLogger("activitypub-mcp:tools-export");
