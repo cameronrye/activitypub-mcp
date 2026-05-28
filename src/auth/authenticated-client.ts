@@ -9,7 +9,7 @@ import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
 import { readJsonWithLimit } from "../utils/fetch-helpers.js";
-import { validateExternalUrl } from "../utils.js";
+import { validateExternalUrl } from "../validation/url.js";
 import { type AccountCredentials, accountManager } from "./account-manager.js";
 
 const logger = getLogger("activitypub-mcp:authenticated-client");

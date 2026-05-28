@@ -16,7 +16,7 @@ import {
   USER_AGENT,
 } from "../config.js";
 import { LRUCache } from "../utils/lru-cache.js";
-import { validateExternalUrl } from "../utils.js";
+import { validateExternalUrl } from "../validation/url.js";
 
 const logger = getLogger("activitypub-mcp:discovery");
 

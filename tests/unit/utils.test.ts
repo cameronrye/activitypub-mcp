@@ -3,15 +3,15 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { getErrorMessage } from "../../src/utils/errors.js";
+import { stripHtmlTags } from "../../src/utils/html.js";
 import {
-  getErrorMessage,
   isBlockedHostname,
   isPrivateIP,
   isPrivateIPv4,
   isPrivateIPv6,
-  stripHtmlTags,
   validateExternalUrlSync,
-} from "../../src/utils.js";
+} from "../../src/validation/url.js";
 
 describe("getErrorMessage", () => {
   it("should extract message from Error objects", () => {

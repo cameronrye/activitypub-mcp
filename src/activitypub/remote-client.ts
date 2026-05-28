@@ -16,10 +16,11 @@ import {
 } from "../config.js";
 import { type ActivityPubActor, webfingerClient } from "../discovery/webfinger.js";
 import { instanceBlocklist } from "../policy/instance-blocklist.js";
+import { getErrorMessage } from "../utils/errors.js";
 import { readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
-import { getErrorMessage, validateExternalUrl } from "../utils.js";
 import { DomainSchema } from "../validation/schemas.js";
+import { validateExternalUrl } from "../validation/url.js";
 
 const logger = getLogger("activitypub-mcp");
 

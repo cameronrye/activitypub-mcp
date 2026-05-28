@@ -12,7 +12,7 @@ import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { remoteClient } from "../activitypub/remote-client.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
 import { extractSingleValue, validateActorIdentifier } from "../server/index.js";
-import { getErrorMessage } from "../utils.js";
+import { getErrorMessage } from "../utils/errors.js";
 import { DomainSchema } from "../validation/schemas.js";
 import { capabilitiesRegistry, trackedMcpServer } from "./capabilities.js";
 

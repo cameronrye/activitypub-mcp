@@ -13,7 +13,8 @@ import { auditLogger } from "../audit/logger.js";
 import { accountManager, authenticatedClient } from "../auth/index.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
 import { performanceMonitor } from "../telemetry/performance-monitor.js";
-import { formatErrorWithSuggestion, getErrorMessage, stripHtmlTags } from "../utils.js";
+import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
+import { stripHtmlTags } from "../utils/html.js";
 import { trackedMcpServer } from "./capabilities.js";
 
 const logger = getLogger("activitypub-mcp:tools-write");
