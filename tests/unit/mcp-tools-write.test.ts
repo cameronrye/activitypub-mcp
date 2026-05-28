@@ -4,6 +4,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { z } from "zod";
 import { registerWriteTools } from "../../src/mcp/tools-write.js";
 import { RateLimiter } from "../../src/server/rate-limiter.js";
 
@@ -1045,7 +1046,6 @@ describe("MCP Write Tools", () => {
       // The handler is invoked directly, bypassing the SDK's Zod wrapper.
       // We exercise the schema explicitly to prove bad input is rejected.
       const tool = registeredTools.get("post-status");
-      const { z } = require("zod");
       const inputSchemaShape = (
         tool?.config as { inputSchema: Record<string, import("zod").ZodTypeAny> }
       ).inputSchema;
@@ -1059,7 +1059,6 @@ describe("MCP Write Tools", () => {
     it("rejects more than 4 mediaIds via Zod max(4)", () => {
       // Same approach: validate directly against the schema shape.
       const tool = registeredTools.get("post-status");
-      const { z } = require("zod");
       const inputSchemaShape = (
         tool?.config as { inputSchema: Record<string, import("zod").ZodTypeAny> }
       ).inputSchema;
