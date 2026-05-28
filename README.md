@@ -987,7 +987,8 @@ Upload media files with alt text descriptions:
   "arguments": {
     "filePath": "/path/to/image.jpg",
     "description": "A beautiful sunset over the ocean",
-    "focus": "0.0,0.5"
+    "focusX": 0.0,
+    "focusY": 0.5
   }
 }
 ```
@@ -996,7 +997,8 @@ Upload media files with alt text descriptions:
 
 - `filePath` (string, required): Local file path or URL to upload
 - `description` (string, optional): Alt text for accessibility (recommended)
-- `focus` (string, optional): Focal point as "x,y" (-1.0 to 1.0)
+- `focusX` (number, optional): Horizontal focal point for crop, range -1.0 to 1.0 (default 0).
+- `focusY` (number, optional): Vertical focal point for crop, range -1.0 to 1.0 (default 0).
 
 **Supported types:** Images (jpg, png, gif, webp), Videos (mp4, webm), Audio (mp3, ogg)
 
