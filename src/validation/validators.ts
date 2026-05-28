@@ -5,7 +5,7 @@
 
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { ActorIdentifierSchema, DomainSchema, QuerySchema } from "../validation/schemas.js";
+import { ActorIdentifierSchema, DomainSchema, QuerySchema } from "./schemas.js";
 
 /**
  * Gets the first error message from a ZodError.

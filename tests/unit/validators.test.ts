@@ -5,13 +5,13 @@
 
 import { McpError } from "@modelcontextprotocol/sdk/types.js";
 import { describe, expect, it } from "vitest";
+import { ActorIdentifierSchema, DomainSchema, QuerySchema } from "../../src/validation/schemas.js";
 import {
   extractSingleValue,
   validateActorIdentifier,
   validateDomain,
   validateQuery,
-} from "../../src/server/validators.js";
-import { ActorIdentifierSchema, DomainSchema, QuerySchema } from "../../src/validation/schemas.js";
+} from "../../src/validation/validators.js";
 
 describe("Validation Schemas", () => {
   describe("DomainSchema", () => {

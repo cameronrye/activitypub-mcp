@@ -14,4 +14,4 @@ export {
   validateActorIdentifier,
   validateDomain,
   validateQuery,
-} from "./validators.js";
+} from "../validation/validators.js";
