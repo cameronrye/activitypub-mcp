@@ -74,15 +74,27 @@ export class AuditLogger {
 
   /**
    * Sanitize parameters to remove sensitive data.
+   *
+   * - Keys whose name suggests a credential are fully redacted.
+   * - User-authored content (post body, content warning, alt text) is
+   *   reduced to a length-only marker. Audit logs are often shipped to
+   *   SIEMs or shared dashboards; v1 stored DM content verbatim.
+   * - Other strings >500 chars are truncated for storage hygiene.
    */
   private sanitizeParams(params: Record<string, unknown>): Record<string, unknown> {
     const sensitiveKeys = ["password", "token", "secret", "key", "auth", "credential"];
+    // User-authored content that should never be stored verbatim. Audit
+    // logs must remain useful (we keep length/presence) without leaking
+    // post bodies, DM content, or content-warning labels.
+    const contentKeys = new Set(["content", "spoilertext", "description", "summary"]);
     const sanitized: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(params)) {
       const lowerKey = key.toLowerCase();
       if (sensitiveKeys.some((sk) => lowerKey.includes(sk))) {
         sanitized[key] = "[REDACTED]";
+      } else if (contentKeys.has(lowerKey) && typeof value === "string") {
+        sanitized[key] = `[content omitted: ${value.length} chars]`;
       } else if (typeof value === "string" && value.length > 500) {
         sanitized[key] = `${value.slice(0, 500)}... [truncated]`;
       } else {

@@ -68,9 +68,6 @@ export const RETRY_MAX_DELAY = parseIntEnv(process.env.RETRY_MAX_DELAY, 30000);
 // Cache Configuration
 // =============================================================================
 
-/** Default instance for hardcoded references */
-export const DEFAULT_INSTANCE = process.env.DEFAULT_INSTANCE || "mastodon.social";
-
 /** Cache TTL in milliseconds (default: 5 minutes) */
 export const CACHE_TTL = parseIntEnv(process.env.CACHE_TTL, 300000);
 
@@ -250,16 +247,6 @@ export const BLOCKED_INSTANCES = parseBlockedInstances(process.env.BLOCKED_INSTA
 export const INSTANCE_BLOCKING_ENABLED = parseBoolEnv(process.env.INSTANCE_BLOCKING_ENABLED, true);
 
 // =============================================================================
-// Content Warning Configuration
-// =============================================================================
-
-/** Whether to respect content warnings in output (default: true) */
-export const RESPECT_CONTENT_WARNINGS = parseBoolEnv(process.env.RESPECT_CONTENT_WARNINGS, true);
-
-/** Whether to include content warnings in responses (default: true) */
-export const SHOW_CONTENT_WARNINGS = parseBoolEnv(process.env.SHOW_CONTENT_WARNINGS, true);
-
-// =============================================================================
 // Configuration Validation
 // =============================================================================
 
@@ -279,11 +266,17 @@ export function validateConfiguration(): void {
     warnings.push("Rate limiting is disabled in production environment");
   }
 
-  // Log warnings if any
+  // Log warnings via logtape — never via console.warn, which on stdio
+  // transport would land on stderr at startup and mix with the MCP
+  // protocol stream.
   if (warnings.length > 0) {
-    console.warn("[config] Configuration warnings:");
-    for (const warning of warnings) {
-      console.warn(`  - ${warning}`);
-    }
+    // Lazy import to avoid pulling logtape into config-only consumers
+    // (the build is ESM/tsc, so this stays tree-shakable in dist).
+    void import("@logtape/logtape").then(({ getLogger }) => {
+      const logger = getLogger("activitypub-mcp:config");
+      for (const warning of warnings) {
+        logger.warn(warning);
+      }
+    });
   }
 }

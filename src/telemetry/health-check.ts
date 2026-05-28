@@ -65,7 +65,6 @@ class HealthChecker {
 
     // Basic system checks
     await this.checkMemoryUsage(checks);
-    await this.checkDiskSpace(checks);
     await this.checkEnvironmentVariables(checks);
 
     // Network connectivity checks
@@ -173,31 +172,6 @@ class HealthChecker {
       checks.memory = {
         status: "fail",
         message: `Memory check failed: ${error instanceof Error ? error.message : String(error)}`,
-        duration: Date.now() - startTime,
-      };
-    }
-  }
-
-  /**
-   * Check logs directory writability
-   */
-  private async checkDiskSpace(checks: HealthCheckResult["checks"]): Promise<void> {
-    const startTime = Date.now();
-
-    try {
-      // Check if we can write to the logs directory
-      const fs = await import("node:fs/promises");
-      await fs.access("./logs", fs.constants.W_OK);
-
-      checks.disk = {
-        status: "pass",
-        message: "Logs directory is writable",
-        duration: Date.now() - startTime,
-      };
-    } catch (error) {
-      checks.disk = {
-        status: "warn",
-        message: `Logs directory not writable: ${error instanceof Error ? error.message : String(error)}`,
         duration: Date.now() - startTime,
       };
     }

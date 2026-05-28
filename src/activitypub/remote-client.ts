@@ -372,26 +372,12 @@ export class RemoteActivityPubClient {
   }
 
   /**
-   * Extract previous page cursor from collection
+   * Extract previous page cursor from collection.
+   * Only honours `prev`. The old code fell through to `last`, which
+   * jumped callers to the final page rather than one page backward.
    */
   private extractPrevCursor(collection: ActivityPubCollection): string | undefined {
-    if (collection.prev) {
-      return collection.prev;
-    }
-
-    if (collection.last) {
-      if (typeof collection.last === "string") {
-        return collection.last;
-      }
-      if (typeof collection.last === "object" && collection.last !== null) {
-        const lastObj = collection.last as unknown as Record<string, unknown>;
-        if ("id" in lastObj && typeof lastObj.id === "string") {
-          return lastObj.id;
-        }
-      }
-    }
-
-    return undefined;
+    return typeof collection.prev === "string" ? collection.prev : undefined;
   }
 
   /**

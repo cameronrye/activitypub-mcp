@@ -3,6 +3,7 @@
  */
 
 import { getLogger } from "@logtape/logtape";
+import { MAX_REQUEST_HISTORY } from "../config.js";
 
 const logger = getLogger("activitypub-mcp:performance");
 
@@ -31,10 +32,16 @@ export interface RequestMetrics {
 }
 
 class PerformanceMonitor {
+  // Map of in-flight request ID → metrics row, so endRequest does an O(1)
+  // exact lookup instead of a substring scan (the old `requestId.includes(
+  // r.operation)` check would mis-match concurrent calls to operations with
+  // overlapping names like 'search' and 'search-posts').
+  private inFlight = new Map<string, RequestMetrics>();
+
   private metrics: PerformanceMetrics;
   private requestHistory: RequestMetrics[] = [];
   private responseTimes: number[] = [];
-  private maxHistorySize = 1000;
+  private maxHistorySize: number;
   private metricsEnabled: boolean;
   private metricsInterval?: NodeJS.Timeout;
   private startTime: number;
@@ -42,6 +49,7 @@ class PerformanceMonitor {
   constructor() {
     this.startTime = Date.now();
     this.metricsEnabled = process.env.METRICS_ENABLED === "true";
+    this.maxHistorySize = MAX_REQUEST_HISTORY;
 
     this.metrics = {
       requestCount: 0,
@@ -77,6 +85,7 @@ class PerformanceMonitor {
       metadata,
     };
 
+    this.inFlight.set(requestId, request);
     this.requestHistory.push(request);
 
     // Keep history size manageable
@@ -93,16 +102,16 @@ class PerformanceMonitor {
   endRequest(requestId: string, success: boolean, error?: string): void {
     if (!this.metricsEnabled || !requestId) return;
 
-    const request = this.requestHistory.find((r) => requestId.includes(r.operation) && !r.endTime);
+    const request = this.inFlight.get(requestId);
+    if (!request) return;
+    this.inFlight.delete(requestId);
 
-    if (request) {
-      request.endTime = Date.now();
-      request.duration = request.endTime - request.startTime;
-      request.success = success;
-      request.error = error;
+    request.endTime = Date.now();
+    request.duration = request.endTime - request.startTime;
+    request.success = success;
+    request.error = error;
 
-      this.updateMetrics(request);
-    }
+    this.updateMetrics(request);
   }
 
   /**

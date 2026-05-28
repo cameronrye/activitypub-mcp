@@ -290,7 +290,10 @@ export class DynamicInstanceDiscoveryService {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
+      const data = await readJsonWithLimit<{ pagination?: { total?: number } }>(
+        response,
+        MAX_RESPONSE_SIZE,
+      );
 
       // Transform API response to our format
       const instances = this.transformInstancesSocialResponse(data);
