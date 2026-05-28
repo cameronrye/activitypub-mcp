@@ -2565,7 +2565,7 @@ function registerUpdateScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
         scheduledPostId: z.string().describe("ID of the scheduled post to update"),
         scheduledAt: z
           .string()
-          .describe("New scheduled time in ISO 8601 format (e.g., 2024-12-25T10:00:00Z)"),
+          .describe("New scheduled time in ISO 8601 format (e.g., one hour from now in UTC)"),
         accountId: z.string().optional().describe("Account ID (defaults to active)"),
         // Legacy field detector — gives a clear error to anyone using the old name.
         scheduledId: z
