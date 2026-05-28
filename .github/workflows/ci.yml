@@ -44,6 +44,11 @@ jobs:
       env:
         NODE_OPTIONS: --max-old-space-size=4096
 
+    - name: Typecheck
+      run: npm run typecheck
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
+
     - name: Run linting
       run: npm run lint
       env:
