@@ -3,6 +3,10 @@ import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const server = setupServer();
+// Note: the production fetch helper catches and silently skips unmatched
+// requests, so MSW's "error" mode would only add console noise without
+// failing tests. The strict `.toBe(3)` assertion below is the real guard
+// against the cap regressing.
 beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
 afterEach(() => {
   server.resetHandlers();
@@ -117,6 +121,6 @@ describe("fetchPostThread cross-origin guard (M3)", () => {
       depth: 1,
       maxReplies: 100,
     });
-    expect(thread.replies.length).toBeLessThanOrEqual(3);
+    expect(thread.replies.length).toBe(3);
   });
 });

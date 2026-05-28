@@ -88,15 +88,19 @@ jobs:
     - name: Install dependencies
       if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true' && steps.validate_version.outputs.valid == 'true'
       run: npm ci
-    
+
+    - name: Typecheck
+      if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true' && steps.validate_version.outputs.valid == 'true'
+      run: npm run typecheck
+
     - name: Run tests
       if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true' && steps.validate_version.outputs.valid == 'true'
       run: npm test
-    
+
     - name: Run linting
       if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true' && steps.validate_version.outputs.valid == 'true'
       run: npm run lint
-    
+
     - name: Build project
       if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true' && steps.validate_version.outputs.valid == 'true'
       run: npm run build

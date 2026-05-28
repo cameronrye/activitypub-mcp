@@ -104,19 +104,23 @@ export class AccountManager {
     // Check for additional accounts
     const rawAccounts = process.env.ACTIVITYPUB_ACCOUNTS;
     if (rawAccounts) {
-      // Migration guard: legacy `:`-delimited format silently truncated tokens
-      // containing colons. Refuse to start rather than silently misload.
-      if (rawAccounts.includes(":") && !rawAccounts.includes("|")) {
-        throw new Error(
-          "ACTIVITYPUB_ACCOUNTS uses pipe (|) delimiter as of v2. " +
-            "Migrate from 'id:inst:tok:user:label' to 'id|inst|tok|user|label'. " +
-            "See MIGRATION-v2.md.",
-        );
-      }
       const entries = rawAccounts
         .split(",")
         .map((e) => e.trim())
         .filter(Boolean);
+
+      // Migration guard: legacy `:`-delimited format silently truncated tokens
+      // containing colons. Refuse to start if ANY entry looks legacy — catches
+      // both all-legacy input and mixed legacy/v2 input.
+      const legacyEntry = entries.find((e) => e.includes(":") && !e.includes("|"));
+      if (legacyEntry) {
+        throw new Error(
+          "ACTIVITYPUB_ACCOUNTS uses pipe (|) delimiter as of v2. " +
+            `Legacy entry detected: "${legacyEntry}". ` +
+            "Migrate from 'id:inst:tok:user:label' to 'id|inst|tok|user|label'. " +
+            "See MIGRATION-v2.md.",
+        );
+      }
       for (const entry of entries) {
         try {
           const parts = entry.split("|");

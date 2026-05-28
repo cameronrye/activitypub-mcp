@@ -112,21 +112,39 @@ describe("PerformanceMonitor.startMetricsCollection unref (H5)", () => {
   });
 
   it("unrefs the metrics interval so it does not keep the event loop alive", async () => {
-    const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
-    // The constructor already called startMetricsCollection() because METRICS_ENABLED=true
-    const interval = (performanceMonitor as unknown as { metricsInterval?: NodeJS.Timeout })
-      .metricsInterval;
-    expect(interval).toBeDefined();
-    // unref() on a Timeout is idempotent and returns the Timeout. We don't have
-    // a public "is unref'd" flag, but we can assert that calling unref() again
-    // doesn't throw and returns the same object — a smoke check that the API
-    // shape is correct.
-    expect(typeof (interval as NodeJS.Timeout).unref).toBe("function");
-    // The most useful assertion: stop() clears the interval.
-    performanceMonitor.stop();
-    expect(
-      (performanceMonitor as unknown as { metricsInterval?: NodeJS.Timeout }).metricsInterval,
-    ).toBeUndefined();
+    // Wrap setInterval so we can observe .unref() on the returned timer.
+    const realSetInterval = global.setInterval;
+    const unrefSpy = vi.fn();
+    const setIntervalSpy = vi.spyOn(global, "setInterval").mockImplementation(((
+      handler: TimerHandler,
+      timeout?: number,
+      ...args: unknown[]
+    ) => {
+      const timer = realSetInterval(handler as () => void, timeout, ...args);
+      // Replace .unref so we can detect the call. Keep the original behavior.
+      const originalUnref = timer.unref.bind(timer);
+      timer.unref = () => {
+        unrefSpy();
+        return originalUnref();
+      };
+      return timer;
+    }) as typeof setInterval);
+
+    try {
+      // Constructor calls startMetricsCollection() because METRICS_ENABLED=true.
+      const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
+
+      expect(setIntervalSpy).toHaveBeenCalled();
+      expect(unrefSpy).toHaveBeenCalledTimes(1);
+
+      // stop() must also clear the interval reference.
+      performanceMonitor.stop();
+      expect(
+        (performanceMonitor as unknown as { metricsInterval?: NodeJS.Timeout }).metricsInterval,
+      ).toBeUndefined();
+    } finally {
+      setIntervalSpy.mockRestore();
+    }
   });
 });
 

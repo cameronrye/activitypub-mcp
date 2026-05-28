@@ -376,6 +376,18 @@ ${cw}${mainContent}
             );
             for (let i = 0; i < thread.replies.length; i++) {
               const reply = thread.replies[i];
+              const stub = reply as unknown as { crossOrigin?: boolean; fetched?: boolean };
+              if (stub.crossOrigin === true && stub.fetched === false) {
+                parts.push(`### Reply ${i + 1}
+
+**Author:** Unknown
+**URL:** ${reply.id}
+
+_Cross-origin reply not fetched (set MCP_THREAD_CROSS_ORIGIN_FETCH=true to follow)._
+
+`);
+                continue;
+              }
               const replyContent = stripHtmlTags(reply.content || reply.summary || "No content");
               const replyCw = reply.summary && reply.content ? `**CW:** ${reply.summary}\n` : "";
               parts.push(`### Reply ${i + 1}

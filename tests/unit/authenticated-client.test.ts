@@ -28,8 +28,7 @@ vi.mock("../../src/auth/account-manager.js", () => ({
   },
 }));
 
-// Mock utils
-vi.mock("../../src/utils.js", () => ({
+vi.mock("../../src/validation/url.js", () => ({
   validateExternalUrl: vi.fn().mockResolvedValue(undefined),
 }));
 

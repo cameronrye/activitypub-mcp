@@ -247,6 +247,16 @@ describe("ACTIVITYPUB_ACCOUNTS pipe delimiter (H6)", () => {
       /ACTIVITYPUB_ACCOUNTS.*pipe/i,
     );
   });
+
+  it("throws migration error when any single entry is legacy (mixed input)", async () => {
+    process.env.ACTIVITYPUB_ACCOUNTS =
+      "good|inst.test|tok1|user1|Label,legacy:inst.test:tok2:user2";
+    delete process.env.ACTIVITYPUB_DEFAULT_INSTANCE;
+    delete process.env.ACTIVITYPUB_DEFAULT_TOKEN;
+    await expect(import("../../src/auth/account-manager.js")).rejects.toThrow(
+      /Legacy entry detected/i,
+    );
+  });
 });
 
 describe("verifyAccount SSRF protection (M8)", () => {

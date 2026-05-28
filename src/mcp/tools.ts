@@ -1074,6 +1074,10 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
             ? `**Replies** (${thread.replies.length} of ${thread.totalReplies} total):\n${thread.replies
                 .slice(0, 10)
                 .map((r, i) => {
+                  const stub = r as unknown as { crossOrigin?: boolean; fetched?: boolean };
+                  if (stub.crossOrigin === true && stub.fetched === false) {
+                    return `${i + 1}. _(cross-origin, not fetched)_ ${r.id}`;
+                  }
                   const content = r.content || r.summary || "No content";
                   const truncated = content.length > 150 ? `${content.slice(0, 150)}...` : content;
                   const cw = r.summary && r.content ? `[CW: ${r.summary}] ` : "";

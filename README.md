@@ -246,10 +246,11 @@ To use this MCP server with Claude Desktop:
 
 ### Quick Reference
 
-For detailed usage instructions, examples, and troubleshooting, see:
+For detailed usage instructions, examples, and troubleshooting, see the
+[documentation site](https://cameronrye.github.io/activitypub-mcp/docs/):
 
-- **[Usage Guide](docs/guides/USAGE_GUIDE.md)** - Comprehensive usage documentation
-- **[Examples](docs/guides/EXAMPLES.md)** - Practical examples and integration patterns
+- **[Usage Guide](https://cameronrye.github.io/activitypub-mcp/docs/guides/usage-guide/)** - Comprehensive usage documentation
+- **[Examples](https://cameronrye.github.io/activitypub-mcp/docs/guides/examples/)** - Practical examples and integration patterns
 - **[API Reference](#api-reference)** - Complete API documentation (below)
 
 ### API Reference
@@ -1145,41 +1146,58 @@ Export fediverse content in multiple formats (JSON, Markdown, CSV):
 
 ```
 activitypub-mcp/
-├── src/                           # Source code
-│   ├── mcp-main.ts                # MCP server entry point
-│   ├── mcp-server.ts              # MCP server implementation
-│   ├── webfinger.ts               # WebFinger discovery client
-│   ├── remote-client.ts           # Remote ActivityPub client
-│   ├── instance-discovery.ts      # Static instance discovery
-│   ├── dynamic-instance-discovery.ts # Live API instance discovery
-│   ├── instance-blocklist.ts      # Instance blocklist manager
-│   ├── audit-logger.ts            # Audit logging infrastructure
-│   ├── health-check.ts            # Health monitoring
-│   ├── performance-monitor.ts     # Performance tracking
-│   ├── config.ts                  # Configuration constants
-│   ├── logging.ts                 # Logging configuration
-│   ├── auth/                      # Authentication (v1.1.0)
-│   │   ├── account-manager.ts     # Multi-account management
-│   │   ├── authenticated-client.ts # Authenticated API client
-│   │   └── index.ts               # Auth module exports
-│   ├── mcp/                       # MCP handlers
-│   │   ├── tools.ts               # Read-only tool implementations
-│   │   ├── tools-write.ts         # Write operation tools (v1.1.0)
-│   │   ├── tools-export.ts        # Export tools (v1.1.0)
-│   │   ├── resources.ts           # Resource implementations
-│   │   └── prompts.ts             # Prompt implementations
-│   └── server/                    # Server infrastructure
-│       ├── http-transport.ts      # HTTP/SSE transport
-│       ├── adaptive-rate-limiter.ts # Per-instance rate limiting (v1.1.0)
-│       └── rate-limiter.ts        # Rate limiting
-├── docs/                          # Documentation
-├── scripts/                       # Installation & setup scripts
-├── tests/                         # Test files
-│   ├── unit/                      # Unit tests
-│   └── integration/               # Integration tests
-├── dist/                          # Built JavaScript files
-├── package.json                   # Dependencies and scripts
-└── README.md                      # This file
+├── src/                              # Source code
+│   ├── mcp-main.ts                   # MCP server entry point
+│   ├── mcp-server.ts                 # MCP server wiring
+│   ├── config.ts                     # Environment-driven configuration
+│   ├── activitypub/                  # Remote ActivityPub client
+│   │   └── remote-client.ts
+│   ├── audit/                        # Audit logging
+│   │   └── logger.ts
+│   ├── auth/                         # Authentication (multi-account)
+│   │   ├── account-manager.ts
+│   │   ├── authenticated-client.ts
+│   │   └── index.ts
+│   ├── discovery/                    # WebFinger + instance discovery
+│   │   ├── webfinger.ts
+│   │   ├── instance-discovery.ts
+│   │   └── dynamic-instance-discovery.ts
+│   ├── mcp/                          # MCP handlers
+│   │   ├── tools.ts                  # Read-only tools
+│   │   ├── tools-write.ts            # Write tools
+│   │   ├── tools-export.ts           # Export tools
+│   │   ├── resources.ts              # Resource implementations
+│   │   ├── prompts.ts                # Prompt implementations
+│   │   └── capabilities.ts           # Capability registry
+│   ├── policy/                       # Instance blocklist
+│   │   └── instance-blocklist.ts
+│   ├── resilience/                   # Rate limiting
+│   │   ├── rate-limiter.ts
+│   │   └── adaptive-rate-limiter.ts
+│   ├── telemetry/                    # Health, metrics, logging
+│   │   ├── health-check.ts
+│   │   ├── performance-monitor.ts
+│   │   └── logging.ts
+│   ├── transport/                    # HTTP transport + auth middleware
+│   │   ├── http.ts
+│   │   └── auth-middleware.ts
+│   ├── utils/                        # Utility helpers
+│   │   ├── errors.ts
+│   │   ├── html.ts
+│   │   ├── fetch-helpers.ts
+│   │   └── lru-cache.ts
+│   └── validation/                   # Zod schemas + URL validation
+│       ├── schemas.ts
+│       ├── validators.ts
+│       └── url.ts
+├── docs/                             # Documentation
+├── scripts/                          # Installation & setup scripts
+├── tests/                            # Test files
+│   ├── unit/                         # Unit tests
+│   └── integration/                  # Integration tests (gated)
+├── dist/                             # Built JavaScript files
+├── package.json
+└── README.md
 ```
 
 ### Technology Stack
@@ -1200,14 +1218,17 @@ LLM Client ←→ MCP Protocol ←→ Fediverse Client ←→ Remote ActivityPub
 
 ## Documentation
 
-Comprehensive documentation is available in the `docs/` directory:
+Full documentation is published at
+[cameronrye.github.io/activitypub-mcp](https://cameronrye.github.io/activitypub-mcp/docs/):
 
-- **[Setup & Installation](docs/setup/)** - Configuration and installation guides
-- **[User Guides](docs/guides/)** - Usage examples and tutorials
-- **[Development](docs/development/)** - Development setup and best practices
-- **[Specifications](docs/specifications/)** - ActivityPub and protocol specifications
+- **[Setup & Installation](https://cameronrye.github.io/activitypub-mcp/docs/setup/)** - Configuration and installation guides
+- **[User Guides](https://cameronrye.github.io/activitypub-mcp/docs/guides/basic-usage/)** - Usage examples and tutorials
+- **[Development](https://cameronrye.github.io/activitypub-mcp/docs/development/architecture/)** - Architecture and contributor docs
+- **[Specifications](https://cameronrye.github.io/activitypub-mcp/docs/specifications/activitypub-llm-specification-guide/)** - ActivityPub and protocol references
 
-See the [Documentation Index](docs/README.md) for a complete overview.
+The `docs/specifications/` directory in this repo also contains the full
+LLM-readable spec mirrors (ActivityPub, ActivityStreams, WebFinger, Fedify CLI)
+as standalone Markdown.
 
 ## Development
 
@@ -1224,13 +1245,20 @@ Create a `.env` file:
 ```env
 # MCP Server configuration
 MCP_SERVER_NAME=activitypub-mcp
-MCP_SERVER_VERSION=1.1.0
+MCP_SERVER_VERSION=2.0.0
 
-# Transport configuration (stdio or http)
+# Transport configuration (stdio or http; stdio is default)
 MCP_TRANSPORT_MODE=stdio
 MCP_HTTP_PORT=3000
 MCP_HTTP_HOST=127.0.0.1
-MCP_HTTP_CORS_ENABLED=false
+
+# REQUIRED if MCP_TRANSPORT_MODE=http. v2 refuses to start without it.
+# Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# MCP_HTTP_SECRET=
+
+# CORS for HTTP transport. v2 default is empty (no origins allowed).
+# Set explicitly for browser clients; "*" is allowed but discouraged.
+# MCP_HTTP_CORS_ORIGINS=https://app.example.com
 
 # Rate limiting
 RATE_LIMIT_ENABLED=true
@@ -1256,12 +1284,22 @@ DYNAMIC_INSTANCE_CACHE_TTL=3600000
 RESPECT_CONTENT_WARNINGS=true
 SHOW_CONTENT_WARNINGS=true
 
-# Authentication (for write operations - v1.1.0)
+# Thread traversal caps (v2 — applies to fetch-post-thread)
+# MCP_THREAD_MAX_DEPTH=5
+# MCP_THREAD_MAX_REPLIES=50
+# MCP_THREAD_CROSS_ORIGIN_FETCH=false  # true restores v1 fetch-everything behavior
+
+# Health check
+# Set to false to skip only the outbound connectivity probe (e.g., air-gapped envs).
+# HEALTH_CHECK_EXTERNAL_PROBE=true
+
+# Authentication — single account (optional)
 ACTIVITYPUB_DEFAULT_INSTANCE=mastodon.social
 ACTIVITYPUB_DEFAULT_TOKEN=your-oauth-access-token
 ACTIVITYPUB_DEFAULT_USERNAME=your-username
 
-# Multi-account configuration (v2 pipe-delimited: id|instance|token|username|label)
+# Authentication — multi-account (v2 pipe-delimited; v1 colon form is rejected)
+# Format: id|instance|token|username|label,id2|...
 # ACTIVITYPUB_ACCOUNTS=work|fosstodon.org|token1|work_account|Work,personal|mastodon.social|token2|personal_account|Personal
 ```
 

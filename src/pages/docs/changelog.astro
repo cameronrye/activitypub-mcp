@@ -24,6 +24,60 @@ const description =
       <div class="releases">
         <div class="release">
           <div class="release-header">
+            <h3>v2.0.0 - 2026-05-27</h3>
+            <span class="release-type stable">Stable Release</span>
+          </div>
+          <div class="release-content">
+            <p><strong>Security &amp; correctness focused release.</strong> See the <a href="https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v2.md" target="_blank" rel="noopener">v2 Migration Guide</a> for full breaking-change details, and <a href="https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md" target="_blank" rel="noopener">CHANGELOG.md</a> for the complete entry.</p>
+
+            <div class="change-category">
+              <h4>Breaking</h4>
+              <ul>
+                <li><code>MCP_HTTP_SECRET</code> is required when <code>MCP_TRANSPORT_MODE=http</code> (no default; ≥16 chars)</li>
+                <li><code>MCP_HTTP_CORS_ORIGINS</code> defaults to empty (was permissive); set explicitly for browser clients</li>
+                <li><code>ACTIVITYPUB_ACCOUNTS</code> uses <code>|</code> as the field delimiter (colon form rejected at startup)</li>
+                <li><code>HEALTH_CHECK_ENABLED</code> removed; replaced with <code>HEALTH_CHECK_EXTERNAL_PROBE</code></li>
+                <li>MCP tool arg renamed: <code>scheduledId</code> → <code>scheduledPostId</code> on cancel-scheduled-post / update-scheduled-post</li>
+                <li>Node 20+ required (was 18+)</li>
+              </ul>
+            </div>
+
+            <div class="change-category">
+              <h4>Added</h4>
+              <ul>
+                <li>SSRF guards + streaming response-size caps on every outbound fetch</li>
+                <li>Thread traversal caps: <code>MCP_THREAD_MAX_DEPTH</code>, <code>MCP_THREAD_MAX_REPLIES</code>, <code>MCP_THREAD_CROSS_ORIGIN_FETCH</code></li>
+                <li>Bearer-token auth middleware on <code>/mcp</code> and <code>/metrics</code></li>
+                <li>Full-surface audit logging (success + failure) across every write tool</li>
+                <li><code>post-status</code> accepts <code>mediaIds</code> and <code>scheduledAt</code> directly</li>
+                <li>Dynamic server-info capabilities from a live tool/resource/prompt registry</li>
+              </ul>
+            </div>
+
+            <div class="change-category">
+              <h4>Fixed</h4>
+              <ul>
+                <li>Pagination cursor preserves <code>limit</code> / <code>min_id</code> / <code>max_id</code> / <code>since_id</code></li>
+                <li>304 Not Modified no longer surfaces as a spurious error</li>
+                <li><code>search-instance</code> renders prose instead of raw JSON; <code>fetch-timeline</code> renders all posts</li>
+                <li>Filter composition in tool list is cumulative (was last-write-wins)</li>
+                <li>PerformanceMonitor interval is unref'd so it never blocks shutdown</li>
+              </ul>
+            </div>
+
+            <div class="change-category">
+              <h4>Internal</h4>
+              <ul>
+                <li>Source reorganized into topic directories: <code>activitypub/</code>, <code>audit/</code>, <code>discovery/</code>, <code>policy/</code>, <code>resilience/</code>, <code>telemetry/</code>, <code>transport/</code>, <code>validation/</code></li>
+                <li>CI: typecheck step, daily integration suite, tarball-contents check, bin smoke test</li>
+                <li>TypeScript <code>noUnusedLocals</code> / <code>noUnusedParameters</code> and Biome <code>noUnusedVariables</code> enforced</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="release">
+          <div class="release-header">
             <h3>v1.0.0 - 2025-01-15</h3>
             <span class="release-type stable">Stable Release</span>
           </div>
@@ -167,34 +221,6 @@ const description =
         </div>
       </div>
 
-      <section class="changelog-section">
-        <h2>Upcoming Features</h2>
-        <div class="upcoming-features">
-          <div class="feature-category">
-            <h3>v1.1.0 - Planned</h3>
-            <ul>
-              <li>Enhanced search capabilities with filters</li>
-              <li>Support for additional fediverse platforms (PeerTube, Pixelfed)</li>
-              <li>Advanced analytics and trend detection</li>
-              <li>Improved caching strategies and persistence</li>
-              <li>WebSocket support for real-time updates</li>
-              <li>Plugin system for extensibility</li>
-            </ul>
-          </div>
-
-          <div class="feature-category">
-            <h3>v1.2.0 - Future</h3>
-            <ul>
-              <li>Machine learning integration for content analysis</li>
-              <li>Advanced federation graph analysis</li>
-              <li>Content recommendation algorithms</li>
-              <li>Multi-language support and i18n</li>
-              <li>Advanced privacy controls and GDPR compliance tools</li>
-              <li>Integration with additional AI/ML platforms</li>
-            </ul>
-          </div>
-        </div>
-      </section>
 
       <section class="changelog-section">
         <h2>Release Statistics</h2>
@@ -226,21 +252,21 @@ const description =
         <h2>Migration Guides</h2>
         <div class="migration-guides">
           <div class="migration-card">
-            <h3>Upgrading to v1.0.0</h3>
-            <p>No breaking changes from v0.9.0. Simply update your package:</p>
-            <pre><code>npm update activitypub-mcp</code></pre>
-            <p>All existing configurations and integrations remain compatible.</p>
+            <h3>Upgrading to v2.0.0</h3>
+            <p>v2 introduces several breaking changes — most around security defaults and config formats. See the full <a href="https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v2.md" target="_blank" rel="noopener">v2 Migration Guide</a> for before/after snippets covering:</p>
+            <ul>
+              <li>Setting <code>MCP_HTTP_SECRET</code> + an explicit <code>MCP_HTTP_CORS_ORIGINS</code> for HTTP transport</li>
+              <li>Migrating <code>ACTIVITYPUB_ACCOUNTS</code> from colon (<code>:</code>) to pipe (<code>|</code>) delimiter</li>
+              <li>Replacing <code>HEALTH_CHECK_ENABLED</code> with <code>HEALTH_CHECK_EXTERNAL_PROBE</code></li>
+              <li>Renaming MCP tool args: <code>scheduledId</code> → <code>scheduledPostId</code></li>
+              <li>Bumping your runtime to Node 20+</li>
+            </ul>
           </div>
 
           <div class="migration-card">
-            <h3>Upgrading from v0.5.0</h3>
-            <p>Significant changes in configuration and API:</p>
-            <ul>
-              <li>Update environment variable names (see configuration guide)</li>
-              <li>Review cache settings - new TTL options available</li>
-              <li>Update any custom error handling code</li>
-              <li>Test all integrations thoroughly</li>
-            </ul>
+            <h3>Upgrading to v1.0.0</h3>
+            <p>No breaking changes from v0.9.0. Simply update your package:</p>
+            <pre><code>npm update activitypub-mcp</code></pre>
           </div>
         </div>
       </section>

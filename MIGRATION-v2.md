@@ -1,9 +1,7 @@
 # Migration Guide: v1 → v2
 
 This is the v2.0.0 release migration guide. See
-[`CHANGELOG.md`](./CHANGELOG.md) for the full list of changes, and
-`docs/superpowers/specs/2026-05-27-v2-release-design.md` for the design
-that drove the release.
+[`CHANGELOG.md`](./CHANGELOG.md) for the full list of changes.
 
 ## Required actions to run v2.0.0
 
@@ -176,7 +174,7 @@ the outbound connectivity probe (the `/health` endpoint's reach test to
 `mastodon.social`), use the new `HEALTH_CHECK_EXTERNAL_PROBE=false`
 instead.
 
-Reference commit: `1c70764`
+Reference commit: `1c70764` — `fix(health): replace dead HEALTH_CHECK_ENABLED with HEALTH_CHECK_EXTERNAL_PROBE (M7)`
 
 ## Resource URI changes
 
