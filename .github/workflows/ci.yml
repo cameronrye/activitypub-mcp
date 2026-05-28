@@ -39,11 +39,6 @@ jobs:
         $env:NODE_OPTIONS="--max-old-space-size=4096"
       shell: powershell
 
-    - name: Auto-fix linting issues
-      run: npm run lint:fix
-      env:
-        NODE_OPTIONS: --max-old-space-size=4096
-
     - name: Typecheck
       run: npm run typecheck
       env:
@@ -95,9 +90,6 @@ jobs:
 
     - name: Validate Biome configuration
       run: npm run validate:biome
-
-    - name: Auto-fix linting issues
-      run: npm run lint:fix
 
     - name: Run Biome linting
       run: npm run lint
