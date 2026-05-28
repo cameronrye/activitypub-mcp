@@ -7,6 +7,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { trackedMcpServer } from "./capabilities.js";
 
 /**
  * Registers all MCP prompts on the server.
@@ -14,6 +15,8 @@ import { z } from "zod";
  * @param mcpServer - The MCP server instance
  */
 export function registerPrompts(mcpServer: McpServer): void {
+  trackedMcpServer(mcpServer);
+
   // Discovery prompts
   registerExploreFediversePrompt(mcpServer);
   registerDiscoverContentPrompt(mcpServer);

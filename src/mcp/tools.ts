@@ -18,6 +18,7 @@ import { validateActorIdentifier, validateDomain, validateQuery } from "../serve
 import type { RateLimiter } from "../server/rate-limiter.js";
 import { formatErrorWithSuggestion, getErrorMessage, stripHtmlTags } from "../utils.js";
 import { ActorIdentifierSchema, DomainSchema, QuerySchema } from "../validation/schemas.js";
+import { trackedMcpServer } from "./capabilities.js";
 import { registerExportTools } from "./tools-export.js";
 import { registerWriteTools } from "./tools-write.js";
 
@@ -30,6 +31,8 @@ const logger = getLogger("activitypub-mcp:tools");
  * @param rateLimiter - The rate limiter instance
  */
 export function registerTools(mcpServer: McpServer, rateLimiter: RateLimiter): void {
+  trackedMcpServer(mcpServer);
+
   // Discovery tools
   registerDiscoverActorTool(mcpServer, rateLimiter);
   registerDiscoverInstancesTool(mcpServer);

@@ -14,6 +14,7 @@ import { remoteClient } from "../remote-client.js";
 import { validateActorIdentifier, validateDomain } from "../server/index.js";
 import type { RateLimiter } from "../server/rate-limiter.js";
 import { formatErrorWithSuggestion, getErrorMessage, stripHtmlTags } from "../utils.js";
+import { trackedMcpServer } from "./capabilities.js";
 
 const logger = getLogger("activitypub-mcp:tools-export");
 
@@ -26,6 +27,8 @@ export type ExportFormat = "json" | "markdown" | "csv";
  * Registers all export tools.
  */
 export function registerExportTools(mcpServer: McpServer, rateLimiter: RateLimiter): void {
+  trackedMcpServer(mcpServer);
+
   registerExportTimelineTool(mcpServer, rateLimiter);
   registerExportThreadTool(mcpServer, rateLimiter);
   registerExportAccountInfoTool(mcpServer, rateLimiter);

@@ -14,6 +14,7 @@ import { extractSingleValue, validateActorIdentifier } from "../server/index.js"
 import type { RateLimiter } from "../server/rate-limiter.js";
 import { getErrorMessage } from "../utils.js";
 import { DomainSchema } from "../validation/schemas.js";
+import { capabilitiesRegistry, trackedMcpServer } from "./capabilities.js";
 
 const logger = getLogger("activitypub-mcp:resources");
 
@@ -41,6 +42,8 @@ export function registerResources(
   rateLimiter: RateLimiter,
   config: ResourceConfig,
 ): void {
+  trackedMcpServer(mcpServer);
+
   // Server resources
   registerServerInfoResource(mcpServer, config);
 
@@ -93,58 +96,16 @@ function registerServerInfoResource(mcpServer: McpServer, config: ResourceConfig
       mimeType: "application/json",
     },
     async (uri) => {
+      const caps = capabilitiesRegistry.list();
       const serverInfo = {
         name: config.serverName,
         version: config.serverVersion,
         description:
           "A Model Context Protocol server for exploring and interacting with the existing Fediverse",
         capabilities: {
-          resources: [
-            "server-info",
-            "remote-actor",
-            "remote-timeline",
-            "remote-followers",
-            "remote-following",
-            "instance-info",
-            "trending",
-            "local-timeline",
-            "federated-timeline",
-            "post-thread",
-          ],
-          tools: {
-            discovery: [
-              "discover-actor",
-              "discover-instances",
-              "discover-instances-live",
-              "recommend-instances",
-            ],
-            content: [
-              "fetch-timeline",
-              "get-post-thread",
-              "search-instance",
-              "search-accounts",
-              "search-hashtags",
-              "search-posts",
-            ],
-            timelines: [
-              "get-trending-hashtags",
-              "get-trending-posts",
-              "get-local-timeline",
-              "get-federated-timeline",
-            ],
-            instance: ["get-instance-info"],
-            utility: ["convert-url", "batch-fetch-actors", "batch-fetch-posts"],
-            system: ["health-check", "performance-metrics"],
-          },
-          prompts: [
-            "explore-fediverse",
-            "discover-content",
-            "compare-instances",
-            "compare-accounts",
-            "analyze-user-activity",
-            "find-experts",
-            "summarize-trending",
-          ],
+          resources: caps.resources,
+          tools: caps.tools,
+          prompts: caps.prompts,
         },
         features: {
           auditLogging: true,

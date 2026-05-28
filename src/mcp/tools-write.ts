@@ -14,6 +14,7 @@ import { accountManager, authenticatedClient } from "../auth/index.js";
 import { performanceMonitor } from "../performance-monitor.js";
 import type { RateLimiter } from "../server/rate-limiter.js";
 import { formatErrorWithSuggestion, getErrorMessage, stripHtmlTags } from "../utils.js";
+import { trackedMcpServer } from "./capabilities.js";
 
 const logger = getLogger("activitypub-mcp:tools-write");
 
@@ -21,6 +22,8 @@ const logger = getLogger("activitypub-mcp:tools-write");
  * Registers all write operation tools.
  */
 export function registerWriteTools(mcpServer: McpServer, rateLimiter: RateLimiter): void {
+  trackedMcpServer(mcpServer);
+
   // Account management tools
   registerListAccountsTool(mcpServer);
   registerSwitchAccountTool(mcpServer);

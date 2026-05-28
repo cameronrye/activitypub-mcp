@@ -5,6 +5,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { McpError } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { capabilitiesRegistry } from "../../src/mcp/capabilities.js";
 import { type ResourceConfig, registerResources } from "../../src/mcp/resources.js";
 import { RateLimiter } from "../../src/server/rate-limiter.js";
 
@@ -58,6 +59,7 @@ describe("MCP Resources", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    capabilitiesRegistry.reset();
 
     // Create a mock MCP server that captures resource registrations
     registeredResources = new Map();
@@ -401,6 +403,68 @@ describe("MCP Resources", () => {
       await expect(resource?.handler(uri, { postUrl: "not-a-valid-url" })).rejects.toThrow(
         "Invalid post URL",
       );
+    });
+  });
+
+  describe("server-info dynamic capabilities (M6)", () => {
+    it("lists every prompt the server actually registered", async () => {
+      // The registry is reset in beforeEach and registerResources populates resources.
+      // Populate the prompts that the real server registers via registerPrompts().
+      // These match the names in src/mcp/prompts.ts exactly.
+      const actualPrompts = [
+        "explore-fediverse",
+        "discover-content",
+        "compare-instances",
+        "compare-accounts",
+        "analyze-user-activity",
+        "find-experts",
+        "summarize-trending",
+        "content-strategy",
+        "community-health",
+        "migration-helper",
+        "thread-composer",
+      ];
+      for (const name of actualPrompts) {
+        capabilitiesRegistry.addPrompt(name);
+      }
+
+      const resource = registeredResources.get("server-info");
+      expect(resource).toBeDefined();
+
+      const uri = new URL("activitypub://server-info");
+      const result = await resource?.handler(uri, {});
+      const contents = (result as { contents: { text: string }[] }).contents;
+      const data = JSON.parse(contents[0].text);
+
+      const advertisedPrompts: string[] = data.capabilities.prompts;
+
+      // Every registered prompt must appear in the server-info response.
+      for (const name of actualPrompts) {
+        expect(advertisedPrompts).toContain(name);
+      }
+
+      // No phantom prompts should appear that weren't registered.
+      for (const name of advertisedPrompts) {
+        expect(actualPrompts).toContain(name);
+      }
+    });
+
+    it("lists resources dynamically from the registry", async () => {
+      // registerResources is called in beforeEach and populates the registry.
+      const resource = registeredResources.get("server-info");
+      expect(resource).toBeDefined();
+
+      const uri = new URL("activitypub://server-info");
+      const result = await resource?.handler(uri, {});
+      const contents = (result as { contents: { text: string }[] }).contents;
+      const data = JSON.parse(contents[0].text);
+
+      const advertisedResources: string[] = data.capabilities.resources;
+      expect(advertisedResources).toContain("server-info");
+      expect(advertisedResources).toContain("remote-actor");
+      expect(advertisedResources).toContain("post-thread");
+      // Should be a flat array, not an object with categories.
+      expect(Array.isArray(advertisedResources)).toBe(true);
     });
   });
 
