@@ -228,19 +228,16 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
 
         // Format posts section
         const postsSection = posts
-          .slice(0, 10)
           .map((post: unknown, index: number) => {
             const p = post as { type?: string; content?: string; summary?: string; id?: string };
             const content = p.content || p.summary || "No content";
-            const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
+            const truncated = content.length > 500 ? `${content.slice(0, 500)}…` : content;
             const postType = p.type || "Post";
             return `${index + 1}. [${postType}] ${truncated}`;
           })
           .join("\n\n");
 
-        const remainingPosts = postCount - 10;
-        const morePostsNote =
-          postCount > 10 ? `\n... and ${remainingPosts} more posts in this page` : "";
+        const morePostsNote = "";
 
         return {
           content: [

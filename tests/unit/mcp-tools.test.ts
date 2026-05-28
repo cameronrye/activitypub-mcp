@@ -886,4 +886,74 @@ describe("MCP Tools", () => {
       expect(text).toContain("example.social");
     });
   });
+
+  describe("fetch-timeline renders all posts (M5)", () => {
+    it("renders more than 10 posts when fetched", async () => {
+      // Mock to return 25 posts
+      const posts = Array.from({ length: 25 }, (_, i) => ({
+        type: "Note",
+        content: `Post ${i + 1}`,
+        id: `post-${i + 1}`,
+      }));
+
+      (remoteClient.fetchActorOutboxPaginated as Mock).mockResolvedValue({
+        items: posts,
+        totalItems: 25,
+        collectionId: "https://example.social/users/testuser/outbox",
+        hasMore: false,
+      });
+
+      const tool = registeredTools.get("fetch-timeline");
+      expect(tool).toBeDefined();
+
+      const result = await tool?.handler({
+        identifier: "user@example.social",
+        limit: 25,
+      });
+
+      const text = ((result as { content: { text: string }[] }).content[0].text ?? "") as string;
+
+      // The bad behavior renders only 10 lines. Assert at least 15 numbered posts.
+      const numberedLines = text.match(/^\d+\. /gm) || [];
+      expect(numberedLines.length).toBeGreaterThanOrEqual(15);
+
+      // No "and N more posts" footer because we rendered everything.
+      expect(text).not.toMatch(/\d+ more posts in this page/);
+    });
+
+    it("truncates each post to 500 chars (not 200)", async () => {
+      // Create a post with a 1000-char body
+      const longContent = "x".repeat(1000);
+      const posts = [
+        {
+          type: "Note",
+          content: longContent,
+          id: "post-1",
+        },
+      ];
+
+      (remoteClient.fetchActorOutboxPaginated as Mock).mockResolvedValue({
+        items: posts,
+        totalItems: 1,
+        collectionId: "https://example.social/users/testuser/outbox",
+        hasMore: false,
+      });
+
+      const tool = registeredTools.get("fetch-timeline");
+      expect(tool).toBeDefined();
+
+      const result = await tool?.handler({
+        identifier: "user@example.social",
+        limit: 1,
+      });
+
+      const text = ((result as { content: { text: string }[] }).content[0].text ?? "") as string;
+
+      // Assert that we have roughly 500 chars of content (plus some overhead for formatting)
+      // The pattern should have 500 x's followed by an ellipsis or truncation marker
+      expect(text).toMatch(/x{400,}/);
+      // Verify it's truncated to 500, not 200
+      expect(text).toMatch(/x{450,}/);
+    });
+  });
 });
