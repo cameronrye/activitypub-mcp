@@ -2,11 +2,16 @@
  * Tests for MCP write tool handlers
  */
 
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { z } from "zod";
 import { registerWriteTools } from "../../src/mcp/tools-write.js";
 import { RateLimiter } from "../../src/resilience/rate-limiter.js";
+
+const THIS_FILE = fileURLToPath(import.meta.url);
+const PKG_JSON_PATH = path.resolve(path.dirname(THIS_FILE), "../../package.json");
 
 // Mock dependencies
 vi.mock("../../src/auth/index.js", () => ({
@@ -879,7 +884,7 @@ describe("MCP Write Tools", () => {
       auditLoggerMock.logToolInvocation.mockClear();
       const tool = registeredTools.get("upload-media");
       expect(tool).toBeDefined();
-      await tool?.handler({ filePath: "/Users/cameron/Developer/activitypub-mcp/package.json" });
+      await tool?.handler({ filePath: PKG_JSON_PATH });
       expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
         "upload-media",
         expect.anything(),
