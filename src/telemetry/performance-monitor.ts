@@ -93,6 +93,17 @@ class PerformanceMonitor {
       this.requestHistory.shift();
     }
 
+    // Bound inFlight too, so a handler that crashes before endRequest
+    // can't leak entries indefinitely. Evict the oldest in-flight entry
+    // when we exceed the cap. The history ring above is the canonical
+    // record; inFlight is only the active-request index.
+    if (this.inFlight.size > this.maxHistorySize) {
+      const oldest = this.inFlight.keys().next().value;
+      if (oldest !== undefined) {
+        this.inFlight.delete(oldest);
+      }
+    }
+
     return requestId;
   }
 

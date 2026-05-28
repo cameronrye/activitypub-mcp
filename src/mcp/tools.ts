@@ -2100,7 +2100,7 @@ function registerBatchFetchActorsTool(mcpServer: McpServer, rateLimiter: RateLim
       description: "Fetch multiple actor profiles at once for efficient bulk lookups",
       inputSchema: {
         identifiers: z
-          .array(z.string())
+          .array(ActorIdentifierSchema)
           .min(1)
           .max(20)
           .describe(

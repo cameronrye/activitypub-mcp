@@ -512,14 +512,21 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
     "reply-to-post",
     {
       title: "Reply to Post",
-      description: "Reply to an existing post/status",
+      description:
+        "Publish a reply to an existing post. Replies are PUBLIC by default and " +
+        "cannot be edited after posting. The reply appears in the parent post's " +
+        "thread, visible to followers of either account. Use visibility: 'direct' " +
+        "for a private reply (DM) instead.",
       inputSchema: {
         statusId: z.string().describe("The ID of the post to reply to"),
         content: z.string().min(1).max(5000).describe("The content of your reply"),
         visibility: z
           .enum(["public", "unlisted", "private", "direct"])
           .optional()
-          .describe("Post visibility (default: matches original post)"),
+          .describe(
+            "Visibility for this reply (default: your account's default posting visibility, " +
+              "which is usually public). Mastodon does NOT auto-match the parent post.",
+          ),
         spoilerText: z.string().max(500).optional().describe("Content warning"),
         accountId: z.string().optional().describe("Account ID to reply from"),
       },

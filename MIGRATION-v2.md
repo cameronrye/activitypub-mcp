@@ -115,6 +115,50 @@ export MCP_THREAD_MAX_DEPTH=10
 export MCP_THREAD_MAX_REPLIES=100
 ```
 
+### Outbound URL scheme restricted to HTTPS
+
+`validateExternalUrl` now rejects any URL whose scheme is not `https:`
+(`file:`, `data:`, `http:`, `ftp:`, etc.). This is defence in depth — no
+v1 user code path constructs non-https URLs, but `HEALTH_CHECK_URL` is
+operator-configurable. If you set it to an `http://` endpoint in v1, the
+v2 health check will fail. Update to `https://`.
+
+### Blocklist now applied to WebFinger and authenticated writes
+
+v1's `BLOCKED_INSTANCES` only gated read-side calls through the remote
+ActivityPub client. v2 also enforces it for WebFinger lookups, actor
+fetches, all authenticated write operations (post, follow, etc.), media
+uploads, and the credential-verify call. Operators who had a blocklist
+configured AND an account on a blocked instance (uncommon) will see
+their writes fail at v2 startup. Either remove the conflicting block or
+move the account to an unblocked instance.
+
+### WebFinger same-origin actor check
+
+`discoverActor` rejects WebFinger responses whose `self` link points to
+a different origin than the queried domain. This closes a spoofing path
+where a malicious instance hands back an actor URL elsewhere. Affected:
+deployments where webfinger lives on a separate origin (e.g.
+`webfinger.example.com` returning actor URLs at `mastodon.example.com`).
+If this matches your setup, run the actor host on the same origin or
+move the webfinger handler to the canonical domain.
+
+### Redirects re-validated, not blindly followed
+
+Every outbound fetch now follows up to 3 redirects, re-running the same
+SSRF + blocklist checks on each hop's target URL. A redirect to a
+private IP is rejected; same-origin redirects pass through unchanged.
+No code change required for typical fediverse deployments — Pleroma /
+Pixelfed / Cloudflare-fronted Mastodons all stay working.
+
+### `get-relationship` no longer accepts `accountIds`
+
+The v1 README documented `accountIds: string[]` on `get-relationship`,
+but the actual implementation took `acct: string`. v2 makes `acct`
+authoritative and rejects `accountIds` with a clear migration error.
+If you have automation that passed `accountIds`, switch to a per-account
+loop calling `get-relationship` with `acct`.
+
 ### Streaming response-size enforcement
 
 Outgoing HTTP requests now stream responses and abort if they
