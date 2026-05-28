@@ -54,7 +54,15 @@ jobs:
     
     - name: Build project
       run: npm run build
-    
+
+    - name: Check tarball contents
+      if: matrix.node-version == '20.x' && matrix.os == 'ubuntu-latest'
+      run: node scripts/check-tarball-contents.js
+
+    - name: Smoke test published bin
+      if: matrix.node-version == '20.x' && matrix.os == 'ubuntu-latest'
+      run: node scripts/smoke-test-bin.js
+
     - name: Run tests
       run: npm test
 
