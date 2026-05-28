@@ -114,6 +114,19 @@ exceed `MAX_RESPONSE_SIZE` (default 10 MB), even when the remote
 server omits the `Content-Length` header. v1 only checked the
 header.
 
+### Instance blocklist JSON imports now validate strictly
+
+`InstanceBlocklist.importFromJson` previously silently skipped entries
+missing required fields (e.g., `domain` or `reason`). v2 validates the
+input against a Zod schema and throws on the first invalid entry instead.
+This prevents partial imports that could silently leave gaps in a
+security-critical blocklist.
+
+If you have an existing JSON dump from v1 that includes malformed
+entries, clean them up before re-importing.
+
+Reference commit: `<L7 commit SHA>` — `fix(policy): runtime-validate instance-blocklist JSON imports (L7)`
+
 ## Sections to be filled by future plans
 
 - **Plans B–F** (other v2 work areas) will append their own sections as they land.
