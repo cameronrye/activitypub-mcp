@@ -768,4 +768,84 @@ describe("MCP Tools", () => {
       strictRateLimiter.stop();
     });
   });
+
+  describe("discover-instances filter composition (H7)", () => {
+    it("applies multiple filters cumulatively", async () => {
+      const tool = registeredTools.get("discover-instances");
+      expect(tool).toBeDefined();
+
+      // Set up mocks so topic and size filters overlap partially:
+      // topic "tech" => [fosstodon.org, techhub.social]
+      // size "large" => [mastodon.social, techhub.social]
+      // combined => [techhub.social] only
+      const techInstances = [
+        {
+          domain: "fosstodon.org",
+          description: "FOSS and tech community",
+          users: "50K",
+          software: "mastodon",
+        },
+        {
+          domain: "techhub.social",
+          description: "Tech hub for developers",
+          users: "200K",
+          software: "mastodon",
+        },
+      ];
+      const largeInstances = [
+        {
+          domain: "mastodon.social",
+          description: "General instance",
+          users: "1M+",
+          software: "mastodon",
+        },
+        {
+          domain: "techhub.social",
+          description: "Tech hub for developers",
+          users: "200K",
+          software: "mastodon",
+        },
+      ];
+
+      (instanceDiscovery.getPopularInstances as Mock).mockReturnValue([
+        ...techInstances,
+        {
+          domain: "mastodon.social",
+          description: "General instance",
+          users: "1M+",
+          software: "mastodon",
+        },
+      ]);
+      (instanceDiscovery.searchInstancesByTopic as Mock).mockReturnValue(techInstances);
+      (instanceDiscovery.getInstancesBySize as Mock).mockReturnValue(largeInstances);
+
+      const both = await tool?.handler({ topic: "tech", size: "large" });
+      const topicOnly = await tool?.handler({ topic: "tech" });
+      const sizeOnly = await tool?.handler({ size: "large" });
+
+      const parseIds = (r: unknown): string[] => {
+        const text = ((r as { content: { text: string }[] })?.content?.[0]?.text ?? "") as string;
+        return text.match(/[a-z0-9.-]+\.[a-z]{2,}/gi) ?? [];
+      };
+
+      const bothIds = new Set(parseIds(both));
+      const topicIds = new Set(parseIds(topicOnly));
+      const sizeIds = new Set(parseIds(sizeOnly));
+
+      // Combined result must be a subset of each individual result
+      for (const id of bothIds) {
+        expect(topicIds.has(id)).toBe(true);
+        expect(sizeIds.has(id)).toBe(true);
+      }
+
+      // Sanity: combined ≤ each individual
+      expect(bothIds.size).toBeLessThanOrEqual(topicIds.size);
+      expect(bothIds.size).toBeLessThanOrEqual(sizeIds.size);
+
+      // techhub.social must appear in combined (it satisfies both filters)
+      expect(bothIds.has("techhub.social")).toBe(true);
+      // fosstodon.org must NOT appear in combined (large filter excludes it)
+      expect(bothIds.has("fosstodon.org")).toBe(false);
+    });
+  });
 });

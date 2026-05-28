@@ -472,19 +472,29 @@ function registerDiscoverInstancesTool(mcpServer: McpServer): void {
         );
 
         if (topic) {
-          instances = instanceDiscovery.searchInstancesByTopic(topic);
+          const topicSet = new Set(
+            instanceDiscovery.searchInstancesByTopic(topic).map((i) => i.domain),
+          );
+          instances = instances.filter((i) => topicSet.has(i.domain));
         }
 
         if (size) {
-          instances = instanceDiscovery.getInstancesBySize(size);
+          const sizeSet = new Set(instanceDiscovery.getInstancesBySize(size).map((i) => i.domain));
+          instances = instances.filter((i) => sizeSet.has(i.domain));
         }
 
         if (region) {
-          instances = instanceDiscovery.getInstancesByRegion(region);
+          const regionSet = new Set(
+            instanceDiscovery.getInstancesByRegion(region).map((i) => i.domain),
+          );
+          instances = instances.filter((i) => regionSet.has(i.domain));
         }
 
         if (beginnerFriendly) {
-          instances = instanceDiscovery.getBeginnerFriendlyInstances();
+          const beginnerSet = new Set(
+            instanceDiscovery.getBeginnerFriendlyInstances().map((i) => i.domain),
+          );
+          instances = instances.filter((i) => beginnerSet.has(i.domain));
         }
 
         const limitedInstances = instances.slice(0, 20);
