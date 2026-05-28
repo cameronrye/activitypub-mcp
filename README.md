@@ -928,7 +928,7 @@ Search across accounts, posts, and hashtags in a single query:
 
 **Parameters:**
 
-- `domain` (string, required): Instance domain to search
+- `domain` (string, optional): Instance domain to search on. Defaults to `mastodon.social`.
 - `query` (string, required): Search query
 - `type` (string, optional): "all", "accounts", "posts", or "hashtags" (default: "all")
 - `limit` (number, optional): Results per type (1-40, default: 20)
