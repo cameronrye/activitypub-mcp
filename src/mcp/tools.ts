@@ -320,16 +320,87 @@ function registerSearchInstanceTool(mcpServer: McpServer, rateLimiter: RateLimit
 
         logger.info("Searching instance", { domain: validDomain, query: validQuery, type });
 
-        const results = await remoteClient.searchInstance(validDomain, validQuery, type);
+        const results = (await remoteClient.searchInstance(validDomain, validQuery, type)) as {
+          accounts?: Array<{
+            id: string;
+            username: string;
+            acct: string;
+            display_name?: string;
+            note?: string;
+            followers_count?: number;
+            statuses_count?: number;
+          }>;
+          statuses?: Array<{
+            id: string;
+            content: string;
+            created_at: string;
+            account: { username: string; acct: string; display_name?: string };
+            reblogs_count: number;
+            favourites_count: number;
+            replies_count: number;
+            spoiler_text?: string;
+          }>;
+          hashtags?: Array<{
+            name: string;
+            url: string;
+            history?: Array<{ day: string; uses: string; accounts: string }>;
+          }>;
+        };
         performanceMonitor.endRequest(requestId, true);
+
+        let formatted: string;
+        let header: string;
+
+        if (type === "accounts") {
+          const accounts = results.accounts ?? [];
+          header = `👤 **Search Results for "${validQuery}" on ${validDomain} (accounts)**\n\nFound ${accounts.length} accounts:`;
+          formatted =
+            accounts
+              .slice(0, 15)
+              .map((acc, i) => {
+                const note = stripHtmlTags(acc.note || "") || "No bio";
+                const truncatedNote = note.length > 100 ? `${note.slice(0, 100)}...` : note;
+                return `${i + 1}. **@${acc.acct}** (${acc.display_name || acc.username})
+   ${truncatedNote}
+   👥 ${acc.followers_count || 0} followers | 📝 ${acc.statuses_count || 0} posts`;
+              })
+              .join("\n\n") || "No accounts found";
+        } else if (type === "statuses") {
+          const statuses = results.statuses ?? [];
+          header = `📝 **Search Results for "${validQuery}" on ${validDomain} (statuses)**\n\nFound ${statuses.length} posts:`;
+          formatted =
+            statuses
+              .slice(0, 10)
+              .map((post, i) => {
+                const content = stripHtmlTags(post.content || "") || "No content";
+                const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
+                const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
+                return `${i + 1}. **@${post.account.acct}** (${post.account.display_name || post.account.username})
+   ${cw}${truncated}
+   ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
+              })
+              .join("\n\n") || "No posts found";
+        } else {
+          const hashtags = results.hashtags ?? [];
+          header = `#️⃣ **Search Results for "${validQuery}" on ${validDomain} (hashtags)**\n\nFound ${hashtags.length} hashtags:`;
+          formatted =
+            hashtags
+              .slice(0, 20)
+              .map((tag, i) => {
+                const recentUses =
+                  tag.history
+                    ?.slice(0, 7)
+                    .reduce((sum, h) => sum + Number.parseInt(h.uses, 10), 0) || 0;
+                return `${i + 1}. **#${tag.name}** - ${recentUses} uses in the last 7 days`;
+              })
+              .join("\n") || "No hashtags found";
+        }
 
         return {
           content: [
             {
               type: "text",
-              text: `Search results for "${validQuery}" on ${validDomain} (${type}):
-
-${JSON.stringify(results, null, 2)}`,
+              text: `${header}\n\n${formatted}`,
             },
           ],
         };

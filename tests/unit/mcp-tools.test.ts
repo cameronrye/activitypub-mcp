@@ -273,7 +273,7 @@ describe("MCP Tools", () => {
       });
 
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Search results",
+        "Search Results",
       );
       expect(remoteClient.searchInstance).toHaveBeenCalledWith(
         "mastodon.social",
@@ -846,6 +846,44 @@ describe("MCP Tools", () => {
       expect(bothIds.has("techhub.social")).toBe(true);
       // fosstodon.org must NOT appear in combined (large filter excludes it)
       expect(bothIds.has("fosstodon.org")).toBe(false);
+    });
+  });
+
+  describe("search-instance prose render (M4)", () => {
+    it("renders results as prose, not raw JSON", async () => {
+      (remoteClient.searchInstance as Mock).mockResolvedValue({
+        accounts: [
+          {
+            id: "1",
+            username: "alice",
+            acct: "alice@example.social",
+            display_name: "Alice",
+            note: "<p>Hello world</p>",
+            followers_count: 42,
+            statuses_count: 100,
+          },
+        ],
+        statuses: [],
+        hashtags: [],
+      });
+
+      const tool = registeredTools.get("search-instance");
+      expect(tool).toBeDefined();
+
+      const result = await tool?.handler({
+        domain: "example.social",
+        query: "test",
+        type: "accounts",
+      });
+
+      const text = ((result as { content: { text: string }[] }).content[0].text ?? "") as string;
+
+      // The bad behavior renders `{` `"id":` etc. — assert that's gone.
+      expect(text).not.toMatch(/^\{\s*"/m); // no leading JSON object
+      expect(text).not.toMatch(/^\s*\{\s*"accounts":/);
+      // The good behavior renders something human-readable.
+      expect(text).toContain("test");
+      expect(text).toContain("example.social");
     });
   });
 });
