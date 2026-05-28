@@ -319,7 +319,9 @@ describe("MCP Write Tools", () => {
       (authenticatedClient.isWriteEnabled as Mock).mockReturnValueOnce(false);
 
       const tool = registeredTools.get("verify-account");
-      await expect(tool?.handler({})).rejects.toThrow("Write operations require authentication");
+      await expect(tool?.handler({})).rejects.toThrow(
+        "This write operation requires authentication",
+      );
     });
 
     it("should handle verification failure", async () => {

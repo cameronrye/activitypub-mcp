@@ -82,13 +82,27 @@ function checkRateLimit(rateLimiter: RateLimiter, identifier: string): void {
 }
 
 /**
- * Helper to check if write operations are available.
+ * Helper for write tools: requires that an authenticated account exists.
  */
 function requireWriteEnabled(): void {
   if (!authenticatedClient.isWriteEnabled()) {
     throw new McpError(
       ErrorCode.InternalError,
-      "Write operations require authentication. Configure ACTIVITYPUB_DEFAULT_INSTANCE and ACTIVITYPUB_DEFAULT_TOKEN environment variables.",
+      "This write operation requires authentication. Configure ACTIVITYPUB_DEFAULT_INSTANCE and ACTIVITYPUB_DEFAULT_TOKEN environment variables.",
+    );
+  }
+}
+
+/**
+ * Helper for authenticated read-only tools (home timeline, notifications, etc.):
+ * same underlying check but a clearer error so users aren't told they need
+ * 'write' for a read.
+ */
+function requireAuthEnabled(): void {
+  if (!authenticatedClient.isWriteEnabled()) {
+    throw new McpError(
+      ErrorCode.InternalError,
+      "This tool requires an authenticated account. Configure ACTIVITYPUB_DEFAULT_INSTANCE and ACTIVITYPUB_DEFAULT_TOKEN environment variables.",
     );
   }
 }
@@ -356,7 +370,11 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
     "post-status",
     {
       title: "Post Status",
-      description: "Create a new post/status on your fediverse account",
+      description:
+        "Publish a post to your fediverse account. PUBLIC by default and visible to the world; " +
+        "most fediverse software does not allow editing after posting. " +
+        "Use visibility: 'direct' for DMs, 'private' for followers-only, or 'scheduledAt' to " +
+        "queue the post for later instead of publishing immediately.",
       inputSchema: {
         content: z.string().min(1).max(5000).describe("The content of your post"),
         visibility: z
@@ -592,7 +610,9 @@ function registerDeletePostTool(mcpServer: McpServer, rateLimiter: RateLimiter):
     "delete-post",
     {
       title: "Delete Post",
-      description: "Delete one of your own posts",
+      description:
+        "Permanently delete one of your own posts. CANNOT BE UNDONE. " +
+        "Federated copies on other servers may persist after deletion.",
       inputSchema: {
         statusId: z.string().describe("The ID of your post to delete"),
         accountId: z.string().optional().describe("Account ID"),
@@ -1626,7 +1646,7 @@ function registerGetHomeTimelineTool(mcpServer: McpServer, rateLimiter: RateLimi
       },
     },
     async ({ limit = 20, maxId, sinceId, accountId }) => {
-      requireWriteEnabled();
+      requireAuthEnabled();
       const startTime = Date.now();
       const auditParams = { limit, maxId, sinceId, accountId };
 
@@ -1736,7 +1756,7 @@ function registerGetNotificationsTool(mcpServer: McpServer, rateLimiter: RateLim
       },
     },
     async ({ limit = 20, types, accountId }) => {
-      requireWriteEnabled();
+      requireAuthEnabled();
       const startTime = Date.now();
       const auditParams = { limit, types, accountId };
 
@@ -1834,7 +1854,7 @@ function registerGetBookmarksTool(mcpServer: McpServer, rateLimiter: RateLimiter
       },
     },
     async ({ limit = 20, accountId }) => {
-      requireWriteEnabled();
+      requireAuthEnabled();
       const startTime = Date.now();
       const auditParams = { limit, accountId };
 
@@ -1917,7 +1937,7 @@ function registerGetFavouritesTool(mcpServer: McpServer, rateLimiter: RateLimite
       },
     },
     async ({ limit = 20, accountId }) => {
-      requireWriteEnabled();
+      requireAuthEnabled();
       const startTime = Date.now();
       const auditParams = { limit, accountId };
 
@@ -2016,7 +2036,7 @@ function registerGetRelationshipTool(mcpServer: McpServer, rateLimiter: RateLimi
       },
     },
     async ({ acct, accountId }) => {
-      requireWriteEnabled();
+      requireAuthEnabled();
       const startTime = Date.now();
       const auditParams = { acct, accountId };
 
@@ -2232,9 +2252,16 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
     {
       title: "Upload Media",
       description:
-        "Upload a media file (image, video, audio) to use in posts. Returns a media ID that can be used with post-status.",
+        "Upload a media file (image, video, audio) to use in posts. Returns a media ID that " +
+        "can be used with post-status. Note: filePath is read from the machine running this " +
+        "MCP server, not the user's local machine — a path that exists locally for the user " +
+        "may not exist on the server's filesystem.",
       inputSchema: {
-        filePath: z.string().describe("Absolute path to the file to upload"),
+        filePath: z
+          .string()
+          .describe(
+            "Absolute path to the file ON THE MCP SERVER's filesystem (not the user's machine).",
+          ),
         description: z
           .string()
           .max(1500)
@@ -2366,7 +2393,7 @@ function registerGetScheduledPostsTool(mcpServer: McpServer, rateLimiter: RateLi
       },
     },
     async ({ limit = 20, accountId }) => {
-      requireWriteEnabled();
+      requireAuthEnabled();
       const startTime = Date.now();
       const auditParams = { limit, accountId };
 

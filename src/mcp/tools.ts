@@ -95,9 +95,14 @@ function registerDiscoverActorTool(mcpServer: McpServer, rateLimiter: RateLimite
     "discover-actor",
     {
       title: "Discover Fediverse Actor",
-      description: "Discover and get information about any actor in the fediverse",
+      description:
+        "Find and retrieve the profile of any fediverse user or account (called an 'actor' " +
+        "in ActivityPub). Returns display name, bio, follower/following URLs, and inbox/outbox " +
+        "endpoints. Pass a handle like '@alice@mastodon.social' or 'alice@mastodon.social'.",
       inputSchema: {
-        identifier: ActorIdentifierSchema.describe("Actor identifier (e.g., user@example.social)"),
+        identifier: ActorIdentifierSchema.describe(
+          "Actor handle in 'user@domain' or '@user@domain' form (e.g., 'alice@mastodon.social')",
+        ),
       },
     },
     async ({ identifier }) => {
@@ -119,11 +124,11 @@ function registerDiscoverActorTool(mcpServer: McpServer, rateLimiter: RateLimite
           content: [
             {
               type: "text",
-              text: `Successfully discovered actor: ${actor.preferredUsername || actor.name || validIdentifier}
+              text: `Successfully discovered actor: ${stripHtmlTags(actor.preferredUsername || actor.name || validIdentifier)}
 
 🆔 ID: ${actor.id}
-👤 Name: ${actor.name || "Not specified"}
-📝 Summary: ${actor.summary || "No bio provided"}
+👤 Name: ${stripHtmlTags(actor.name || "") || "Not specified"}
+📝 Summary: ${stripHtmlTags(actor.summary || "") || "No bio provided"}
 🔗 URL: ${actor.url || actor.id}
 📥 Inbox: ${actor.inbox}
 📤 Outbox: ${actor.outbox}
@@ -169,7 +174,7 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
       title: "Fetch Actor Timeline",
       description: "Fetch posts from any actor's timeline in the fediverse with pagination support",
       inputSchema: {
-        identifier: z.string().describe("Actor identifier (e.g., user@example.social)"),
+        identifier: ActorIdentifierSchema.describe("Actor identifier (e.g., user@example.social)"),
         limit: z
           .number()
           .min(1)
@@ -2126,8 +2131,10 @@ function registerBatchFetchActorsTool(mcpServer: McpServer, rateLimiter: RateLim
           )
           .map((r, i) => {
             const actor = r.actor;
-            return `${i + 1}. ✅ **${actor.preferredUsername || r.identifier}** (@${r.identifier})
-   ${actor.name || "No display name"} - ${actor.summary?.slice(0, 100) || "No bio"}...`;
+            const safeName = stripHtmlTags(actor.name || "");
+            const safeSummary = stripHtmlTags(actor.summary || "").slice(0, 100);
+            return `${i + 1}. ✅ **${stripHtmlTags(actor.preferredUsername || r.identifier)}** (@${r.identifier})
+   ${safeName || "No display name"} - ${safeSummary || "No bio"}...`;
           })
           .join("\n\n");
 

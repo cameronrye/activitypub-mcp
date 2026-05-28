@@ -715,7 +715,12 @@ function registerPostThreadResource(mcpServer: McpServer, rateLimiter: RateLimit
     }),
     {
       title: "Post Thread",
-      description: "Get a post and its full conversation thread including replies and parent posts",
+      description:
+        "Get a post and its full conversation thread (replies and parent posts). " +
+        "The {domain}/{statusId} URI template only works for Mastodon-compatible " +
+        "instances (Mastodon, Hometown, Glitch-soc, Pleroma, Akkoma in compatibility " +
+        "mode). For Misskey, Calckey, Pixelfed, or PeerTube, use the get-post-thread " +
+        "tool with the full post URL instead.",
       mimeType: "application/json",
     },
     async (uri, params) => {
