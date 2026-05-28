@@ -91,6 +91,7 @@
     "dev:site": "astro dev",
     "preview:site": "astro preview",
     "generate:og-image": "node scripts/generate-og-image.js",
+    "typecheck": "tsc --noEmit",
     "clean": "rimraf dist",
     "prepublishOnly": "run-s clean validate:version build"
   }
