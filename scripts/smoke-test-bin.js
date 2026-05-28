@@ -7,11 +7,12 @@
  */
 
 import { execSync, spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const TIMEOUT_MS = 10000;
+const IS_WINDOWS = process.platform === "win32";
 
 function main() {
   console.log("Building package...");
@@ -33,13 +34,22 @@ function main() {
   });
 
   console.log("Invoking the bin to verify it loads...");
-  const binPath = join(tempDir, "node_modules", ".bin", "activitypub-mcp");
+  // On Windows, npm creates `<bin>.cmd` and `<bin>.ps1` shims (no extensionless
+  // file). On Unix it creates a bare `<bin>` symlink. Prefer `.cmd` on Windows
+  // so spawnSync resolves the shim correctly without needing `shell: true`.
+  const binBase = join(tempDir, "node_modules", ".bin", "activitypub-mcp");
+  const binPath = IS_WINDOWS && existsSync(`${binBase}.cmd`) ? `${binBase}.cmd` : binBase;
+  if (!existsSync(binPath)) {
+    console.error(`Bin shim not found at ${binPath}`);
+    process.exit(1);
+  }
   // Send empty stdin and use a short timeout — the bin is a long-running
   // MCP server, so we just need to confirm it starts without throwing.
   const result = spawnSync(binPath, [], {
     timeout: TIMEOUT_MS,
     encoding: "utf8",
     input: "",
+    shell: IS_WINDOWS,
   });
 
   // The bin starts an MCP server on stdio, then blocks waiting for input.
