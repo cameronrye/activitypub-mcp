@@ -21,17 +21,19 @@
 
 The ActivityPub MCP Server is a Fediverse client that allows AI assistants to discover actors, fetch timelines, explore instances, and search content across the decentralized social web. It implements the complete MCP specification with resources for data access, tools for interaction, and prompts for guided exploration.
 
-### Key Features
+### Key Features (v2.0.0)
 
 - **Fediverse Integration**: Connect to any ActivityPub server (Mastodon, Pleroma, Misskey, etc.)
-- **WebFinger Discovery**: Find and resolve actors across the network
-- **MCP Protocol**: Full implementation with resources, tools, and prompts
-- **TypeScript Implementation**: Modern, type-safe codebase with ESM support
-- **Cross-Platform Support**: Works on Windows, macOS, and Linux
-- **LLM-Optimized**: Designed for efficient AI assistant interaction
-- **Security**: Built-in security scanning and dependency auditing
-- **Performance Monitoring**: Comprehensive logging and metrics
-- **Testing**: Extensive test coverage with multiple test suites
+- **WebFinger Discovery**: Find and resolve actors across the network (same-origin self link enforced in v2)
+- **53 MCP Tools**: 21 read-only + 28 authenticated (post, follow, boost, polls, media, schedule) + 4 export
+- **10 MCP Resources, 11 MCP Prompts**: `server-info` dynamic from live capability registry
+- **Multi-Account Support**: Pipe-delimited `ACTIVITYPUB_ACCOUNTS` config; per-call account selection
+- **Dual Transport**: stdio (default, for Claude Desktop / Cursor) and HTTP (Bearer-authenticated `/mcp` + `/metrics`)
+- **TypeScript Implementation**: Modern, strict TypeScript with ESM, topic-organized source tree
+- **Cross-Platform Support**: Works on Windows, macOS, and Linux (Node 20+ required)
+- **Security-Hardened**: SSRF guard on every outbound call, streaming response-size caps (default 10MB), HTTPS-only outbound, instance blocklist, thread cross-origin gating, audit logging on every write tool
+- **Performance Monitoring**: Comprehensive logging, metrics tool, in-memory caches
+- **Testing**: 624+ unit tests plus a daily integration workflow against the live Fediverse
 
 ### Architecture
 
@@ -49,7 +51,7 @@ The server acts as a bridge between LLMs and the Fediverse:
 
 ### Prerequisites
 
-- Node.js 18.0.0 or higher
+- Node.js 20.0.0 or higher (Node 18 reached EOL on April 30, 2025)
 - npm or yarn package manager
 - Internet connectivity for federation
 
@@ -155,24 +157,39 @@ npm run test:all
 
 ### Environment Variables
 
-Create a `.env` file in your project root or set these environment variables:
+Create a `.env` file in your project root or set these environment variables. Authoritative reference: `.env.example` and `.env.production.example` in the repo.
 
 ```bash
-# Logging Configuration
-LOG_LEVEL=info              # Options: debug, info, warn, error
-DEBUG=false                 # Enable debug mode
+# ---- Core ----
+LOG_LEVEL=info                                  # debug | info | warning | error | fatal
+USER_AGENT=ActivityPub-MCP-Client/2.0.0
+REQUEST_TIMEOUT=15000                           # production default: 10000
+CACHE_TTL=300                                   # seconds
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_MAX=100
+RATE_LIMIT_WINDOW=900000
 
-# Cache Configuration
-CACHE_TTL=3600             # Cache time-to-live in seconds (default: 1 hour)
-CACHE_MAX_SIZE=100         # Maximum cache entries
+# ---- HTTP transport (only when MCP_TRANSPORT_MODE=http) ----
+MCP_TRANSPORT_MODE=stdio                        # stdio | http
+MCP_HTTP_PORT=3000
+MCP_HTTP_HOST=127.0.0.1
+MCP_HTTP_SECRET=                                # REQUIRED for http. 32+ random chars.
+                                                # All /mcp + /metrics requests must include
+                                                # `Authorization: Bearer <secret>`. /health stays open.
+MCP_HTTP_CORS_ORIGINS=                          # v2 default empty (no origins). Was "*" in v1.
 
-# Network Configuration
-REQUEST_TIMEOUT=30000      # Request timeout in milliseconds
-MAX_RETRIES=3              # Maximum retry attempts for failed requests
+# ---- Authenticated write tools ----
+# v2 uses PIPE (|) delimiter. v1 colon format is rejected at startup.
+ACTIVITYPUB_ACCOUNTS=id|instance|token|user|label,id2|instance|token|user|label
 
-# Performance Configuration
-ENABLE_PERFORMANCE_MONITORING=true  # Enable performance metrics
-PERFORMANCE_LOG_INTERVAL=60000      # Log interval in milliseconds
+# ---- Thread traversal caps (v2) ----
+MCP_THREAD_MAX_DEPTH=5
+MCP_THREAD_MAX_REPLIES=50
+MCP_THREAD_CROSS_ORIGIN_FETCH=false             # set true to restore v1 fetch-everything
+
+# ---- Health ----
+HEALTH_CHECK_EXTERNAL_PROBE=true                # gates outbound mastodon.social probe
+                                                # (replaces removed HEALTH_CHECK_ENABLED)
 ```
 
 ### Configuration Files
@@ -214,217 +231,71 @@ When integrating with MCP clients like Claude Desktop, configure the server in t
 
 ## API Reference
 
-### MCP Resources
+### MCP Resources (10 total)
 
-Resources provide read-only access to remote ActivityPub data.
+Resources provide read-only access to remote ActivityPub data via `activitypub://` URIs. The full reference is at <https://cameronrye.github.io/activitypub-mcp/docs/api/resources/>.
 
-#### remote-actor
+| URI template | Purpose |
+|---|---|
+| `activitypub://server-info` | Dynamic server capabilities (tools/resources/prompts/feature flags, live from registry) |
+| `activitypub://remote-actor/{identifier}` | ActivityPub Actor object |
+| `activitypub://remote-timeline/{identifier}` | Actor outbox / public timeline |
+| `activitypub://remote-followers/{identifier}` | Followers collection |
+| `activitypub://remote-following/{identifier}` | Following collection |
+| `activitypub://instance-info/{domain}` | Instance metadata and stats |
+| `activitypub://trending/{domain}` | Trending hashtags and posts |
+| `activitypub://local-timeline/{domain}` | Local public timeline |
+| `activitypub://federated-timeline/{domain}` | Federated public timeline |
+| `activitypub://post-thread/{domain}/{statusId}` | Post with ancestors and replies (Mastodon URL form, v2). Legacy `activitypub://post-thread/{postUrl}` form still accepted with a deprecation warning; removed in 2.1.0. |
 
-Access actor information from the Fediverse.
-
-**URI Format:** `activitypub://remote-actor/{handle}`
-
-**Parameters:**
-- `handle` (required): Actor handle in format `@username@domain.com`
+**Identifier formats**: `@user@domain.com`, `user@domain.com`, or a full Actor URL.
 
 **Example:**
 ```
 activitypub://remote-actor/@gargron@mastodon.social
 ```
 
-**Response:**
+### MCP Tools (53 total)
+
+Tools fall into three groups. Full schemas and examples at <https://cameronrye.github.io/activitypub-mcp/docs/api/tools/>.
+
+**Read-only (21):** `discover-actor`, `fetch-timeline`, `search-instance`, `get-instance-info`, `discover-instances`, `discover-instances-live`, `recommend-instances`, `health-check`, `performance-metrics`, `get-post-thread`, `get-trending-hashtags`, `get-trending-posts`, `get-local-timeline`, `get-federated-timeline`, `search-accounts`, `search-hashtags`, `search-posts`, `search`, `convert-url`, `batch-fetch-actors`, `batch-fetch-posts`.
+
+**Authenticated write (28):** `list-accounts`, `switch-account`, `verify-account`, `post-status`, `reply-to-post`, `delete-post`, `boost-post`, `unboost-post`, `favourite-post`, `unfavourite-post`, `bookmark-post`, `unbookmark-post`, `follow-account`, `unfollow-account`, `mute-account`, `unmute-account`, `block-account`, `unblock-account`, `get-relationship`, `get-home-timeline`, `get-notifications`, `get-bookmarks`, `get-favourites`, `vote-on-poll`, `upload-media`, `get-scheduled-posts`, `update-scheduled-post`, `cancel-scheduled-post`.
+
+**Export (4):** `export-timeline`, `export-thread`, `export-account-info`, `export-hashtag` — output JSON, Markdown, or CSV.
+
+**Notable v2 changes:**
+- `post-status` accepts `mediaIds` and `scheduledAt` for media attachments and scheduled posts.
+- `cancel-scheduled-post` / `update-scheduled-post` use `scheduledPostId` (not v1's `scheduledId`).
+- `get-relationship` takes `acct: string` (not v1's `accountIds: string[]`).
+- `get-post-thread` caps at depth 5 / 50 replies; cross-origin replies are stubbed unless `MCP_THREAD_CROSS_ORIGIN_FETCH=true`.
+
+**Example tool call:**
 ```json
 {
-  "id": "https://mastodon.social/users/gargron",
-  "type": "Person",
-  "preferredUsername": "gargron",
-  "name": "Eugen Rochko",
-  "summary": "Founder and CEO of Mastodon",
-  "url": "https://mastodon.social/@gargron",
-  "inbox": "https://mastodon.social/users/gargron/inbox",
-  "outbox": "https://mastodon.social/users/gargron/outbox",
-  "followers": "https://mastodon.social/users/gargron/followers",
-  "following": "https://mastodon.social/users/gargron/following"
+  "name": "discover-actor",
+  "arguments": { "identifier": "@gargron@mastodon.social" }
 }
 ```
 
-#### remote-timeline
+### MCP Prompts (11 total)
 
-Fetch an actor's timeline/outbox.
+Guided workflows. Full reference at <https://cameronrye.github.io/activitypub-mcp/docs/api/prompts/>.
 
-**URI Format:** `activitypub://remote-timeline/{handle}`
-
-**Parameters:**
-- `handle` (required): Actor handle in format `@username@domain.com`
-
-**Example:**
-```
-activitypub://remote-timeline/@gargron@mastodon.social
-```
-
-**Response:**
-```json
-{
-  "type": "OrderedCollection",
-  "totalItems": 1234,
-  "orderedItems": [
-    {
-      "type": "Create",
-      "actor": "https://mastodon.social/users/gargron",
-      "object": {
-        "type": "Note",
-        "content": "Hello Fediverse!",
-        "published": "2024-01-15T12:00:00Z"
-      }
-    }
-  ]
-}
-```
-
-#### instance-info
-
-Get information about a Fediverse instance.
-
-**URI Format:** `activitypub://instance-info/{domain}`
-
-**Parameters:**
-- `domain` (required): Instance domain (e.g., `mastodon.social`)
-
-**Example:**
-```
-activitypub://instance-info/mastodon.social
-```
-
-**Response:**
-```json
-{
-  "uri": "mastodon.social",
-  "title": "Mastodon",
-  "description": "The original server operated by the Mastodon gGmbH non-profit",
-  "version": "4.2.0",
-  "stats": {
-    "user_count": 500000,
-    "status_count": 50000000,
-    "domain_count": 10000
-  }
-}
-```
-
-### MCP Tools
-
-Tools provide interactive operations for discovery and exploration.
-
-#### discover-actor
-
-Discover an actor using WebFinger protocol.
-
-**Parameters:**
-- `handle` (required): Actor handle in format `@username@domain.com` or `username@domain.com`
-
-**Example:**
-```json
-{
-  "handle": "@gargron@mastodon.social"
-}
-```
-
-**Response:**
-```json
-{
-  "subject": "acct:gargron@mastodon.social",
-  "links": [
-    {
-      "rel": "self",
-      "type": "application/activity+json",
-      "href": "https://mastodon.social/users/gargron"
-    }
-  ]
-}
-```
-
-#### fetch-timeline
-
-Fetch an actor's public timeline.
-
-**Parameters:**
-- `handle` (required): Actor handle
-- `limit` (optional): Number of items to fetch (default: 20, max: 100)
-
-**Example:**
-```json
-{
-  "handle": "@gargron@mastodon.social",
-  "limit": 10
-}
-```
-
-#### search-fediverse
-
-Search for content across the Fediverse.
-
-**Parameters:**
-- `query` (required): Search query
-- `type` (optional): Type of content to search (`accounts`, `statuses`, `hashtags`)
-- `limit` (optional): Number of results (default: 20, max: 100)
-
-**Example:**
-```json
-{
-  "query": "activitypub",
-  "type": "statuses",
-  "limit": 20
-}
-```
-
-#### explore-instance
-
-Explore a Fediverse instance.
-
-**Parameters:**
-- `domain` (required): Instance domain
-- `include_stats` (optional): Include instance statistics (default: true)
-
-**Example:**
-```json
-{
-  "domain": "mastodon.social",
-  "include_stats": true
-}
-```
-
-### MCP Prompts
-
-Prompts provide guided workflows for common tasks.
-
-#### fediverse-discovery
-
-Guided workflow for discovering actors and content.
-
-**Variables:**
-- `topic` (optional): Topic of interest
-- `instance` (optional): Specific instance to explore
-
-**Example:**
-```json
-{
-  "topic": "open source",
-  "instance": "fosstodon.org"
-}
-```
-
-#### actor-analysis
-
-Analyze an actor's profile and activity.
-
-**Variables:**
-- `handle` (required): Actor handle to analyze
-
-**Example:**
-```json
-{
-  "handle": "@gargron@mastodon.social"
-}
-```
+| Prompt | Purpose |
+|---|---|
+| `explore-fediverse` | Open-ended fediverse exploration |
+| `compare-instances` | Side-by-side instance comparison |
+| `discover-content` | Find content across instances on a topic |
+| `compare-accounts` | Compare two fediverse accounts |
+| `analyze-user-activity` | Detailed activity analysis |
+| `find-experts` | Discover experts on a topic |
+| `summarize-trending` | Summarize trending posts and hashtags |
+| `content-strategy` | Plan fediverse content strategy |
+| `community-health` | Analyze instance moderation and health |
+| `migration-helper` | Evaluate and plan instance migration |
+| `thread-composer` | Compose well-structured threaded posts |
 
 ---
 
@@ -638,57 +509,72 @@ for (const handle of actors) {
 
 ## Development
 
-### Project Structure
+### Project Structure (v2 — topic-organized)
 
 ```
 activitypub-mcp/
 ├── src/
-│   ├── mcp-main.ts           # MCP server entry point
-│   ├── mcp-server.ts         # MCP server implementation
-│   ├── remote-client.ts      # ActivityPub client
-│   ├── webfinger.ts          # WebFinger resolver
-│   ├── instance-discovery.ts # Instance discovery
-│   ├── health-check.ts       # Health monitoring
-│   ├── logging.ts            # Logging utilities
-│   ├── performance-monitor.ts # Performance tracking
-│   ├── config.ts             # Configuration
-│   └── validation/           # Input validation
-├── tests/
-│   ├── test-mcp.ts           # MCP server tests
-│   ├── test-integration.ts   # Integration tests
-│   ├── test-comprehensive.ts # Comprehensive tests
-│   └── test-fediverse.ts     # Fediverse client tests
-├── docs/
-│   ├── setup/                # Setup guides
-│   ├── guides/               # Usage guides
-│   ├── development/          # Development docs
-│   └── specifications/       # Protocol specs
+│   ├── mcp-main.ts                   # MCP server entry point (bin)
+│   ├── mcp-server.ts                 # Server bootstrap
+│   ├── config.ts                     # Configuration loader (Zod-validated)
+│   ├── mcp/                          # MCP protocol surface
+│   │   ├── tools.ts                  # 21 read-only tools
+│   │   ├── tools-write.ts            # 28 authenticated tools
+│   │   ├── tools-export.ts           # 4 export tools
+│   │   ├── resources.ts              # 10 resources
+│   │   ├── prompts.ts                # 11 prompts
+│   │   └── capabilities.ts           # Dynamic capability registry
+│   ├── activitypub/                  # ActivityPub client
+│   │   └── remote-client.ts
+│   ├── discovery/                    # WebFinger and instance discovery
+│   │   ├── webfinger.ts
+│   │   ├── instance-discovery.ts
+│   │   └── dynamic-instance-discovery.ts
+│   ├── auth/                         # Account management + credentials
+│   ├── policy/                       # Instance blocklist
+│   │   └── instance-blocklist.ts
+│   ├── audit/                        # Audit logging
+│   │   └── logger.ts
+│   ├── telemetry/                    # Health, logging, perf
+│   │   ├── health-check.ts
+│   │   ├── logging.ts
+│   │   └── performance-monitor.ts
+│   ├── transport/                    # HTTP transport + Bearer auth middleware
+│   │   ├── http.ts
+│   │   └── auth-middleware.ts
+│   ├── resilience/                   # Rate limiting, retry
+│   │   └── rate-limiter.ts
+│   ├── validation/                   # URL, schemas, validators
+│   │   ├── url.ts                    # SSRF guard, scheme allowlist
+│   │   └── validators.ts
+│   └── utils/                        # Errors, HTML stripping
+│       ├── errors.ts
+│       └── html.ts
+├── tests/                            # 624+ unit tests + integration suite
+├── docs/specifications/              # Protocol reference guides
 ├── scripts/
-│   ├── install.sh            # Unix installation
-│   ├── install.ps1           # Windows installation
-│   └── setup.sh              # Setup script
+│   ├── install.sh / install.ps1      # Installer
+│   └── setup.sh                      # Setup
 └── public/
-    ├── llms.txt              # LLM-friendly summary
-    └── llms-full.txt         # Complete documentation
+    ├── llms.txt                      # LLM-friendly summary
+    └── llms-full.txt                 # This file
 ```
 
 ### Running Tests
 
 ```bash
-# Run all tests
+# Unit tests (default)
+npm run test
+npm run test:coverage
+
+# Integration tests against live Fediverse (runs daily in CI)
+npm run test:integration
+
+# Both
 npm run test:all
 
-# Run specific test suites
-npm run test                  # Basic MCP tests
-npm run test:integration      # Integration tests
-npm run test:comprehensive    # Comprehensive tests
-npm run test:fediverse        # Fediverse client tests
-npm run test:errors           # Error scenario tests
-npm run test:edge             # Edge case tests
-
-# Run with coverage
-npm run test:coverage
-npm run coverage
+# Type check
+npm run typecheck
 ```
 
 ### Development Mode
@@ -1040,33 +926,54 @@ Log levels:
 
 ## Changelog
 
-### Version 1.0.2 (Current)
+The canonical changelog lives in [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/master/CHANGELOG.md). Highlights:
+
+### Version 2.0.0 (Current) — 2026-05-27
+
+Major release. Security, correctness, and ergonomics overhaul.
+
+**Breaking changes:**
+- Node 20+ required (Node 18 EOL April 30, 2025)
+- HTTP transport requires `MCP_HTTP_SECRET` (32+ random chars). All requests to `/mcp` and `/metrics` must include `Authorization: Bearer <secret>`. `/health` stays unauthenticated. Stdio is unaffected.
+- `MCP_HTTP_CORS_ORIGINS` no longer defaults to `"*"` — defaults to empty.
+- `ACTIVITYPUB_ACCOUNTS` uses pipe `|` delimiter (legacy colon format rejected at startup).
+- `scheduledId` → `scheduledPostId` on `cancel-scheduled-post` and `update-scheduled-post`.
+- `get-relationship` takes `acct: string` (rejects legacy `accountIds: string[]`).
+- `HEALTH_CHECK_ENABLED` removed; use `HEALTH_CHECK_EXTERNAL_PROBE` for the outbound mastodon.social probe.
+- Outbound URL scheme allow-list: `validateExternalUrl` now rejects non-https schemes.
 
 **Added:**
-- Enhanced error handling and validation
-- Improved caching mechanisms
-- Better performance monitoring
-- Additional test coverage
+- `post-status` supports `mediaIds` and `scheduledAt` (round-trip with `upload-media`).
+- `search-instance` returns prose output (was raw JSON).
+- `fetch-timeline` renders all posts (was capped at 10) with 500-char per-post truncation.
+- Dynamic `server-info` capabilities — list comes from the live registry.
+- Thread traversal caps: `MCP_THREAD_MAX_DEPTH=5`, `MCP_THREAD_MAX_REPLIES=50`, with `MCP_THREAD_CROSS_ORIGIN_FETCH=false` cross-origin gate.
+- Audit logging wired into every write tool.
+- New `post-thread` resource URI template: `activitypub://post-thread/{domain}/{statusId}` (Mastodon-style URL constructor). Legacy `{postUrl}` form still accepted with a deprecation warning; removed in 2.1.0.
+- `npm run typecheck` script and CI step.
+- Daily integration test workflow against the live Fediverse.
 
-**Fixed:**
-- WebFinger resolution edge cases
-- Timeline pagination issues
-- Memory leak in cache implementation
+**Security:**
+- Streaming response-size enforcement (default 10 MB) — aborts even when Content-Length is missing.
+- `verifyAccount` routes through SSRF guard; instance-discovery raw fetches gated by `DomainSchema` + `validateExternalUrl`.
+- `DomainSchema` rejects IP literals.
+- WebFinger same-origin actor check closes a spoofing path.
+- Redirects re-run SSRF + blocklist checks on each hop (up to 3).
+- Instance blocklist now enforced on WebFinger, actor fetches, all write operations, media uploads, and credential verification.
 
-**Changed:**
-- Updated dependencies to latest versions
-- Improved documentation
-- Enhanced logging output
+**Internal:**
+- Source tree reorganized into 11 topic directories (see Project Structure above).
+- 624 unit tests (up from 533 at v2 start).
+- `files` whitelist in `package.json` controls npm publish contents.
+- See `MIGRATION-v2.md` for the full upgrade guide.
+
+### Version 1.1.0 — 2026-02-02
+
+Added authenticated write operations (multi-account, posting, interactions, polls, scheduling, exports), HTTP transport support, instance blocklist, dynamic instance discovery, audit logging. 13 new read-only tools, 4 new resources, 4 new prompts.
 
 ### Version 1.0.0
 
-**Initial Release:**
-- Complete MCP server implementation
-- ActivityPub client functionality
-- WebFinger discovery
-- Cross-platform support
-- Comprehensive test suite
-- Full documentation
+Initial release: complete MCP read-only server, ActivityPub client, WebFinger discovery, cross-platform support, full documentation.
 
 ---
 

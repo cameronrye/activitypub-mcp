@@ -47,8 +47,9 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
             <h3>Discovery Tools</h3>
             <ul>
               <li><code>discover-actor</code> - Find and analyze fediverse users</li>
-              <li><code>discover-instances</code> - Search for instances by topic</li>
-              <li><code>search-content</code> - Find posts and content</li>
+              <li><code>discover-instances</code> / <code>discover-instances-live</code> - Search for instances by topic</li>
+              <li><code>search</code> - Unified search across accounts, posts, hashtags</li>
+              <li><code>search-posts</code> / <code>search-accounts</code> / <code>search-hashtags</code> - Targeted searches</li>
             </ul>
             <p><strong>Use for:</strong> Finding new communities, researching topics, identifying key actors</p>
           </div>
@@ -57,8 +58,9 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
             <h3>Information Tools</h3>
             <ul>
               <li><code>get-instance-info</code> - Instance metadata and statistics</li>
-              <li><code>fetch-timeline</code> - Actor's recent posts</li>
-              <li><code>get-post-details</code> - Detailed post information</li>
+              <li><code>fetch-timeline</code> - Actor's recent posts (paginated)</li>
+              <li><code>get-post-thread</code> - Post with full conversation thread (depth/reply caps in v2)</li>
+              <li><code>get-trending-hashtags</code> / <code>get-trending-posts</code> - What's trending</li>
             </ul>
             <p><strong>Use for:</strong> Understanding communities, analyzing content, tracking activity</p>
           </div>
@@ -66,11 +68,12 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
           <div class="category-card">
             <h3>Utility Tools</h3>
             <ul>
-              <li><code>health-check</code> - Server status and performance</li>
-              <li><code>clear-cache</code> - Reset cached data</li>
-              <li><code>validate-actor</code> - Check actor accessibility</li>
+              <li><code>health-check</code> - Server status and outbound connectivity</li>
+              <li><code>performance-metrics</code> - Cache hit rate, latency, error counts</li>
+              <li><code>convert-url</code> - Convert between identifier and URL forms</li>
+              <li><code>batch-fetch-actors</code> / <code>batch-fetch-posts</code> - Fetch many at once</li>
             </ul>
-            <p><strong>Use for:</strong> Troubleshooting, maintenance, optimization</p>
+            <p><strong>Use for:</strong> Troubleshooting, observability, bulk lookups</p>
           </div>
         </div>
       </section>

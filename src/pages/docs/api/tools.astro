@@ -1243,6 +1243,24 @@ verify-account</code></pre>
                       <td>No</td>
                       <td>ISO 639-1 language code (e.g., "en")</td>
                     </tr>
+                    <tr>
+                      <td><code>mediaIds</code></td>
+                      <td>string[]</td>
+                      <td>No</td>
+                      <td>Media attachment IDs from <code>upload-media</code> (max 4 per post, Mastodon limit)</td>
+                    </tr>
+                    <tr>
+                      <td><code>scheduledAt</code></td>
+                      <td>string (ISO 8601)</td>
+                      <td>No</td>
+                      <td>Schedule the post for a future time (must be at least one hour in the future). Returns a scheduled post — manage with <code>get-scheduled-posts</code> / <code>update-scheduled-post</code> / <code>cancel-scheduled-post</code>.</td>
+                    </tr>
+                    <tr>
+                      <td><code>accountId</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Account ID to post from (defaults to the active account from <code>switch-account</code>)</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -1256,7 +1274,13 @@ post-status --content "Hello fediverse!"
 post-status --content "Spoiler discussion here" --spoilerText "Movie spoilers"
 
 # Unlisted post
-post-status --content "Only visible to followers" --visibility unlisted</code></pre>
+post-status --content "Only visible to followers" --visibility unlisted
+
+# Post with media (upload first via upload-media)
+post-status --content "Look at this!" --mediaIds '["12345"]'
+
+# Schedule a post for later
+post-status --content "Happy New Year!" --scheduledAt "2027-01-01T00:00:00Z"</code></pre>
               </div>
             </div>
           </div>

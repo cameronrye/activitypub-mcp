@@ -132,18 +132,19 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
             <h3>Step-by-Step Process</h3>
             <div class="example-steps">
               <div class="step">
-                <h4>Step 1: Get the Original Post</h4>
-                <pre><code>fetch-post https://mastodon.social/@gargron/111234567890</code></pre>
+                <h4>Step 1: Fetch the Post and Full Thread</h4>
+                <pre><code>get-post-thread --postUrl https://mastodon.social/@gargron/111234567890</code></pre>
                 <div class="step-explanation">
-                  <p>This retrieves the original post with its content, metadata, and reply information.</p>
+                  <p>A single call returns the root post plus ancestors and replies. Capped at depth 5 / 50 replies by default (configurable via <code>MCP_THREAD_MAX_DEPTH</code> / <code>MCP_THREAD_MAX_REPLIES</code>). Cross-origin replies come back as stubs unless <code>MCP_THREAD_CROSS_ORIGIN_FETCH=true</code>.</p>
                 </div>
               </div>
 
               <div class="step">
-                <h4>Step 2: Fetch Reply Thread</h4>
-                <pre><code>fetch-replies https://mastodon.social/@gargron/111234567890</code></pre>
+                <h4>Step 2: Or Fetch as a Resource</h4>
+                <pre><code># Mastodon-style URL (recommended)
+GET activitypub://post-thread/mastodon.social/111234567890</code></pre>
                 <div class="step-explanation">
-                  <p>Gets all replies to the post, showing the conversation flow.</p>
+                  <p>The legacy <code>activitypub://post-thread/{`{postUrl}`}</code> URL-encoded form is still accepted with a deprecation warning and will be removed in v2.1.0.</p>
                 </div>
               </div>
 
@@ -173,7 +174,11 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
 
               <div class="step">
                 <h4>Step 2: Search Each Instance</h4>
-                <pre><code>search-content "renewable energy" climate.social</code></pre>
+                <pre><code># Unified search across accounts, posts, and hashtags
+search --query "renewable energy" --domain climate.social --type all
+
+# Or narrow to posts only
+search-posts --query "renewable energy" --domain climate.social</code></pre>
               </div>
 
               <div class="step">

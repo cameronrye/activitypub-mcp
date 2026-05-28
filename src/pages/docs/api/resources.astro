@@ -41,16 +41,20 @@ const description =
         
         <div class="resource-reference">
           <h3><code>activitypub://server-info</code></h3>
-          <p>Provides comprehensive information about the MCP server instance.</p>
-          
+          <p>
+            Provides comprehensive information about the MCP server instance. In v2 the
+            tools/resources/prompts arrays are populated dynamically from the live capability
+            registry, so the list never drifts from what the server actually serves.
+          </p>
+
           <div class="resource-details">
             <div class="resource-content-example">
               <h4>Content Structure</h4>
               <p>Returns comprehensive server information including:</p>
               <ul>
                 <li>Server name, version, and uptime</li>
-                <li>Available tools and resources</li>
-                <li>Configuration settings</li>
+                <li>Available tools, resources, and prompts (live from the registry — v2)</li>
+                <li>Configuration settings and feature flags</li>
                 <li>Performance statistics</li>
               </ul>
             </div>
@@ -337,31 +341,52 @@ const description =
         <p>Resources for accessing specific content and threads.</p>
 
         <div class="resource-reference">
-          <h3><code>activitypub://post-thread/{"{postUrl}"}</code></h3>
+          <h3><code>activitypub://post-thread/{"{domain}"}/{"{statusId}"}</code></h3>
           <p>Get a post and its full conversation thread including replies and parent posts.</p>
 
           <div class="resource-details">
             <div class="resource-content-example">
-              <h4>URI Template</h4>
+              <h4>URI Template (v2 — recommended)</h4>
+              <p><code>activitypub://post-thread/{"{domain}"}/{"{statusId}"}</code></p>
+              <p>
+                Replace <code>{"{domain}"}</code> with the instance domain and <code>{"{statusId}"}</code>
+                with the Mastodon status ID. Constructs
+                <code>https://{"{domain}"}/web/statuses/{"{statusId}"}</code> internally — the Mastodon-compatible URL.
+              </p>
+
+              <h4>Legacy URI Template (deprecated, removed in 2.1.0)</h4>
               <p><code>activitypub://post-thread/{"{postUrl}"}</code></p>
-              <p>Replace <code>{"{postUrl}"}</code> with the URL-encoded post URL</p>
+              <p>
+                The original URL-encoded form is still accepted with a deprecation warning. It remains
+                useful for non-Mastodon ActivityPub implementations (Pleroma, Akkoma, Misskey, etc.)
+                whose status URLs do not match the Mastodon shape. Will be removed in v2.1.0 once
+                instance-software detection lands.
+              </p>
 
               <h4>Content Structure</h4>
               <p>Returns thread data including:</p>
               <ul>
                 <li>The main post content and metadata</li>
                 <li>Array of ancestor posts (conversation context)</li>
-                <li>Array of reply posts</li>
+                <li>Array of reply posts (cross-origin replies returned as stubs by default — set <code>MCP_THREAD_CROSS_ORIGIN_FETCH=true</code> to fetch them fully)</li>
                 <li>Total reply count</li>
               </ul>
+              <p>
+                Capped at <code>MCP_THREAD_MAX_DEPTH</code> (default 5) and
+                <code>MCP_THREAD_MAX_REPLIES</code> (default 50).
+              </p>
             </div>
 
             <div class="usage-examples">
               <h4>Usage Examples</h4>
               <div class="example-item">
-                <h5>View Conversation Thread</h5>
-                <p>URI: <code>activitypub://post-thread/https%3A%2F%2Fmastodon.social%2F%40user%2F123456</code></p>
+                <h5>View Conversation Thread (Mastodon)</h5>
+                <p>URI: <code>activitypub://post-thread/mastodon.social/123456</code></p>
                 <blockquote>"Show me the full conversation for this post"</blockquote>
+              </div>
+              <div class="example-item">
+                <h5>Legacy form (Pleroma/Misskey/etc.)</h5>
+                <p>URI: <code>activitypub://post-thread/https%3A%2F%2Fpleroma.example%2Fnotice%2FAaBbCc</code></p>
               </div>
             </div>
           </div>

@@ -41,8 +41,8 @@ const description =
             <pre><code>npx activitypub-mcp install</code></pre>
           </div>
           <div class="prerequisite-card">
-            <h3>Node.js 18+</h3>
-            <p>Required for running the MCP server</p>
+            <h3>Node.js 20+</h3>
+            <p>Required for running the MCP server (Node 18 reached EOL April 2025)</p>
             <a href="https://nodejs.org" target="_blank" rel="noopener" class="btn btn-outline">Download Node.js</a>
           </div>
         </div>
@@ -100,10 +100,10 @@ const description =
       "args": ["-y", "activitypub-mcp"],
       "env": {
         "LOG_LEVEL": "debug",
-        "USER_AGENT": "Claude-ActivityPub-Explorer/1.0",
+        "USER_AGENT": "Claude-ActivityPub-Explorer/2.0.0",
         "REQUEST_TIMEOUT": "60000",
         "CACHE_TTL": "600",
-        "RATE_LIMIT_REQUESTS": "100"
+        "RATE_LIMIT_MAX": "100"
       }
     }
   }
