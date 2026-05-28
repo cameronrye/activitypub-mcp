@@ -4,7 +4,7 @@
 
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { RemoteActivityPubClient } from "../../src/remote-client.js";
+import { RemoteActivityPubClient } from "../../src/activitypub/remote-client.js";
 import { server } from "../mocks/server.js";
 
 describe("RemoteActivityPubClient", () => {
@@ -627,7 +627,9 @@ describe("RemoteActivityPubClient response size cap (M2)", () => {
   it("aborts fetch when streamed body exceeds MAX_RESPONSE_SIZE without Content-Length", async () => {
     vi.resetModules();
     process.env = { ...originalEnv, MAX_RESPONSE_SIZE: "100" };
-    const { RemoteActivityPubClient: Client } = await import("../../src/remote-client.js");
+    const { RemoteActivityPubClient: Client } = await import(
+      "../../src/activitypub/remote-client.js"
+    );
     const { ResponseTooLargeError } = await import("../../src/utils/fetch-helpers.js");
     const huge = "x".repeat(500);
     server.use(

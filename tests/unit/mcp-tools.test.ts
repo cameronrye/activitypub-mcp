@@ -8,7 +8,7 @@ import { registerTools } from "../../src/mcp/tools.js";
 import { RateLimiter } from "../../src/server/rate-limiter.js";
 
 // Mock dependencies
-vi.mock("../../src/remote-client.js", () => ({
+vi.mock("../../src/activitypub/remote-client.js", () => ({
   remoteClient: {
     fetchRemoteActor: vi.fn(),
     fetchActorOutboxPaginated: vi.fn(),
@@ -106,12 +106,12 @@ vi.mock("@logtape/logtape", () => ({
   }),
 }));
 
+// Import mocked modules
+import { remoteClient } from "../../src/activitypub/remote-client.js";
 import { dynamicInstanceDiscovery } from "../../src/discovery/dynamic-instance-discovery.js";
 import { instanceDiscovery } from "../../src/discovery/instance-discovery.js";
 import { healthChecker } from "../../src/health-check.js";
 import { performanceMonitor } from "../../src/performance-monitor.js";
-// Import mocked modules
-import { remoteClient } from "../../src/remote-client.js";
 
 describe("MCP Tools", () => {
   let mcpServer: McpServer;

@@ -9,7 +9,7 @@ import { getLogger } from "@logtape/logtape";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
-import { remoteClient } from "../remote-client.js";
+import { remoteClient } from "../activitypub/remote-client.js";
 import { extractSingleValue, validateActorIdentifier } from "../server/index.js";
 import type { RateLimiter } from "../server/rate-limiter.js";
 import { getErrorMessage } from "../utils.js";

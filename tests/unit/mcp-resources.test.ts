@@ -10,7 +10,7 @@ import { type ResourceConfig, registerResources } from "../../src/mcp/resources.
 import { RateLimiter } from "../../src/server/rate-limiter.js";
 
 // Mock dependencies
-vi.mock("../../src/remote-client.js", () => ({
+vi.mock("../../src/activitypub/remote-client.js", () => ({
   remoteClient: {
     fetchRemoteActor: vi.fn(),
     fetchActorOutbox: vi.fn(),
@@ -34,7 +34,7 @@ vi.mock("@logtape/logtape", () => ({
   }),
 }));
 
-import { remoteClient } from "../../src/remote-client.js";
+import { remoteClient } from "../../src/activitypub/remote-client.js";
 
 describe("MCP Resources", () => {
   let mcpServer: McpServer;

@@ -43,7 +43,7 @@ describe("fetchPostThread cross-origin guard (M3)", () => {
         HttpResponse.json({ id: "https://a.test/post/2", type: "Note", content: "hi" }),
       ),
     );
-    const { RemoteActivityPubClient } = await import("../../src/remote-client.js");
+    const { RemoteActivityPubClient } = await import("../../src/activitypub/remote-client.js");
     const client = new RemoteActivityPubClient();
     const thread = await client.fetchPostThread("https://a.test/post/1", {
       depth: 2,
@@ -73,7 +73,7 @@ describe("fetchPostThread cross-origin guard (M3)", () => {
     // Spy on fetch to assert b.test is never contacted
     const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-    const { RemoteActivityPubClient } = await import("../../src/remote-client.js");
+    const { RemoteActivityPubClient } = await import("../../src/activitypub/remote-client.js");
     const client = new RemoteActivityPubClient();
     const thread = await client.fetchPostThread("https://a.test/post/1", {
       depth: 2,
@@ -111,7 +111,7 @@ describe("fetchPostThread cross-origin guard (M3)", () => {
       ),
       ...ids.map((id) => http.get(id, () => HttpResponse.json({ id, type: "Note", content: "x" }))),
     );
-    const { RemoteActivityPubClient } = await import("../../src/remote-client.js");
+    const { RemoteActivityPubClient } = await import("../../src/activitypub/remote-client.js");
     const client = new RemoteActivityPubClient();
     const thread = await client.fetchPostThread("https://a.test/post/1", {
       depth: 1,

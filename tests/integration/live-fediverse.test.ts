@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { RemoteActivityPubClient } from "../../src/remote-client.js";
+import { RemoteActivityPubClient } from "../../src/activitypub/remote-client.js";
 
 describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)(
   "RemoteActivityPubClient - Live Fediverse Tests",
