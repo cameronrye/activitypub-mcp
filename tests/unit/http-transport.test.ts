@@ -3,7 +3,7 @@
  */
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { HttpTransportServer } from "../../src/server/http-transport.js";
+import { HttpTransportServer } from "../../src/transport/http.js";
 
 const TEST_SECRET = "x".repeat(32);
 

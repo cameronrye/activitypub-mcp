@@ -4,7 +4,7 @@
  * Provides HTTP/SSE transport for the MCP server, enabling remote
  * connections and production deployments.
  *
- * @module server/http-transport
+ * @module transport/http
  */
 
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";

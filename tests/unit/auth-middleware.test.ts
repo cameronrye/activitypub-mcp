@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse } from "node:http";
 import { Socket } from "node:net";
 import { describe, expect, it } from "vitest";
-import { checkBearerAuth } from "../../src/server/auth-middleware.js";
+import { checkBearerAuth } from "../../src/transport/auth-middleware.js";
 
 function makeReq(headers: Record<string, string>): IncomingMessage {
   const req = new IncomingMessage(new Socket());
