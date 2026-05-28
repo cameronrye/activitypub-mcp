@@ -5,29 +5,33 @@ on:
     tags:
       - 'v*'
 
-# Add permissions for GitHub token
+# id-token: write is required for OIDC-based npm provenance attestations.
 permissions:
   contents: write
   packages: write
   pull-requests: read
+  id-token: write
 
 jobs:
   test:
     name: Test before release
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v6
       with:
         node-version: '20.x'
         cache: 'npm'
-    
+
     - name: Install dependencies
       run: npm ci
+
+    - name: Validate version stamps
+      run: npm run validate:version
 
     - name: Typecheck
       run: npm run typecheck
@@ -38,33 +42,43 @@ jobs:
     - name: Run linting
       run: npm run lint
 
-    - name: Build project
-      run: npm run build
+    - name: Build project (clean first)
+      run: npm run clean && npm run build
+
+    - name: Check tarball contents
+      run: node scripts/check-tarball-contents.js
+
+    - name: Smoke test published bin
+      run: node scripts/smoke-test-bin.js
 
   publish-npm:
     name: Publish to npm
     needs: test
     runs-on: ubuntu-latest
-    
+    # id-token: write must be set on the publishing job too for provenance.
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v6
       with:
         node-version: '20.x'
         cache: 'npm'
         registry-url: 'https://registry.npmjs.org'
-    
+
     - name: Install dependencies
       run: npm ci
-    
-    - name: Build project
-      run: npm run build
-    
-    - name: Publish to npm
-      run: npm publish
+
+    - name: Build project (clean first)
+      run: npm run clean && npm run build
+
+    - name: Publish to npm with provenance
+      run: npm publish --provenance --access public
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -72,29 +86,29 @@ jobs:
     name: Create GitHub Release
     needs: [test, publish-npm]
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
       with:
         fetch-depth: 0
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v6
       with:
         node-version: '20.x'
         cache: 'npm'
-    
+
     - name: Install dependencies
       run: npm ci
-    
-    - name: Build project
-      run: npm run build
-    
+
+    - name: Build project (clean first)
+      run: npm run clean && npm run build
+
     - name: Get version from tag
       id: get_version
       run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-    
+
     - name: Generate changelog
       id: changelog
       run: |
@@ -106,7 +120,10 @@ jobs:
           echo "" >> release_notes.md
           echo "See commit history for changes." >> release_notes.md
         fi
-    
+
+    - name: Pack release tarball
+      run: npm pack
+
     - name: Create Release
       uses: softprops/action-gh-release@v3
       env:
@@ -117,11 +134,11 @@ jobs:
         body_path: release_notes.md
         draft: false
         prerelease: false
+        # Attach the full npm tarball — individual JS files would have
+        # broken inter-module imports if anyone tried to wget+run them.
         files: |
-          dist/mcp-main.js
-          dist/mcp-server.js
-          dist/*.d.ts
-    
+          activitypub-mcp-${{ steps.get_version.outputs.VERSION }}.tgz
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v7
       with:
