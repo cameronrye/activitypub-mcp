@@ -67,7 +67,7 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:integration": "vitest run --config vitest.config.integration.ts",
-    "test:all": "vitest run",
+    "test:all": "vitest run && vitest run --config vitest.config.integration.ts",
     "test:coverage": "vitest run --coverage",
     "coverage": "vitest run --coverage",
     "lint": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" biome check .",

@@ -56,7 +56,7 @@ jobs:
       run: npm run build
     
     - name: Run tests
-      run: npm run test:all
+      run: npm test
 
     - name: Check for security vulnerabilities
       run: npm audit --audit-level=high
