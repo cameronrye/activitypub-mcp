@@ -919,8 +919,8 @@ ACTIVITYPUB_DEFAULT_INSTANCE=mastodon.social
 ACTIVITYPUB_DEFAULT_TOKEN=your-oauth-access-token
 ACTIVITYPUB_DEFAULT_USERNAME=your-username
 
-# Multi-account configuration (JSON format)
-ACTIVITYPUB_ACCOUNTS='[{"id":"work","instance":"fosstodon.org","token":"token1","username":"work_account"},{"id":"personal","instance":"mastodon.social","token":"token2","username":"personal_account"}]'
+# Multi-account configuration (v2 pipe-delimited format: id|instance|token|username|label)
+ACTIVITYPUB_ACCOUNTS=work|fosstodon.org|token1|work_account|Work,personal|mastodon.social|token2|personal_account|Personal
 ```
 
 ### Account Management Tools
@@ -1423,7 +1423,9 @@ npm run prod
 
 # Enable performance monitoring
 METRICS_ENABLED=true
-HEALTH_CHECK_ENABLED=true
+# Health checks are always on in v2; set this to false only to skip the
+# outbound mastodon.social connectivity probe (e.g., air-gapped environments).
+HEALTH_CHECK_EXTERNAL_PROBE=true
 ```
 
 ## Integration Examples

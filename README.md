@@ -1261,8 +1261,8 @@ ACTIVITYPUB_DEFAULT_INSTANCE=mastodon.social
 ACTIVITYPUB_DEFAULT_TOKEN=your-oauth-access-token
 ACTIVITYPUB_DEFAULT_USERNAME=your-username
 
-# Multi-account configuration (JSON format)
-# ACTIVITYPUB_ACCOUNTS='[{"id":"work","instance":"fosstodon.org","token":"token1","username":"work_account"},{"id":"personal","instance":"mastodon.social","token":"token2","username":"personal_account"}]'
+# Multi-account configuration (v2 pipe-delimited: id|instance|token|username|label)
+# ACTIVITYPUB_ACCOUNTS=work|fosstodon.org|token1|work_account|Work,personal|mastodon.social|token2|personal_account|Personal
 ```
 
 ### HTTP Transport Mode

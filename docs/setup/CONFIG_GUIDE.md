@@ -67,13 +67,25 @@ This guide explains how to properly configure the ActivityPub MCP Server for dif
 - `MCP_SERVER_NAME`: Name of the MCP server
 - `MCP_SERVER_VERSION`: Version identifier
 
-### Transport Configuration (New in v1.1.0)
+### Transport Configuration
 
 - `MCP_TRANSPORT_MODE`: Transport mode (`stdio` or `http`, default: `stdio`)
 - `MCP_HTTP_PORT`: HTTP server port (default: `3000`)
 - `MCP_HTTP_HOST`: HTTP server host (default: `127.0.0.1` for security)
 - `MCP_HTTP_CORS_ENABLED`: Enable CORS for HTTP transport (default: `false`)
-- `MCP_HTTP_CORS_ORIGINS`: CORS allowed origins, comma-separated (default: `*`)
+- `MCP_HTTP_CORS_ORIGINS`: CORS allowed origins, comma-separated. **v2 default: empty (no origins allowed).** Setting `"*"` is permitted but logs a startup warning since `MCP_HTTP_SECRET` is the only thing protecting `/mcp` and `/metrics` from arbitrary web pages.
+- `MCP_HTTP_SECRET` (**required when `MCP_TRANSPORT_MODE=http`**): Bearer-token secret of at least 16 characters. v2 refuses to start without it. Clients must send `Authorization: Bearer <MCP_HTTP_SECRET>` on `/mcp` and `/metrics`. The `/health` endpoint stays unauthenticated for load-balancer probes. Generate one with:
+  ```bash
+  export MCP_HTTP_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+  ```
+
+### Thread Traversal Caps (v2)
+
+`fetch-post-thread` enforces depth and reply caps and gates cross-origin reply fetches by default to prevent SSRF / fan-out:
+
+- `MCP_THREAD_MAX_DEPTH`: Max recursion depth (default: `5`)
+- `MCP_THREAD_MAX_REPLIES`: Max total replies returned (default: `50`)
+- `MCP_THREAD_CROSS_ORIGIN_FETCH`: When `true`, fetch replies whose origin differs from the root post. Default `false` — cross-origin replies are returned as stubs (`{ id, origin, fetched: false }`).
 
 ### HTTP & Network
 
@@ -129,24 +141,13 @@ Configure authentication for write operations (posting, interactions, etc.):
 
 **Multi-Account Configuration:**
 
-- `ACTIVITYPUB_ACCOUNTS`: JSON array of account configurations
+- `ACTIVITYPUB_ACCOUNTS`: Pipe-delimited account list. Format: `id|instance|token|username|label`, multiple accounts separated by commas.
+
+> **v2 breaking change.** v1 accepted a JSON array; v2 uses pipe-delimited entries so OAuth tokens that contain colons parse correctly. v2 refuses to start if it sees the legacy colon-delimited form. See [MIGRATION-v2.md](../../MIGRATION-v2.md#4-activitypub_accounts-now-uses-pipe--delimiter) for the migration sed one-liner.
 
 Example multi-account configuration:
 ```bash
-ACTIVITYPUB_ACCOUNTS='[
-  {
-    "id": "work",
-    "instance": "fosstodon.org",
-    "token": "your-oauth-token-1",
-    "username": "work_account"
-  },
-  {
-    "id": "personal",
-    "instance": "mastodon.social",
-    "token": "your-oauth-token-2",
-    "username": "personal_account"
-  }
-]'
+ACTIVITYPUB_ACCOUNTS=work|fosstodon.org|your-oauth-token-1|work_account|Work,personal|mastodon.social|your-oauth-token-2|personal_account|Personal
 ```
 
 **Obtaining OAuth Tokens:**
