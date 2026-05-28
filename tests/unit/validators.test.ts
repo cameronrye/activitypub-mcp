@@ -257,7 +257,7 @@ describe("Edge Cases", () => {
   describe("Boundary conditions for identifiers", () => {
     it("should handle identifier at minimum valid length", () => {
       // Minimum: 3 chars total, valid format
-      const result = ActorIdentifierSchema.safeParse("a@b.c");
+      const _result = ActorIdentifierSchema.safeParse("a@b.c");
       // This is 5 chars but might not pass domain validation
       // Let's use a proper minimum
       const result2 = ActorIdentifierSchema.safeParse("a@b.co");

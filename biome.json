@@ -45,10 +45,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
-      "correctness": {
-        "noUnusedVariables": "off"
-      }
+      "recommended": true
     }
   },
   "overrides": [
@@ -57,7 +54,8 @@
       "linter": {
         "rules": {
           "correctness": {
-            "noUnusedImports": "off"
+            "noUnusedImports": "off",
+            "noUnusedVariables": "off"
           }
         }
       }

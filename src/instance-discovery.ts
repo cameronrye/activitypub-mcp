@@ -234,7 +234,7 @@ export class InstanceDiscoveryService {
     const url = `https://${validDomain.data}/api/v1/instance`;
     try {
       await validateExternalUrl(url);
-    } catch (error) {
+    } catch (_error) {
       return { domain, online: false };
     }
 
