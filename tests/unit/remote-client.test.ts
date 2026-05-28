@@ -768,4 +768,21 @@ describe("ETag 304 without cache (H4)", () => {
     expect(obj.id).toBe("https://a.test/object");
     expect(callCount).toBe(2); // proves we did the retry
   });
+
+  it("throws a clear error when 304 persists on unconditional re-fetch", async () => {
+    let callCount = 0;
+    server.use(
+      http.get("https://stuck.test/object", () => {
+        callCount++;
+        // Always return 304 — even on the unconditional re-fetch
+        return new HttpResponse(null, { status: 304 });
+      }),
+    );
+    const client = new RemoteActivityPubClient();
+    await expect(client.fetchObject("https://stuck.test/object")).rejects.toThrow(
+      /misconfigured|304/i,
+    );
+    // The outer retry loop will still attempt; we just want to confirm the error message is informative.
+    expect(callCount).toBeGreaterThanOrEqual(2);
+  });
 });

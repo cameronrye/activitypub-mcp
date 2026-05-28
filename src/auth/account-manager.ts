@@ -71,7 +71,7 @@ export class AccountManager {
 
   /**
    * Load accounts from environment variables.
-   * Format: ACTIVITYPUB_ACCOUNTS=id1:instance1:token1,id2:instance2:token2
+   * Format: ACTIVITYPUB_ACCOUNTS=id1|instance1|token1|username1|label1,id2|instance2|token2|username2|label2
    * Or individual: ACTIVITYPUB_ACCOUNT_<ID>_INSTANCE, ACTIVITYPUB_ACCOUNT_<ID>_TOKEN
    */
   private loadFromEnvironment(): void {

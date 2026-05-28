@@ -694,6 +694,11 @@ export class RemoteActivityPubClient {
             ...options,
             headers: freshHeaders,
           });
+          if (freshResponse.status === 304) {
+            throw new Error(
+              `Server returned 304 on unconditional re-fetch for ${url}; server is misconfigured`,
+            );
+          }
           if (!freshResponse.ok) {
             throw new Error(`HTTP ${freshResponse.status}: ${freshResponse.statusText}`);
           }
