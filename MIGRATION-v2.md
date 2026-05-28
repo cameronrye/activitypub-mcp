@@ -178,7 +178,7 @@ the outbound connectivity probe (the `/health` endpoint's reach test to
 `mastodon.social`), use the new `HEALTH_CHECK_EXTERNAL_PROBE=false`
 instead.
 
-Reference commit: `<M7 commit SHA>`
+Reference commit: `1c70764`
 
 ## Sections to be filled by future plans
 
