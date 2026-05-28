@@ -30,6 +30,13 @@
 
 ---
 
+> **Upgrading from v1?** See [MIGRATION-v2.md](./MIGRATION-v2.md) for the
+> full v2.0.0 upgrade guide. v2 includes breaking changes (Node 20+,
+> required HTTP secret, env var format change) — read the migration
+> notes before upgrading.
+
+---
+
 <h2 align="center">What's New in v1.1.0</h2>
 
 <p align="center">
