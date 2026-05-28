@@ -22,11 +22,14 @@ describe("config", () => {
   });
 
   it("should use default values when env vars are not set", async () => {
-    // Clear relevant env vars
+    // Clear relevant env vars (including the test-suite-wide retry overrides
+    // from tests/setup.ts so we can assert true defaults).
     delete process.env.MCP_SERVER_NAME;
     delete process.env.MCP_SERVER_VERSION;
     delete process.env.REQUEST_TIMEOUT;
     delete process.env.CACHE_TTL;
+    delete process.env.RETRY_BASE_DELAY;
+    delete process.env.RETRY_MAX_DELAY;
 
     const config = await import("../../src/config.js");
 
