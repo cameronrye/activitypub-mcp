@@ -1,5 +1,5 @@
 import { getLogger } from "@logtape/logtape";
-import "./logging.js";
+import "./telemetry/logging.js";
 
 const logger = getLogger("activitypub-mcp");
 

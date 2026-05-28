@@ -164,7 +164,7 @@ vi.mock("../../src/auth/index.js", () => ({
   },
 }));
 
-vi.mock("../../src/performance-monitor.js", () => ({
+vi.mock("../../src/telemetry/performance-monitor.js", () => ({
   performanceMonitor: {
     startRequest: vi.fn().mockReturnValue("req-123"),
     endRequest: vi.fn(),

@@ -10,7 +10,7 @@ import {
   MEMORY_WARN_THRESHOLD_MB,
   MEMORY_WARN_THRESHOLD_PERCENT,
   SERVER_VERSION,
-} from "./config.js";
+} from "../config.js";
 import { performanceMonitor } from "./performance-monitor.js";
 
 const logger = getLogger("activitypub-mcp:health");

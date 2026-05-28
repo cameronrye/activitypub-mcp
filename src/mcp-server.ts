@@ -23,8 +23,8 @@ import {
   TRANSPORT_MODE,
 } from "./config.js";
 import { registerPrompts, registerResources, registerTools } from "./mcp/index.js";
-import { performanceMonitor } from "./performance-monitor.js";
 import { HttpTransportServer, RateLimiter } from "./server/index.js";
+import { performanceMonitor } from "./telemetry/performance-monitor.js";
 
 const logger = getLogger("activitypub-mcp");
 

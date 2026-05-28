@@ -20,8 +20,8 @@ import {
   SERVER_NAME,
   SERVER_VERSION,
 } from "../config.js";
-import { healthChecker } from "../health-check.js";
-import { performanceMonitor } from "../performance-monitor.js";
+import { healthChecker } from "../telemetry/health-check.js";
+import { performanceMonitor } from "../telemetry/performance-monitor.js";
 import { checkBearerAuth } from "./auth-middleware.js";
 
 const logger = getLogger("activitypub-mcp:http");

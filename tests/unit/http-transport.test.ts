@@ -396,7 +396,7 @@ describe("HEALTH_CHECK_EXTERNAL_PROBE behavioral (M7)", () => {
     process.env.HEALTH_CHECK_EXTERNAL_PROBE = "false";
     vi.resetModules();
     const fetchSpy = vi.spyOn(globalThis, "fetch");
-    const { healthChecker } = await import("../../src/health-check.js");
+    const { healthChecker } = await import("../../src/telemetry/health-check.js");
     await healthChecker.performHealthCheck(true);
     // The connectivity probe to HEALTH_CHECK_URL must NOT have fired.
     const probeCalls = fetchSpy.mock.calls.filter(([url]) =>

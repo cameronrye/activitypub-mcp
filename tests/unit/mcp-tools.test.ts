@@ -55,7 +55,7 @@ vi.mock("../../src/discovery/dynamic-instance-discovery.js", () => ({
   },
 }));
 
-vi.mock("../../src/health-check.js", () => ({
+vi.mock("../../src/telemetry/health-check.js", () => ({
   healthChecker: {
     performHealthCheck: vi.fn().mockResolvedValue({
       status: "healthy",
@@ -69,7 +69,7 @@ vi.mock("../../src/health-check.js", () => ({
   },
 }));
 
-vi.mock("../../src/performance-monitor.js", () => ({
+vi.mock("../../src/telemetry/performance-monitor.js", () => ({
   performanceMonitor: {
     startRequest: vi.fn().mockReturnValue("req-123"),
     endRequest: vi.fn(),
@@ -110,8 +110,8 @@ vi.mock("@logtape/logtape", () => ({
 import { remoteClient } from "../../src/activitypub/remote-client.js";
 import { dynamicInstanceDiscovery } from "../../src/discovery/dynamic-instance-discovery.js";
 import { instanceDiscovery } from "../../src/discovery/instance-discovery.js";
-import { healthChecker } from "../../src/health-check.js";
-import { performanceMonitor } from "../../src/performance-monitor.js";
+import { healthChecker } from "../../src/telemetry/health-check.js";
+import { performanceMonitor } from "../../src/telemetry/performance-monitor.js";
 
 describe("MCP Tools", () => {
   let mcpServer: McpServer;
