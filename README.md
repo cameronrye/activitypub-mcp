@@ -1245,9 +1245,9 @@ LLM Client ←→ MCP Protocol ←→ Fediverse Client ←→ Remote ActivityPub
                               Remote Data Fetching
 ```
 
-## Documentation
+## Further Documentation
 
-Full documentation is published at
+For deeper guides, see the full documentation site at
 [cameronrye.github.io/activitypub-mcp](https://cameronrye.github.io/activitypub-mcp/docs/):
 
 - **[Setup & Installation](https://cameronrye.github.io/activitypub-mcp/docs/setup/)** - Configuration and installation guides

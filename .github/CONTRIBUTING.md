@@ -152,7 +152,6 @@ full move table from v1 → v2):
 
 ```
 src/
-├── main.ts                       # Info display entry point
 ├── mcp-main.ts                   # MCP server entry point
 ├── mcp-server.ts                 # MCP server implementation
 ├── config.ts                     # Configuration constants
@@ -235,9 +234,9 @@ tests/
 ### User Documentation
 
 - **Update README.md** for user-facing changes
-- **Add examples** to EXAMPLES.md
-- **Update USAGE_GUIDE.md** for new features
-- **Maintain CHANGELOG.md** for releases
+- **Add examples** to `src/pages/docs/guides/examples.astro`
+- **Update the relevant page under `src/pages/docs/`** for new features
+- **Maintain CHANGELOG.md and MIGRATION-v2.md** for releases
 
 ## Security
 
@@ -295,12 +294,14 @@ We follow **Semantic Versioning** (SemVer):
 
 ### Code of Conduct
 
-Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+Be respectful and constructive. Substantive disagreement is fine;
+personal attacks, harassment, or off-topic political fights are not
+and will be moderated.
 
 ## Recognition
 
 Contributors will be recognized in:
-- **CONTRIBUTORS.md** file
+
 - **GitHub contributors** section
 - **Release notes** for significant contributions
 
