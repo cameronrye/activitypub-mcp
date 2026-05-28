@@ -936,20 +936,23 @@ Search across accounts, posts, and hashtags in a single query:
 
 #### Relationship Checking (NEW)
 
-Check your relationship status with other accounts:
+Check your relationship status with another account:
 
 ```json
 {
   "name": "get-relationship",
   "arguments": {
-    "accountIds": ["12345", "67890"]
+    "acct": "alice@mastodon.social"
   }
 }
 ```
 
 **Parameters:**
 
-- `accountIds` (array, required): Account IDs to check relationship status
+- `acct` (string, required): Account to check relationship with, in `username@instance` format.
+- `accountId` (string, optional): Your account ID (defaults to active account).
+
+**Note:** This tool checks one account at a time. To check multiple accounts, call it once per account.
 
 **Returns:** Following, followed_by, blocking, muting, and other relationship statuses.
 

@@ -1994,10 +1994,21 @@ function registerGetRelationshipTool(mcpServer: McpServer, rateLimiter: RateLimi
     {
       title: "Get Relationship",
       description:
-        "Check your relationship status with another account (following, followed by, blocking, muting, etc.)",
+        "Check your relationship status with another account (following, followed by, blocking, muting, etc.). Pass a single acct like 'username@instance'. To check multiple accounts, call this tool once per account.",
       inputSchema: {
-        acct: z.string().describe("Account to check relationship with (username@instance)"),
+        acct: z
+          .string()
+          .describe(
+            "Account to check relationship with (username@instance). If you have multiple accounts to check, call this tool once per account.",
+          ),
         accountId: z.string().optional().describe("Your account ID"),
+        // Detector for the legacy/wrong field name from old docs:
+        accountIds: z
+          .never({
+            message:
+              "get-relationship takes 'acct' (a single username@instance string), not 'accountIds'. Call this tool once per account.",
+          })
+          .optional(),
       },
     },
     async ({ acct, accountId }) => {

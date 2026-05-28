@@ -1068,4 +1068,25 @@ describe("MCP Write Tools", () => {
       ).toThrow(/4|max/i);
     });
   });
+
+  describe("get-relationship strict schema (H3a)", () => {
+    it("rejects accountIds with a helpful error even when acct is supplied", () => {
+      const tool = registeredTools.get("get-relationship");
+      expect(tool).toBeDefined();
+      const inputSchemaShape = (
+        tool?.config as { inputSchema: Record<string, import("zod").ZodTypeAny> }
+      ).inputSchema;
+      const schema = z.object(inputSchemaShape);
+      // accountIds is the wrong field name — schema should reject it even when acct is present
+      expect(() => schema.parse({ acct: "alice@example.social", accountIds: ["1", "2"] })).toThrow(
+        /acct|never|expected|invalid/i,
+      );
+    });
+
+    it("accepts the documented acct field", async () => {
+      const tool = registeredTools.get("get-relationship");
+      const result = await tool?.handler({ acct: "user@example.social" });
+      expect(result).toBeDefined();
+    });
+  });
 });
