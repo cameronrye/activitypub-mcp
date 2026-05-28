@@ -102,33 +102,42 @@ export class AccountManager {
     }
 
     // Check for additional accounts
-    const accountsEnv = process.env.ACTIVITYPUB_ACCOUNTS;
-    if (accountsEnv) {
-      const accountEntries = accountsEnv.split(",");
-      for (const entry of accountEntries) {
-        const parts = entry.trim().split(":");
-        if (parts.length >= 3) {
+    const rawAccounts = process.env.ACTIVITYPUB_ACCOUNTS;
+    if (rawAccounts) {
+      // Migration guard: legacy `:`-delimited format silently truncated tokens
+      // containing colons. Refuse to start rather than silently misload.
+      if (rawAccounts.includes(":") && !rawAccounts.includes("|")) {
+        throw new Error(
+          "ACTIVITYPUB_ACCOUNTS uses pipe (|) delimiter as of v2. " +
+            "Migrate from 'id:inst:tok:user:label' to 'id|inst|tok|user|label'. " +
+            "See MIGRATION-v2.md.",
+        );
+      }
+      const entries = rawAccounts
+        .split(",")
+        .map((e) => e.trim())
+        .filter(Boolean);
+      for (const entry of entries) {
+        try {
+          const parts = entry.split("|");
           const [id, instance, token, username = "user", label] = parts;
-          try {
-            const account: AccountCredentials = {
-              id,
-              instance,
-              username,
-              accessToken: token,
-              tokenType: "Bearer",
-              scopes: ["read", "write", "follow"],
-              createdAt: new Date().toISOString(),
-              label: label || undefined,
-            };
-
-            this.accounts.set(id, account);
-            if (!this.activeAccountId) {
-              this.activeAccountId = id;
-            }
-            logger.info("Loaded account from environment", { id, instance });
-          } catch (error) {
-            logger.warn("Failed to load account from environment", { id, error });
+          if (!id || !instance || !token) {
+            logger.warn("Skipping malformed account entry", { entry });
+            continue;
           }
+          this.addAccount({
+            id,
+            instance,
+            accessToken: token,
+            tokenType: "Bearer",
+            username,
+            label,
+            scopes: ["read", "write"],
+          });
+        } catch (error) {
+          logger.warn("Failed to load account from environment", {
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
       }
     }
@@ -323,5 +332,7 @@ export class AccountManager {
   }
 }
 
-// Export singleton instance
+// Export singleton instance.
+// Construction throws if env vars are misconfigured (e.g. legacy ACTIVITYPUB_ACCOUNTS
+// format). The server entry point catches this and exits non-zero.
 export const accountManager = new AccountManager();

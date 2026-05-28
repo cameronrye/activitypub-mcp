@@ -210,6 +210,45 @@ describe("AccountManager", () => {
   });
 });
 
+describe("ACTIVITYPUB_ACCOUNTS pipe delimiter (H6)", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("parses pipe-delimited accounts correctly", async () => {
+    process.env.ACTIVITYPUB_ACCOUNTS = "id1|inst1.test|tok-with:colons|user1|label1";
+    delete process.env.ACTIVITYPUB_DEFAULT_INSTANCE;
+    delete process.env.ACTIVITYPUB_DEFAULT_TOKEN;
+    const { AccountManager } = await import("../../src/auth/account-manager.js");
+    const manager = new AccountManager();
+    const accounts = manager.listAccounts();
+    expect(accounts).toHaveLength(1);
+    expect(accounts[0].id).toBe("id1");
+    expect(accounts[0].instance).toBe("inst1.test");
+    // The token (which contains a colon) must be preserved verbatim.
+    const acct = manager.getAccount("id1");
+    expect(acct?.accessToken).toBe("tok-with:colons");
+  });
+
+  it("throws clear migration error for legacy `:`-delimited entries", async () => {
+    process.env.ACTIVITYPUB_ACCOUNTS = "id1:inst1.test:tok:user1";
+    delete process.env.ACTIVITYPUB_DEFAULT_INSTANCE;
+    delete process.env.ACTIVITYPUB_DEFAULT_TOKEN;
+    // The singleton at module level also calls the constructor, so the import
+    // itself rejects with the migration error.
+    await expect(import("../../src/auth/account-manager.js")).rejects.toThrow(
+      /ACTIVITYPUB_ACCOUNTS.*pipe/i,
+    );
+  });
+});
+
 describe("verifyAccount SSRF protection (M8)", () => {
   const originalEnv = process.env;
 

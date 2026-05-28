@@ -53,6 +53,35 @@ web pages. Explicit origins are strongly recommended.
 
 Reference commit: `d0827d9` — `feat!(config): default MCP_HTTP_CORS_ORIGINS to empty (H1)`
 
+### 4. `ACTIVITYPUB_ACCOUNTS` now uses pipe `|` delimiter
+
+The multi-account env var changed from colon-delimited to pipe-delimited
+so tokens containing colons (e.g. JWTs) parse correctly.
+
+**Before (v1):**
+
+```env
+ACTIVITYPUB_ACCOUNTS=id1:inst1:tok1:user1:label1,id2:inst2:tok2:user2:label2
+```
+
+**After (v2):**
+
+```env
+ACTIVITYPUB_ACCOUNTS=id1|inst1|tok1|user1|label1,id2|inst2|tok2|user2|label2
+```
+
+If you only have hostnames and ASCII tokens, a global replace works:
+
+```bash
+sed -i 's/:/|/g' .env   # Caveat: only safe if NO part of the value contains a literal :
+```
+
+Otherwise, edit by hand and replace the four field separators in each entry.
+
+v2 will refuse to start if it sees a `:`-delimited value (no silent truncation).
+
+Reference commit: `<H6 commit SHA>` — `fix!(auth): use pipe delimiter in ACTIVITYPUB_ACCOUNTS (H6)`
+
 ## Behavioral changes (non-breaking but visible)
 
 ### Audit logging is on by default for write tools
