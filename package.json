@@ -30,7 +30,7 @@
     "social-media",
     "decentralized"
   ],
-  "author": "ActivityPub MCP Server Contributors",
+  "author": "Cameron Rye <c@meron.io>",
   "license": "MIT",
   "repository": {
     "type": "git",

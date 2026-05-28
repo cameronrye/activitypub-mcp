@@ -1255,9 +1255,10 @@ Full documentation is published at
 - **[Development](https://cameronrye.github.io/activitypub-mcp/docs/development/architecture/)** - Architecture and contributor docs
 - **[Specifications](https://cameronrye.github.io/activitypub-mcp/docs/specifications/activitypub-llm-specification-guide/)** - ActivityPub and protocol references
 
-The `docs/specifications/` directory in this repo also contains the full
-LLM-readable spec mirrors (ActivityPub, ActivityStreams, WebFinger, Fedify CLI)
-as standalone Markdown.
+The `docs/specifications/` directory in this repo contains LLM-readable
+spec mirrors (ActivityPub, ActivityStreams, WebFinger, Fedify CLI) as
+standalone Markdown. All other documentation moved to the Astro-built
+site under `src/pages/docs/` in v2.0.0.
 
 ## Development
 
