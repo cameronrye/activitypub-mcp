@@ -13,7 +13,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AuditLogger } from "../../src/audit/logger.js";
 import { DynamicInstanceDiscoveryService } from "../../src/discovery/dynamic-instance-discovery.js";
-import { InstanceBlocklist } from "../../src/instance-blocklist.js";
+import { InstanceBlocklist } from "../../src/policy/instance-blocklist.js";
 
 describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)("Audit Logger with Live Operations", () => {
   let auditLogger: AuditLogger;
