@@ -1,11 +1,8 @@
 # Migration Guide: v1 → v2
 
-This guide tracks every breaking change in the activitypub-mcp v2 release.
-Each breaking commit appends its section as v2 is built out. The final
-v2.0.0 release will present this as a complete migration walkthrough.
-
-> Status: in progress. See `docs/superpowers/specs/2026-05-27-v2-release-design.md`
-> for the full v2 design.
+This is the v2.0.0 release migration guide. See
+`docs/superpowers/specs/2026-05-27-v2-release-design.md` for the design
+that drove the release.
 
 ## Required actions to run v2.0.0
 
@@ -92,7 +89,7 @@ field delimiter. The startup migration guard will catch silently-generated legac
 format, but the diagnostic is much clearer if the generator emits the right format
 directly.
 
-Reference commit: `<H6 commit SHA>` — `fix!(auth): use pipe delimiter in ACTIVITYPUB_ACCOUNTS (H6)`
+Reference commit: `61f1b56` — `fix!(auth): use pipe delimiter in ACTIVITYPUB_ACCOUNTS (H6)`
 
 ## Behavioral changes (non-breaking but visible)
 
@@ -142,7 +139,7 @@ Also note: the `reason` field is now constrained to one of `policy`, `user`,
 reasons (e.g., `"offensive content"`), map them to one of these values before
 importing.
 
-Reference commit: `<L7 commit SHA>` — `fix(policy): runtime-validate instance-blocklist JSON imports (L7)`
+Reference commit: `3413c1d` — `fix(policy): runtime-validate instance-blocklist JSON imports (L7)`
 
 ## Tool API changes
 
@@ -216,7 +213,30 @@ legacy `{postUrl}` form until 2.1.0.
 
 Reference commit: `a6f8049`
 
-## Sections to be filled by future plans
+## Internal refactor (FYI, not breaking)
 
-- **Plans B–F** (other v2 work areas) will append their own sections as they land.
-- A consolidated tool-API table will be added once Plans B/C land their schema changes.
+v2 reorganized the `src/` tree from a flat layout into topic directories.
+**The public API of the `activitypub-mcp` package is the bin (`activitypub-mcp` on the command line) and its MCP protocol surface — internal source paths are not part of the API.** Deep imports like `activitypub-mcp/dist/audit-logger.js` were never officially supported.
+
+The new layout, for anyone curious:
+
+| Old path | New path |
+|---|---|
+| `src/audit-logger.ts` | `src/audit/logger.ts` |
+| `src/instance-blocklist.ts` | `src/policy/instance-blocklist.ts` |
+| `src/webfinger.ts` | `src/discovery/webfinger.ts` |
+| `src/instance-discovery.ts` | `src/discovery/instance-discovery.ts` |
+| `src/dynamic-instance-discovery.ts` | `src/discovery/dynamic-instance-discovery.ts` |
+| `src/remote-client.ts` | `src/activitypub/remote-client.ts` |
+| `src/performance-monitor.ts` | `src/telemetry/performance-monitor.ts` |
+| `src/health-check.ts` | `src/telemetry/health-check.ts` |
+| `src/logging.ts` | `src/telemetry/logging.ts` |
+| `src/server/http-transport.ts` | `src/transport/http.ts` |
+| `src/server/auth-middleware.ts` | `src/transport/auth-middleware.ts` |
+| `src/server/rate-limiter.ts` | `src/resilience/rate-limiter.ts` |
+| `src/server/adaptive-rate-limiter.ts` | `src/resilience/adaptive-rate-limiter.ts` |
+| `src/server/validators.ts` | `src/validation/validators.ts` |
+| `src/utils.ts` | 3-way split: `src/validation/url.ts` + `src/utils/errors.ts` + `src/utils/html.ts` |
+| `src/server/index.ts` | deleted; consumers use direct imports |
+
+`src/server/` and the six unused placeholder directories (`async/`, `security/`, `streaming/`, `errors/`, `translation/`, `media/`) were removed.
