@@ -14,7 +14,7 @@ import {
   THREAD_MAX_REPLIES,
   USER_AGENT,
 } from "./config.js";
-import { instanceBlocklist } from "./instance-blocklist.js";
+import { instanceBlocklist } from "./policy/instance-blocklist.js";
 import { readJsonWithLimit } from "./utils/fetch-helpers.js";
 import { LRUCache } from "./utils/lru-cache.js";
 import { getErrorMessage, validateExternalUrl } from "./utils.js";

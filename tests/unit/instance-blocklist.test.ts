@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { InstanceBlocklist } from "../../src/instance-blocklist.js";
+import { InstanceBlocklist } from "../../src/policy/instance-blocklist.js";
 
 describe("InstanceBlocklist", () => {
   let blocklist: InstanceBlocklist;

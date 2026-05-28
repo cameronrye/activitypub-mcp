@@ -7,8 +7,8 @@
 
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
-import { auditLogger } from "./audit/logger.js";
-import { BLOCKED_INSTANCES } from "./config.js";
+import { auditLogger } from "../audit/logger.js";
+import { BLOCKED_INSTANCES } from "../config.js";
 
 const logger = getLogger("activitypub-mcp:blocklist");
 
