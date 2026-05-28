@@ -10,6 +10,14 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "MIGRATION-v2.md"
+  ],
   "keywords": [
     "activitypub",
     "mcp",
