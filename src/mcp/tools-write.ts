@@ -2474,14 +2474,20 @@ function registerCancelScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
       title: "Cancel Scheduled Post",
       description: "Cancel a scheduled post before it's published",
       inputSchema: {
-        scheduledId: z.string().describe("The ID of the scheduled post to cancel"),
-        accountId: z.string().optional().describe("Account ID"),
+        scheduledPostId: z.string().describe("ID of the scheduled post to cancel"),
+        accountId: z.string().optional().describe("Account ID (defaults to active)"),
+        // Legacy field detector — gives a clear error to anyone using the old name.
+        scheduledId: z
+          .never({
+            message: "scheduledId was renamed to scheduledPostId in v2. Update your call.",
+          })
+          .optional(),
       },
     },
-    async ({ scheduledId, accountId }) => {
+    async ({ scheduledPostId, accountId }) => {
       requireWriteEnabled();
       const startTime = Date.now();
-      const auditParams = { scheduledId, accountId };
+      const auditParams = { scheduledPostId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
@@ -2503,11 +2509,11 @@ function registerCancelScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
 
       const requestId = performanceMonitor.startRequest("cancel-scheduled-post", {
         instance: account.instance,
-        scheduledId,
+        scheduledPostId,
       });
 
       try {
-        await authenticatedClient.cancelScheduledPost(scheduledId, accountId);
+        await authenticatedClient.cancelScheduledPost(scheduledPostId, accountId);
         performanceMonitor.endRequest(requestId, true);
         auditLogger.logToolInvocation("cancel-scheduled-post", auditParams, {
           success: true,
@@ -2520,7 +2526,7 @@ function registerCancelScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
               type: "text",
               text: `✅ **Scheduled Post Canceled**
 
-The scheduled post \`${scheduledId}\` has been canceled and will not be published.`,
+The scheduled post \`${scheduledPostId}\` has been canceled and will not be published.`,
             },
           ],
         };
@@ -2553,17 +2559,23 @@ function registerUpdateScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
       title: "Update Scheduled Post",
       description: "Change the scheduled time for a scheduled post",
       inputSchema: {
-        scheduledId: z.string().describe("The ID of the scheduled post to update"),
+        scheduledPostId: z.string().describe("ID of the scheduled post to update"),
         scheduledAt: z
           .string()
           .describe("New scheduled time in ISO 8601 format (e.g., 2024-12-25T10:00:00Z)"),
-        accountId: z.string().optional().describe("Account ID"),
+        accountId: z.string().optional().describe("Account ID (defaults to active)"),
+        // Legacy field detector — gives a clear error to anyone using the old name.
+        scheduledId: z
+          .never({
+            message: "scheduledId was renamed to scheduledPostId in v2. Update your call.",
+          })
+          .optional(),
       },
     },
-    async ({ scheduledId, scheduledAt, accountId }) => {
+    async ({ scheduledPostId, scheduledAt, accountId }) => {
       requireWriteEnabled();
       const startTime = Date.now();
-      const auditParams = { scheduledId, scheduledAt, accountId };
+      const auditParams = { scheduledPostId, scheduledAt, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
@@ -2585,13 +2597,13 @@ function registerUpdateScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
 
       const requestId = performanceMonitor.startRequest("update-scheduled-post", {
         instance: account.instance,
-        scheduledId,
+        scheduledPostId,
         scheduledAt,
       });
 
       try {
         const updated = await authenticatedClient.updateScheduledPost(
-          scheduledId,
+          scheduledPostId,
           scheduledAt,
           accountId,
         );
@@ -2609,7 +2621,7 @@ function registerUpdateScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
               type: "text",
               text: `✅ **Scheduled Post Updated**
 
-Post \`${scheduledId}\` is now scheduled for: **${newDate}**`,
+Post \`${scheduledPostId}\` is now scheduled for: **${newDate}**`,
             },
           ],
         };

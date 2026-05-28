@@ -640,7 +640,7 @@ describe("MCP Write Tools", () => {
   describe("cancel-scheduled-post tool", () => {
     it("should cancel a scheduled post", async () => {
       const tool = registeredTools.get("cancel-scheduled-post");
-      const result = await tool?.handler({ scheduledId: "scheduled-1" });
+      const result = await tool?.handler({ scheduledPostId: "scheduled-1" });
 
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "Scheduled Post Canceled",
@@ -653,7 +653,7 @@ describe("MCP Write Tools", () => {
     it("should update a scheduled post", async () => {
       const tool = registeredTools.get("update-scheduled-post");
       const result = await tool?.handler({
-        scheduledId: "scheduled-1",
+        scheduledPostId: "scheduled-1",
         scheduledAt: "2024-12-26T10:00:00Z",
       });
 
@@ -961,7 +961,7 @@ describe("MCP Write Tools", () => {
       auditLoggerMock.logToolInvocation.mockClear();
       const tool = registeredTools.get("cancel-scheduled-post");
       expect(tool).toBeDefined();
-      await tool?.handler({ scheduledId: "scheduled-1" });
+      await tool?.handler({ scheduledPostId: "scheduled-1" });
       expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
         "cancel-scheduled-post",
         expect.anything(),
@@ -973,7 +973,7 @@ describe("MCP Write Tools", () => {
       auditLoggerMock.logToolInvocation.mockClear();
       const tool = registeredTools.get("update-scheduled-post");
       expect(tool).toBeDefined();
-      await tool?.handler({ scheduledId: "scheduled-1", scheduledAt: "2099-01-01T00:00:00Z" });
+      await tool?.handler({ scheduledPostId: "scheduled-1", scheduledAt: "2099-01-01T00:00:00Z" });
       expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
         "update-scheduled-post",
         expect.anything(),
@@ -1087,6 +1087,42 @@ describe("MCP Write Tools", () => {
       const tool = registeredTools.get("get-relationship");
       const result = await tool?.handler({ acct: "user@example.social" });
       expect(result).toBeDefined();
+    });
+  });
+
+  describe("scheduled-post rename to scheduledPostId (H3b)", () => {
+    beforeEach(() => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      (authenticatedClient.cancelScheduledPost as Mock).mockClear();
+      (authenticatedClient.updateScheduledPost as Mock).mockClear();
+    });
+
+    it("cancel-scheduled-post accepts scheduledPostId (new name)", async () => {
+      const tool = registeredTools.get("cancel-scheduled-post");
+      expect(tool).toBeDefined();
+      await tool?.handler({ scheduledPostId: "sched-1" });
+      expect(authenticatedClient.cancelScheduledPost).toHaveBeenCalledWith("sched-1", undefined);
+    });
+
+    it("update-scheduled-post accepts scheduledPostId (new name)", async () => {
+      const tool = registeredTools.get("update-scheduled-post");
+      await tool?.handler({
+        scheduledPostId: "sched-1",
+        scheduledAt: "2099-01-01T00:00:00Z",
+      });
+      expect(authenticatedClient.updateScheduledPost).toHaveBeenCalledWith(
+        "sched-1",
+        "2099-01-01T00:00:00Z",
+        undefined,
+      );
+    });
+
+    it("rejects legacy scheduledId with a helpful error", async () => {
+      const tool = registeredTools.get("cancel-scheduled-post");
+      const schema = z.object(tool?.config.inputSchema as Record<string, z.ZodTypeAny>);
+      expect(() =>
+        schema.parse({ scheduledId: "sched-1" } as unknown as { scheduledPostId: string }),
+      ).toThrow(/scheduledPostId|scheduledId|renamed|unrecognized/i);
     });
   });
 });

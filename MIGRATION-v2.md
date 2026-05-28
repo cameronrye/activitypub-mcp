@@ -144,6 +144,30 @@ importing.
 
 Reference commit: `<L7 commit SHA>` — `fix(policy): runtime-validate instance-blocklist JSON imports (L7)`
 
+## Tool API changes
+
+### `cancel-scheduled-post` and `update-scheduled-post`: `scheduledId` → `scheduledPostId`
+
+The parameter `scheduledId` was renamed to `scheduledPostId` to match how
+the README documented it and to be less ambiguous about what kind of ID
+it is. The Zod schema rejects the legacy name with a clear error:
+
+> "scheduledId was renamed to scheduledPostId in v2. Update your call."
+
+**Before (v1):**
+
+```json
+{ "name": "cancel-scheduled-post", "arguments": { "scheduledId": "123" } }
+```
+
+**After (v2):**
+
+```json
+{ "name": "cancel-scheduled-post", "arguments": { "scheduledPostId": "123" } }
+```
+
+Reference commit: `<H3b commit SHA>` — `fix!(tools): rename scheduledId to scheduledPostId (H3b)`
+
 ## Sections to be filled by future plans
 
 - **Plans B–F** (other v2 work areas) will append their own sections as they land.
