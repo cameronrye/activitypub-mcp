@@ -85,9 +85,13 @@ describe("fetchPostThread cross-origin guard (M3)", () => {
     });
 
     // Verify b.test was never fetched
-    const bTestCalls = fetchSpy.mock.calls.filter((args) =>
-      String(args[0]).startsWith("https://b.test"),
-    );
+    const bTestCalls = fetchSpy.mock.calls.filter((args) => {
+      try {
+        return new URL(String(args[0])).hostname === "b.test";
+      } catch {
+        return false;
+      }
+    });
     expect(bTestCalls).toHaveLength(0);
 
     const stub = thread.replies.find((r) => r.id === "https://b.test/post/9");
