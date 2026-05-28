@@ -134,3 +134,28 @@ describe("CORS defaults (H1)", () => {
     expect(mod.HTTP_CORS_ORIGINS).toBe("");
   });
 });
+
+describe("HEALTH_CHECK_EXTERNAL_PROBE config (M7)", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("defaults to true", async () => {
+    delete process.env.HEALTH_CHECK_EXTERNAL_PROBE;
+    const mod = await import("../../src/config.js");
+    expect(mod.HEALTH_CHECK_EXTERNAL_PROBE).toBe(true);
+  });
+
+  it("can be disabled via env", async () => {
+    process.env.HEALTH_CHECK_EXTERNAL_PROBE = "false";
+    const mod = await import("../../src/config.js");
+    expect(mod.HEALTH_CHECK_EXTERNAL_PROBE).toBe(false);
+  });
+});

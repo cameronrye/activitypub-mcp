@@ -2,7 +2,7 @@
  * Unit tests for the HttpTransportServer class.
  */
 
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { HttpTransportServer } from "../../src/server/http-transport.js";
 
 const TEST_SECRET = "x".repeat(32);
@@ -376,5 +376,33 @@ describe("HttpTransportServer", () => {
       });
       expect(response3.headers.get("Access-Control-Allow-Origin")).toBe("http://c.com");
     });
+  });
+});
+
+describe("HEALTH_CHECK_EXTERNAL_PROBE behavioral (M7)", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+    vi.restoreAllMocks();
+  });
+
+  it("skips the external probe when HEALTH_CHECK_EXTERNAL_PROBE=false", async () => {
+    process.env.HEALTH_CHECK_EXTERNAL_PROBE = "false";
+    vi.resetModules();
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const { healthChecker } = await import("../../src/health-check.js");
+    await healthChecker.performHealthCheck(true);
+    // The connectivity probe to HEALTH_CHECK_URL must NOT have fired.
+    const probeCalls = fetchSpy.mock.calls.filter(([url]) =>
+      String(url).includes("mastodon.social"),
+    );
+    expect(probeCalls).toHaveLength(0);
+    fetchSpy.mockRestore();
   });
 });

@@ -168,6 +168,18 @@ it is. The Zod schema rejects the legacy name with a clear error:
 
 Reference commit: `<H3b commit SHA>` — `fix!(tools): rename scheduledId to scheduledPostId (H3b)`
 
+## Removed env vars
+
+### `HEALTH_CHECK_ENABLED` removed
+
+This env var was dead code in v1 — setting it had no effect because no
+consumer checked it. v2 deletes it. If you specifically want to skip
+the outbound connectivity probe (the `/health` endpoint's reach test to
+`mastodon.social`), use the new `HEALTH_CHECK_EXTERNAL_PROBE=false`
+instead.
+
+Reference commit: `<M7 commit SHA>`
+
 ## Sections to be filled by future plans
 
 - **Plans B–F** (other v2 work areas) will append their own sections as they land.

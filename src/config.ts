@@ -132,6 +132,17 @@ export const MEMORY_WARN_THRESHOLD_PERCENT = parseIntEnv(
   80,
 );
 
+/**
+ * Whether to perform the outbound network connectivity probe in health checks.
+ * Default: true. Set to false to skip the external probe (useful when the
+ * server runs in an air-gapped environment or under strict outbound network
+ * policies).
+ */
+export const HEALTH_CHECK_EXTERNAL_PROBE = parseBoolEnv(
+  process.env.HEALTH_CHECK_EXTERNAL_PROBE,
+  true,
+);
+
 // =============================================================================
 // Performance Monitoring Configuration
 // =============================================================================

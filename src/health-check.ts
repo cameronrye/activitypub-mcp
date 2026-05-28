@@ -4,6 +4,7 @@
 
 import { getLogger } from "@logtape/logtape";
 import {
+  HEALTH_CHECK_EXTERNAL_PROBE,
   HEALTH_CHECK_TIMEOUT,
   HEALTH_CHECK_URL,
   MEMORY_WARN_THRESHOLD_MB,
@@ -47,12 +48,10 @@ export interface HealthCheckResult {
 }
 
 class HealthChecker {
-  private readonly healthCheckEnabled: boolean;
   private readonly version: string;
   private readonly startTime: number;
 
   constructor() {
-    this.healthCheckEnabled = process.env.HEALTH_CHECK_ENABLED === "true";
     this.version = SERVER_VERSION;
     this.startTime = Date.now();
   }
@@ -233,6 +232,15 @@ class HealthChecker {
    * Check network connectivity
    */
   private async checkNetworkConnectivity(checks: HealthCheckResult["checks"]): Promise<void> {
+    if (!HEALTH_CHECK_EXTERNAL_PROBE) {
+      checks.network = {
+        status: "pass",
+        message: "External probe skipped (HEALTH_CHECK_EXTERNAL_PROBE=false)",
+        duration: 0,
+      };
+      return;
+    }
+
     const startTime = Date.now();
 
     try {
@@ -324,13 +332,6 @@ class HealthChecker {
       status: "ok",
       uptime: Date.now() - this.startTime,
     };
-  }
-
-  /**
-   * Check if health checks are enabled
-   */
-  isEnabled(): boolean {
-    return this.healthCheckEnabled;
   }
 }
 
