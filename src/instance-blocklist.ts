@@ -6,10 +6,23 @@
  */
 
 import { getLogger } from "@logtape/logtape";
+import { z } from "zod";
 import { auditLogger } from "./audit-logger.js";
 import { BLOCKED_INSTANCES } from "./config.js";
 
 const logger = getLogger("activitypub-mcp:blocklist");
+
+/**
+ * Zod schema for validating BlockedInstance entries during import.
+ */
+const BlockedInstanceSchema = z.object({
+  domain: z.string().min(1, "domain must be non-empty"),
+  reason: z.enum(["policy", "user", "safety", "spam", "federation", "custom"]),
+  description: z.string().optional(),
+  addedAt: z.string().optional(),
+  addedBy: z.string().optional(),
+  expiresAt: z.string().optional(),
+});
 
 /**
  * Block reason categories.
@@ -242,17 +255,16 @@ export class InstanceBlocklist {
    * Import blocks from JSON.
    */
   importFromJson(json: string): number {
-    const entries = JSON.parse(json) as BlockedInstance[];
+    const raw = JSON.parse(json);
+    const entries = z.array(BlockedInstanceSchema).parse(raw);
     let imported = 0;
 
     for (const entry of entries) {
-      if (entry.domain && entry.reason) {
-        this.addBlock({
-          ...entry,
-          addedAt: entry.addedAt || new Date().toISOString(),
-        });
-        imported++;
-      }
+      this.addBlock({
+        ...entry,
+        addedAt: entry.addedAt || new Date().toISOString(),
+      });
+      imported++;
     }
 
     logger.info("Imported blocks from JSON", { count: imported });

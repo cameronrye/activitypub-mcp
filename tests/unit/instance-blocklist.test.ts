@@ -448,15 +448,14 @@ describe("InstanceBlocklist", () => {
   });
 
   describe("import edge cases", () => {
-    it("should skip entries without required fields", () => {
+    it("should throw when entries lack required fields", () => {
       const json = JSON.stringify([
         { domain: "valid.example.com", reason: "policy" },
         { domain: "missing-reason.example.com" },
         { reason: "policy" },
       ]);
 
-      const imported = blocklist.importFromJson(json);
-      expect(imported).toBe(1); // Only valid.example.com (requires both domain AND reason)
+      expect(() => blocklist.importFromJson(json)).toThrow();
     });
 
     it("should handle empty JSON array", () => {
@@ -512,6 +511,25 @@ describe("InstanceBlocklist", () => {
       });
 
       expect(() => blocklist.validateNotBlocked("without-description.example.com")).toThrow(/spam/);
+    });
+  });
+
+  describe("importFromJson validation (L7)", () => {
+    it("throws ZodError when JSON contains an entry with an empty domain", () => {
+      const bad = JSON.stringify([{ domain: "", reason: "policy" }]);
+      expect(() => blocklist.importFromJson(bad)).toThrow();
+    });
+
+    it("throws ZodError when JSON contains an entry with a missing domain field", () => {
+      const bad = JSON.stringify([{ reason: "policy" }]);
+      expect(() => blocklist.importFromJson(bad)).toThrow();
+    });
+
+    it("accepts valid JSON without throwing", () => {
+      const good = JSON.stringify([
+        { domain: "evil.example", reason: "policy", addedAt: new Date().toISOString() },
+      ]);
+      expect(() => blocklist.importFromJson(good)).not.toThrow();
     });
   });
 });
