@@ -750,6 +750,9 @@ export class RemoteActivityPubClient {
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
+        // Reject redirects so a host that passed pre-flight SSRF validation
+        // cannot 302 to a private IP after the fact.
+        redirect: "error",
       });
       clearTimeout(timeoutId);
 

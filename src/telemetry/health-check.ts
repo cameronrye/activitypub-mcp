@@ -251,6 +251,7 @@ class HealthChecker {
       const response = await fetch(HEALTH_CHECK_URL, {
         method: "HEAD",
         signal: controller.signal,
+        redirect: "error",
       });
 
       clearTimeout(timeoutId);

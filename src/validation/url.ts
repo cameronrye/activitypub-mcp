@@ -80,6 +80,13 @@ const BLOCKED_HOSTNAME_SUFFIXES = [
   ".localdomain",
 ];
 
+/**
+ * URL schemes permitted for outbound fetches.
+ * Everything else (file:, data:, http:, ftp:, gopher:, javascript:, etc.)
+ * is rejected as a defence-in-depth SSRF/exfil guard.
+ */
+const ALLOWED_URL_SCHEMES = new Set(["https:"]);
+
 /** Regex to match IPv4 addresses */
 const IPV4_REGEX = /^(?:\d{1,3}\.){3}\d{1,3}$/;
 
@@ -206,6 +213,10 @@ export async function validateExternalUrl(url: string): Promise<void> {
   const parsedUrl = new URL(url);
   const hostname = parsedUrl.hostname.toLowerCase();
 
+  if (!ALLOWED_URL_SCHEMES.has(parsedUrl.protocol)) {
+    throw new Error(`URL scheme "${parsedUrl.protocol}" is not allowed (only https: is permitted)`);
+  }
+
   // Check for blocked hostnames
   if (isBlockedHostname(hostname)) {
     throw new Error(`Access to internal hostname "${hostname}" is not allowed`);
@@ -244,6 +255,10 @@ export async function validateExternalUrl(url: string): Promise<void> {
 export function validateExternalUrlSync(url: string): void {
   const parsedUrl = new URL(url);
   const hostname = parsedUrl.hostname.toLowerCase();
+
+  if (!ALLOWED_URL_SCHEMES.has(parsedUrl.protocol)) {
+    throw new Error(`URL scheme "${parsedUrl.protocol}" is not allowed (only https: is permitted)`);
+  }
 
   // Check for blocked hostnames
   if (isBlockedHostname(hostname)) {

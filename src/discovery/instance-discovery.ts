@@ -164,6 +164,7 @@ export class InstanceDiscoveryService {
       const response = await fetch(url, {
         method: "HEAD",
         signal: controller.signal,
+        redirect: "error",
       });
 
       clearTimeout(timeoutId);
@@ -214,6 +215,7 @@ export class InstanceDiscoveryService {
           "User-Agent": USER_AGENT,
         },
         signal: controller.signal,
+        redirect: "error",
       });
 
       clearTimeout(timeoutId);

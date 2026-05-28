@@ -8,6 +8,7 @@
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
+import { instanceBlocklist } from "../policy/instance-blocklist.js";
 import { readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { validateExternalUrl } from "../validation/url.js";
 import { type AccountCredentials, accountManager } from "./account-manager.js";
@@ -191,6 +192,9 @@ export class AuthenticatedClient {
     // SSRF protection
     await validateExternalUrl(url);
 
+    // Policy: respect operator blocklist for authenticated writes too.
+    instanceBlocklist.validateNotBlocked(account.instance);
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
@@ -198,6 +202,7 @@ export class AuthenticatedClient {
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
+        redirect: "error",
         headers: {
           Authorization: this.getAuthHeader(account),
           "Content-Type": "application/json",
@@ -931,6 +936,7 @@ export class AuthenticatedClient {
 
     const url = `https://${account.instance}/api/v2/media`;
     await validateExternalUrl(url);
+    instanceBlocklist.validateNotBlocked(account.instance);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout * 3); // Longer timeout for uploads
@@ -939,6 +945,7 @@ export class AuthenticatedClient {
       const response = await fetch(url, {
         method: "POST",
         signal: controller.signal,
+        redirect: "error",
         headers: {
           Authorization: this.getAuthHeader(account),
           Accept: "application/json",

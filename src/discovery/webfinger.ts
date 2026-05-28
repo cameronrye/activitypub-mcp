@@ -1,6 +1,14 @@
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
-import { CACHE_MAX_SIZE, CACHE_TTL, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
+import {
+  CACHE_MAX_SIZE,
+  CACHE_TTL,
+  MAX_RESPONSE_SIZE,
+  REQUEST_TIMEOUT,
+  USER_AGENT,
+} from "../config.js";
+import { instanceBlocklist } from "../policy/instance-blocklist.js";
+import { readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
 import { ActorIdentifierSchema } from "../validation/schemas.js";
 import { validateExternalUrl } from "../validation/url.js";
@@ -11,7 +19,8 @@ const logger = getLogger("activitypub-mcp");
 const WebFingerResponseSchema = z.object({
   subject: z.string(),
   aliases: z.array(z.string()).optional(),
-  properties: z.record(z.string(), z.string()).optional(),
+  // RFC 7033 §4.4.5: property values are string | null.
+  properties: z.record(z.string(), z.union([z.string(), z.null()])).optional(),
   links: z.array(
     z.object({
       rel: z.string(),
@@ -19,7 +28,7 @@ const WebFingerResponseSchema = z.object({
       href: z.string().optional(),
       template: z.string().optional(),
       titles: z.record(z.string(), z.string()).optional(),
-      properties: z.record(z.string(), z.string()).optional(),
+      properties: z.record(z.string(), z.union([z.string(), z.null()])).optional(),
     }),
   ),
 });
@@ -114,6 +123,28 @@ export class WebFingerClient {
       throw new Error(`No ActivityPub actor URL found for ${normalizedIdentifier}`);
     }
 
+    // Guard against WebFinger spoofing: the actor URL returned by the
+    // queried instance must live on the same origin. Without this check
+    // evil.social could hand back https://mastodon.social/users/admin
+    // and the model would see that profile cached as if it belonged to
+    // evil.social.
+    const [, queriedDomain] = normalizedIdentifier.split("@");
+    if (queriedDomain) {
+      const expectedOrigin = `https://${queriedDomain.toLowerCase()}`;
+      let actorOrigin: string;
+      try {
+        actorOrigin = new URL(actorUrl).origin.toLowerCase();
+      } catch {
+        throw new Error(`WebFinger returned malformed actor URL: ${actorUrl}`);
+      }
+      if (actorOrigin !== expectedOrigin) {
+        throw new Error(
+          `WebFinger spoofing detected: ${normalizedIdentifier} resolved to ${actorOrigin}, ` +
+            `expected ${expectedOrigin}`,
+        );
+      }
+    }
+
     // Fetch the actor
     const actor = await this.fetchActor(actorUrl);
 
@@ -144,6 +175,9 @@ export class WebFingerClient {
     // SSRF protection: validate URL with async DNS resolution for rebinding detection
     await validateExternalUrl(webfingerUrl);
 
+    // Policy: respect operator blocklist for WebFinger lookups too.
+    instanceBlocklist.validateNotBlocked(domain);
+
     logger.info("Performing WebFinger lookup", {
       identifier,
       url: webfingerUrl,
@@ -160,6 +194,7 @@ export class WebFingerClient {
           "User-Agent": USER_AGENT,
         },
         signal: controller.signal,
+        redirect: "error",
       });
 
       clearTimeout(timeoutId);
@@ -168,7 +203,7 @@ export class WebFingerClient {
         throw new Error(`WebFinger lookup failed: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
       const webfingerResponse = WebFingerResponseSchema.parse(data);
 
       // Cache the result (LRU cache handles eviction and TTL)
@@ -204,6 +239,17 @@ export class WebFingerClient {
     // SSRF protection: validate URL with async DNS resolution for rebinding detection
     await validateExternalUrl(actorUrl);
 
+    // Policy: respect operator blocklist for actor fetches too.
+    try {
+      const actorHost = new URL(actorUrl).hostname;
+      instanceBlocklist.validateNotBlocked(actorHost);
+    } catch (e) {
+      if (e instanceof TypeError) {
+        throw new Error(`Malformed actor URL: ${actorUrl}`);
+      }
+      throw e;
+    }
+
     logger.info("Fetching ActivityPub actor", { url: actorUrl });
 
     try {
@@ -218,6 +264,7 @@ export class WebFingerClient {
           "User-Agent": USER_AGENT,
         },
         signal: controller.signal,
+        redirect: "error",
       });
 
       clearTimeout(timeoutId);
@@ -226,7 +273,7 @@ export class WebFingerClient {
         throw new Error(`Failed to fetch actor: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
       return ActivityPubActorSchema.parse(data);
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {

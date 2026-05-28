@@ -12,9 +12,11 @@ import {
   DYNAMIC_INSTANCE_CACHE_TTL,
   INSTANCES_SOCIAL_TOKEN,
   MAX_DYNAMIC_INSTANCES,
+  MAX_RESPONSE_SIZE,
   REQUEST_TIMEOUT,
   USER_AGENT,
 } from "../config.js";
+import { readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
 import { validateExternalUrl } from "../validation/url.js";
 
@@ -279,6 +281,7 @@ export class DynamicInstanceDiscoveryService {
       const response = await fetch(url.toString(), {
         headers,
         signal: controller.signal,
+        redirect: "error",
       });
 
       clearTimeout(timeoutId);
@@ -287,7 +290,7 @@ export class DynamicInstanceDiscoveryService {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
 
       // Transform API response to our format
       const instances = this.transformInstancesSocialResponse(data);
@@ -354,6 +357,7 @@ export class DynamicInstanceDiscoveryService {
         },
         body: JSON.stringify({ query }),
         signal: controller.signal,
+        redirect: "error",
       });
 
       clearTimeout(timeoutId);
@@ -362,7 +366,7 @@ export class DynamicInstanceDiscoveryService {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
       let instances = this.transformFediverseObserverResponse(data);
 
       // Apply client-side filters

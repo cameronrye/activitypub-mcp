@@ -87,9 +87,13 @@ export class InstanceBlocklist {
 
   /**
    * Normalize a domain for consistent comparison.
+   *
+   * Strips trailing FQDN dot (e.g. "evil.social.") so blocklist
+   * exact-match lookups can't be bypassed by internally constructed
+   * URLs that carry the FQDN form.
    */
   private normalizeDomain(domain: string): string {
-    return domain.toLowerCase().trim();
+    return domain.toLowerCase().trim().replace(/\.+$/, "");
   }
 
   /**

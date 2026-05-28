@@ -38,6 +38,20 @@ describe("InstanceBlocklist", () => {
       expect(blocklist.isBlocked("Blocked.Example.Com").blocked).toBe(true);
     });
 
+    it("should match across trailing-dot (FQDN) and case variants", () => {
+      blocklist.addBlock({
+        domain: "evil.social",
+        reason: "policy",
+        addedAt: new Date().toISOString(),
+      });
+
+      // Internally constructed URLs may carry the FQDN trailing dot; the
+      // blocklist must still match.
+      expect(blocklist.isBlocked("evil.social.").blocked).toBe(true);
+      expect(blocklist.isBlocked("EVIL.SOCIAL.").blocked).toBe(true);
+      expect(blocklist.isBlocked("evil.social..").blocked).toBe(true);
+    });
+
     it("should support wildcard patterns", () => {
       blocklist.addBlock({
         domain: "*.badnetwork.example",

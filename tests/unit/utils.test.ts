@@ -155,35 +155,42 @@ describe("validateExternalUrlSync", () => {
   it("should allow valid public URLs", () => {
     expect(() => validateExternalUrlSync("https://example.com")).not.toThrow();
     expect(() => validateExternalUrlSync("https://mastodon.social/api/v1")).not.toThrow();
-    expect(() => validateExternalUrlSync("http://8.8.8.8")).not.toThrow();
+    expect(() => validateExternalUrlSync("https://8.8.8.8")).not.toThrow();
+  });
+
+  it("should reject non-https schemes", () => {
+    expect(() => validateExternalUrlSync("http://example.com")).toThrow(/not allowed/i);
+    expect(() => validateExternalUrlSync("file:///etc/passwd")).toThrow(/not allowed/i);
+    expect(() => validateExternalUrlSync("data:text/plain,hi")).toThrow(/not allowed/i);
+    expect(() => validateExternalUrlSync("ftp://example.com")).toThrow(/not allowed/i);
   });
 
   it("should block localhost URLs", () => {
-    expect(() => validateExternalUrlSync("http://localhost")).toThrow(
+    expect(() => validateExternalUrlSync("https://localhost")).toThrow(
       /internal hostname.*not allowed/i,
     );
-    expect(() => validateExternalUrlSync("http://localhost:8080")).toThrow(
+    expect(() => validateExternalUrlSync("https://localhost:8080")).toThrow(
       /internal hostname.*not allowed/i,
     );
   });
 
   it("should block private IP URLs", () => {
-    expect(() => validateExternalUrlSync("http://127.0.0.1")).toThrow(
+    expect(() => validateExternalUrlSync("https://127.0.0.1")).toThrow(
       /private IP address.*not allowed/i,
     );
-    expect(() => validateExternalUrlSync("http://192.168.1.1")).toThrow(
+    expect(() => validateExternalUrlSync("https://192.168.1.1")).toThrow(
       /private IP address.*not allowed/i,
     );
-    expect(() => validateExternalUrlSync("http://10.0.0.1:3000")).toThrow(
+    expect(() => validateExternalUrlSync("https://10.0.0.1:3000")).toThrow(
       /private IP address.*not allowed/i,
     );
   });
 
   it("should block internal domain URLs", () => {
-    expect(() => validateExternalUrlSync("http://server.local")).toThrow(
+    expect(() => validateExternalUrlSync("https://server.local")).toThrow(
       /internal hostname.*not allowed/i,
     );
-    expect(() => validateExternalUrlSync("http://db.internal")).toThrow(
+    expect(() => validateExternalUrlSync("https://db.internal")).toThrow(
       /internal hostname.*not allowed/i,
     );
   });

@@ -8,6 +8,7 @@
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT } from "../config.js";
+import { instanceBlocklist } from "../policy/instance-blocklist.js";
 import { readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { validateExternalUrl } from "../validation/url.js";
 
@@ -288,8 +289,9 @@ export class AccountManager {
 
     try {
       await validateExternalUrl(url);
+      instanceBlocklist.validateNotBlocked(account.instance);
     } catch (error) {
-      logger.error("Account verification refused (URL validation failed)", {
+      logger.error("Account verification refused (URL or policy validation failed)", {
         id: accountId,
         error: error instanceof Error ? error.message : String(error),
       });
@@ -306,6 +308,7 @@ export class AccountManager {
           Accept: "application/json",
         },
         signal: controller.signal,
+        redirect: "error",
       });
 
       if (!response.ok) {
