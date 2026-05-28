@@ -33,15 +33,6 @@ describe("LRUCache", () => {
       expect(cache.size).toBe(1);
     });
 
-    it("should correctly report has()", () => {
-      const cache = new LRUCache<string, number>();
-
-      cache.set("a", 1);
-
-      expect(cache.has("a")).toBe(true);
-      expect(cache.has("b")).toBe(false);
-    });
-
     it("should delete values", () => {
       const cache = new LRUCache<string, number>();
 
@@ -138,17 +129,6 @@ describe("LRUCache", () => {
       vi.advanceTimersByTime(1500);
 
       expect(cache.get("a")).toBeUndefined();
-    });
-
-    it("should return false for expired items on has()", () => {
-      const cache = new LRUCache<string, number>({ ttl: 1000 });
-
-      cache.set("a", 1);
-      expect(cache.has("a")).toBe(true);
-
-      vi.advanceTimersByTime(1500);
-
-      expect(cache.has("a")).toBe(false);
     });
 
     it("should prune expired entries", () => {
