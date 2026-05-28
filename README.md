@@ -1099,7 +1099,7 @@ Manage scheduled posts:
   "name": "update-scheduled-post",
   "arguments": {
     "scheduledPostId": "123",
-    "scheduledAt": "2026-02-14T18:00:00.000Z"
+    "scheduledAt": "<ISO 8601 timestamp at least one hour in the future>"
   }
 }
 ```

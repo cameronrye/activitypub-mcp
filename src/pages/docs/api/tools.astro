@@ -775,8 +775,8 @@ search-posts mastodon.social "typescript tutorial"</code></pre>
                     <tr>
                       <td><code>domain</code></td>
                       <td>string</td>
-                      <td>Yes</td>
-                      <td>Instance domain to search</td>
+                      <td>No</td>
+                      <td>Instance domain to search. Defaults to <code>mastodon.social</code>.</td>
                     </tr>
                     <tr>
                       <td><code>query</code></td>
@@ -1485,10 +1485,10 @@ unbookmark-post --postUrl "https://mastodon.social/@user/123456"</code></pre>
                   </thead>
                   <tbody>
                     <tr>
-                      <td><code>accountIds</code></td>
-                      <td>array</td>
+                      <td><code>acct</code></td>
+                      <td>string</td>
                       <td>Yes</td>
-                      <td>Array of account IDs to check relationship status</td>
+                      <td>Single account ID or acct handle (e.g. <code>user@instance.social</code>) to check the relationship for. Call once per account.</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1496,8 +1496,10 @@ unbookmark-post --postUrl "https://mastodon.social/@user/123456"</code></pre>
 
               <div class="examples">
                 <h4>Examples</h4>
-                <pre><code># Check relationship with accounts
-get-relationship --accountIds ["12345", "67890"]</code></pre>
+                <pre><code># Check relationship with a single account
+get-relationship --acct "user@mastodon.social"
+
+# To check multiple accounts, call the tool once per account.</code></pre>
               </div>
 
               <div class="response">
@@ -1919,10 +1921,16 @@ vote-on-poll --pollId "123456" --choices [0, 2]</code></pre>
                       <td>Alt text description for accessibility (highly recommended)</td>
                     </tr>
                     <tr>
-                      <td><code>focus</code></td>
-                      <td>string</td>
+                      <td><code>focusX</code></td>
+                      <td>number</td>
                       <td>No</td>
-                      <td>Focal point as "x,y" where each value is -1.0 to 1.0 (determines crop center)</td>
+                      <td>Horizontal focal point, -1.0 to 1.0 (determines crop center). Must be provided together with <code>focusY</code>.</td>
+                    </tr>
+                    <tr>
+                      <td><code>focusY</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Vertical focal point, -1.0 to 1.0 (determines crop center). Must be provided together with <code>focusX</code>.</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1934,7 +1942,7 @@ vote-on-poll --pollId "123456" --choices [0, 2]</code></pre>
 upload-media --filePath "/path/to/image.jpg" --description "A sunset over mountains"
 
 # Upload with focal point for cropping
-upload-media --filePath "/path/to/photo.png" --description "Portrait photo" --focus "0.0,0.5"
+upload-media --filePath "/path/to/photo.png" --description "Portrait photo" --focusX 0.0 --focusY 0.5
 
 # Upload from URL
 upload-media --filePath "https://example.com/image.jpg" --description "External image"</code></pre>
@@ -2037,7 +2045,7 @@ get-scheduled-posts --limit 10</code></pre>
                       <td><code>scheduledAt</code></td>
                       <td>string</td>
                       <td>Yes</td>
-                      <td>New scheduled time in ISO 8601 format (e.g., "2026-02-14T18:00:00.000Z")</td>
+                      <td>New scheduled time in ISO 8601 format. Must be at least one hour in the future.</td>
                     </tr>
                   </tbody>
                 </table>
@@ -2046,7 +2054,7 @@ get-scheduled-posts --limit 10</code></pre>
               <div class="examples">
                 <h4>Examples</h4>
                 <pre><code># Reschedule a post
-update-scheduled-post --scheduledPostId "123" --scheduledAt "2026-02-14T18:00:00.000Z"</code></pre>
+update-scheduled-post --scheduledPostId "123" --scheduledAt "&lt;ISO 8601 timestamp at least one hour in the future&gt;"</code></pre>
               </div>
             </div>
           </div>

@@ -1,6 +1,7 @@
 # Migration Guide: v1 → v2
 
 This is the v2.0.0 release migration guide. See
+[`CHANGELOG.md`](./CHANGELOG.md) for the full list of changes, and
 `docs/superpowers/specs/2026-05-27-v2-release-design.md` for the design
 that drove the release.
 
@@ -240,3 +241,24 @@ The new layout, for anyone curious:
 | `src/server/index.ts` | deleted; consumers use direct imports |
 
 `src/server/` and the six unused placeholder directories (`async/`, `security/`, `streaming/`, `errors/`, `translation/`, `media/`) were removed.
+
+## Explicitly not changed
+
+The following are intentionally **unchanged** in v2 so existing integrations
+that touch only these surfaces do not need code edits:
+
+- **MCP tool names.** Every tool keeps its v1 name (e.g., `post-status`,
+  `fetch-timeline`, `discover-instances`). Only specific tool *parameters*
+  changed — see "Tool API changes" above.
+- **MCP resource scheme.** Resources are still served under the
+  `activitypub://` scheme. Only the `post-thread` template path shape
+  changed — see "Resource URI changes" above.
+- **Read-only tool surface.** The set of read-only tools (timelines,
+  instance discovery, post lookup, etc.) is unchanged. No read-only tool
+  was renamed, removed, or had a required parameter added.
+- **MCP prompts.** All v1 prompts remain available; only the
+  `discover-content` prompt's `topics` (plural) parameter is now documented
+  to match the long-standing schema name.
+- **Stdio transport.** Stdio transport (`MCP_TRANSPORT_MODE=stdio`,
+  the default) is unchanged. The new `MCP_HTTP_SECRET` requirement applies
+  only to `http` transport.
