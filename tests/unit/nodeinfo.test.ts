@@ -487,6 +487,31 @@ describe("getInstanceSoftware — same-host check on linked URL", () => {
     expect(info.software?.name).toBe("akkoma");
   });
 
+  it("accepts a linked NodeInfo URL on the same host in trailing-dot FQDN form", async () => {
+    server.use(
+      http.get("https://fqdn.social/.well-known/nodeinfo", () =>
+        HttpResponse.json({
+          links: [
+            {
+              rel: "http://nodeinfo.diaspora.software/ns/schema/2.0",
+              href: "https://fqdn.social./nodeinfo/2.0",
+            },
+          ],
+        }),
+      ),
+      http.get("https://fqdn.social./nodeinfo/2.0", () =>
+        HttpResponse.json({
+          software: { name: "mastodon", version: "4.3.2" },
+          protocols: ["activitypub"],
+        }),
+      ),
+    );
+
+    const info = await getInstanceSoftware("fqdn.social");
+    expect(info.detection).toBe("success");
+    expect(info.software?.name).toBe("mastodon");
+  });
+
   it("rejects a linked NodeInfo URL on an unrelated host", async () => {
     server.use(
       http.get("https://victim.social/.well-known/nodeinfo", () =>

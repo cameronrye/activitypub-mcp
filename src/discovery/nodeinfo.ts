@@ -169,8 +169,10 @@ async function performDetection(domain: string): Promise<InstanceSoftwareInfo> {
 }
 
 function isSameOrSubdomain(input: string, candidate: string): boolean {
-  const a = input.toLowerCase();
-  const b = candidate.toLowerCase();
+  // Strip a trailing dot so the FQDN form (e.g. "example.org.") of the same
+  // host is treated as equal, not rejected as a different host.
+  const a = input.toLowerCase().replace(/\.$/, "");
+  const b = candidate.toLowerCase().replace(/\.$/, "");
   return b === a || b.endsWith(`.${a}`);
 }
 
