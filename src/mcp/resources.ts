@@ -10,6 +10,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { remoteClient } from "../activitypub/remote-client.js";
+import { getInstanceSoftware } from "../discovery/nodeinfo.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
 import { getErrorMessage } from "../utils/errors.js";
 import { DomainSchema } from "../validation/schemas.js";
@@ -307,12 +308,16 @@ function registerInstanceInfoResource(mcpServer: McpServer, rateLimiter: RateLim
 
         logger.info("Fetching instance info", { domain: validDomain });
 
-        const instanceInfo = await remoteClient.getInstanceInfo(validDomain);
+        const [instanceInfo, software] = await Promise.all([
+          remoteClient.getInstanceInfo(validDomain),
+          getInstanceSoftware(validDomain),
+        ]);
 
         const normalizedInstanceInfo = {
           ...instanceInfo,
           title: instanceInfo.description || `${instanceInfo.software || "Unknown"} instance`,
           uri: `https://${validDomain}`,
+          software,
         };
 
         return {
