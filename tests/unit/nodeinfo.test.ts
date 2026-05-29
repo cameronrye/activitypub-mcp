@@ -283,8 +283,10 @@ describe("getInstanceSoftware — failure modes (never throws)", () => {
       }),
     );
 
-    await getInstanceSoftware("flaky.social");
-    await getInstanceSoftware("flaky.social");
+    const first = await getInstanceSoftware("flaky.social");
+    const second = await getInstanceSoftware("flaky.social");
     expect(fetchCount).toBe(1);
+    expect(second.detection).toBe("unavailable");
+    expect(second.reason).toBe(first.reason);
   });
 });

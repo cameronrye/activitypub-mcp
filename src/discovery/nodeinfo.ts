@@ -87,6 +87,7 @@ export async function getInstanceSoftware(domain: string): Promise<InstanceSoftw
   try {
     const info = await performDetection(normalizedDomain);
     cache.set(normalizedDomain, info);
+    negativeCache.delete(normalizedDomain);
     return info;
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
