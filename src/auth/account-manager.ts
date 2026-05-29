@@ -9,6 +9,7 @@ import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import { resolveWriteAdapter } from "./adapters/resolve.js";
 import type { AccountInfo } from "./adapters/write-adapter.js";
+import * as tokenStore from "./token-store.js";
 
 const logger = getLogger("activitypub-mcp:account-manager");
 
@@ -46,10 +47,47 @@ export type AccountCredentials = z.infer<typeof AccountCredentialsSchema>;
 export class AccountManager {
   private accounts: Map<string, AccountCredentials> = new Map();
   private activeAccountId: string | null = null;
+  private readyPromise: Promise<void>;
 
   constructor() {
-    // Load accounts from environment if configured
+    // Synchronous env load keeps existing behavior; persisted store load is async.
     this.loadFromEnvironment();
+    this.readyPromise = this.loadFromTokenStore();
+  }
+
+  /** Resolves once persisted accounts have finished loading. */
+  ready(): Promise<void> {
+    return this.readyPromise;
+  }
+
+  /** Load persisted accounts, skipping ids already present from env (env wins). */
+  private async loadFromTokenStore(): Promise<void> {
+    try {
+      const persisted = await tokenStore.loadAll();
+      for (const account of persisted) {
+        if (this.accounts.has(account.id)) {
+          logger.debug("Skipping persisted account (id already loaded from env)", {
+            id: account.id,
+          });
+          continue;
+        }
+        this.accounts.set(account.id, account);
+        if (!this.activeAccountId) this.activeAccountId = account.id;
+      }
+    } catch (error) {
+      logger.warn("Failed to load persisted accounts", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  /** Add an account and persist it to the token store. */
+  async addAndPersistAccount(
+    credentials: Omit<AccountCredentials, "createdAt">,
+  ): Promise<AccountCredentials> {
+    const account = this.addAccount(credentials);
+    await tokenStore.save(account);
+    return account;
   }
 
   /**

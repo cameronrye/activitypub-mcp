@@ -381,3 +381,80 @@ describe("verifyAccount delegates to the platform adapter", () => {
     expect(await manager.verifyAccount("x")).toBeNull();
   });
 });
+
+describe("token-store integration", () => {
+  const originalEnv = process.env;
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+    delete process.env.ACTIVITYPUB_DEFAULT_INSTANCE;
+    delete process.env.ACTIVITYPUB_DEFAULT_TOKEN;
+    delete process.env.ACTIVITYPUB_ACCOUNTS;
+  });
+  afterEach(() => {
+    process.env = originalEnv;
+    vi.restoreAllMocks();
+    vi.doUnmock("../../src/auth/token-store.js");
+  });
+
+  it("loads persisted accounts at construction", async () => {
+    vi.doMock("../../src/auth/token-store.js", () => ({
+      loadAll: vi.fn().mockResolvedValue([]),
+      save: vi.fn().mockResolvedValue(undefined),
+      remove: vi.fn().mockResolvedValue(undefined),
+    }));
+    const { AccountManager } = await import("../../src/auth/account-manager.js");
+    const mgr = new AccountManager();
+    await mgr.ready();
+    expect(mgr.accountCount).toBe(0);
+  });
+
+  it("env accounts win over store accounts with the same id", async () => {
+    process.env.ACTIVITYPUB_DEFAULT_INSTANCE = "mastodon.social";
+    process.env.ACTIVITYPUB_DEFAULT_TOKEN = "env-token";
+    vi.doMock("../../src/auth/token-store.js", () => ({
+      loadAll: vi.fn().mockResolvedValue([
+        {
+          id: "default",
+          instance: "evil.example",
+          username: "x",
+          accessToken: "store-token",
+          tokenType: "Bearer",
+          scopes: ["read"],
+          createdAt: "2026-05-29T00:00:00.000Z",
+        },
+      ]),
+      save: vi.fn(),
+      remove: vi.fn(),
+    }));
+    const { AccountManager } = await import("../../src/auth/account-manager.js");
+    const mgr = new AccountManager();
+    await mgr.ready();
+    expect(mgr.getAccount("default")?.instance).toBe("mastodon.social");
+    expect(mgr.getAccount("default")?.accessToken).toBe("env-token");
+  });
+
+  it("addAndPersistAccount adds and calls token-store.save", async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    vi.doMock("../../src/auth/token-store.js", () => ({
+      loadAll: vi.fn().mockResolvedValue([]),
+      save,
+      remove: vi.fn(),
+    }));
+    const { AccountManager } = await import("../../src/auth/account-manager.js");
+    const mgr = new AccountManager();
+    await mgr.ready();
+    await mgr.addAndPersistAccount({
+      id: "mastodon:fosstodon.org:alice",
+      instance: "fosstodon.org",
+      username: "alice",
+      accessToken: "tok",
+      tokenType: "Bearer",
+      scopes: ["read", "write"],
+    });
+    expect(mgr.getAccount("mastodon:fosstodon.org:alice")).toBeDefined();
+    expect(save).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "mastodon:fosstodon.org:alice", accessToken: "tok" }),
+    );
+  });
+});
