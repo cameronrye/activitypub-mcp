@@ -6,6 +6,7 @@ import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   clearNodeInfoCache,
+  formatInstanceSoftware,
   getInstanceSoftware,
   NodeInfoDiscoverySchema,
   NodeInfoSchema,
@@ -463,5 +464,47 @@ describe("getInstanceSoftware — same-host check on linked URL", () => {
     const info = await getInstanceSoftware("victim.social");
     expect(info.detection).toBe("unavailable");
     expect(info.reason).toMatch(/different host|cross-host/i);
+  });
+});
+
+describe("formatInstanceSoftware", () => {
+  it("formats a success result as a single human-readable line", () => {
+    const text = formatInstanceSoftware({
+      domain: "mastodon.social",
+      detection: "success",
+      software: { name: "mastodon", version: "4.3.2" },
+      protocols: ["activitypub"],
+      openRegistrations: false,
+    });
+    expect(text).toContain("mastodon.social");
+    expect(text).toContain("Mastodon");
+    expect(text).toContain("4.3.2");
+    expect(text).toContain("activitypub");
+    expect(text).toContain("false");
+  });
+
+  it("formats an unavailable result with the reason", () => {
+    const text = formatInstanceSoftware({
+      domain: "missing.social",
+      detection: "unavailable",
+      software: null,
+      protocols: null,
+      openRegistrations: null,
+      reason: "HTTP 404 Not Found",
+    });
+    expect(text).toMatch(/could not detect/i);
+    expect(text).toContain("missing.social");
+    expect(text).toContain("HTTP 404");
+  });
+
+  it("capitalizes common software names", () => {
+    const text = formatInstanceSoftware({
+      domain: "x.social",
+      detection: "success",
+      software: { name: "pleroma", version: "2.7.0" },
+      protocols: ["activitypub"],
+      openRegistrations: null,
+    });
+    expect(text).toContain("Pleroma");
   });
 });

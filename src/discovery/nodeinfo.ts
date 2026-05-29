@@ -171,6 +171,33 @@ function pickHighestNodeInfo2Link(
   return matches[0];
 }
 
+function titleCase(name: string): string {
+  if (!name) return name;
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+export function formatInstanceSoftware(info: InstanceSoftwareInfo): string {
+  if (info.detection === "unavailable") {
+    return `Could not detect software for \`${info.domain}\`: ${info.reason ?? "unknown reason"}.`;
+  }
+  const software = info.software;
+  const protocols = info.protocols ?? [];
+  const openReg = info.openRegistrations;
+  const parts: string[] = [];
+  if (software) {
+    parts.push(`\`${info.domain}\` runs **${titleCase(software.name)} ${software.version}**.`);
+  } else {
+    parts.push(`\`${info.domain}\` software metadata unavailable.`);
+  }
+  if (protocols.length > 0) {
+    parts.push(`Protocols: ${protocols.join(", ")}.`);
+  }
+  if (openReg !== null) {
+    parts.push(`Open registrations: ${openReg}.`);
+  }
+  return parts.join(" ");
+}
+
 async function fetchJson(url: string): Promise<unknown> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
