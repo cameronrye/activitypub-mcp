@@ -109,10 +109,14 @@
 ### Authenticated Features
 
 - **Multi-Account Support**: Manage multiple fediverse accounts with secure credential storage
-- **Posting Operations**: Create, reply to, and delete posts
+- **Posting Operations**: Create, reply to, edit, delete, and pin/unpin posts
 - **Social Interactions**: Boost, favourite, bookmark, follow, mute, and block
+- **Hashtags, Lists & Filters**: Follow/unfollow hashtags; manage lists (create, members, list timeline); manage keyword filters
+- **Profile & Follow Requests**: Edit your display name/bio/fields; list, accept, and reject pending follow requests
 - **Authenticated Timelines**: Access home timeline, notifications, bookmarks, and favourites
 - **Content Export**: Export timelines, threads, and account data in multiple formats
+
+> The hashtag, list, filter, profile, and follow-request tools use Mastodon REST endpoints and return a clear "not supported on Misskey" message on Misskey accounts.
 
 ### Security & Administration
 
