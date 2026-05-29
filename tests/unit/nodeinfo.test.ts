@@ -86,5 +86,14 @@ describe("NodeInfo schemas", () => {
         }),
       ).toThrow();
     });
+
+    it("rejects when protocols is missing", () => {
+      expect(() =>
+        NodeInfoSchema.parse({
+          version: "2.0",
+          software: { name: "mastodon", version: "4.3.2" },
+        }),
+      ).toThrow();
+    });
   });
 });
