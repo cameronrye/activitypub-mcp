@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking changes
 
 - **`activitypub://post-thread/{postUrl}` URI form removed.** Deprecated in v2.0.0 with a warning; removed in 2.1.0. Use the canonical `activitypub://post-thread/{domain}/{statusId}` form. Callers using the legacy form receive an `InvalidParams` error with a migration message.
+- **`activitypub://instance-info/{domain}` `software` field is now an object.** Previously a plain string (e.g. `"mastodon"`) sourced from the upstream instance metadata. v2.1 replaces it with the structured `{detection, software, protocols, openRegistrations}` block from NodeInfo detection. The old string is no longer present in the response. Consumers reading `body.software` as a string should switch to `body.software.software?.name`.
 
 ### Internal
 
