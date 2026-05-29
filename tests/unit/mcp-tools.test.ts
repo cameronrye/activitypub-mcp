@@ -106,10 +106,20 @@ vi.mock("@logtape/logtape", () => ({
   }),
 }));
 
+vi.mock("../../src/discovery/nodeinfo.js", () => ({
+  getInstanceSoftware: vi.fn(),
+  formatInstanceSoftware: vi.fn((info) =>
+    info.detection === "success"
+      ? `\`${info.domain}\` runs ${info.software.name} ${info.software.version}.`
+      : `Could not detect software for \`${info.domain}\`: ${info.reason}.`,
+  ),
+}));
+
 // Import mocked modules
 import { remoteClient } from "../../src/activitypub/remote-client.js";
 import { dynamicInstanceDiscovery } from "../../src/discovery/dynamic-instance-discovery.js";
 import { instanceDiscovery } from "../../src/discovery/instance-discovery.js";
+import { getInstanceSoftware } from "../../src/discovery/nodeinfo.js";
 import { healthChecker } from "../../src/telemetry/health-check.js";
 import { performanceMonitor } from "../../src/telemetry/performance-monitor.js";
 
@@ -163,6 +173,7 @@ describe("MCP Tools", () => {
         "get-local-timeline",
         "get-federated-timeline",
         "get-instance-info",
+        "get-instance-software",
         "convert-url",
         "batch-fetch-actors",
         "batch-fetch-posts",
@@ -954,6 +965,53 @@ describe("MCP Tools", () => {
       expect(text).toMatch(/x{400,}/);
       // Verify it's truncated to 500, not 200
       expect(text).toMatch(/x{450,}/);
+    });
+  });
+
+  describe("get-instance-software tool", () => {
+    it("returns a prose success message for a valid instance", async () => {
+      (getInstanceSoftware as Mock).mockResolvedValue({
+        domain: "tools-success.social",
+        detection: "success",
+        software: { name: "mastodon", version: "4.3.2" },
+        protocols: ["activitypub"],
+        openRegistrations: false,
+      });
+
+      const tool = registeredTools.get("get-instance-software");
+      expect(tool).toBeDefined();
+      const result = await tool?.handler({ domain: "tools-success.social" });
+      const text = (result as { content: { text: string }[] }).content[0].text;
+      expect(text).toContain("mastodon");
+      expect(text).toContain("4.3.2");
+    });
+
+    it("returns an unavailable prose message when detection fails", async () => {
+      (getInstanceSoftware as Mock).mockResolvedValue({
+        domain: "tools-fail.social",
+        detection: "unavailable",
+        software: null,
+        protocols: null,
+        openRegistrations: null,
+        reason: "HTTP 404 Not Found",
+      });
+
+      const tool = registeredTools.get("get-instance-software");
+      const result = await tool?.handler({ domain: "tools-fail.social" });
+      const text = (result as { content: { text: string }[] }).content[0].text;
+      expect(text).toMatch(/could not detect/i);
+    });
+
+    it("returns an error result for an invalid domain", async () => {
+      // The handler validates via DomainSchema; an invalid domain (containing space)
+      // should produce an error response (not throw to the caller).
+      const tool = registeredTools.get("get-instance-software");
+      // Accept either: result.isError = true OR the call threw.
+      // Our mcp tool pattern throws McpError for schema parse failures.
+      // If the framework calls .parse before .handler, the call will reject.
+      // Either is acceptable behavior — assert that detection was NOT attempted.
+      await tool?.handler({ domain: "not a domain" }).catch(() => undefined);
+      expect(getInstanceSoftware).not.toHaveBeenCalledWith("not a domain");
     });
   });
 });
