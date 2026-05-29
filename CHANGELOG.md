@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`get-instance-software` tool.** Detects ActivityPub software (Mastodon, Pleroma, Misskey, Akkoma, Sharkey, GotoSocial, Friendica, etc.) and version via NodeInfo 2.0/2.1. Returns a structured `{detection, software, protocols, openRegistrations}` shape, rendered as prose in the MCP response. Failure modes return `detection: "unavailable"` with a one-line reason — the tool never throws on detection failure.
 - **`activitypub://instance-info/{domain}` resource enrichment.** Resource responses now include a structured `software:` block from the same NodeInfo detection, fetched in parallel with the existing instance-info payload. Resource fetches succeed even when software detection returns `unavailable`.
 - **`MCP_INSTANCE_SOFTWARE_TTL_MS` env var.** Tunes the positive-cache TTL for NodeInfo detection results. Default: `86_400_000` (24h). Negative-cache TTL (for detection failures) is hardcoded at 1h.
+- **Dependabot config.** Weekly npm and GitHub Actions update PRs, with minor+patch updates grouped to reduce noise; major bumps surface as individual PRs for explicit review.
 
 ### Breaking changes
 
