@@ -117,6 +117,7 @@ vi.mock("../../src/discovery/nodeinfo.js", () => ({
 
 // Import mocked modules
 import { remoteClient } from "../../src/activitypub/remote-client.js";
+import { auditLogger } from "../../src/audit/logger.js";
 import { dynamicInstanceDiscovery } from "../../src/discovery/dynamic-instance-discovery.js";
 import { instanceDiscovery } from "../../src/discovery/instance-discovery.js";
 import { getInstanceSoftware } from "../../src/discovery/nodeinfo.js";
@@ -1007,6 +1008,49 @@ describe("MCP Tools", () => {
       const tool = registeredTools.get("get-instance-software");
       await expect(tool?.handler({ domain: "not a domain" })).rejects.toThrow();
       expect(getInstanceSoftware).not.toHaveBeenCalled();
+    });
+
+    it("audit-logs success=true on a successful detection", async () => {
+      (getInstanceSoftware as Mock).mockResolvedValue({
+        domain: "audit-ok.social",
+        detection: "success",
+        software: { name: "mastodon", version: "4.3.2" },
+        protocols: ["activitypub"],
+        openRegistrations: false,
+      });
+      const auditSpy = vi.spyOn(auditLogger, "logToolInvocation").mockImplementation(() => {});
+
+      const tool = registeredTools.get("get-instance-software");
+      await tool?.handler({ domain: "audit-ok.social" });
+
+      expect(auditSpy).toHaveBeenCalledWith(
+        "get-instance-software",
+        { domain: "audit-ok.social" },
+        expect.objectContaining({ success: true }),
+      );
+      auditSpy.mockRestore();
+    });
+
+    it("audit-logs success=false when detection is unavailable", async () => {
+      (getInstanceSoftware as Mock).mockResolvedValue({
+        domain: "audit-bad.social",
+        detection: "unavailable",
+        software: null,
+        protocols: null,
+        openRegistrations: null,
+        reason: "HTTP 404 Not Found",
+      });
+      const auditSpy = vi.spyOn(auditLogger, "logToolInvocation").mockImplementation(() => {});
+
+      const tool = registeredTools.get("get-instance-software");
+      await tool?.handler({ domain: "audit-bad.social" });
+
+      expect(auditSpy).toHaveBeenCalledWith(
+        "get-instance-software",
+        { domain: "audit-bad.social" },
+        expect.objectContaining({ success: false }),
+      );
+      auditSpy.mockRestore();
     });
   });
 });
