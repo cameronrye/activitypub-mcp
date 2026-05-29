@@ -353,6 +353,44 @@ describe("getInstanceSoftware — SSRF + blocklist", () => {
   });
 });
 
+describe("getInstanceSoftware — single-flight", () => {
+  beforeEach(() => {
+    clearNodeInfoCache();
+  });
+
+  it("two concurrent calls for the same domain trigger a single discovery fetch", async () => {
+    let discoveryHits = 0;
+    server.use(
+      http.get("https://race.social/.well-known/nodeinfo", async () => {
+        discoveryHits++;
+        // Yield to let any second caller arrive before responding.
+        await new Promise((r) => setTimeout(r, 25));
+        return HttpResponse.json({
+          links: [
+            {
+              rel: "http://nodeinfo.diaspora.software/ns/schema/2.0",
+              href: "https://race.social/nodeinfo/2.0",
+            },
+          ],
+        });
+      }),
+      http.get("https://race.social/nodeinfo/2.0", () =>
+        HttpResponse.json({
+          software: { name: "mastodon", version: "4.3.2" },
+          protocols: ["activitypub"],
+        }),
+      ),
+    );
+
+    const [a, b] = await Promise.all([
+      getInstanceSoftware("race.social"),
+      getInstanceSoftware("race.social"),
+    ]);
+    expect(a).toEqual(b);
+    expect(discoveryHits).toBe(1);
+  });
+});
+
 describe("getInstanceSoftware — same-host check on linked URL", () => {
   beforeEach(() => {
     clearNodeInfoCache();

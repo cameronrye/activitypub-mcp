@@ -73,9 +73,12 @@ const negativeCache = new LRUCache<string, InstanceSoftwareInfo>({
   ttl: NEGATIVE_TTL_MS,
 });
 
+const inFlight = new Map<string, Promise<InstanceSoftwareInfo>>();
+
 export function clearNodeInfoCache(): void {
   cache.clear();
   negativeCache.clear();
+  inFlight.clear();
 }
 
 export async function getInstanceSoftware(domain: string): Promise<InstanceSoftwareInfo> {
@@ -86,25 +89,35 @@ export async function getInstanceSoftware(domain: string): Promise<InstanceSoftw
   const negative = negativeCache.get(normalizedDomain);
   if (negative) return negative;
 
-  try {
-    const info = await performDetection(normalizedDomain);
-    cache.set(normalizedDomain, info);
-    negativeCache.delete(normalizedDomain);
-    return info;
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    const info: InstanceSoftwareInfo = {
-      domain: normalizedDomain,
-      detection: "unavailable",
-      software: null,
-      protocols: null,
-      openRegistrations: null,
-      reason,
-    };
-    logger.info("NodeInfo detection unavailable", { domain: normalizedDomain, reason });
-    negativeCache.set(normalizedDomain, info);
-    return info;
-  }
+  const existing = inFlight.get(normalizedDomain);
+  if (existing) return existing;
+
+  const promise = (async () => {
+    try {
+      const info = await performDetection(normalizedDomain);
+      cache.set(normalizedDomain, info);
+      negativeCache.delete(normalizedDomain);
+      return info;
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      const info: InstanceSoftwareInfo = {
+        domain: normalizedDomain,
+        detection: "unavailable",
+        software: null,
+        protocols: null,
+        openRegistrations: null,
+        reason,
+      };
+      logger.info("NodeInfo detection unavailable", { domain: normalizedDomain, reason });
+      negativeCache.set(normalizedDomain, info);
+      return info;
+    } finally {
+      inFlight.delete(normalizedDomain);
+    }
+  })();
+
+  inFlight.set(normalizedDomain, promise);
+  return promise;
 }
 
 async function performDetection(domain: string): Promise<InstanceSoftwareInfo> {
