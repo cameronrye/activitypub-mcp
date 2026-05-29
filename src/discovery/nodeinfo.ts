@@ -121,14 +121,14 @@ async function performDetection(domain: string): Promise<InstanceSoftwareInfo> {
     throw new Error("no NodeInfo 2.0/2.1 link in discovery document");
   }
 
-  // Same-host check first, then SSRF guard + blocklist on the linked NodeInfo URL.
+  // SSRF guard + same-host + blocklist on the linked NodeInfo URL.
+  await validateExternalUrl(link.href);
   const linkedHost = new URL(link.href).hostname.toLowerCase();
   if (!isSameOrSubdomain(domain, linkedHost)) {
     throw new Error(
       `linked NodeInfo URL on different host (${linkedHost}, expected ${domain} or subdomain)`,
     );
   }
-  await validateExternalUrl(link.href);
   instanceBlocklist.validateNotBlocked(linkedHost);
 
   const body = await fetchJson(link.href);

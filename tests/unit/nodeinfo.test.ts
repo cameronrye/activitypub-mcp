@@ -314,8 +314,7 @@ describe("getInstanceSoftware — SSRF + blocklist", () => {
 
     const info = await getInstanceSoftware("ssrf.social");
     expect(info.detection).toBe("unavailable");
-    // Caught by same-host check (127.0.0.1 ≠ ssrf.social) before SSRF guard fires.
-    expect(info.reason).toMatch(/not allowed|private|different host/i);
+    expect(info.reason).toMatch(/not allowed|private/i);
   });
 
   it("returns unavailable when input domain is blocklisted", async () => {
@@ -350,8 +349,7 @@ describe("getInstanceSoftware — SSRF + blocklist", () => {
 
     const info = await getInstanceSoftware("localhost.social");
     expect(info.detection).toBe("unavailable");
-    // Caught by same-host check (example.com ≠ localhost.social) before scheme check fires.
-    expect(info.reason).toMatch(/not allowed|scheme|different host/i);
+    expect(info.reason).toMatch(/not allowed|scheme/i);
   });
 });
 
@@ -417,7 +415,7 @@ describe("getInstanceSoftware — same-host check on linked URL", () => {
           links: [
             {
               rel: "http://nodeinfo.diaspora.software/ns/schema/2.0",
-              href: "https://attacker.com/nodeinfo/2.0",
+              href: "https://attacker.test/nodeinfo/2.0",
             },
           ],
         }),
