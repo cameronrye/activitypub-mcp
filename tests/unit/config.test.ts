@@ -138,6 +138,25 @@ describe("CORS defaults (H1)", () => {
   });
 });
 
+describe("INSTANCE_SOFTWARE_TTL", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("defaults to 24h (86_400_000 ms) when env var is unset", async () => {
+    delete process.env.MCP_INSTANCE_SOFTWARE_TTL_MS;
+    const mod = await import("../../src/config.js");
+    expect(mod.INSTANCE_SOFTWARE_TTL).toBe(86_400_000);
+  });
+});
+
 describe("HEALTH_CHECK_EXTERNAL_PROBE config (M7)", () => {
   const originalEnv = process.env;
 

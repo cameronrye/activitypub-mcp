@@ -37,7 +37,7 @@ function parseBoolEnv(value: string | undefined, defaultValue: boolean): boolean
 export const SERVER_NAME = process.env.MCP_SERVER_NAME || "activitypub-mcp";
 
 /** MCP Server version */
-export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "2.0.0";
+export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "2.1.0";
 
 /** Log level for the application */
 export const LOG_LEVEL = process.env.LOG_LEVEL || "info";
@@ -213,6 +213,19 @@ export const DYNAMIC_INSTANCE_CACHE_TTL = parseIntEnv(
 
 /** Maximum instances to fetch from external API */
 export const MAX_DYNAMIC_INSTANCES = parseIntEnv(process.env.MAX_DYNAMIC_INSTANCES, 100);
+
+// =============================================================================
+// Instance Software Detection (NodeInfo) Configuration
+// =============================================================================
+
+/**
+ * TTL for cached NodeInfo software-detection results, in milliseconds.
+ * Default: 24h. Negative-cache TTL (for detection failures) is hardcoded at 1h.
+ */
+export const INSTANCE_SOFTWARE_TTL = parseIntEnv(
+  process.env.MCP_INSTANCE_SOFTWARE_TTL_MS,
+  86_400_000,
+);
 
 // =============================================================================
 // Audit Logging Configuration
