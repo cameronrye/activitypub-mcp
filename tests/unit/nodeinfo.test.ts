@@ -314,7 +314,8 @@ describe("getInstanceSoftware — SSRF + blocklist", () => {
 
     const info = await getInstanceSoftware("ssrf.social");
     expect(info.detection).toBe("unavailable");
-    expect(info.reason).toMatch(/not allowed|private/i);
+    // Caught by same-host check (127.0.0.1 ≠ ssrf.social) before SSRF guard fires.
+    expect(info.reason).toMatch(/not allowed|private|different host/i);
   });
 
   it("returns unavailable when input domain is blocklisted", async () => {
@@ -349,6 +350,82 @@ describe("getInstanceSoftware — SSRF + blocklist", () => {
 
     const info = await getInstanceSoftware("localhost.social");
     expect(info.detection).toBe("unavailable");
-    expect(info.reason).toMatch(/not allowed|scheme/i);
+    // Caught by same-host check (example.com ≠ localhost.social) before scheme check fires.
+    expect(info.reason).toMatch(/not allowed|scheme|different host/i);
+  });
+});
+
+describe("getInstanceSoftware — same-host check on linked URL", () => {
+  beforeEach(() => {
+    clearNodeInfoCache();
+    instanceBlocklist.clear();
+  });
+
+  it("accepts a linked NodeInfo URL on the exact same host", async () => {
+    server.use(
+      http.get("https://exact.social/.well-known/nodeinfo", () =>
+        HttpResponse.json({
+          links: [
+            {
+              rel: "http://nodeinfo.diaspora.software/ns/schema/2.0",
+              href: "https://exact.social/nodeinfo/2.0",
+            },
+          ],
+        }),
+      ),
+      http.get("https://exact.social/nodeinfo/2.0", () =>
+        HttpResponse.json({
+          software: { name: "mastodon", version: "4.3.2" },
+          protocols: ["activitypub"],
+        }),
+      ),
+    );
+
+    const info = await getInstanceSoftware("exact.social");
+    expect(info.detection).toBe("success");
+  });
+
+  it("accepts a linked NodeInfo URL on a subdomain of the input", async () => {
+    server.use(
+      http.get("https://parent.social/.well-known/nodeinfo", () =>
+        HttpResponse.json({
+          links: [
+            {
+              rel: "http://nodeinfo.diaspora.software/ns/schema/2.0",
+              href: "https://nodeinfo.parent.social/2.0",
+            },
+          ],
+        }),
+      ),
+      http.get("https://nodeinfo.parent.social/2.0", () =>
+        HttpResponse.json({
+          software: { name: "akkoma", version: "3.13.0" },
+          protocols: ["activitypub"],
+        }),
+      ),
+    );
+
+    const info = await getInstanceSoftware("parent.social");
+    expect(info.detection).toBe("success");
+    expect(info.software?.name).toBe("akkoma");
+  });
+
+  it("rejects a linked NodeInfo URL on an unrelated host", async () => {
+    server.use(
+      http.get("https://victim.social/.well-known/nodeinfo", () =>
+        HttpResponse.json({
+          links: [
+            {
+              rel: "http://nodeinfo.diaspora.software/ns/schema/2.0",
+              href: "https://attacker.com/nodeinfo/2.0",
+            },
+          ],
+        }),
+      ),
+    );
+
+    const info = await getInstanceSoftware("victim.social");
+    expect(info.detection).toBe("unavailable");
+    expect(info.reason).toMatch(/different host|cross-host/i);
   });
 });
