@@ -215,6 +215,19 @@ export const DYNAMIC_INSTANCE_CACHE_TTL = parseIntEnv(
 export const MAX_DYNAMIC_INSTANCES = parseIntEnv(process.env.MAX_DYNAMIC_INSTANCES, 100);
 
 // =============================================================================
+// Instance Software Detection (NodeInfo) Configuration
+// =============================================================================
+
+/**
+ * TTL for cached NodeInfo software-detection results, in milliseconds.
+ * Default: 24h. Negative-cache TTL (for detection failures) is hardcoded at 1h.
+ */
+export const INSTANCE_SOFTWARE_TTL = parseIntEnv(
+  process.env.MCP_INSTANCE_SOFTWARE_TTL_MS,
+  86_400_000,
+);
+
+// =============================================================================
 // Audit Logging Configuration
 // =============================================================================
 

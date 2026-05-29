@@ -1,6 +1,12 @@
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
-import { CACHE_MAX_SIZE, MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
+import {
+  CACHE_MAX_SIZE,
+  INSTANCE_SOFTWARE_TTL,
+  MAX_RESPONSE_SIZE,
+  REQUEST_TIMEOUT,
+  USER_AGENT,
+} from "../config.js";
 import { instanceBlocklist } from "../policy/instance-blocklist.js";
 import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
@@ -58,12 +64,11 @@ export type InstanceSoftwareInfo = {
 
 const logger = getLogger("activitypub-mcp:nodeinfo");
 
-const POSITIVE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 const NODEINFO_2_REL_PREFIX = "http://nodeinfo.diaspora.software/ns/schema/2.";
 
 const cache = new LRUCache<string, InstanceSoftwareInfo>({
   maxSize: Math.min(CACHE_MAX_SIZE, 256),
-  ttl: POSITIVE_TTL_MS,
+  ttl: INSTANCE_SOFTWARE_TTL,
 });
 
 const NEGATIVE_TTL_MS = 60 * 60 * 1000; // 1h
