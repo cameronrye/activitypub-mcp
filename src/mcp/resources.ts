@@ -9,11 +9,12 @@ import { getLogger } from "@logtape/logtape";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
-import { remoteClient } from "../remote-client.js";
-import { extractSingleValue, validateActorIdentifier } from "../server/index.js";
-import type { RateLimiter } from "../server/rate-limiter.js";
-import { getErrorMessage } from "../utils.js";
+import { remoteClient } from "../activitypub/remote-client.js";
+import type { RateLimiter } from "../resilience/rate-limiter.js";
+import { getErrorMessage } from "../utils/errors.js";
 import { DomainSchema } from "../validation/schemas.js";
+import { extractSingleValue, validateActorIdentifier } from "../validation/validators.js";
+import { capabilitiesRegistry, trackedMcpServer } from "./capabilities.js";
 
 const logger = getLogger("activitypub-mcp:resources");
 
@@ -41,6 +42,8 @@ export function registerResources(
   rateLimiter: RateLimiter,
   config: ResourceConfig,
 ): void {
+  trackedMcpServer(mcpServer);
+
   // Server resources
   registerServerInfoResource(mcpServer, config);
 
@@ -93,58 +96,16 @@ function registerServerInfoResource(mcpServer: McpServer, config: ResourceConfig
       mimeType: "application/json",
     },
     async (uri) => {
+      const caps = capabilitiesRegistry.list();
       const serverInfo = {
         name: config.serverName,
         version: config.serverVersion,
         description:
           "A Model Context Protocol server for exploring and interacting with the existing Fediverse",
         capabilities: {
-          resources: [
-            "server-info",
-            "remote-actor",
-            "remote-timeline",
-            "remote-followers",
-            "remote-following",
-            "instance-info",
-            "trending",
-            "local-timeline",
-            "federated-timeline",
-            "post-thread",
-          ],
-          tools: {
-            discovery: [
-              "discover-actor",
-              "discover-instances",
-              "discover-instances-live",
-              "recommend-instances",
-            ],
-            content: [
-              "fetch-timeline",
-              "get-post-thread",
-              "search-instance",
-              "search-accounts",
-              "search-hashtags",
-              "search-posts",
-            ],
-            timelines: [
-              "get-trending-hashtags",
-              "get-trending-posts",
-              "get-local-timeline",
-              "get-federated-timeline",
-            ],
-            instance: ["get-instance-info"],
-            utility: ["convert-url", "batch-fetch-actors", "batch-fetch-posts"],
-            system: ["health-check", "performance-metrics"],
-          },
-          prompts: [
-            "explore-fediverse",
-            "discover-content",
-            "compare-instances",
-            "compare-accounts",
-            "analyze-user-activity",
-            "find-experts",
-            "summarize-trending",
-          ],
+          resources: caps.resources,
+          tools: caps.tools,
+          prompts: caps.prompts,
         },
         features: {
           auditLogging: true,
@@ -731,17 +692,22 @@ function registerFederatedTimelineResource(mcpServer: McpServer, rateLimiter: Ra
 
 /**
  * Post thread resource - get a post and its full conversation thread.
+ *
+ * URI template (v2.0.x): activitypub://post-thread/{domain}/{statusId}
+ * Legacy form (deprecated, removed in 2.1.0): activitypub://post-thread/{postUrl}
  */
 function registerPostThreadResource(mcpServer: McpServer, rateLimiter: RateLimiter): void {
   mcpServer.registerResource(
     "post-thread",
-    new ResourceTemplate("activitypub://post-thread/{postUrl}", {
+    new ResourceTemplate("activitypub://post-thread/{domain}/{statusId}", {
       list: async () => ({
         resources: [
           {
-            uri: "activitypub://post-thread/{postUrl}",
+            uri: "activitypub://post-thread/{domain}/{statusId}",
             name: "post-thread",
-            description: "Get a post and its full conversation thread (replies and ancestors)",
+            description:
+              "Get a post and its full conversation thread (replies and ancestors). " +
+              "For Mastodon-compatible instances, addressable as {domain}/{statusId}.",
             mimeType: "application/json",
           },
         ],
@@ -749,26 +715,58 @@ function registerPostThreadResource(mcpServer: McpServer, rateLimiter: RateLimit
     }),
     {
       title: "Post Thread",
-      description: "Get a post and its full conversation thread including replies and parent posts",
+      description:
+        "Get a post and its full conversation thread (replies and parent posts). " +
+        "The {domain}/{statusId} URI template only works for Mastodon-compatible " +
+        "instances (Mastodon, Hometown, Glitch-soc, Pleroma, Akkoma in compatibility " +
+        "mode). For Misskey, Calckey, Pixelfed, or PeerTube, use the get-post-thread " +
+        "tool with the full post URL instead.",
       mimeType: "application/json",
     },
-    async (uri, { postUrl }) => {
+    async (uri, params) => {
       try {
-        const postUrlStr = extractSingleValue(postUrl);
+        // The {domain} segment will look like a hostname for the new form
+        // (e.g. "mastodon.social") or an encoded URL for the legacy form
+        // (e.g. "https%3A%2F%2Fmastodon.social%2F%40user%2F123456").
+        const firstSegment = extractSingleValue(params.domain ?? "");
 
-        // Validate URL format
-        let parsedUrl: URL;
-        try {
-          // Handle URL-encoded post URLs
-          const decodedUrl = decodeURIComponent(postUrlStr);
-          parsedUrl = new URL(decodedUrl);
-        } catch {
-          throw new McpError(ErrorCode.InvalidParams, `Invalid post URL: ${postUrlStr}`);
+        let postUrl: string;
+        const looksLikeEncodedUrl =
+          firstSegment.includes("%3A%2F%2F") || firstSegment.includes("://");
+
+        if (looksLikeEncodedUrl) {
+          // Legacy form — still supported in 2.0.x with a deprecation warning.
+          logger.warn(
+            "post-thread URI template `{postUrl}` is deprecated; pass `{domain}/{statusId}` instead. Will be removed in 2.1.0.",
+            { receivedUri: uri.href },
+          );
+          try {
+            postUrl = new URL(decodeURIComponent(firstSegment)).href;
+          } catch {
+            throw new McpError(
+              ErrorCode.InvalidParams,
+              `Invalid post URL in legacy template: ${firstSegment}`,
+            );
+          }
+        } else {
+          // New form: {domain}/{statusId}
+          const domain = firstSegment;
+          const statusId = extractSingleValue(params.statusId ?? "");
+          if (!domain || !statusId) {
+            throw new McpError(
+              ErrorCode.InvalidParams,
+              "post-thread requires {domain} and {statusId} in the URI (e.g. activitypub://post-thread/mastodon.social/123456)",
+            );
+          }
+          // Mastodon-compatible URL — works for Mastodon and most Mastodon-API-compatible
+          // implementations. Non-Mastodon instances may need the legacy {postUrl} form.
+          postUrl = `https://${domain}/web/statuses/${statusId}`;
         }
 
+        const parsedUrl = new URL(postUrl);
         checkRateLimit(rateLimiter, parsedUrl.hostname);
 
-        logger.info("Fetching post thread", { postUrl: postUrlStr });
+        logger.info("Fetching post thread", { postUrl, legacyForm: looksLikeEncodedUrl });
 
         const threadData = await remoteClient.fetchPostThread(parsedUrl.href, {
           depth: 2,
@@ -794,18 +792,13 @@ function registerPostThreadResource(mcpServer: McpServer, rateLimiter: RateLimit
           ],
         };
       } catch (error) {
-        logger.error("Failed to fetch post thread", {
-          postUrl,
-          error: getErrorMessage(error),
-        });
-
         if (error instanceof McpError) {
           throw error;
         }
 
         throw new McpError(
           ErrorCode.InternalError,
-          `Failed to fetch post thread: ${getErrorMessage(error)}`,
+          `Failed to fetch post thread: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     },

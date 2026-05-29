@@ -24,7 +24,7 @@ Thank you for your interest in contributing to the ActivityPub MCP Server! This 
 
 ### Prerequisites
 
-- **Node.js 18+** (LTS recommended)
+- **Node.js 20+** (LTS recommended; CI runs on Node 20 and 22)
 - **npm** or **yarn**
 - **Git**
 
@@ -63,20 +63,69 @@ npm run test:all
 Run specific test types:
 ```bash
 npm run test              # Unit tests
-npm run test:integration  # Integration tests
-npm run test:comprehensive # Comprehensive tests
+npm run test:integration  # Integration tests (see below — requires opt-in env var)
 ```
+
+Integration tests that hit the live fediverse (`tests/integration/`) are gated
+behind the `RUN_INTEGRATION_TESTS` environment variable so they never run as
+part of routine local development or PR CI. To run them locally:
+
+```bash
+RUN_INTEGRATION_TESTS=1 npm run test:integration
+```
+
+CI runs them on a daily schedule via `.github/workflows/integration.yml`;
+failures there are reported but non-blocking.
 
 ### Code Quality
 
 Before submitting, ensure your code passes all quality checks:
 
 ```bash
-npm run lint              # Check linting
-npm run lint:fix          # Fix linting issues
+npm run typecheck         # Type-check without emitting
+npm run lint              # Check linting (read-only; CI runs the same check)
+npm run lint:fix          # Fix linting issues locally
 npm run format            # Format code
 npm run build             # Build TypeScript
 ```
+
+> **CI is read-only.** The pipeline runs `npm run lint` (not `lint:fix`). Run
+> `lint:fix` locally before pushing — never expect CI to auto-fix style.
+
+#### Recommended: precommit hook
+
+The repo ships a `precommit` npm script that runs validation and lint:
+
+```bash
+npm run precommit
+```
+
+Wire it into a local git pre-commit hook so issues are caught before push:
+
+```bash
+# One-time setup — uses a plain pre-commit hook (no extra deps):
+cat > .git/hooks/pre-commit <<'EOF'
+#!/usr/bin/env bash
+exec npm run precommit
+EOF
+chmod +x .git/hooks/pre-commit
+```
+
+### Schema-first rule for tool changes
+
+When you add or modify an MCP tool parameter:
+
+1. **Add the parameter to the Zod schema in `src/mcp/`** first.
+2. **Update the README and the Astro docs (`src/pages/docs/api/tools.astro`)
+   in the same commit.** Code and docs drifted in v1; the v2 audit found
+   five mismatched tools. Keep them in sync at commit time.
+3. **Add a test** that exercises the new parameter (success + at least one
+   refusal/refinement case).
+
+The MCP `server-info` capability list is generated from the live registry
+(`src/mcp/capabilities.ts`), so a missing tool registration shows up at
+runtime — but parameter-level drift between schema and docs does not, so
+it is on the author to keep the doc in sync.
 
 ## Coding Standards
 
@@ -98,18 +147,25 @@ We use **Biome** for code formatting and linting:
 
 ### File Organization
 
+`src/` is organized by topic (see MIGRATION-v2.md "Internal refactor" for the
+full move table from v1 → v2):
+
 ```
 src/
-├── main.ts                # Info display entry point
-├── mcp-main.ts            # MCP server entry point
-├── mcp-server.ts          # MCP server implementation
-├── webfinger.ts           # WebFinger discovery client
-├── remote-client.ts       # Remote ActivityPub client
-├── instance-discovery.ts  # Instance discovery service
-├── health-check.ts        # Health monitoring
-├── performance-monitor.ts # Performance tracking
-├── config.ts              # Configuration constants
-└── logging.ts             # Logging configuration
+├── mcp-main.ts                   # MCP server entry point
+├── mcp-server.ts                 # MCP server implementation
+├── config.ts                     # Configuration constants
+├── activitypub/                  # Remote ActivityPub client
+├── audit/                        # Audit logging
+├── auth/                         # Multi-account auth + authenticated client
+├── discovery/                    # WebFinger + instance discovery
+├── mcp/                          # MCP tools, resources, prompts, capabilities
+├── policy/                       # Instance blocklist
+├── resilience/                   # Rate limiters
+├── telemetry/                    # Health checks, performance monitor, logging
+├── transport/                    # HTTP transport + bearer auth middleware
+├── utils/                        # Errors, HTML helpers, fetch helpers, LRU cache
+└── validation/                   # URL validation, Zod schemas, request validators
 ```
 
 ### Commit Messages
@@ -144,24 +200,26 @@ docs(readme): update installation instructions
 
 ### Test Structure
 
-- **Unit tests**: Test individual functions and classes
-- **Integration tests**: Test MCP server integration
-- **Comprehensive tests**: Test full workflow scenarios
+- **Unit tests** (`tests/unit/*.test.ts`): Vitest + MSW. Test individual
+  modules in isolation with mocked HTTP. Always-on in CI.
+- **Integration tests** (`tests/integration/*.test.ts`): hit the live
+  fediverse. Gated by `RUN_INTEGRATION_TESTS=1`. Run nightly in CI.
 
 ### Writing Tests
 
 - **Test both success and failure cases**
 - **Use descriptive test names**
-- **Mock external dependencies**
+- **Mock external dependencies** with MSW handlers in `tests/mocks/`
 - **Keep tests focused and independent**
 
 ### Test Files
 
 ```
 tests/
-├── test-mcp.ts           # MCP server tests
-├── test-integration.ts   # Integration tests
-└── test-comprehensive.ts # End-to-end tests
+├── setup.ts              # Vitest setup (MSW init, env shim)
+├── mocks/                # MSW request handlers
+├── unit/                 # Vitest suites with mocked HTTP — always run in CI
+└── integration/          # Live-fediverse suites — opt-in via RUN_INTEGRATION_TESTS=1
 ```
 
 ## Documentation
@@ -176,9 +234,9 @@ tests/
 ### User Documentation
 
 - **Update README.md** for user-facing changes
-- **Add examples** to EXAMPLES.md
-- **Update USAGE_GUIDE.md** for new features
-- **Maintain CHANGELOG.md** for releases
+- **Add examples** to `src/pages/docs/guides/examples.astro`
+- **Update the relevant page under `src/pages/docs/`** for new features
+- **Maintain CHANGELOG.md and MIGRATION-v2.md** for releases
 
 ## Security
 
@@ -236,12 +294,14 @@ We follow **Semantic Versioning** (SemVer):
 
 ### Code of Conduct
 
-Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+Be respectful and constructive. Substantive disagreement is fine;
+personal attacks, harassment, or off-topic political fights are not
+and will be moderated.
 
 ## Recognition
 
 Contributors will be recognized in:
-- **CONTRIBUTORS.md** file
+
 - **GitHub contributors** section
 - **Release notes** for significant contributions
 

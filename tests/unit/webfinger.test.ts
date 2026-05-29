@@ -4,7 +4,7 @@
 
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
-import { WebFingerClient } from "../../src/webfinger.js";
+import { WebFingerClient } from "../../src/discovery/webfinger.js";
 import { server } from "../mocks/server.js";
 
 describe("WebFingerClient", () => {
@@ -117,6 +117,28 @@ describe("WebFingerClient", () => {
 
     it("should block SSRF attempts to private IPs", async () => {
       await expect(client.discoverActor("user@192.168.1.1")).rejects.toThrow(/not allowed|Invalid/);
+    });
+
+    it("should reject WebFinger spoofing — actor URL on a different origin", async () => {
+      server.use(
+        http.get("https://spoofer.social/.well-known/webfinger", () => {
+          return HttpResponse.json({
+            subject: "acct:admin@spoofer.social",
+            links: [
+              {
+                rel: "self",
+                type: "application/activity+json",
+                // Hostile: claims to be at spoofer.social but points elsewhere.
+                href: "https://mastodon.social/users/admin",
+              },
+            ],
+          });
+        }),
+      );
+
+      await expect(client.discoverActor("admin@spoofer.social")).rejects.toThrow(
+        /spoofing detected/i,
+      );
     });
   });
 

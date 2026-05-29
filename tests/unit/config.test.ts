@@ -22,11 +22,14 @@ describe("config", () => {
   });
 
   it("should use default values when env vars are not set", async () => {
-    // Clear relevant env vars
+    // Clear relevant env vars (including the test-suite-wide retry overrides
+    // from tests/setup.ts so we can assert true defaults).
     delete process.env.MCP_SERVER_NAME;
     delete process.env.MCP_SERVER_VERSION;
     delete process.env.REQUEST_TIMEOUT;
     delete process.env.CACHE_TTL;
+    delete process.env.RETRY_BASE_DELAY;
+    delete process.env.RETRY_MAX_DELAY;
 
     const config = await import("../../src/config.js");
 
@@ -82,5 +85,80 @@ describe("config", () => {
     expect(config.HEALTH_CHECK_TIMEOUT).toBe(5000);
     expect(config.MEMORY_WARN_THRESHOLD_MB).toBe(500);
     expect(config.MEMORY_WARN_THRESHOLD_PERCENT).toBe(80);
+  });
+});
+
+describe("Thread traversal config (M3)", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("MCP_THREAD_MAX_DEPTH defaults to 5", async () => {
+    delete process.env.MCP_THREAD_MAX_DEPTH;
+    const mod = await import("../../src/config.js");
+    expect(mod.THREAD_MAX_DEPTH).toBe(5);
+  });
+
+  it("MCP_THREAD_MAX_REPLIES defaults to 50", async () => {
+    delete process.env.MCP_THREAD_MAX_REPLIES;
+    const mod = await import("../../src/config.js");
+    expect(mod.THREAD_MAX_REPLIES).toBe(50);
+  });
+
+  it("MCP_THREAD_CROSS_ORIGIN_FETCH defaults to false", async () => {
+    delete process.env.MCP_THREAD_CROSS_ORIGIN_FETCH;
+    const mod = await import("../../src/config.js");
+    expect(mod.THREAD_CROSS_ORIGIN_FETCH).toBe(false);
+  });
+});
+
+describe("CORS defaults (H1)", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("HTTP_CORS_ORIGINS defaults to empty string (no origins)", async () => {
+    delete process.env.MCP_HTTP_CORS_ORIGINS;
+    const mod = await import("../../src/config.js");
+    expect(mod.HTTP_CORS_ORIGINS).toBe("");
+  });
+});
+
+describe("HEALTH_CHECK_EXTERNAL_PROBE config (M7)", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("defaults to true", async () => {
+    delete process.env.HEALTH_CHECK_EXTERNAL_PROBE;
+    const mod = await import("../../src/config.js");
+    expect(mod.HEALTH_CHECK_EXTERNAL_PROBE).toBe(true);
+  });
+
+  it("can be disabled via env", async () => {
+    process.env.HEALTH_CHECK_EXTERNAL_PROBE = "false";
+    const mod = await import("../../src/config.js");
+    expect(mod.HEALTH_CHECK_EXTERNAL_PROBE).toBe(false);
   });
 });

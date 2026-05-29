@@ -5,6 +5,79 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-05-27
+
+> **Major release.** v2 is a security, correctness, and ergonomics overhaul of the v1 server. See `MIGRATION-v2.md` for the full upgrade guide.
+
+### Breaking changes
+
+- **Node 20+ required.** Node 18 reached EOL April 30, 2025. v2's minimum is `node >=20.0.0`.
+- **HTTP transport requires `MCP_HTTP_SECRET`.** The HTTP transport now refuses to start without a `MCP_HTTP_SECRET` env var (32+ random chars recommended). All requests to `/mcp` and `/metrics` must include `Authorization: Bearer <secret>`. `/health` remains unauthenticated. stdio transport is unaffected.
+- **CORS default changed.** `MCP_HTTP_CORS_ORIGINS` no longer defaults to `"*"`. Set it explicitly if cross-origin requests are needed.
+- **`ACTIVITYPUB_ACCOUNTS` delimiter changed.** Format is now `id|instance|token|username|label` (pipe), not colon. v2 refuses to start if it sees the legacy `:`-delimited value.
+- **`scheduledId` → `scheduledPostId`.** The `cancel-scheduled-post` and `update-scheduled-post` tools renamed their identifier parameter for clarity and to match the README.
+- **`HEALTH_CHECK_ENABLED` env var removed.** Replaced by the narrower `HEALTH_CHECK_EXTERNAL_PROBE` (default `true`) which gates only the outbound `mastodon.social` connectivity probe.
+- **`get-relationship` no longer accepts the legacy `accountIds` array.** The v1 README documented `accountIds: string[]`; the actual handler took `acct: string`. v2 makes `acct` (single string) authoritative and throws a helpful error if `accountIds` is passed. Callers scripting against the old README must update.
+- **Outbound URL scheme allow-list.** `validateExternalUrl` now rejects non-https schemes (`file:`, `data:`, `http:`, `ftp:`, …). Defence in depth — affects only callers that constructed non-https URLs (no v1 user code path did this), but flagged here for completeness.
+
+### Added
+
+- **`post-status` now supports `mediaIds` and `scheduledAt`.** Round-trip flow with `upload-media` works end-to-end.
+- **`search-instance` returns prose output** matching the other search tools (was raw JSON in v1).
+- **`fetch-timeline` renders all posts** (was capped at 10) and truncates per-post content to 500 chars.
+- **Dynamic `server-info` capabilities.** The `activitypub://server-info` resource now lists tools/resources/prompts from a live registry — no more hand-maintained arrays that drift.
+- **Thread traversal caps.** `get-post-thread` caps recursion depth at 5 and total replies at 50 (configurable via `MCP_THREAD_MAX_DEPTH` and `MCP_THREAD_MAX_REPLIES`).
+- **Cross-origin thread gate.** Replies whose origin differs from the root post are returned as stubs by default (set `MCP_THREAD_CROSS_ORIGIN_FETCH=true` to opt in to v1 fetch-everything behavior).
+- **Audit logging wired into every write tool.** `auditLogger.logToolInvocation` fires on success and failure across all 27 write-effect handlers.
+- **`post-thread` resource URI template.** New form `activitypub://post-thread/{domain}/{statusId}` (Mastodon-compatible). Legacy `{postUrl}` form still accepted with a deprecation warning; removed in 2.1.0.
+- **`npm run typecheck`** script and CI step.
+- **Daily integration test workflow** (`.github/workflows/integration.yml`) runs against the live Fediverse on a schedule.
+- **`npm pack` contents check + published-bin smoke test** in CI.
+
+### Changed
+
+- **Streaming response-size enforcement.** Outgoing HTTP requests stream the body and abort if `MAX_RESPONSE_SIZE` (10 MB default) is exceeded, even when the remote server omits `Content-Length`.
+- **`verifyAccount` routes through SSRF guard.** No more raw `fetch` with a bearer token; private IPs and localhost are blocked before the request.
+- **`instance-discovery` raw fetches gated** by `DomainSchema` + `validateExternalUrl`.
+- **`DomainSchema` rejects IP literals.** Was permissive in v1.
+- **`discover-instances` filter composition fixed.** Multiple filters now compose cumulatively (v1 silently dropped all but the last filter).
+- **HTTP transport CORS warning** at startup if wildcard origin is set.
+- **`fetchActorOutboxPaginated` preserves cursor URL query params** (v1 silently overwrote `max_id`/`min_id` with caller-supplied filters when both were passed).
+- **ETag 304 handling.** When the server returns 304 without a cache entry (TTL eviction), v2 re-fetches without `If-None-Match` instead of throwing a spurious `HTTP 304: Not Modified`.
+- **`PerformanceMonitor` interval is `.unref()`'d** and properly stopped on graceful shutdown. Removed the forced `process.exit(0)` in the SIGTERM handler.
+- **`InstanceBlocklist.importFromJson` validates input via Zod.** Malformed entries throw instead of being silently skipped.
+- **`LRUCache.has()` removed.** Use `get(key) !== undefined` for consistent promotion semantics.
+- **`auditLogging: true` capability flag is now truthful.** Was advertised but unwired in v1.
+
+### Fixed
+
+- **`extractNextCursor` no longer loops back to `collection.first`.** v1 fell back to `first` when `next` was absent, causing pagination to bounce back to page 1.
+
+### Removed
+
+- **`HEALTH_CHECK_ENABLED` env var** (dead code in v1 — replaced by `HEALTH_CHECK_EXTERNAL_PROBE`).
+- **`LRUCache.has()` method** (see Changed).
+- **Six unused placeholder directories** under `src/` (`async/`, `security/`, `streaming/`, `errors/`, `translation/`, `media/`).
+- **Dead double-start guard** in `src/mcp-server.ts`.
+- **`src/main.ts`** — informational entrypoint never exposed publicly.
+- **`src/utils/index.ts`** — barrel export replaced by direct imports.
+- **`src/resilience/adaptive-rate-limiter.ts`** — was never wired into any tool.
+
+### Security
+
+- **HTTP transport Bearer auth.** Closes the gap where `/mcp` was reachable by any local client.
+- **Thread traversal cross-origin gating.** Reduces attack surface from following untrusted `inReplyTo` chains.
+- **Streaming response size cap.** DoS protection against servers that omit `Content-Length`.
+- **`InstanceBlocklist.importFromJson` runtime validation** prevents silent corruption of the blocklist.
+- **`DomainSchema` rejects IP literals.** Defense in depth against bypass attempts.
+
+### Internal
+
+- **Topic-dir refactor.** `src/` reorganized into 11 topic directories. `src/utils.ts` split into `src/validation/url.ts`, `src/utils/errors.ts`, `src/utils/html.ts`. `src/server/` removed (re-exports inlined). See `MIGRATION-v2.md` § "Internal refactor (FYI, not breaking)".
+- **Stricter TypeScript and Biome flags** enabled: `noUnusedLocals`, `noUnusedParameters`, Biome `noUnusedVariables`.
+- **`files` whitelist** in `package.json` controls npm publish contents. Source maps and declaration maps no longer ship.
+- **624 unit tests** (up from 533 at v2 start) covering every behavior change.
+
 ## [1.1.0] - 2026-02-02
 
 ### Added

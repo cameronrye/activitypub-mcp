@@ -5,10 +5,10 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { registerExportTools } from "../../src/mcp/tools-export.js";
-import { RateLimiter } from "../../src/server/rate-limiter.js";
+import { RateLimiter } from "../../src/resilience/rate-limiter.js";
 
 // Mock dependencies
-vi.mock("../../src/remote-client.js", () => ({
+vi.mock("../../src/activitypub/remote-client.js", () => ({
   remoteClient: {
     fetchActorOutboxPaginated: vi.fn().mockResolvedValue({
       items: [
@@ -59,7 +59,7 @@ vi.mock("../../src/remote-client.js", () => ({
   },
 }));
 
-vi.mock("../../src/performance-monitor.js", () => ({
+vi.mock("../../src/telemetry/performance-monitor.js", () => ({
   performanceMonitor: {
     startRequest: vi.fn().mockReturnValue("req-123"),
     endRequest: vi.fn(),
@@ -75,7 +75,7 @@ vi.mock("@logtape/logtape", () => ({
   }),
 }));
 
-import { remoteClient } from "../../src/remote-client.js";
+import { remoteClient } from "../../src/activitypub/remote-client.js";
 
 describe("MCP Export Tools", () => {
   let mcpServer: McpServer;

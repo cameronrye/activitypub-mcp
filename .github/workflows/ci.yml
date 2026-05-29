@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, v2 ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, v2 ]
 
 jobs:
   test:
@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [20.x, 22.x]
         os: [ubuntu-latest, windows-latest, macos-latest]
     
     steps:
@@ -39,8 +39,8 @@ jobs:
         $env:NODE_OPTIONS="--max-old-space-size=4096"
       shell: powershell
 
-    - name: Auto-fix linting issues
-      run: npm run lint:fix
+    - name: Typecheck
+      run: npm run typecheck
       env:
         NODE_OPTIONS: --max-old-space-size=4096
 
@@ -52,15 +52,25 @@ jobs:
     - name: Run formatting check
       run: npm run format:check
     
-    - name: Build project
-      run: npm run build
-    
+    - name: Validate version stamps
+      run: npm run validate:version
+
+    - name: Build project (clean first)
+      run: npm run clean && npm run build
+
+    - name: Check tarball contents
+      if: matrix.node-version == '20.x' && matrix.os == 'ubuntu-latest'
+      run: node scripts/check-tarball-contents.js
+
+    - name: Smoke test published bin
+      if: matrix.node-version == '20.x'
+      run: node scripts/smoke-test-bin.js
+
     - name: Run tests
-      run: npm run test:all
+      run: npm test
 
     - name: Check for security vulnerabilities
       run: npm audit --audit-level=high
-      continue-on-error: true
 
     - name: Upload build artifacts
       if: matrix.node-version == '20.x' && matrix.os == 'ubuntu-latest'
@@ -90,9 +100,6 @@ jobs:
 
     - name: Validate Biome configuration
       run: npm run validate:biome
-
-    - name: Auto-fix linting issues
-      run: npm run lint:fix
 
     - name: Run Biome linting
       run: npm run lint

@@ -26,8 +26,8 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
           <h2>Prerequisites</h2>
           <div class="prerequisites-grid">
             <div class="prerequisite-item">
-              <h3>Node.js 18+</h3>
-              <p>The server requires Node.js version 18 or higher.</p>
+              <h3>Node.js 20+</h3>
+              <p>v2 requires Node.js 20 LTS or later (Node 18 reached end-of-life April 30, 2025).</p>
               <a href="https://nodejs.org/" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Download Node.js</a>
             </div>
             <div class="prerequisite-item">
@@ -97,21 +97,65 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
                 </tr>
                 <tr>
                   <td><code>USER_AGENT</code></td>
-                  <td><code>ActivityPub-MCP-Server/1.0</code></td>
+                  <td><code>ActivityPub-MCP-Client/2.0.0</code></td>
                   <td>Custom User-Agent for HTTP requests</td>
                 </tr>
                 <tr>
                   <td><code>REQUEST_TIMEOUT</code></td>
-                  <td><code>30000</code></td>
-                  <td>HTTP request timeout in milliseconds</td>
+                  <td><code>15000</code></td>
+                  <td>HTTP request timeout in milliseconds (production default: 10000)</td>
                 </tr>
                 <tr>
                   <td><code>CACHE_TTL</code></td>
                   <td><code>300</code></td>
                   <td>Cache time-to-live in seconds</td>
                 </tr>
+                <tr>
+                  <td><code>MCP_HTTP_SECRET</code></td>
+                  <td><em>none</em></td>
+                  <td><strong>Required</strong> when <code>MCP_TRANSPORT_MODE=http</code>. 32+ random chars; gates <code>/mcp</code> and <code>/metrics</code> via Bearer auth.</td>
+                </tr>
+                <tr>
+                  <td><code>MCP_HTTP_CORS_ORIGINS</code></td>
+                  <td><em>empty</em></td>
+                  <td>Comma-separated origins. v2 default is empty (no origins allowed); set explicitly for browser clients.</td>
+                </tr>
+                <tr>
+                  <td><code>MCP_THREAD_MAX_DEPTH</code></td>
+                  <td><code>5</code></td>
+                  <td>Max recursion depth for <code>get-post-thread</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>MCP_THREAD_MAX_REPLIES</code></td>
+                  <td><code>50</code></td>
+                  <td>Max total replies fetched per thread.</td>
+                </tr>
+                <tr>
+                  <td><code>MCP_THREAD_CROSS_ORIGIN_FETCH</code></td>
+                  <td><code>false</code></td>
+                  <td>Set <code>true</code> to fetch replies whose origin differs from the root post.</td>
+                </tr>
+                <tr>
+                  <td><code>HEALTH_CHECK_EXTERNAL_PROBE</code></td>
+                  <td><code>true</code></td>
+                  <td>Gates the outbound mastodon.social connectivity probe (replaces removed <code>HEALTH_CHECK_ENABLED</code>).</td>
+                </tr>
+                <tr>
+                  <td><code>ACTIVITYPUB_ACCOUNTS</code></td>
+                  <td><em>none</em></td>
+                  <td>Multi-account config. v2 uses pipe <code>|</code> delimiter: <code>id|instance|token|username|label</code>. v2 refuses to start on legacy colon form.</td>
+                </tr>
               </tbody>
             </table>
+          </div>
+
+          <div class="callout callout-warn">
+            <strong>HTTP transport breaking changes in v2:</strong>
+            <ul>
+              <li><code>MCP_HTTP_SECRET</code> is now required. Requests to <code>/mcp</code> and <code>/metrics</code> must include <code>Authorization: Bearer &lt;secret&gt;</code>. <code>/health</code> stays unauthenticated for load balancers.</li>
+              <li><code>MCP_HTTP_CORS_ORIGINS</code> no longer defaults to <code>*</code>. Set it explicitly when browser clients need cross-origin access.</li>
+              <li>See <a href="https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v2.md">MIGRATION-v2.md</a> for the full upgrade guide.</li>
+            </ul>
           </div>
         </section>
 

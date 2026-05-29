@@ -1,6 +1,6 @@
 {
   "name": "activitypub-mcp",
-  "version": "1.1.2",
+  "version": "2.0.0",
   "description": "A Model Context Protocol server for exploring and interacting with the existing Fediverse",
   "main": "dist/mcp-main.js",
   "bin": {
@@ -8,8 +8,16 @@
   },
   "type": "module",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "MIGRATION-v2.md"
+  ],
   "keywords": [
     "activitypub",
     "mcp",
@@ -22,7 +30,7 @@
     "social-media",
     "decentralized"
   ],
-  "author": "ActivityPub MCP Server Contributors",
+  "author": "Cameron Rye <c@meron.io>",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -38,9 +46,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.5",
     "@astrojs/mdx": "^4.3.10",
-    "@astrojs/rss": "^4.0.13",
     "@astrojs/sitemap": "^3.6.0",
     "@biomejs/biome": "^2.2.4",
     "@dotenvx/dotenvx": "^1.51.1",
@@ -53,21 +59,20 @@
     "npm-run-all2": "^8.0.4",
     "pagefind": "^1.4.0",
     "rimraf": "^6.0.1",
-    "sass": "^1.94.0",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "vitest": "^4.0.18"
   },
   "scripts": {
-    "dev": "dotenvx run -- tsx watch ./src/main.ts",
-    "prod": "dotenvx run -- node --import tsx ./src/main.ts",
+    "dev": "dotenvx run -- tsx watch ./src/mcp-main.ts",
+    "prod": "dotenvx run -- node --import tsx ./src/mcp-main.ts",
     "mcp": "tsx ./src/mcp-main.ts",
     "mcp:dev": "tsx watch ./src/mcp-main.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:integration": "vitest run --config vitest.config.integration.ts",
-    "test:all": "vitest run",
+    "test:all": "vitest run && vitest run --config vitest.config.integration.ts",
     "test:coverage": "vitest run --coverage",
     "coverage": "vitest run --coverage",
     "lint": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" biome check .",
@@ -91,7 +96,8 @@
     "dev:site": "astro dev",
     "preview:site": "astro preview",
     "generate:og-image": "node scripts/generate-og-image.js",
+    "typecheck": "tsc --noEmit",
     "clean": "rimraf dist",
-    "prepublishOnly": "run-s clean validate:version build"
+    "prepublishOnly": "run-s clean validate:version typecheck lint build"
   }
 }

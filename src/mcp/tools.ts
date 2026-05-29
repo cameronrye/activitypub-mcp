@@ -9,15 +9,21 @@ import { getLogger } from "@logtape/logtape";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { dynamicInstanceDiscovery } from "../dynamic-instance-discovery.js";
-import { healthChecker } from "../health-check.js";
-import { instanceDiscovery } from "../instance-discovery.js";
-import { performanceMonitor } from "../performance-monitor.js";
-import { remoteClient } from "../remote-client.js";
-import { validateActorIdentifier, validateDomain, validateQuery } from "../server/index.js";
-import type { RateLimiter } from "../server/rate-limiter.js";
-import { formatErrorWithSuggestion, getErrorMessage, stripHtmlTags } from "../utils.js";
+import { remoteClient } from "../activitypub/remote-client.js";
+import { dynamicInstanceDiscovery } from "../discovery/dynamic-instance-discovery.js";
+import { instanceDiscovery } from "../discovery/instance-discovery.js";
+import type { RateLimiter } from "../resilience/rate-limiter.js";
+import { healthChecker } from "../telemetry/health-check.js";
+import { performanceMonitor } from "../telemetry/performance-monitor.js";
+import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
+import { stripHtmlTags } from "../utils/html.js";
 import { ActorIdentifierSchema, DomainSchema, QuerySchema } from "../validation/schemas.js";
+import {
+  validateActorIdentifier,
+  validateDomain,
+  validateQuery,
+} from "../validation/validators.js";
+import { trackedMcpServer } from "./capabilities.js";
 import { registerExportTools } from "./tools-export.js";
 import { registerWriteTools } from "./tools-write.js";
 
@@ -30,6 +36,8 @@ const logger = getLogger("activitypub-mcp:tools");
  * @param rateLimiter - The rate limiter instance
  */
 export function registerTools(mcpServer: McpServer, rateLimiter: RateLimiter): void {
+  trackedMcpServer(mcpServer);
+
   // Discovery tools
   registerDiscoverActorTool(mcpServer, rateLimiter);
   registerDiscoverInstancesTool(mcpServer);
@@ -87,9 +95,14 @@ function registerDiscoverActorTool(mcpServer: McpServer, rateLimiter: RateLimite
     "discover-actor",
     {
       title: "Discover Fediverse Actor",
-      description: "Discover and get information about any actor in the fediverse",
+      description:
+        "Find and retrieve the profile of any fediverse user or account (called an 'actor' " +
+        "in ActivityPub). Returns display name, bio, follower/following URLs, and inbox/outbox " +
+        "endpoints. Pass a handle like '@alice@mastodon.social' or 'alice@mastodon.social'.",
       inputSchema: {
-        identifier: ActorIdentifierSchema.describe("Actor identifier (e.g., user@example.social)"),
+        identifier: ActorIdentifierSchema.describe(
+          "Actor handle in 'user@domain' or '@user@domain' form (e.g., 'alice@mastodon.social')",
+        ),
       },
     },
     async ({ identifier }) => {
@@ -111,11 +124,11 @@ function registerDiscoverActorTool(mcpServer: McpServer, rateLimiter: RateLimite
           content: [
             {
               type: "text",
-              text: `Successfully discovered actor: ${actor.preferredUsername || actor.name || validIdentifier}
+              text: `Successfully discovered actor: ${stripHtmlTags(actor.preferredUsername || actor.name || validIdentifier)}
 
 🆔 ID: ${actor.id}
-👤 Name: ${actor.name || "Not specified"}
-📝 Summary: ${actor.summary || "No bio provided"}
+👤 Name: ${stripHtmlTags(actor.name || "") || "Not specified"}
+📝 Summary: ${stripHtmlTags(actor.summary || "") || "No bio provided"}
 🔗 URL: ${actor.url || actor.id}
 📥 Inbox: ${actor.inbox}
 📤 Outbox: ${actor.outbox}
@@ -161,7 +174,7 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
       title: "Fetch Actor Timeline",
       description: "Fetch posts from any actor's timeline in the fediverse with pagination support",
       inputSchema: {
-        identifier: z.string().describe("Actor identifier (e.g., user@example.social)"),
+        identifier: ActorIdentifierSchema.describe("Actor identifier (e.g., user@example.social)"),
         limit: z
           .number()
           .min(1)
@@ -228,19 +241,14 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
 
         // Format posts section
         const postsSection = posts
-          .slice(0, 10)
           .map((post: unknown, index: number) => {
             const p = post as { type?: string; content?: string; summary?: string; id?: string };
-            const content = p.content || p.summary || "No content";
-            const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
+            const content = stripHtmlTags(p.content || p.summary || "") || "No content";
+            const truncated = content.length > 500 ? `${content.slice(0, 500)}…` : content;
             const postType = p.type || "Post";
             return `${index + 1}. [${postType}] ${truncated}`;
           })
           .join("\n\n");
-
-        const remainingPosts = postCount - 10;
-        const morePostsNote =
-          postCount > 10 ? `\n... and ${remainingPosts} more posts in this page` : "";
 
         return {
           content: [
@@ -255,8 +263,7 @@ ${timeline.hasMore ? "📄 More posts available (use cursor for next page)" : "�
 
 ${paginationSection}
 **Recent posts:**
-${postsSection}
-${morePostsNote}`,
+${postsSection}`,
             },
           ],
         };
@@ -320,16 +327,87 @@ function registerSearchInstanceTool(mcpServer: McpServer, rateLimiter: RateLimit
 
         logger.info("Searching instance", { domain: validDomain, query: validQuery, type });
 
-        const results = await remoteClient.searchInstance(validDomain, validQuery, type);
+        const results = (await remoteClient.searchInstance(validDomain, validQuery, type)) as {
+          accounts?: Array<{
+            id: string;
+            username: string;
+            acct: string;
+            display_name?: string;
+            note?: string;
+            followers_count?: number;
+            statuses_count?: number;
+          }>;
+          statuses?: Array<{
+            id: string;
+            content: string;
+            created_at: string;
+            account: { username: string; acct: string; display_name?: string };
+            reblogs_count: number;
+            favourites_count: number;
+            replies_count: number;
+            spoiler_text?: string;
+          }>;
+          hashtags?: Array<{
+            name: string;
+            url: string;
+            history?: Array<{ day: string; uses: string; accounts: string }>;
+          }>;
+        };
         performanceMonitor.endRequest(requestId, true);
+
+        let formatted: string;
+        let header: string;
+
+        if (type === "accounts") {
+          const accounts = results.accounts ?? [];
+          header = `👤 **Search Results for "${validQuery}" on ${validDomain} (accounts)**\n\nFound ${accounts.length} accounts:`;
+          formatted =
+            accounts
+              .slice(0, 15)
+              .map((acc, i) => {
+                const note = stripHtmlTags(acc.note || "") || "No bio";
+                const truncatedNote = note.length > 100 ? `${note.slice(0, 100)}...` : note;
+                return `${i + 1}. **@${acc.acct}** (${acc.display_name || acc.username})
+   ${truncatedNote}
+   👥 ${acc.followers_count || 0} followers | 📝 ${acc.statuses_count || 0} posts`;
+              })
+              .join("\n\n") || "No accounts found";
+        } else if (type === "statuses") {
+          const statuses = results.statuses ?? [];
+          header = `📝 **Search Results for "${validQuery}" on ${validDomain} (statuses)**\n\nFound ${statuses.length} posts:`;
+          formatted =
+            statuses
+              .slice(0, 10)
+              .map((post, i) => {
+                const content = stripHtmlTags(post.content || "") || "No content";
+                const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
+                const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
+                return `${i + 1}. **@${post.account.acct}** (${post.account.display_name || post.account.username})
+   ${cw}${truncated}
+   ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
+              })
+              .join("\n\n") || "No posts found";
+        } else {
+          const hashtags = results.hashtags ?? [];
+          header = `#️⃣ **Search Results for "${validQuery}" on ${validDomain} (hashtags)**\n\nFound ${hashtags.length} hashtags:`;
+          formatted =
+            hashtags
+              .slice(0, 20)
+              .map((tag, i) => {
+                const recentUses =
+                  tag.history
+                    ?.slice(0, 7)
+                    .reduce((sum, h) => sum + Number.parseInt(h.uses, 10), 0) || 0;
+                return `${i + 1}. **#${tag.name}** - ${recentUses} uses in the last 7 days`;
+              })
+              .join("\n") || "No hashtags found";
+        }
 
         return {
           content: [
             {
               type: "text",
-              text: `Search results for "${validQuery}" on ${validDomain} (${type}):
-
-${JSON.stringify(results, null, 2)}`,
+              text: `${header}\n\n${formatted}`,
             },
           ],
         };
@@ -472,19 +550,29 @@ function registerDiscoverInstancesTool(mcpServer: McpServer): void {
         );
 
         if (topic) {
-          instances = instanceDiscovery.searchInstancesByTopic(topic);
+          const topicSet = new Set(
+            instanceDiscovery.searchInstancesByTopic(topic).map((i) => i.domain),
+          );
+          instances = instances.filter((i) => topicSet.has(i.domain));
         }
 
         if (size) {
-          instances = instanceDiscovery.getInstancesBySize(size);
+          const sizeSet = new Set(instanceDiscovery.getInstancesBySize(size).map((i) => i.domain));
+          instances = instances.filter((i) => sizeSet.has(i.domain));
         }
 
         if (region) {
-          instances = instanceDiscovery.getInstancesByRegion(region);
+          const regionSet = new Set(
+            instanceDiscovery.getInstancesByRegion(region).map((i) => i.domain),
+          );
+          instances = instances.filter((i) => regionSet.has(i.domain));
         }
 
         if (beginnerFriendly) {
-          instances = instanceDiscovery.getBeginnerFriendlyInstances();
+          const beginnerSet = new Set(
+            instanceDiscovery.getBeginnerFriendlyInstances().map((i) => i.domain),
+          );
+          instances = instances.filter((i) => beginnerSet.has(i.domain));
         }
 
         const limitedInstances = instances.slice(0, 20);
@@ -973,7 +1061,7 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
           thread.ancestors.length > 0
             ? `**Conversation Context** (${thread.ancestors.length} parent posts):\n${thread.ancestors
                 .map((a, i) => {
-                  const content = a.content || a.summary || "No content";
+                  const content = stripHtmlTags(a.content || a.summary || "") || "No content";
                   const truncated = content.length > 150 ? `${content.slice(0, 150)}...` : content;
                   return `${i + 1}. ${truncated}`;
                 })
@@ -981,9 +1069,12 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
             : "";
 
         // Format main post
-        const postContent = thread.post.content || thread.post.summary || "No content";
+        const postContent =
+          stripHtmlTags(thread.post.content || thread.post.summary || "") || "No content";
         const spoilerText =
-          thread.post.summary && thread.post.content ? `⚠️ CW: ${thread.post.summary}\n` : "";
+          thread.post.summary && thread.post.content
+            ? `⚠️ CW: ${stripHtmlTags(thread.post.summary)}\n`
+            : "";
 
         // Format replies
         const repliesSection =
@@ -991,9 +1082,13 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
             ? `**Replies** (${thread.replies.length} of ${thread.totalReplies} total):\n${thread.replies
                 .slice(0, 10)
                 .map((r, i) => {
-                  const content = r.content || r.summary || "No content";
+                  const stub = r as unknown as { crossOrigin?: boolean; fetched?: boolean };
+                  if (stub.crossOrigin === true && stub.fetched === false) {
+                    return `${i + 1}. _(cross-origin, not fetched)_ ${r.id}`;
+                  }
+                  const content = stripHtmlTags(r.content || r.summary || "") || "No content";
                   const truncated = content.length > 150 ? `${content.slice(0, 150)}...` : content;
-                  const cw = r.summary && r.content ? `[CW: ${r.summary}] ` : "";
+                  const cw = r.summary && r.content ? `[CW: ${stripHtmlTags(r.summary)}] ` : "";
                   return `${i + 1}. ${cw}${truncated}`;
                 })
                 .join(
@@ -2005,7 +2100,7 @@ function registerBatchFetchActorsTool(mcpServer: McpServer, rateLimiter: RateLim
       description: "Fetch multiple actor profiles at once for efficient bulk lookups",
       inputSchema: {
         identifiers: z
-          .array(z.string())
+          .array(ActorIdentifierSchema)
           .min(1)
           .max(20)
           .describe(
@@ -2039,8 +2134,10 @@ function registerBatchFetchActorsTool(mcpServer: McpServer, rateLimiter: RateLim
           )
           .map((r, i) => {
             const actor = r.actor;
-            return `${i + 1}. ✅ **${actor.preferredUsername || r.identifier}** (@${r.identifier})
-   ${actor.name || "No display name"} - ${actor.summary?.slice(0, 100) || "No bio"}...`;
+            const safeName = stripHtmlTags(actor.name || "");
+            const safeSummary = stripHtmlTags(actor.summary || "").slice(0, 100);
+            return `${i + 1}. ✅ **${stripHtmlTags(actor.preferredUsername || r.identifier)}** (@${r.identifier})
+   ${safeName || "No display name"} - ${safeSummary || "No bio"}...`;
           })
           .join("\n\n");
 

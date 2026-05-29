@@ -11,11 +11,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { AuditLogger } from "../../src/audit-logger.js";
-import { DynamicInstanceDiscoveryService } from "../../src/dynamic-instance-discovery.js";
-import { InstanceBlocklist } from "../../src/instance-blocklist.js";
+import { AuditLogger } from "../../src/audit/logger.js";
+import { DynamicInstanceDiscoveryService } from "../../src/discovery/dynamic-instance-discovery.js";
+import { InstanceBlocklist } from "../../src/policy/instance-blocklist.js";
 
-describe("Audit Logger with Live Operations", () => {
+describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)("Audit Logger with Live Operations", () => {
   let auditLogger: AuditLogger;
   let discoveryService: DynamicInstanceDiscoveryService;
 
@@ -96,66 +96,69 @@ describe("Audit Logger with Live Operations", () => {
   });
 });
 
-describe("Instance Blocklist with Discovery Integration", () => {
-  let blocklist: InstanceBlocklist;
-  let discoveryService: DynamicInstanceDiscoveryService;
+describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)(
+  "Instance Blocklist with Discovery Integration",
+  () => {
+    let blocklist: InstanceBlocklist;
+    let discoveryService: DynamicInstanceDiscoveryService;
 
-  beforeEach(() => {
-    blocklist = new InstanceBlocklist();
-    blocklist.clear();
-    discoveryService = new DynamicInstanceDiscoveryService();
-    discoveryService.clearCache();
-  });
-
-  afterEach(() => {
-    blocklist.clear();
-    discoveryService.clearCache();
-  });
-
-  it("should filter discovered instances against blocklist", async () => {
-    // Add some domains to blocklist
-    blocklist.addBlock({
-      domain: "blocked-test.example",
-      reason: "policy",
-      addedAt: new Date().toISOString(),
+    beforeEach(() => {
+      blocklist = new InstanceBlocklist();
+      blocklist.clear();
+      discoveryService = new DynamicInstanceDiscoveryService();
+      discoveryService.clearCache();
     });
 
-    // Discover instances
-    const result = await discoveryService.searchInstances({ limit: 10 });
-
-    // Filter out blocked instances
-    const allowedInstances = result.instances.filter(
-      (instance) => !blocklist.isBlocked(instance.domain).blocked,
-    );
-
-    // All returned instances should not be blocked
-    for (const instance of allowedInstances) {
-      expect(blocklist.isBlocked(instance.domain).blocked).toBe(false);
-    }
-  });
-
-  it("should handle wildcard blocks with discovered instances", async () => {
-    // Add wildcard block
-    blocklist.addBlock({
-      domain: "*.blocked-network.example",
-      reason: "safety",
-      addedAt: new Date().toISOString(),
+    afterEach(() => {
+      blocklist.clear();
+      discoveryService.clearCache();
     });
 
-    // Test that wildcard matching works
-    expect(blocklist.isBlocked("server1.blocked-network.example").blocked).toBe(true);
-    expect(blocklist.isBlocked("server2.blocked-network.example").blocked).toBe(true);
+    it("should filter discovered instances against blocklist", async () => {
+      // Add some domains to blocklist
+      blocklist.addBlock({
+        domain: "blocked-test.example",
+        reason: "policy",
+        addedAt: new Date().toISOString(),
+      });
 
-    // Real instances should not be blocked
-    const result = await discoveryService.searchInstances({ limit: 5 });
-    for (const instance of result.instances) {
-      // Real instances shouldn't match our test wildcard
-      expect(blocklist.isBlocked(instance.domain).blocked).toBe(false);
-    }
-  });
-});
+      // Discover instances
+      const result = await discoveryService.searchInstances({ limit: 10 });
 
-describe("Combined Feature Workflow", () => {
+      // Filter out blocked instances
+      const allowedInstances = result.instances.filter(
+        (instance) => !blocklist.isBlocked(instance.domain).blocked,
+      );
+
+      // All returned instances should not be blocked
+      for (const instance of allowedInstances) {
+        expect(blocklist.isBlocked(instance.domain).blocked).toBe(false);
+      }
+    });
+
+    it("should handle wildcard blocks with discovered instances", async () => {
+      // Add wildcard block
+      blocklist.addBlock({
+        domain: "*.blocked-network.example",
+        reason: "safety",
+        addedAt: new Date().toISOString(),
+      });
+
+      // Test that wildcard matching works
+      expect(blocklist.isBlocked("server1.blocked-network.example").blocked).toBe(true);
+      expect(blocklist.isBlocked("server2.blocked-network.example").blocked).toBe(true);
+
+      // Real instances should not be blocked
+      const result = await discoveryService.searchInstances({ limit: 5 });
+      for (const instance of result.instances) {
+        // Real instances shouldn't match our test wildcard
+        expect(blocklist.isBlocked(instance.domain).blocked).toBe(false);
+      }
+    });
+  },
+);
+
+describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)("Combined Feature Workflow", () => {
   let auditLogger: AuditLogger;
   let blocklist: InstanceBlocklist;
   let discoveryService: DynamicInstanceDiscoveryService;
@@ -262,7 +265,7 @@ describe("Combined Feature Workflow", () => {
   });
 });
 
-describe("Blocklist Import/Export Integration", () => {
+describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)("Blocklist Import/Export Integration", () => {
   it("should round-trip blocklist through JSON", () => {
     const sourceBlocklist = new InstanceBlocklist();
     sourceBlocklist.clear();
@@ -302,7 +305,7 @@ describe("Blocklist Import/Export Integration", () => {
   });
 });
 
-describe("Performance Characteristics", () => {
+describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)("Performance Characteristics", () => {
   it("should handle rapid audit logging", () => {
     const auditLogger = new AuditLogger({ maxEntries: 1000, enabled: true });
 

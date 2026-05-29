@@ -28,7 +28,7 @@ describe("PerformanceMonitor", () => {
 
   describe("singleton instance", () => {
     it("should export performanceMonitor singleton", async () => {
-      const { performanceMonitor } = await import("../../src/performance-monitor.js");
+      const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
       expect(performanceMonitor).toBeDefined();
       expect(typeof performanceMonitor.startRequest).toBe("function");
       expect(typeof performanceMonitor.endRequest).toBe("function");
@@ -36,7 +36,7 @@ describe("PerformanceMonitor", () => {
     });
 
     it("should have getMetrics returning PerformanceMetrics", async () => {
-      const { performanceMonitor } = await import("../../src/performance-monitor.js");
+      const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
       const metrics = performanceMonitor.getMetrics();
 
       expect(metrics).toHaveProperty("requestCount");
@@ -51,7 +51,7 @@ describe("PerformanceMonitor", () => {
     });
 
     it("should have getHealthStatus returning health data", async () => {
-      const { performanceMonitor } = await import("../../src/performance-monitor.js");
+      const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
       const health = performanceMonitor.getHealthStatus();
 
       expect(health).toHaveProperty("status");
@@ -61,14 +61,14 @@ describe("PerformanceMonitor", () => {
     });
 
     it("should have getRequestHistory returning array", async () => {
-      const { performanceMonitor } = await import("../../src/performance-monitor.js");
+      const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
       const history = performanceMonitor.getRequestHistory();
 
       expect(Array.isArray(history)).toBe(true);
     });
 
     it("should have getOperationMetrics returning metrics object", async () => {
-      const { performanceMonitor } = await import("../../src/performance-monitor.js");
+      const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
       const opMetrics = performanceMonitor.getOperationMetrics("test-operation");
 
       expect(opMetrics).toHaveProperty("count");
@@ -79,7 +79,7 @@ describe("PerformanceMonitor", () => {
     });
 
     it("should be able to stop without error", async () => {
-      const { performanceMonitor } = await import("../../src/performance-monitor.js");
+      const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
       expect(() => performanceMonitor.stop()).not.toThrow();
     });
   });
@@ -87,7 +87,7 @@ describe("PerformanceMonitor", () => {
 
 describe("PerformanceMetrics types", () => {
   it("should export PerformanceMetrics interface", async () => {
-    const module = await import("../../src/performance-monitor.js");
+    const module = await import("../../src/telemetry/performance-monitor.js");
     expect(module.performanceMonitor).toBeDefined();
     const metrics = module.performanceMonitor.getMetrics();
 
@@ -95,6 +95,56 @@ describe("PerformanceMetrics types", () => {
     expect(typeof metrics.requestCount).toBe("number");
     expect(typeof metrics.errorCount).toBe("number");
     expect(typeof metrics.averageResponseTime).toBe("number");
+  });
+});
+
+describe("PerformanceMonitor.startMetricsCollection unref (H5)", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv, METRICS_ENABLED: "true", METRICS_INTERVAL: "1000" };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+    vi.clearAllMocks();
+  });
+
+  it("unrefs the metrics interval so it does not keep the event loop alive", async () => {
+    // Wrap setInterval so we can observe .unref() on the returned timer.
+    const realSetInterval = global.setInterval;
+    const unrefSpy = vi.fn();
+    const setIntervalSpy = vi.spyOn(global, "setInterval").mockImplementation(((
+      handler: TimerHandler,
+      timeout?: number,
+      ...args: unknown[]
+    ) => {
+      const timer = realSetInterval(handler as () => void, timeout, ...args);
+      // Replace .unref so we can detect the call. Keep the original behavior.
+      const originalUnref = timer.unref.bind(timer);
+      timer.unref = () => {
+        unrefSpy();
+        return originalUnref();
+      };
+      return timer;
+    }) as typeof setInterval);
+
+    try {
+      // Constructor calls startMetricsCollection() because METRICS_ENABLED=true.
+      const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
+
+      expect(setIntervalSpy).toHaveBeenCalled();
+      expect(unrefSpy).toHaveBeenCalledTimes(1);
+
+      // stop() must also clear the interval reference.
+      performanceMonitor.stop();
+      expect(
+        (performanceMonitor as unknown as { metricsInterval?: NodeJS.Timeout }).metricsInterval,
+      ).toBeUndefined();
+    } finally {
+      setIntervalSpy.mockRestore();
+    }
   });
 });
 
@@ -112,7 +162,7 @@ describe("PerformanceMonitor with metrics enabled", () => {
   });
 
   it("should track request when metrics enabled", async () => {
-    const { performanceMonitor } = await import("../../src/performance-monitor.js");
+    const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
 
     const requestId = performanceMonitor.startRequest("test-op", { key: "value" });
     expect(requestId).not.toBe("");
@@ -123,7 +173,7 @@ describe("PerformanceMonitor with metrics enabled", () => {
   });
 
   it("should track failed request", async () => {
-    const { performanceMonitor } = await import("../../src/performance-monitor.js");
+    const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
 
     const requestId = performanceMonitor.startRequest("failing-op");
     performanceMonitor.endRequest(requestId, false, "Test error message");
@@ -135,7 +185,7 @@ describe("PerformanceMonitor with metrics enabled", () => {
   });
 
   it("should handle unknown requestId gracefully", async () => {
-    const { performanceMonitor } = await import("../../src/performance-monitor.js");
+    const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
 
     expect(() => performanceMonitor.endRequest("unknown-request-id", true)).not.toThrow();
 
@@ -143,7 +193,7 @@ describe("PerformanceMonitor with metrics enabled", () => {
   });
 
   it("should handle empty requestId gracefully", async () => {
-    const { performanceMonitor } = await import("../../src/performance-monitor.js");
+    const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
 
     expect(() => performanceMonitor.endRequest("", true)).not.toThrow();
 
@@ -151,7 +201,7 @@ describe("PerformanceMonitor with metrics enabled", () => {
   });
 
   it("should handle multiple requests and return metrics", async () => {
-    const { performanceMonitor } = await import("../../src/performance-monitor.js");
+    const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
 
     const id1 = performanceMonitor.startRequest("multi-test-1");
     performanceMonitor.endRequest(id1, true);
@@ -167,7 +217,7 @@ describe("PerformanceMonitor with metrics enabled", () => {
   });
 
   it("should maintain history size limit", async () => {
-    const { performanceMonitor } = await import("../../src/performance-monitor.js");
+    const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
 
     // Create many requests
     for (let i = 0; i < 100; i++) {
@@ -182,7 +232,7 @@ describe("PerformanceMonitor with metrics enabled", () => {
   });
 
   it("should get operation-specific metrics", async () => {
-    const { performanceMonitor } = await import("../../src/performance-monitor.js");
+    const { performanceMonitor } = await import("../../src/telemetry/performance-monitor.js");
 
     const id1 = performanceMonitor.startRequest("specific-op");
     performanceMonitor.endRequest(id1, true);

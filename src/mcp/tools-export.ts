@@ -9,11 +9,13 @@ import { getLogger } from "@logtape/logtape";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { performanceMonitor } from "../performance-monitor.js";
-import { remoteClient } from "../remote-client.js";
-import { validateActorIdentifier, validateDomain } from "../server/index.js";
-import type { RateLimiter } from "../server/rate-limiter.js";
-import { formatErrorWithSuggestion, getErrorMessage, stripHtmlTags } from "../utils.js";
+import { remoteClient } from "../activitypub/remote-client.js";
+import type { RateLimiter } from "../resilience/rate-limiter.js";
+import { performanceMonitor } from "../telemetry/performance-monitor.js";
+import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
+import { stripHtmlTags } from "../utils/html.js";
+import { validateActorIdentifier, validateDomain } from "../validation/validators.js";
+import { trackedMcpServer } from "./capabilities.js";
 
 const logger = getLogger("activitypub-mcp:tools-export");
 
@@ -26,6 +28,8 @@ export type ExportFormat = "json" | "markdown" | "csv";
  * Registers all export tools.
  */
 export function registerExportTools(mcpServer: McpServer, rateLimiter: RateLimiter): void {
+  trackedMcpServer(mcpServer);
+
   registerExportTimelineTool(mcpServer, rateLimiter);
   registerExportThreadTool(mcpServer, rateLimiter);
   registerExportAccountInfoTool(mcpServer, rateLimiter);
@@ -372,6 +376,18 @@ ${cw}${mainContent}
             );
             for (let i = 0; i < thread.replies.length; i++) {
               const reply = thread.replies[i];
+              const stub = reply as unknown as { crossOrigin?: boolean; fetched?: boolean };
+              if (stub.crossOrigin === true && stub.fetched === false) {
+                parts.push(`### Reply ${i + 1}
+
+**Author:** Unknown
+**URL:** ${reply.id}
+
+_Cross-origin reply not fetched (set MCP_THREAD_CROSS_ORIGIN_FETCH=true to follow)._
+
+`);
+                continue;
+              }
               const replyContent = stripHtmlTags(reply.content || reply.summary || "No content");
               const replyCw = reply.summary && reply.content ? `**CW:** ${reply.summary}\n` : "";
               parts.push(`### Reply ${i + 1}
@@ -545,7 +561,7 @@ function registerExportAccountInfoTool(mcpServer: McpServer, rateLimiter: RateLi
               text: `👤 **Account Export Complete**
 
 **Account:** ${validIdentifier}
-**Name:** ${actor.name || actor.preferredUsername || "Unknown"}
+**Name:** ${stripHtmlTags(actor.name || actor.preferredUsername || "") || "Unknown"}
 **URL:** ${actor.url || actor.id}
 
 **Included Data:**

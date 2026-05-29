@@ -3,8 +3,8 @@
  */
 
 import { HttpResponse, http } from "msw";
-import { beforeEach, describe, expect, it } from "vitest";
-import { RemoteActivityPubClient } from "../../src/remote-client.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { RemoteActivityPubClient } from "../../src/activitypub/remote-client.js";
 import { server } from "../mocks/server.js";
 
 describe("RemoteActivityPubClient", () => {
@@ -478,5 +478,313 @@ describe("RemoteActivityPubClient", () => {
       expect(outbox.id).toBe("https://retry.social/users/user/outbox");
       expect(outboxAttempts).toBe(3);
     });
+  });
+});
+
+describe("extractNextCursor semantics (M12)", () => {
+  let client: RemoteActivityPubClient;
+
+  beforeEach(() => {
+    client = new RemoteActivityPubClient();
+  });
+
+  it("returns hasMore=false when collection has neither items nor a next link", async () => {
+    server.use(
+      http.get("https://m12.test/.well-known/webfinger", () =>
+        HttpResponse.json({
+          subject: "acct:user@m12.test",
+          links: [
+            {
+              rel: "self",
+              type: "application/activity+json",
+              href: "https://m12.test/users/user",
+            },
+          ],
+        }),
+      ),
+      http.get("https://m12.test/users/user", () =>
+        HttpResponse.json({
+          id: "https://m12.test/users/user",
+          type: "Person",
+          preferredUsername: "user",
+          inbox: "https://m12.test/users/user/inbox",
+          outbox: "https://m12.test/users/user/outbox",
+        }),
+      ),
+      http.get("https://m12.test/users/user/outbox", () =>
+        HttpResponse.json({
+          id: "https://m12.test/users/user/outbox",
+          type: "OrderedCollection",
+          totalItems: 0,
+          // No orderedItems, no next, no first
+        }),
+      ),
+    );
+
+    const result = await client.fetchActorOutboxPaginated("user@m12.test");
+    expect(result.hasMore).toBe(false);
+    expect(result.nextCursor).toBeUndefined();
+  });
+
+  it("follows `first` to data page when root has no items and no cursor was supplied", async () => {
+    server.use(
+      http.get("https://m12first.test/.well-known/webfinger", () =>
+        HttpResponse.json({
+          subject: "acct:user@m12first.test",
+          links: [
+            {
+              rel: "self",
+              type: "application/activity+json",
+              href: "https://m12first.test/users/user",
+            },
+          ],
+        }),
+      ),
+      http.get("https://m12first.test/users/user", () =>
+        HttpResponse.json({
+          id: "https://m12first.test/users/user",
+          type: "Person",
+          preferredUsername: "user",
+          inbox: "https://m12first.test/users/user/inbox",
+          outbox: "https://m12first.test/users/user/outbox",
+        }),
+      ),
+      http.get("https://m12first.test/users/user/outbox", ({ request }) => {
+        const url = new URL(request.url);
+        // Only serve the root collection at the bare outbox URL (no page param)
+        if (!url.searchParams.has("page")) {
+          return HttpResponse.json({
+            id: "https://m12first.test/users/user/outbox",
+            type: "OrderedCollection",
+            totalItems: 5,
+            first: "https://m12first.test/users/user/outbox/page-1",
+            // No orderedItems inline
+          });
+        }
+        // Should not be called with page param in this test
+        return new HttpResponse(null, { status: 404 });
+      }),
+    );
+
+    const result = await client.fetchActorOutboxPaginated("user@m12first.test");
+    // The root collection has no inline items but has `first`.
+    // With the fix, nextCursor should be the first-page URL so the caller can descend.
+    expect(result.nextCursor).toBe("https://m12first.test/users/user/outbox/page-1");
+    expect(result.hasMore).toBe(true);
+  });
+
+  it("does NOT loop back to `first` once on a CollectionPage with no `next`", async () => {
+    server.use(
+      http.get("https://m12loop.test/.well-known/webfinger", () =>
+        HttpResponse.json({
+          subject: "acct:user@m12loop.test",
+          links: [
+            {
+              rel: "self",
+              type: "application/activity+json",
+              href: "https://m12loop.test/users/user",
+            },
+          ],
+        }),
+      ),
+      http.get("https://m12loop.test/users/user", () =>
+        HttpResponse.json({
+          id: "https://m12loop.test/users/user",
+          type: "Person",
+          preferredUsername: "user",
+          inbox: "https://m12loop.test/users/user/inbox",
+          outbox: "https://m12loop.test/users/user/outbox",
+        }),
+      ),
+      http.get("https://m12loop.test/users/user/outbox/page-1", () =>
+        HttpResponse.json({
+          id: "https://m12loop.test/users/user/outbox/page-1",
+          type: "OrderedCollectionPage",
+          orderedItems: [{ type: "Note", content: "a post" }],
+          // Has `first` pointing back to itself — no `next`
+          first: "https://m12loop.test/users/user/outbox/page-1",
+        }),
+      ),
+    );
+
+    // Provide page-1 as the cursor (simulating "already on a data page")
+    const result = await client.fetchActorOutboxPaginated("user@m12loop.test", {
+      cursor: "https://m12loop.test/users/user/outbox/page-1",
+    });
+    // Should NOT return first as nextCursor — we're already on a page, no `next` means done
+    expect(result.nextCursor).toBeUndefined();
+    expect(result.hasMore).toBe(false);
+  });
+});
+
+describe("RemoteActivityPubClient response size cap (M2)", () => {
+  const originalEnv = process.env;
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("aborts fetch when streamed body exceeds MAX_RESPONSE_SIZE without Content-Length", async () => {
+    vi.resetModules();
+    process.env = { ...originalEnv, MAX_RESPONSE_SIZE: "100" };
+    const { RemoteActivityPubClient: Client } = await import(
+      "../../src/activitypub/remote-client.js"
+    );
+    const { ResponseTooLargeError } = await import("../../src/utils/fetch-helpers.js");
+    const huge = "x".repeat(500);
+    server.use(
+      http.get(
+        "https://example.test/actor",
+        () =>
+          new HttpResponse(
+            new ReadableStream({
+              start(c) {
+                c.enqueue(new TextEncoder().encode(JSON.stringify({ name: huge })));
+                c.close();
+              },
+            }),
+            { headers: { "Content-Type": "application/activity+json" } },
+          ),
+      ),
+    );
+    const client = new Client();
+    await expect(client.fetchObject("https://example.test/actor")).rejects.toBeInstanceOf(
+      ResponseTooLargeError,
+    );
+  });
+});
+
+describe("fetchActorOutboxPaginated cursor vs id-filter (M1)", () => {
+  let client: RemoteActivityPubClient;
+
+  beforeEach(() => {
+    client = new RemoteActivityPubClient();
+  });
+
+  it("preserves cursor query params and ignores caller-supplied maxId", async () => {
+    let requestedUrl: string | null = null;
+    server.use(
+      http.get("https://a.test/.well-known/webfinger", () =>
+        HttpResponse.json({
+          subject: "acct:u@a.test",
+          links: [
+            {
+              rel: "self",
+              type: "application/activity+json",
+              href: "https://a.test/users/u",
+            },
+          ],
+        }),
+      ),
+      http.get("https://a.test/users/u", () =>
+        HttpResponse.json({
+          id: "https://a.test/users/u",
+          type: "Person",
+          preferredUsername: "u",
+          inbox: "https://a.test/users/u/inbox",
+          outbox: "https://a.test/users/u/outbox",
+        }),
+      ),
+      http.get("https://a.test/users/u/outbox/page", ({ request }) => {
+        requestedUrl = request.url;
+        return HttpResponse.json({
+          id: "https://a.test/users/u/outbox/page",
+          type: "OrderedCollectionPage",
+          orderedItems: [],
+        });
+      }),
+    );
+
+    await client.fetchActorOutboxPaginated("u@a.test", {
+      cursor: "https://a.test/users/u/outbox/page?max_id=X",
+      maxId: "Y", // should be ignored
+    });
+
+    expect(requestedUrl).toContain("max_id=X");
+    expect(requestedUrl).not.toContain("max_id=Y");
+  });
+
+  it("applies caller's maxId when no cursor is provided", async () => {
+    let requestedUrl: string | null = null;
+    server.use(
+      http.get("https://a.test/.well-known/webfinger", () =>
+        HttpResponse.json({
+          subject: "acct:u@a.test",
+          links: [
+            {
+              rel: "self",
+              type: "application/activity+json",
+              href: "https://a.test/users/u",
+            },
+          ],
+        }),
+      ),
+      http.get("https://a.test/users/u", () =>
+        HttpResponse.json({
+          id: "https://a.test/users/u",
+          type: "Person",
+          preferredUsername: "u",
+          inbox: "https://a.test/users/u/inbox",
+          outbox: "https://a.test/users/u/outbox",
+        }),
+      ),
+      http.get("https://a.test/users/u/outbox", ({ request }) => {
+        requestedUrl = request.url;
+        return HttpResponse.json({
+          id: "https://a.test/users/u/outbox",
+          type: "OrderedCollection",
+          orderedItems: [],
+        });
+      }),
+    );
+
+    await client.fetchActorOutboxPaginated("u@a.test", { maxId: "Y" });
+
+    expect(requestedUrl).toContain("max_id=Y");
+  });
+});
+
+describe("ETag 304 without cache (H4)", () => {
+  it("re-fetches without If-None-Match when 304 comes back with no cache entry", async () => {
+    let callCount = 0;
+    server.use(
+      http.get("https://a.test/object", ({ request }) => {
+        callCount++;
+        // First call: client sends some ETag (or none) — return 304 to simulate
+        // the server insisting it's unchanged even though our cache is empty.
+        if (callCount === 1) {
+          return new HttpResponse(null, { status: 304 });
+        }
+        // Second call: client should retry without If-None-Match — return fresh data.
+        if (request.headers.get("if-none-match") !== null) {
+          // The retry should have stripped the If-None-Match header. If it's
+          // still present, this test will fail (a real regression — we want
+          // a clean retry).
+          return new HttpResponse(null, { status: 304 });
+        }
+        return HttpResponse.json({ id: "https://a.test/object", type: "Note", content: "hi" });
+      }),
+    );
+    const client = new RemoteActivityPubClient();
+    const obj = await client.fetchObject("https://a.test/object");
+    expect(obj.id).toBe("https://a.test/object");
+    expect(callCount).toBe(2); // proves we did the retry
+  });
+
+  it("throws a clear error when 304 persists on unconditional re-fetch", async () => {
+    let callCount = 0;
+    server.use(
+      http.get("https://stuck.test/object", () => {
+        callCount++;
+        // Always return 304 — even on the unconditional re-fetch
+        return new HttpResponse(null, { status: 304 });
+      }),
+    );
+    const client = new RemoteActivityPubClient();
+    await expect(client.fetchObject("https://stuck.test/object")).rejects.toThrow(
+      /misconfigured|304/i,
+    );
+    // The outer retry loop will still attempt; we just want to confirm the error message is informative.
+    expect(callCount).toBeGreaterThanOrEqual(2);
   });
 });

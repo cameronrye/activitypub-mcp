@@ -3,7 +3,7 @@
 import { getLogger } from "@logtape/logtape";
 import { SERVER_NAME, SERVER_VERSION, validateConfiguration } from "./config.js";
 import ActivityPubMCPServer from "./mcp-server.js";
-import "./logging.js";
+import "./telemetry/logging.js";
 
 const logger = getLogger("activitypub-mcp");
 

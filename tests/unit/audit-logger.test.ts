@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { AuditLogger } from "../../src/audit-logger.js";
+import { AuditLogger } from "../../src/audit/logger.js";
 
 describe("AuditLogger", () => {
   let auditLogger: AuditLogger;
@@ -315,6 +315,27 @@ describe("AuditLogger", () => {
       expect(entries[0].params?.apiToken).toBe("[REDACTED]");
       expect(entries[0].params?.authCredential).toBe("[REDACTED]");
       expect(entries[0].params?.secretKey).toBe("[REDACTED]");
+    });
+
+    it("should omit user-authored content keys (post body, CW, alt text)", () => {
+      auditLogger.logToolInvocation(
+        "post-status",
+        {
+          content: "this is a private DM",
+          spoilerText: "mental health",
+          description: "alt text for the attached image",
+          visibility: "direct",
+        },
+        { success: true },
+      );
+
+      const entries = auditLogger.getRecentEntries();
+      // Length-only marker, never the literal string.
+      expect(entries[0].params?.content).toBe("[content omitted: 20 chars]");
+      expect(entries[0].params?.spoilerText).toBe("[content omitted: 13 chars]");
+      expect(entries[0].params?.description).toBe("[content omitted: 31 chars]");
+      // Non-content fields untouched.
+      expect(entries[0].params?.visibility).toBe("direct");
     });
 
     it("should handle non-string values correctly", () => {

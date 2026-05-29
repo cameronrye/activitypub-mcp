@@ -209,3 +209,110 @@ describe("AccountManager", () => {
     expect((exported[0] as Record<string, unknown>).accessToken).toBeUndefined();
   });
 });
+
+describe("ACTIVITYPUB_ACCOUNTS pipe delimiter (H6)", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("parses pipe-delimited accounts correctly", async () => {
+    process.env.ACTIVITYPUB_ACCOUNTS = "id1|inst1.test|tok-with:colons|user1|label1";
+    delete process.env.ACTIVITYPUB_DEFAULT_INSTANCE;
+    delete process.env.ACTIVITYPUB_DEFAULT_TOKEN;
+    const { AccountManager } = await import("../../src/auth/account-manager.js");
+    const manager = new AccountManager();
+    const accounts = manager.listAccounts();
+    expect(accounts).toHaveLength(1);
+    expect(accounts[0].id).toBe("id1");
+    expect(accounts[0].instance).toBe("inst1.test");
+    // The token (which contains a colon) must be preserved verbatim.
+    const acct = manager.getAccount("id1");
+    expect(acct?.accessToken).toBe("tok-with:colons");
+  });
+
+  it("throws clear migration error for legacy `:`-delimited entries", async () => {
+    process.env.ACTIVITYPUB_ACCOUNTS = "id1:inst1.test:tok:user1";
+    delete process.env.ACTIVITYPUB_DEFAULT_INSTANCE;
+    delete process.env.ACTIVITYPUB_DEFAULT_TOKEN;
+    // The singleton at module level also calls the constructor, so the import
+    // itself rejects with the migration error.
+    await expect(import("../../src/auth/account-manager.js")).rejects.toThrow(
+      /ACTIVITYPUB_ACCOUNTS.*pipe/i,
+    );
+  });
+
+  it("throws migration error when any single entry is legacy (mixed input)", async () => {
+    process.env.ACTIVITYPUB_ACCOUNTS =
+      "good|inst.test|tok1|user1|Label,legacy:inst.test:tok2:user2";
+    delete process.env.ACTIVITYPUB_DEFAULT_INSTANCE;
+    delete process.env.ACTIVITYPUB_DEFAULT_TOKEN;
+    await expect(import("../../src/auth/account-manager.js")).rejects.toThrow(
+      /Legacy entry detected/i,
+    );
+  });
+});
+
+describe("verifyAccount SSRF protection (M8)", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+    delete process.env.ACTIVITYPUB_DEFAULT_INSTANCE;
+    delete process.env.ACTIVITYPUB_DEFAULT_TOKEN;
+    delete process.env.ACTIVITYPUB_ACCOUNTS;
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("refuses to send credentials to a private-network instance", async () => {
+    const { AccountManager } = await import("../../src/auth/account-manager.js");
+    const manager = new AccountManager();
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    manager.addAccount({
+      id: "internal",
+      instance: "10.0.0.1",
+      username: "user",
+      accessToken: "tok",
+      tokenType: "Bearer",
+      scopes: ["read"],
+    });
+
+    const result = await manager.verifyAccount("internal");
+    expect(result).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it("refuses to send credentials to localhost", async () => {
+    const { AccountManager } = await import("../../src/auth/account-manager.js");
+    const manager = new AccountManager();
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    manager.addAccount({
+      id: "local",
+      instance: "localhost",
+      username: "user",
+      accessToken: "tok",
+      tokenType: "Bearer",
+      scopes: ["read"],
+    });
+
+    const result = await manager.verifyAccount("local");
+    expect(result).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+});

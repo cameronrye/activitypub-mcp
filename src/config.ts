@@ -37,7 +37,7 @@ function parseBoolEnv(value: string | undefined, defaultValue: boolean): boolean
 export const SERVER_NAME = process.env.MCP_SERVER_NAME || "activitypub-mcp";
 
 /** MCP Server version */
-export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "1.1.2";
+export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "2.0.0";
 
 /** Log level for the application */
 export const LOG_LEVEL = process.env.LOG_LEVEL || "info";
@@ -67,9 +67,6 @@ export const RETRY_MAX_DELAY = parseIntEnv(process.env.RETRY_MAX_DELAY, 30000);
 // =============================================================================
 // Cache Configuration
 // =============================================================================
-
-/** Default instance for hardcoded references */
-export const DEFAULT_INSTANCE = process.env.DEFAULT_INSTANCE || "mastodon.social";
 
 /** Cache TTL in milliseconds (default: 5 minutes) */
 export const CACHE_TTL = parseIntEnv(process.env.CACHE_TTL, 300000);
@@ -132,12 +129,43 @@ export const MEMORY_WARN_THRESHOLD_PERCENT = parseIntEnv(
   80,
 );
 
+/**
+ * Whether to perform the outbound network connectivity probe in health checks.
+ * Default: true. Set to false to skip the external probe (useful when the
+ * server runs in an air-gapped environment or under strict outbound network
+ * policies).
+ */
+export const HEALTH_CHECK_EXTERNAL_PROBE = parseBoolEnv(
+  process.env.HEALTH_CHECK_EXTERNAL_PROBE,
+  true,
+);
+
 // =============================================================================
 // Performance Monitoring Configuration
 // =============================================================================
 
 /** Maximum request history entries to keep */
 export const MAX_REQUEST_HISTORY = parseIntEnv(process.env.MAX_REQUEST_HISTORY, 1000);
+
+// =============================================================================
+// Thread Traversal Configuration (M3)
+// =============================================================================
+
+/** Maximum recursion depth when fetching a post thread (default: 5) */
+export const THREAD_MAX_DEPTH = parseIntEnv(process.env.MCP_THREAD_MAX_DEPTH, 5);
+
+/** Maximum total replies fetched per thread, across all depths (default: 50) */
+export const THREAD_MAX_REPLIES = parseIntEnv(process.env.MCP_THREAD_MAX_REPLIES, 50);
+
+/**
+ * Whether to follow replies whose origin differs from the root post.
+ * Default: false — replies from other origins are returned as stubs.
+ * Set to true to restore v1 unrestricted fan-out behavior.
+ */
+export const THREAD_CROSS_ORIGIN_FETCH = parseBoolEnv(
+  process.env.MCP_THREAD_CROSS_ORIGIN_FETCH,
+  false,
+);
 
 // =============================================================================
 // HTTP Transport Configuration
@@ -155,8 +183,20 @@ export const HTTP_HOST = process.env.MCP_HTTP_HOST || "127.0.0.1";
 /** Enable CORS for HTTP transport (default: false) */
 export const HTTP_CORS_ENABLED = parseBoolEnv(process.env.MCP_HTTP_CORS_ENABLED, false);
 
-/** CORS allowed origins (comma-separated, default: *) */
-export const HTTP_CORS_ORIGINS = process.env.MCP_HTTP_CORS_ORIGINS || "*";
+/**
+ * CORS allowed origins (comma-separated). Default: empty (no cross-origin
+ * requests allowed). Set explicitly to a list of origins or "*" to enable.
+ * Setting "*" logs a startup warning since auth is the only thing keeping
+ * arbitrary web pages from talking to the local server.
+ */
+export const HTTP_CORS_ORIGINS = process.env.MCP_HTTP_CORS_ORIGINS ?? "";
+
+/**
+ * Shared secret required as Bearer token for HTTP transport requests.
+ * If unset, HTTP transport refuses to start (see http-transport.ts).
+ * stdio transport ignores this value.
+ */
+export const HTTP_SECRET = process.env.MCP_HTTP_SECRET || "";
 
 // =============================================================================
 // Dynamic Instance Discovery Configuration
@@ -207,16 +247,6 @@ export const BLOCKED_INSTANCES = parseBlockedInstances(process.env.BLOCKED_INSTA
 export const INSTANCE_BLOCKING_ENABLED = parseBoolEnv(process.env.INSTANCE_BLOCKING_ENABLED, true);
 
 // =============================================================================
-// Content Warning Configuration
-// =============================================================================
-
-/** Whether to respect content warnings in output (default: true) */
-export const RESPECT_CONTENT_WARNINGS = parseBoolEnv(process.env.RESPECT_CONTENT_WARNINGS, true);
-
-/** Whether to include content warnings in responses (default: true) */
-export const SHOW_CONTENT_WARNINGS = parseBoolEnv(process.env.SHOW_CONTENT_WARNINGS, true);
-
-// =============================================================================
 // Configuration Validation
 // =============================================================================
 
@@ -236,11 +266,17 @@ export function validateConfiguration(): void {
     warnings.push("Rate limiting is disabled in production environment");
   }
 
-  // Log warnings if any
+  // Log warnings via logtape — never via console.warn, which on stdio
+  // transport would land on stderr at startup and mix with the MCP
+  // protocol stream.
   if (warnings.length > 0) {
-    console.warn("[config] Configuration warnings:");
-    for (const warning of warnings) {
-      console.warn(`  - ${warning}`);
-    }
+    // Lazy import to avoid pulling logtape into config-only consumers
+    // (the build is ESM/tsc, so this stays tree-shakable in dist).
+    void import("@logtape/logtape").then(({ getLogger }) => {
+      const logger = getLogger("activitypub-mcp:config");
+      for (const warning of warnings) {
+        logger.warn(warning);
+      }
+    });
   }
 }

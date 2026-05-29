@@ -51,14 +51,14 @@ function Test-NodeVersion {
         $versionNumber = $nodeVersion -replace 'v', ''
         $majorVersion = ($versionNumber -split '\.')[0]
 
-        if ([int]$majorVersion -lt 18) {
-            Write-Error "Node.js version $nodeVersion is not supported. Please install Node.js 18+ first."
+        if ([int]$majorVersion -lt 20) {
+            Write-Error "Node.js version $nodeVersion is not supported. Please install Node.js 20+ first."
             exit 1
         }
 
         Write-Info "Node.js version $nodeVersion is supported"
     } catch {
-        Write-Error "Node.js is not installed. Please install Node.js 18+ first."
+        Write-Error "Node.js is not installed. Please install Node.js 20+ first."
         Write-Host "Visit: https://nodejs.org/"
         exit 1
     }

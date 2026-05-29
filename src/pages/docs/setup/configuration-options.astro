@@ -45,14 +45,14 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
                 </tr>
                 <tr>
                   <td><code>USER_AGENT</code></td>
-                  <td><code>ActivityPub-MCP-Server/1.0</code></td>
+                  <td><code>ActivityPub-MCP-Client/2.0.0</code></td>
                   <td>Custom User-Agent for HTTP requests</td>
                   <td><code>MyApp-ActivityPub/2.0</code></td>
                 </tr>
                 <tr>
                   <td><code>REQUEST_TIMEOUT</code></td>
-                  <td><code>30000</code></td>
-                  <td>HTTP request timeout in milliseconds</td>
+                  <td><code>15000</code></td>
+                  <td>HTTP request timeout in milliseconds (production default: 10000)</td>
                   <td><code>45000</code> (45 seconds)</td>
                 </tr>
                 <tr>
@@ -78,6 +78,130 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
                   <td><code>900000</code></td>
                   <td>Rate limit window in milliseconds</td>
                   <td><code>1800000</code> (30 minutes)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="config-section">
+          <h2>HTTP Transport (v2)</h2>
+          <p>
+            Used only when <code>MCP_TRANSPORT_MODE=http</code> is set. The default stdio transport
+            (used by Claude Desktop and Cursor) ignores all of these. In v2, the HTTP transport
+            <strong>refuses to start</strong> without <code>MCP_HTTP_SECRET</code>.
+          </p>
+          <div class="config-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Default</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>MCP_TRANSPORT_MODE</code></td>
+                  <td><code>stdio</code></td>
+                  <td>Transport mode: <code>stdio</code> (default) or <code>http</code></td>
+                </tr>
+                <tr>
+                  <td><code>MCP_HTTP_PORT</code></td>
+                  <td><code>3000</code></td>
+                  <td>Port for the HTTP transport</td>
+                </tr>
+                <tr>
+                  <td><code>MCP_HTTP_HOST</code></td>
+                  <td><code>127.0.0.1</code></td>
+                  <td>Bind host for the HTTP transport</td>
+                </tr>
+                <tr>
+                  <td><code>MCP_HTTP_SECRET</code></td>
+                  <td><em>none — required</em></td>
+                  <td>
+                    Bearer-token secret for <code>/mcp</code> and <code>/metrics</code>. 32+ random chars recommended.
+                    Generate with <code>node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"</code>.
+                    Requests must include <code>Authorization: Bearer &lt;secret&gt;</code>. The <code>/health</code> endpoint stays unauthenticated.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>MCP_HTTP_CORS_ORIGINS</code></td>
+                  <td><em>empty</em></td>
+                  <td>Comma-separated CORS origins. v2 default is empty (no origins allowed); set explicitly for browser clients.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout callout-warn">
+            <strong>Migrating from v1?</strong> Set <code>MCP_HTTP_SECRET</code> before upgrading, and set
+            <code>MCP_HTTP_CORS_ORIGINS</code> explicitly if you relied on the v1 <code>"*"</code> default.
+            See <a href="https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v2.md">MIGRATION-v2.md</a>.
+          </div>
+        </section>
+
+        <section class="config-section">
+          <h2>Thread Traversal Caps (v2)</h2>
+          <p>Controls applied to the <code>get-post-thread</code> tool and <code>activitypub://post-thread/…</code> resource.</p>
+          <div class="config-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Default</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>MCP_THREAD_MAX_DEPTH</code></td>
+                  <td><code>5</code></td>
+                  <td>Maximum recursion depth when walking <code>inReplyTo</code> chains.</td>
+                </tr>
+                <tr>
+                  <td><code>MCP_THREAD_MAX_REPLIES</code></td>
+                  <td><code>50</code></td>
+                  <td>Maximum total replies fetched per thread.</td>
+                </tr>
+                <tr>
+                  <td><code>MCP_THREAD_CROSS_ORIGIN_FETCH</code></td>
+                  <td><code>false</code></td>
+                  <td>If <code>true</code>, fetch replies whose origin differs from the root post (v1 behavior). Default returns cross-origin replies as stubs.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="config-section">
+          <h2>Multi-Account Configuration (v2)</h2>
+          <p>
+            <code>ACTIVITYPUB_ACCOUNTS</code> uses the <strong>pipe (<code>|</code>) delimiter</strong> in v2 so tokens containing colons (e.g., JWTs) parse correctly. v2 refuses to start if it sees the legacy colon-delimited form.
+          </p>
+          <pre><code># Format: id|instance|token|username|label, comma-separated
+ACTIVITYPUB_ACCOUNTS=work|fosstodon.org|TOKEN1|me|Work,home|mastodon.social|TOKEN2|me|Personal</code></pre>
+        </section>
+
+        <section class="config-section">
+          <h2>Health Check (v2)</h2>
+          <p>
+            The legacy <code>HEALTH_CHECK_ENABLED</code> env var was removed in v2 (it was dead code in v1).
+            Use <code>HEALTH_CHECK_EXTERNAL_PROBE</code> to gate only the outbound mastodon.social connectivity probe — useful for air-gapped environments.
+          </p>
+          <div class="config-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Default</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>HEALTH_CHECK_EXTERNAL_PROBE</code></td>
+                  <td><code>true</code></td>
+                  <td>Set to <code>false</code> to skip the outbound mastodon.social connectivity check.</td>
                 </tr>
               </tbody>
             </table>

@@ -59,7 +59,7 @@ body:
       value: |
         - OS: [e.g. macOS 14.0, Ubuntu 22.04, Windows 11]
         - Node.js version: [e.g. 20.10.0]
-        - Package version: [e.g. 1.0.0]
+        - Package version: [e.g. 2.0.0]
         - MCP Client: [e.g. Claude Desktop, MCP Inspector]
 
   - type: textarea

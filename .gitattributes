@@ -1,21 +1,22 @@
-# Set default behavior to automatically normalize line endings
-* text=auto
+# Set default behavior: normalize line endings to LF on checkin AND checkout.
+# Biome's lineEnding is "lf"; without `eol=lf`, Windows runners check out CRLF
+# and biome fails CI.
+* text=auto eol=lf
 
-# Explicitly declare text files you want to always be normalized and converted
-# to native line endings on checkout
-*.ts text
-*.js text
-*.json text
-*.md text
-*.yml text
-*.yaml text
-*.astro text
-*.css text
-*.scss text
-*.html text
-*.xml text
-*.svg text
-*.txt text
+# Explicitly declare LF text files (redundant with eol=lf above but documents intent).
+*.ts text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.astro text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.html text eol=lf
+*.xml text eol=lf
+*.svg text eol=lf
+*.txt text eol=lf
 
 # Declare files that will always have CRLF line endings on checkout
 *.ps1 text eol=crlf

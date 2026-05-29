@@ -81,28 +81,6 @@ export class LRUCache<K, V> {
   }
 
   /**
-   * Checks if a key exists in the cache and hasn't expired.
-   *
-   * @param key - The key to check
-   * @returns True if the key exists and hasn't expired
-   */
-  has(key: K): boolean {
-    const entry = this.cache.get(key);
-
-    if (!entry) {
-      return false;
-    }
-
-    // Check if entry has expired
-    if (this.ttl > 0 && Date.now() - entry.timestamp > this.ttl) {
-      this.cache.delete(key);
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
    * Removes a key from the cache.
    *
    * @param key - The key to remove

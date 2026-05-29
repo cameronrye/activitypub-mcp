@@ -25,11 +25,14 @@ vi.mock("../../src/mcp/index.js", () => ({
   registerPrompts: vi.fn(),
 }));
 
-vi.mock("../../src/server/index.js", () => ({
+vi.mock("../../src/resilience/rate-limiter.js", () => ({
   RateLimiter: class MockRateLimiter {
     checkLimit = vi.fn().mockReturnValue(true);
     stop = vi.fn();
   },
+}));
+
+vi.mock("../../src/transport/http.js", () => ({
   HttpTransportServer: class MockHttpServer {
     start = vi.fn().mockResolvedValue({});
     stop = vi.fn().mockResolvedValue(undefined);
@@ -53,9 +56,11 @@ vi.mock("../../src/config.js", () => ({
   RATE_LIMIT_ENABLED: false,
   RATE_LIMIT_MAX: 100,
   RATE_LIMIT_WINDOW: 60000,
+  RATE_LIMIT_CLEANUP_INTERVAL: 60000,
   TRANSPORT_MODE: "stdio",
   HTTP_PORT: 3000,
   HTTP_HOST: "localhost",
+  MAX_REQUEST_HISTORY: 1000,
 }));
 
 describe("ActivityPubMCPServer", () => {

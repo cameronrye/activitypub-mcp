@@ -7,6 +7,10 @@
 
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
+import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT } from "../config.js";
+import { instanceBlocklist } from "../policy/instance-blocklist.js";
+import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { validateExternalUrl } from "../validation/url.js";
 
 const logger = getLogger("activitypub-mcp:account-manager");
 
@@ -68,7 +72,7 @@ export class AccountManager {
 
   /**
    * Load accounts from environment variables.
-   * Format: ACTIVITYPUB_ACCOUNTS=id1:instance1:token1,id2:instance2:token2
+   * Format: ACTIVITYPUB_ACCOUNTS=id1|instance1|token1|username1|label1,id2|instance2|token2|username2|label2
    * Or individual: ACTIVITYPUB_ACCOUNT_<ID>_INSTANCE, ACTIVITYPUB_ACCOUNT_<ID>_TOKEN
    */
   private loadFromEnvironment(): void {
@@ -99,33 +103,46 @@ export class AccountManager {
     }
 
     // Check for additional accounts
-    const accountsEnv = process.env.ACTIVITYPUB_ACCOUNTS;
-    if (accountsEnv) {
-      const accountEntries = accountsEnv.split(",");
-      for (const entry of accountEntries) {
-        const parts = entry.trim().split(":");
-        if (parts.length >= 3) {
-          const [id, instance, token, username = "user", label] = parts;
-          try {
-            const account: AccountCredentials = {
-              id,
-              instance,
-              username,
-              accessToken: token,
-              tokenType: "Bearer",
-              scopes: ["read", "write", "follow"],
-              createdAt: new Date().toISOString(),
-              label: label || undefined,
-            };
+    const rawAccounts = process.env.ACTIVITYPUB_ACCOUNTS;
+    if (rawAccounts) {
+      const entries = rawAccounts
+        .split(",")
+        .map((e) => e.trim())
+        .filter(Boolean);
 
-            this.accounts.set(id, account);
-            if (!this.activeAccountId) {
-              this.activeAccountId = id;
-            }
-            logger.info("Loaded account from environment", { id, instance });
-          } catch (error) {
-            logger.warn("Failed to load account from environment", { id, error });
+      // Migration guard: legacy `:`-delimited format silently truncated tokens
+      // containing colons. Refuse to start if ANY entry looks legacy — catches
+      // both all-legacy input and mixed legacy/v2 input.
+      const legacyEntry = entries.find((e) => e.includes(":") && !e.includes("|"));
+      if (legacyEntry) {
+        throw new Error(
+          "ACTIVITYPUB_ACCOUNTS uses pipe (|) delimiter as of v2. " +
+            `Legacy entry detected: "${legacyEntry}". ` +
+            "Migrate from 'id:inst:tok:user:label' to 'id|inst|tok|user|label'. " +
+            "See MIGRATION-v2.md.",
+        );
+      }
+      for (const entry of entries) {
+        try {
+          const parts = entry.split("|");
+          const [id, instance, token, username = "user", label] = parts;
+          if (!id || !instance || !token) {
+            logger.warn("Skipping malformed account entry", { entry });
+            continue;
           }
+          this.addAccount({
+            id,
+            instance,
+            accessToken: token,
+            tokenType: "Bearer",
+            username,
+            label,
+            scopes: ["read", "write"],
+          });
+        } catch (error) {
+          logger.warn("Failed to load account from environment", {
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
       }
     }
@@ -268,30 +285,50 @@ export class AccountManager {
       return null;
     }
 
+    const url = `https://${account.instance}/api/v1/accounts/verify_credentials`;
+
     try {
-      const response = await fetch(
-        `https://${account.instance}/api/v1/accounts/verify_credentials`,
+      await validateExternalUrl(url);
+      instanceBlocklist.validateNotBlocked(account.instance);
+    } catch (error) {
+      logger.error("Account verification refused (URL or policy validation failed)", {
+        id: accountId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+    try {
+      const response = await fetchWithRedirectGuard(
+        url,
         {
           headers: {
             Authorization: `${account.tokenType} ${account.accessToken}`,
             Accept: "application/json",
           },
+          signal: controller.signal,
+        },
+        async (target) => {
+          await validateExternalUrl(target);
+          instanceBlocklist.validateNotBlocked(new URL(target).hostname);
         },
       );
 
       if (!response.ok) {
-        logger.warn("Account verification failed", {
-          id: accountId,
-          status: response.status,
-        });
+        logger.warn("Account verification failed", { id: accountId, status: response.status });
         return null;
       }
 
-      const data = await response.json();
+      const data = await readJsonWithLimit<unknown>(response, MAX_RESPONSE_SIZE);
       return AccountInfoSchema.parse(data);
     } catch (error) {
       logger.error("Account verification error", { id: accountId, error });
       return null;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -308,5 +345,7 @@ export class AccountManager {
   }
 }
 
-// Export singleton instance
+// Export singleton instance.
+// Construction throws if env vars are misconfigured (e.g. legacy ACTIVITYPUB_ACCOUNTS
+// format). The server entry point catches this and exits non-zero.
 export const accountManager = new AccountManager();

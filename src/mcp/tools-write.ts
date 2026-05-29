@@ -9,10 +9,13 @@ import { getLogger } from "@logtape/logtape";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { auditLogger } from "../audit/logger.js";
 import { accountManager, authenticatedClient } from "../auth/index.js";
-import { performanceMonitor } from "../performance-monitor.js";
-import type { RateLimiter } from "../server/rate-limiter.js";
-import { formatErrorWithSuggestion, getErrorMessage, stripHtmlTags } from "../utils.js";
+import type { RateLimiter } from "../resilience/rate-limiter.js";
+import { performanceMonitor } from "../telemetry/performance-monitor.js";
+import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
+import { stripHtmlTags } from "../utils/html.js";
+import { trackedMcpServer } from "./capabilities.js";
 
 const logger = getLogger("activitypub-mcp:tools-write");
 
@@ -20,6 +23,8 @@ const logger = getLogger("activitypub-mcp:tools-write");
  * Registers all write operation tools.
  */
 export function registerWriteTools(mcpServer: McpServer, rateLimiter: RateLimiter): void {
+  trackedMcpServer(mcpServer);
+
   // Account management tools
   registerListAccountsTool(mcpServer);
   registerSwitchAccountTool(mcpServer);
@@ -77,13 +82,27 @@ function checkRateLimit(rateLimiter: RateLimiter, identifier: string): void {
 }
 
 /**
- * Helper to check if write operations are available.
+ * Helper for write tools: requires that an authenticated account exists.
  */
 function requireWriteEnabled(): void {
   if (!authenticatedClient.isWriteEnabled()) {
     throw new McpError(
       ErrorCode.InternalError,
-      "Write operations require authentication. Configure ACTIVITYPUB_DEFAULT_INSTANCE and ACTIVITYPUB_DEFAULT_TOKEN environment variables.",
+      "This write operation requires authentication. Configure ACTIVITYPUB_DEFAULT_INSTANCE and ACTIVITYPUB_DEFAULT_TOKEN environment variables.",
+    );
+  }
+}
+
+/**
+ * Helper for authenticated read-only tools (home timeline, notifications, etc.):
+ * same underlying check but a clearer error so users aren't told they need
+ * 'write' for a read.
+ */
+function requireAuthEnabled(): void {
+  if (!authenticatedClient.isWriteEnabled()) {
+    throw new McpError(
+      ErrorCode.InternalError,
+      "This tool requires an authenticated account. Configure ACTIVITYPUB_DEFAULT_INSTANCE and ACTIVITYPUB_DEFAULT_TOKEN environment variables.",
     );
   }
 }
@@ -123,7 +142,7 @@ Write operations are currently disabled. To enable write operations, configure a
 2. Set the name and required scopes (read, write, follow)
 3. Copy the "Your access token" value
 
-💡 For multiple accounts, use \`ACTIVITYPUB_ACCOUNTS=id1:instance1:token1:username1,id2:instance2:token2:username2\``,
+💡 For multiple accounts, use \`ACTIVITYPUB_ACCOUNTS=id1|instance1|token1|username1|label1,id2|instance2|token2|username2|label2\` (pipe-delimited; v2 changed from colon to avoid conflict with colons in tokens).`,
             },
           ],
         };
@@ -169,9 +188,17 @@ function registerSwitchAccountTool(mcpServer: McpServer): void {
       },
     },
     async ({ accountId }) => {
+      const startTime = Date.now();
+      const auditParams = { accountId };
+
       const success = accountManager.setActiveAccount(accountId);
 
       if (!success) {
+        auditLogger.logToolInvocation("switch-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "Account not found",
+        });
         return {
           content: [
             {
@@ -188,6 +215,11 @@ Use \`list-accounts\` to see available account IDs.`,
       }
 
       const account = accountManager.getAccount(accountId);
+
+      auditLogger.logToolInvocation("switch-account", auditParams, {
+        success: true,
+        duration: Date.now() - startTime,
+      });
 
       return {
         content: [
@@ -219,10 +251,17 @@ function registerVerifyAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
       },
     },
     async ({ accountId }) => {
-      requireWriteEnabled();
+      requireAuthEnabled();
+      const startTime = Date.now();
+      const auditParams = { accountId };
 
       const targetId = accountId || accountManager.getActiveAccount()?.id;
       if (!targetId) {
+        auditLogger.logToolInvocation("verify-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account specified",
+        });
         return {
           content: [
             {
@@ -236,6 +275,11 @@ function registerVerifyAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
 
       const account = accountManager.getAccount(targetId);
       if (!account) {
+        auditLogger.logToolInvocation("verify-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "Account not found",
+        });
         return {
           content: [{ type: "text", text: `❌ Account not found: ${targetId}` }],
           isError: true,
@@ -251,6 +295,11 @@ function registerVerifyAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
         performanceMonitor.endRequest(requestId, true);
 
         if (!info) {
+          auditLogger.logToolInvocation("verify-account", auditParams, {
+            success: false,
+            duration: Date.now() - startTime,
+            error: "Credentials invalid or expired",
+          });
           return {
             content: [
               {
@@ -265,6 +314,11 @@ Please update your access token.`,
             isError: true,
           };
         }
+
+        auditLogger.logToolInvocation("verify-account", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -287,6 +341,12 @@ Please update your access token.`,
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("verify-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -310,7 +370,11 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
     "post-status",
     {
       title: "Post Status",
-      description: "Create a new post/status on your fediverse account",
+      description:
+        "Publish a post to your fediverse account. PUBLIC by default and visible to the world; " +
+        "most fediverse software does not allow editing after posting. " +
+        "Use visibility: 'direct' for DMs, 'private' for followers-only, or 'scheduledAt' to " +
+        "queue the post for later instead of publishing immediately.",
       inputSchema: {
         content: z.string().min(1).max(5000).describe("The content of your post"),
         visibility: z
@@ -321,16 +385,54 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
         sensitive: z.boolean().optional().describe("Mark media as sensitive"),
         language: z.string().optional().describe("Language code (ISO 639-1, e.g., 'en')"),
         accountId: z.string().optional().describe("Account ID to post from (defaults to active)"),
+        mediaIds: z
+          .array(z.string())
+          .max(4, "post-status accepts at most 4 media IDs")
+          .optional()
+          .describe("Media IDs from upload-media (max 4)"),
+        scheduledAt: z
+          .string()
+          .datetime({ message: "scheduledAt must be ISO 8601 (e.g., 2026-06-01T15:00:00Z)" })
+          .refine((d) => new Date(d).getTime() > Date.now(), {
+            message: "scheduledAt must be in the future",
+          })
+          .optional()
+          .describe("ISO 8601 datetime to schedule the post (e.g., one hour from now in ISO 8601)"),
       },
     },
-    async ({ content, visibility = "public", spoilerText, sensitive, language, accountId }) => {
+    async ({
+      content,
+      visibility = "public",
+      spoilerText,
+      sensitive,
+      language,
+      accountId,
+      mediaIds,
+      scheduledAt,
+    }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = {
+        content,
+        visibility,
+        spoilerText,
+        sensitive,
+        language,
+        accountId,
+        mediaIds,
+        scheduledAt,
+      };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("post-status", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured for posting." }],
           isError: true,
@@ -354,11 +456,17 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
             spoilerText,
             sensitive,
             language,
+            mediaIds,
+            scheduledAt,
           },
           accountId,
         );
 
         performanceMonitor.endRequest(requestId, true);
+        auditLogger.logToolInvocation("post-status", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -379,11 +487,17 @@ Posted as @${status.account.username}`,
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = getErrorMessage(error);
+        auditLogger.logToolInvocation("post-status", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
               type: "text",
-              text: `❌ Failed to create post: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+              text: `❌ Failed to create post: ${formatErrorWithSuggestion(message)}`,
             },
           ],
           isError: true,
@@ -398,26 +512,40 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
     "reply-to-post",
     {
       title: "Reply to Post",
-      description: "Reply to an existing post/status",
+      description:
+        "Publish a reply to an existing post. Replies are PUBLIC by default and " +
+        "cannot be edited after posting. The reply appears in the parent post's " +
+        "thread, visible to followers of either account. Use visibility: 'direct' " +
+        "for a private reply (DM) instead.",
       inputSchema: {
         statusId: z.string().describe("The ID of the post to reply to"),
         content: z.string().min(1).max(5000).describe("The content of your reply"),
         visibility: z
           .enum(["public", "unlisted", "private", "direct"])
           .optional()
-          .describe("Post visibility (default: matches original post)"),
+          .describe(
+            "Visibility for this reply (default: your account's default posting visibility, " +
+              "which is usually public). Mastodon does NOT auto-match the parent post.",
+          ),
         spoilerText: z.string().max(500).optional().describe("Content warning"),
         accountId: z.string().optional().describe("Account ID to reply from"),
       },
     },
     async ({ statusId, content, visibility, spoilerText, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, content, visibility, spoilerText, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("reply-to-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -443,6 +571,10 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
         );
 
         performanceMonitor.endRequest(requestId, true);
+        auditLogger.logToolInvocation("reply-to-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -460,6 +592,12 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("reply-to-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -479,7 +617,9 @@ function registerDeletePostTool(mcpServer: McpServer, rateLimiter: RateLimiter):
     "delete-post",
     {
       title: "Delete Post",
-      description: "Delete one of your own posts",
+      description:
+        "Permanently delete one of your own posts. CANNOT BE UNDONE. " +
+        "Federated copies on other servers may persist after deletion.",
       inputSchema: {
         statusId: z.string().describe("The ID of your post to delete"),
         accountId: z.string().optional().describe("Account ID"),
@@ -487,12 +627,19 @@ function registerDeletePostTool(mcpServer: McpServer, rateLimiter: RateLimiter):
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("delete-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -509,6 +656,10 @@ function registerDeletePostTool(mcpServer: McpServer, rateLimiter: RateLimiter):
       try {
         await authenticatedClient.deletePost(statusId, accountId);
         performanceMonitor.endRequest(requestId, true);
+        auditLogger.logToolInvocation("delete-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -522,6 +673,12 @@ Post ${statusId} has been deleted.`,
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("delete-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -553,12 +710,19 @@ function registerBoostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter): 
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("boost-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -575,6 +739,10 @@ function registerBoostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter): 
       try {
         const status = await authenticatedClient.boostPost(statusId, accountId);
         performanceMonitor.endRequest(requestId, true);
+        auditLogger.logToolInvocation("boost-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -590,6 +758,12 @@ You boosted a post by @${status.account.username}
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("boost-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -617,12 +791,19 @@ function registerUnboostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("unboost-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -633,6 +814,10 @@ function registerUnboostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
 
       try {
         await authenticatedClient.unboostPost(statusId, accountId);
+        auditLogger.logToolInvocation("unboost-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -645,6 +830,12 @@ Your boost has been removed from post ${statusId}.`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("unboost-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -672,12 +863,19 @@ function registerFavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimite
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("favourite-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -688,6 +886,10 @@ function registerFavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimite
 
       try {
         const status = await authenticatedClient.favouritePost(statusId, accountId);
+        auditLogger.logToolInvocation("favourite-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -702,6 +904,12 @@ You favourited a post by @${status.account.username}
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("favourite-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -729,12 +937,19 @@ function registerUnfavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimi
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("unfavourite-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -745,6 +960,10 @@ function registerUnfavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimi
 
       try {
         await authenticatedClient.unfavouritePost(statusId, accountId);
+        auditLogger.logToolInvocation("unfavourite-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -757,6 +976,12 @@ Post ${statusId} has been removed from your favourites.`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("unfavourite-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -784,12 +1009,19 @@ function registerBookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimiter
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("bookmark-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -800,6 +1032,10 @@ function registerBookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimiter
 
       try {
         const status = await authenticatedClient.bookmarkPost(statusId, accountId);
+        auditLogger.logToolInvocation("bookmark-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -814,6 +1050,12 @@ Saved post by @${status.account.username}
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("bookmark-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -841,12 +1083,19 @@ function registerUnbookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimit
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { statusId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("unbookmark-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -857,6 +1106,10 @@ function registerUnbookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimit
 
       try {
         await authenticatedClient.unbookmarkPost(statusId, accountId);
+        auditLogger.logToolInvocation("unbookmark-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -869,6 +1122,12 @@ Post ${statusId} has been removed from your bookmarks.`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("unbookmark-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -910,12 +1169,19 @@ function registerFollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
     },
     async ({ acct, showBoosts = true, notify = false, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { acct, showBoosts, notify, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("follow-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -945,6 +1211,11 @@ function registerFollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
           ? "Follow request sent (awaiting approval)"
           : "Now following";
 
+        auditLogger.logToolInvocation("follow-account", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -960,6 +1231,12 @@ function registerFollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("follow-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -987,12 +1264,19 @@ function registerUnfollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimi
     },
     async ({ acct, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { acct, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("unfollow-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1005,6 +1289,11 @@ function registerUnfollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimi
         const targetAccount = await authenticatedClient.lookupAccount(acct, accountId);
         await authenticatedClient.unfollowAccount(targetAccount.id, accountId);
 
+        auditLogger.logToolInvocation("unfollow-account", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -1016,6 +1305,12 @@ You are no longer following this account.`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("unfollow-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1051,12 +1346,19 @@ function registerMuteAccountTool(mcpServer: McpServer, rateLimiter: RateLimiter)
     },
     async ({ acct, muteNotifications = true, duration = 0, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { acct, muteNotifications, duration, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("mute-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1075,6 +1377,11 @@ function registerMuteAccountTool(mcpServer: McpServer, rateLimiter: RateLimiter)
 
         const durationText = duration > 0 ? `for ${duration} seconds` : "indefinitely";
 
+        auditLogger.logToolInvocation("mute-account", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -1086,6 +1393,12 @@ function registerMuteAccountTool(mcpServer: McpServer, rateLimiter: RateLimiter)
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("mute-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1113,12 +1426,19 @@ function registerUnmuteAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
     },
     async ({ acct, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { acct, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("unmute-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1131,6 +1451,11 @@ function registerUnmuteAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
         const targetAccount = await authenticatedClient.lookupAccount(acct, accountId);
         await authenticatedClient.unmuteAccount(targetAccount.id, accountId);
 
+        auditLogger.logToolInvocation("unmute-account", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -1142,6 +1467,12 @@ Their posts will now appear in your timelines again.`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("unmute-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1169,12 +1500,19 @@ function registerBlockAccountTool(mcpServer: McpServer, rateLimiter: RateLimiter
     },
     async ({ acct, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { acct, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("block-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1187,6 +1525,11 @@ function registerBlockAccountTool(mcpServer: McpServer, rateLimiter: RateLimiter
         const targetAccount = await authenticatedClient.lookupAccount(acct, accountId);
         await authenticatedClient.blockAccount(targetAccount.id, accountId);
 
+        auditLogger.logToolInvocation("block-account", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -1198,6 +1541,12 @@ They can no longer see your posts or interact with you.`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("block-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1225,12 +1574,19 @@ function registerUnblockAccountTool(mcpServer: McpServer, rateLimiter: RateLimit
     },
     async ({ acct, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { acct, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("unblock-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1243,6 +1599,11 @@ function registerUnblockAccountTool(mcpServer: McpServer, rateLimiter: RateLimit
         const targetAccount = await authenticatedClient.lookupAccount(acct, accountId);
         await authenticatedClient.unblockAccount(targetAccount.id, accountId);
 
+        auditLogger.logToolInvocation("unblock-account", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -1254,6 +1615,12 @@ They can now see your posts and interact with you again.`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("unblock-account", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1286,13 +1653,20 @@ function registerGetHomeTimelineTool(mcpServer: McpServer, rateLimiter: RateLimi
       },
     },
     async ({ limit = 20, maxId, sinceId, accountId }) => {
-      requireWriteEnabled();
+      requireAuthEnabled();
+      const startTime = Date.now();
+      const auditParams = { limit, maxId, sinceId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("get-home-timeline", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1319,6 +1693,11 @@ function registerGetHomeTimelineTool(mcpServer: McpServer, rateLimiter: RateLimi
           })
           .join("\n\n");
 
+        auditLogger.logToolInvocation("get-home-timeline", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -1332,6 +1711,12 @@ ${posts.length > 0 ? `📄 Use maxId: "${posts[posts.length - 1].id}" for next p
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("get-home-timeline", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1378,13 +1763,20 @@ function registerGetNotificationsTool(mcpServer: McpServer, rateLimiter: RateLim
       },
     },
     async ({ limit = 20, types, accountId }) => {
-      requireWriteEnabled();
+      requireAuthEnabled();
+      const startTime = Date.now();
+      const auditParams = { limit, types, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("get-notifications", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1421,6 +1813,11 @@ function registerGetNotificationsTool(mcpServer: McpServer, rateLimiter: RateLim
           })
           .join("\n\n");
 
+        auditLogger.logToolInvocation("get-notifications", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -1432,6 +1829,12 @@ ${notificationList || "No notifications"}`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("get-notifications", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1458,13 +1861,20 @@ function registerGetBookmarksTool(mcpServer: McpServer, rateLimiter: RateLimiter
       },
     },
     async ({ limit = 20, accountId }) => {
-      requireWriteEnabled();
+      requireAuthEnabled();
+      const startTime = Date.now();
+      const auditParams = { limit, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("get-bookmarks", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1486,6 +1896,11 @@ function registerGetBookmarksTool(mcpServer: McpServer, rateLimiter: RateLimiter
           })
           .join("\n\n");
 
+        auditLogger.logToolInvocation("get-bookmarks", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -1497,6 +1912,12 @@ ${bookmarkList || "No bookmarks found"}`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("get-bookmarks", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1523,13 +1944,20 @@ function registerGetFavouritesTool(mcpServer: McpServer, rateLimiter: RateLimite
       },
     },
     async ({ limit = 20, accountId }) => {
-      requireWriteEnabled();
+      requireAuthEnabled();
+      const startTime = Date.now();
+      const auditParams = { limit, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("get-favourites", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1551,6 +1979,11 @@ function registerGetFavouritesTool(mcpServer: McpServer, rateLimiter: RateLimite
           })
           .join("\n\n");
 
+        auditLogger.logToolInvocation("get-favourites", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -1562,6 +1995,12 @@ ${favouriteList || "No favourites found"}`,
           ],
         };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("get-favourites", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1586,20 +2025,38 @@ function registerGetRelationshipTool(mcpServer: McpServer, rateLimiter: RateLimi
     {
       title: "Get Relationship",
       description:
-        "Check your relationship status with another account (following, followed by, blocking, muting, etc.)",
+        "Check your relationship status with another account (following, followed by, blocking, muting, etc.). Pass a single acct like 'username@instance'. To check multiple accounts, call this tool once per account.",
       inputSchema: {
-        acct: z.string().describe("Account to check relationship with (username@instance)"),
+        acct: z
+          .string()
+          .describe(
+            "Account to check relationship with (username@instance). If you have multiple accounts to check, call this tool once per account.",
+          ),
         accountId: z.string().optional().describe("Your account ID"),
+        // Detector for the legacy/wrong field name from old docs:
+        accountIds: z
+          .never({
+            message:
+              "get-relationship takes 'acct' (a single username@instance string), not 'accountIds'. Call this tool once per account.",
+          })
+          .optional(),
       },
     },
     async ({ acct, accountId }) => {
-      requireWriteEnabled();
+      requireAuthEnabled();
+      const startTime = Date.now();
+      const auditParams = { acct, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("get-relationship", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1635,6 +2092,11 @@ function registerGetRelationshipTool(mcpServer: McpServer, rateLimiter: RateLimi
         if (relationship.domain_blocking) statusItems.push("🌐 Domain blocked");
         if (relationship.endorsed) statusItems.push("⭐ Featured on your profile");
 
+        auditLogger.logToolInvocation("get-relationship", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -1652,6 +2114,12 @@ ${relationship.note ? `\n📝 **Note**: ${relationship.note}` : ""}
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("get-relationship", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1689,12 +2157,19 @@ function registerVoteOnPollTool(mcpServer: McpServer, rateLimiter: RateLimiter):
     },
     async ({ pollId, choices, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { pollId, choices, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("vote-on-poll", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1733,6 +2208,11 @@ function registerVoteOnPollTool(mcpServer: McpServer, rateLimiter: RateLimiter):
             ? `⏰ Expires: ${new Date(poll.expires_at).toLocaleString()}`
             : "";
 
+        auditLogger.logToolInvocation("vote-on-poll", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
+
         return {
           content: [
             {
@@ -1749,6 +2229,12 @@ ${expiryText}`,
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("vote-on-poll", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1773,9 +2259,16 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
     {
       title: "Upload Media",
       description:
-        "Upload a media file (image, video, audio) to use in posts. Returns a media ID that can be used with post-status.",
+        "Upload a media file (image, video, audio) to use in posts. Returns a media ID that " +
+        "can be used with post-status. Note: filePath is read from the machine running this " +
+        "MCP server, not the user's local machine — a path that exists locally for the user " +
+        "may not exist on the server's filesystem.",
       inputSchema: {
-        filePath: z.string().describe("Absolute path to the file to upload"),
+        filePath: z
+          .string()
+          .describe(
+            "Absolute path to the file ON THE MCP SERVER's filesystem (not the user's machine).",
+          ),
         description: z
           .string()
           .max(1500)
@@ -1798,12 +2291,19 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
     },
     async ({ filePath, description, focusX, focusY, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { filePath, description, focusX, focusY, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("upload-media", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1836,6 +2336,10 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
         );
 
         performanceMonitor.endRequest(requestId, true);
+        auditLogger.logToolInvocation("upload-media", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -1860,6 +2364,12 @@ post-status content="Your post" mediaIds=["${media.id}"]
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("upload-media", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1890,13 +2400,20 @@ function registerGetScheduledPostsTool(mcpServer: McpServer, rateLimiter: RateLi
       },
     },
     async ({ limit = 20, accountId }) => {
-      requireWriteEnabled();
+      requireAuthEnabled();
+      const startTime = Date.now();
+      const auditParams = { limit, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("get-scheduled-posts", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -1913,6 +2430,11 @@ function registerGetScheduledPostsTool(mcpServer: McpServer, rateLimiter: RateLi
       try {
         const scheduled = await authenticatedClient.getScheduledPosts({ limit }, accountId);
         performanceMonitor.endRequest(requestId, true);
+
+        auditLogger.logToolInvocation("get-scheduled-posts", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         if (scheduled.length === 0) {
           return {
@@ -1963,6 +2485,12 @@ ${postsList}
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("get-scheduled-posts", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -1984,18 +2512,31 @@ function registerCancelScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
       title: "Cancel Scheduled Post",
       description: "Cancel a scheduled post before it's published",
       inputSchema: {
-        scheduledId: z.string().describe("The ID of the scheduled post to cancel"),
-        accountId: z.string().optional().describe("Account ID"),
+        scheduledPostId: z.string().describe("ID of the scheduled post to cancel"),
+        accountId: z.string().optional().describe("Account ID (defaults to active)"),
+        // Legacy field detector — gives a clear error to anyone using the old name.
+        scheduledId: z
+          .never({
+            message: "scheduledId was renamed to scheduledPostId in v2. Update your call.",
+          })
+          .optional(),
       },
     },
-    async ({ scheduledId, accountId }) => {
+    async ({ scheduledPostId, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { scheduledPostId, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("cancel-scheduled-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -2006,12 +2547,16 @@ function registerCancelScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
 
       const requestId = performanceMonitor.startRequest("cancel-scheduled-post", {
         instance: account.instance,
-        scheduledId,
+        scheduledPostId,
       });
 
       try {
-        await authenticatedClient.cancelScheduledPost(scheduledId, accountId);
+        await authenticatedClient.cancelScheduledPost(scheduledPostId, accountId);
         performanceMonitor.endRequest(requestId, true);
+        auditLogger.logToolInvocation("cancel-scheduled-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         return {
           content: [
@@ -2019,12 +2564,18 @@ function registerCancelScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
               type: "text",
               text: `✅ **Scheduled Post Canceled**
 
-The scheduled post \`${scheduledId}\` has been canceled and will not be published.`,
+The scheduled post \`${scheduledPostId}\` has been canceled and will not be published.`,
             },
           ],
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("cancel-scheduled-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {
@@ -2046,21 +2597,38 @@ function registerUpdateScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
       title: "Update Scheduled Post",
       description: "Change the scheduled time for a scheduled post",
       inputSchema: {
-        scheduledId: z.string().describe("The ID of the scheduled post to update"),
+        scheduledPostId: z.string().describe("ID of the scheduled post to update"),
         scheduledAt: z
           .string()
-          .describe("New scheduled time in ISO 8601 format (e.g., 2024-12-25T10:00:00Z)"),
-        accountId: z.string().optional().describe("Account ID"),
+          .datetime({ message: "scheduledAt must be ISO 8601 (e.g., 2099-01-01T15:00:00Z)" })
+          .refine((d) => new Date(d).getTime() > Date.now(), {
+            message: "scheduledAt must be in the future",
+          })
+          .describe("New scheduled time in ISO 8601 format (e.g., one hour from now in UTC)"),
+        accountId: z.string().optional().describe("Account ID (defaults to active)"),
+        // Legacy field detector — gives a clear error to anyone using the old name.
+        scheduledId: z
+          .never({
+            message: "scheduledId was renamed to scheduledPostId in v2. Update your call.",
+          })
+          .optional(),
       },
     },
-    async ({ scheduledId, scheduledAt, accountId }) => {
+    async ({ scheduledPostId, scheduledAt, accountId }) => {
       requireWriteEnabled();
+      const startTime = Date.now();
+      const auditParams = { scheduledPostId, scheduledAt, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
         : accountManager.getActiveAccount();
 
       if (!account) {
+        auditLogger.logToolInvocation("update-scheduled-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: "No account configured",
+        });
         return {
           content: [{ type: "text", text: "❌ No account configured." }],
           isError: true,
@@ -2071,17 +2639,21 @@ function registerUpdateScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
 
       const requestId = performanceMonitor.startRequest("update-scheduled-post", {
         instance: account.instance,
-        scheduledId,
+        scheduledPostId,
         scheduledAt,
       });
 
       try {
         const updated = await authenticatedClient.updateScheduledPost(
-          scheduledId,
+          scheduledPostId,
           scheduledAt,
           accountId,
         );
         performanceMonitor.endRequest(requestId, true);
+        auditLogger.logToolInvocation("update-scheduled-post", auditParams, {
+          success: true,
+          duration: Date.now() - startTime,
+        });
 
         const newDate = new Date(updated.scheduled_at).toLocaleString();
 
@@ -2091,12 +2663,18 @@ function registerUpdateScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
               type: "text",
               text: `✅ **Scheduled Post Updated**
 
-Post \`${scheduledId}\` is now scheduled for: **${newDate}**`,
+Post \`${scheduledPostId}\` is now scheduled for: **${newDate}**`,
             },
           ],
         };
       } catch (error) {
         performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
+        const message = error instanceof Error ? error.message : String(error);
+        auditLogger.logToolInvocation("update-scheduled-post", auditParams, {
+          success: false,
+          duration: Date.now() - startTime,
+          error: message,
+        });
         return {
           content: [
             {

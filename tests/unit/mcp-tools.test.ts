@@ -5,10 +5,10 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { registerTools } from "../../src/mcp/tools.js";
-import { RateLimiter } from "../../src/server/rate-limiter.js";
+import { RateLimiter } from "../../src/resilience/rate-limiter.js";
 
 // Mock dependencies
-vi.mock("../../src/remote-client.js", () => ({
+vi.mock("../../src/activitypub/remote-client.js", () => ({
   remoteClient: {
     fetchRemoteActor: vi.fn(),
     fetchActorOutboxPaginated: vi.fn(),
@@ -26,7 +26,7 @@ vi.mock("../../src/remote-client.js", () => ({
   },
 }));
 
-vi.mock("../../src/instance-discovery.js", () => ({
+vi.mock("../../src/discovery/instance-discovery.js", () => ({
   instanceDiscovery: {
     getPopularInstances: vi.fn().mockReturnValue([
       {
@@ -44,7 +44,7 @@ vi.mock("../../src/instance-discovery.js", () => ({
   },
 }));
 
-vi.mock("../../src/dynamic-instance-discovery.js", () => ({
+vi.mock("../../src/discovery/dynamic-instance-discovery.js", () => ({
   dynamicInstanceDiscovery: {
     searchInstances: vi.fn().mockResolvedValue({
       instances: [{ domain: "test.social", users: 1000, software: "mastodon" }],
@@ -55,7 +55,7 @@ vi.mock("../../src/dynamic-instance-discovery.js", () => ({
   },
 }));
 
-vi.mock("../../src/health-check.js", () => ({
+vi.mock("../../src/telemetry/health-check.js", () => ({
   healthChecker: {
     performHealthCheck: vi.fn().mockResolvedValue({
       status: "healthy",
@@ -69,7 +69,7 @@ vi.mock("../../src/health-check.js", () => ({
   },
 }));
 
-vi.mock("../../src/performance-monitor.js", () => ({
+vi.mock("../../src/telemetry/performance-monitor.js", () => ({
   performanceMonitor: {
     startRequest: vi.fn().mockReturnValue("req-123"),
     endRequest: vi.fn(),
@@ -106,12 +106,12 @@ vi.mock("@logtape/logtape", () => ({
   }),
 }));
 
-import { dynamicInstanceDiscovery } from "../../src/dynamic-instance-discovery.js";
-import { healthChecker } from "../../src/health-check.js";
-import { instanceDiscovery } from "../../src/instance-discovery.js";
-import { performanceMonitor } from "../../src/performance-monitor.js";
 // Import mocked modules
-import { remoteClient } from "../../src/remote-client.js";
+import { remoteClient } from "../../src/activitypub/remote-client.js";
+import { dynamicInstanceDiscovery } from "../../src/discovery/dynamic-instance-discovery.js";
+import { instanceDiscovery } from "../../src/discovery/instance-discovery.js";
+import { healthChecker } from "../../src/telemetry/health-check.js";
+import { performanceMonitor } from "../../src/telemetry/performance-monitor.js";
 
 describe("MCP Tools", () => {
   let mcpServer: McpServer;
@@ -273,7 +273,7 @@ describe("MCP Tools", () => {
       });
 
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Search results",
+        "Search Results",
       );
       expect(remoteClient.searchInstance).toHaveBeenCalledWith(
         "mastodon.social",
@@ -766,6 +766,194 @@ describe("MCP Tools", () => {
       );
 
       strictRateLimiter.stop();
+    });
+  });
+
+  describe("discover-instances filter composition (H7)", () => {
+    it("applies multiple filters cumulatively", async () => {
+      const tool = registeredTools.get("discover-instances");
+      expect(tool).toBeDefined();
+
+      // Set up mocks so topic and size filters overlap partially:
+      // topic "tech" => [fosstodon.org, techhub.social]
+      // size "large" => [mastodon.social, techhub.social]
+      // combined => [techhub.social] only
+      const techInstances = [
+        {
+          domain: "fosstodon.org",
+          description: "FOSS and tech community",
+          users: "50K",
+          software: "mastodon",
+        },
+        {
+          domain: "techhub.social",
+          description: "Tech hub for developers",
+          users: "200K",
+          software: "mastodon",
+        },
+      ];
+      const largeInstances = [
+        {
+          domain: "mastodon.social",
+          description: "General instance",
+          users: "1M+",
+          software: "mastodon",
+        },
+        {
+          domain: "techhub.social",
+          description: "Tech hub for developers",
+          users: "200K",
+          software: "mastodon",
+        },
+      ];
+
+      (instanceDiscovery.getPopularInstances as Mock).mockReturnValue([
+        ...techInstances,
+        {
+          domain: "mastodon.social",
+          description: "General instance",
+          users: "1M+",
+          software: "mastodon",
+        },
+      ]);
+      (instanceDiscovery.searchInstancesByTopic as Mock).mockReturnValue(techInstances);
+      (instanceDiscovery.getInstancesBySize as Mock).mockReturnValue(largeInstances);
+
+      const both = await tool?.handler({ topic: "tech", size: "large" });
+      const topicOnly = await tool?.handler({ topic: "tech" });
+      const sizeOnly = await tool?.handler({ size: "large" });
+
+      const parseIds = (r: unknown): string[] => {
+        const text = ((r as { content: { text: string }[] })?.content?.[0]?.text ?? "") as string;
+        return text.match(/[a-z0-9.-]+\.[a-z]{2,}/gi) ?? [];
+      };
+
+      const bothIds = new Set(parseIds(both));
+      const topicIds = new Set(parseIds(topicOnly));
+      const sizeIds = new Set(parseIds(sizeOnly));
+
+      // Combined result must be a subset of each individual result
+      for (const id of bothIds) {
+        expect(topicIds.has(id)).toBe(true);
+        expect(sizeIds.has(id)).toBe(true);
+      }
+
+      // Sanity: combined ≤ each individual
+      expect(bothIds.size).toBeLessThanOrEqual(topicIds.size);
+      expect(bothIds.size).toBeLessThanOrEqual(sizeIds.size);
+
+      // techhub.social must appear in combined (it satisfies both filters)
+      expect(bothIds.has("techhub.social")).toBe(true);
+      // fosstodon.org must NOT appear in combined (large filter excludes it)
+      expect(bothIds.has("fosstodon.org")).toBe(false);
+    });
+  });
+
+  describe("search-instance prose render (M4)", () => {
+    it("renders results as prose, not raw JSON", async () => {
+      (remoteClient.searchInstance as Mock).mockResolvedValue({
+        accounts: [
+          {
+            id: "1",
+            username: "alice",
+            acct: "alice@example.social",
+            display_name: "Alice",
+            note: "<p>Hello world</p>",
+            followers_count: 42,
+            statuses_count: 100,
+          },
+        ],
+        statuses: [],
+        hashtags: [],
+      });
+
+      const tool = registeredTools.get("search-instance");
+      expect(tool).toBeDefined();
+
+      const result = await tool?.handler({
+        domain: "example.social",
+        query: "test",
+        type: "accounts",
+      });
+
+      const text = ((result as { content: { text: string }[] }).content[0].text ?? "") as string;
+
+      // The bad behavior renders `{` `"id":` etc. — assert that's gone.
+      expect(text).not.toMatch(/^\{\s*"/m); // no leading JSON object
+      expect(text).not.toMatch(/^\s*\{\s*"accounts":/);
+      // The good behavior renders something human-readable.
+      expect(text).toContain("test");
+      expect(text).toContain("example.social");
+    });
+  });
+
+  describe("fetch-timeline renders all posts (M5)", () => {
+    it("renders more than 10 posts when fetched", async () => {
+      // Mock to return 25 posts
+      const posts = Array.from({ length: 25 }, (_, i) => ({
+        type: "Note",
+        content: `Post ${i + 1}`,
+        id: `post-${i + 1}`,
+      }));
+
+      (remoteClient.fetchActorOutboxPaginated as Mock).mockResolvedValue({
+        items: posts,
+        totalItems: 25,
+        collectionId: "https://example.social/users/testuser/outbox",
+        hasMore: false,
+      });
+
+      const tool = registeredTools.get("fetch-timeline");
+      expect(tool).toBeDefined();
+
+      const result = await tool?.handler({
+        identifier: "user@example.social",
+        limit: 25,
+      });
+
+      const text = ((result as { content: { text: string }[] }).content[0].text ?? "") as string;
+
+      // The bad behavior renders only 10 lines. Assert at least 15 numbered posts.
+      const numberedLines = text.match(/^\d+\. /gm) || [];
+      expect(numberedLines.length).toBeGreaterThanOrEqual(15);
+
+      // No "and N more posts" footer because we rendered everything.
+      expect(text).not.toMatch(/\d+ more posts in this page/);
+    });
+
+    it("truncates each post to 500 chars (not 200)", async () => {
+      // Create a post with a 1000-char body
+      const longContent = "x".repeat(1000);
+      const posts = [
+        {
+          type: "Note",
+          content: longContent,
+          id: "post-1",
+        },
+      ];
+
+      (remoteClient.fetchActorOutboxPaginated as Mock).mockResolvedValue({
+        items: posts,
+        totalItems: 1,
+        collectionId: "https://example.social/users/testuser/outbox",
+        hasMore: false,
+      });
+
+      const tool = registeredTools.get("fetch-timeline");
+      expect(tool).toBeDefined();
+
+      const result = await tool?.handler({
+        identifier: "user@example.social",
+        limit: 1,
+      });
+
+      const text = ((result as { content: { text: string }[] }).content[0].text ?? "") as string;
+
+      // Assert that we have roughly 500 chars of content (plus some overhead for formatting)
+      // The pattern should have 500 x's followed by an ellipsis or truncation marker
+      expect(text).toMatch(/x{400,}/);
+      // Verify it's truncated to 500, not 200
+      expect(text).toMatch(/x{450,}/);
     });
   });
 });

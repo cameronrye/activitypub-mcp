@@ -6,22 +6,21 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "../mocks/server.js";
 
-// Mock the file system and logger before importing the module
-vi.mock("node:fs", () => ({
-  readFileSync: vi.fn().mockReturnValue(
-    JSON.stringify({
-      mastodon: [
-        { domain: "mastodon.social", description: "General-purpose instance", users: "1M+" },
-        { domain: "fosstodon.org", description: "FOSS enthusiasts", users: "50K" },
-        { domain: "techhub.social", description: "Tech community", users: "10K" },
-      ],
-      pleroma: [{ domain: "pleroma.social", description: "Lightweight fediverse", users: "5K" }],
-      pixelfed: [{ domain: "pixelfed.social", description: "Photo sharing", users: "100K" }],
-      lemmy: [{ domain: "lemmy.world", description: "Link aggregation", users: "200K" }],
-      misskey: [],
-      peertube: [],
-    }),
-  ),
+// Mock the inlined instance data so tests are deterministic regardless of
+// curated-list updates in src/discovery/data/instances.ts.
+vi.mock("../../src/discovery/data/instances.js", () => ({
+  POPULAR_INSTANCES: {
+    mastodon: [
+      { domain: "mastodon.social", description: "General-purpose instance", users: "1M+" },
+      { domain: "fosstodon.org", description: "FOSS enthusiasts", users: "50K" },
+      { domain: "techhub.social", description: "Tech community", users: "10K" },
+    ],
+    pleroma: [{ domain: "pleroma.social", description: "Lightweight fediverse", users: "5K" }],
+    pixelfed: [{ domain: "pixelfed.social", description: "Photo sharing", users: "100K" }],
+    lemmy: [{ domain: "lemmy.world", description: "Link aggregation", users: "200K" }],
+    misskey: [],
+    peertube: [],
+  },
 }));
 
 vi.mock("@logtape/logtape", () => ({
@@ -34,7 +33,7 @@ vi.mock("@logtape/logtape", () => ({
 }));
 
 // Import after mocks are set up
-const { InstanceDiscoveryService } = await import("../../src/instance-discovery.js");
+const { InstanceDiscoveryService } = await import("../../src/discovery/instance-discovery.js");
 
 describe("InstanceDiscoveryService", () => {
   let service: InstanceDiscoveryService;
@@ -316,6 +315,43 @@ describe("InstanceDiscoveryService", () => {
   });
 });
 
+describe("InstanceDiscoveryService SSRF defence (L4)", () => {
+  const service = new InstanceDiscoveryService();
+
+  it("checkInstanceHealth refuses private IP", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const r = await service.checkInstanceHealth("10.0.0.1");
+    expect(r.online).toBe(false);
+    expect(r.error).toMatch(/IP|private|invalid/i);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it("checkInstanceHealth refuses localhost", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const r = await service.checkInstanceHealth("localhost");
+    expect(r.online).toBe(false);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it("getInstanceStats refuses link-local address", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const r = await service.getInstanceStats("169.254.169.254");
+    expect(r.online).toBe(false);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it("getInstanceStats refuses single-label domain", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const r = await service.getInstanceStats("not-a-domain");
+    expect(r.online).toBe(false);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+});
+
 describe("InstanceDiscoveryService - Edge Cases", () => {
   let service: InstanceDiscoveryService;
 
@@ -331,5 +367,49 @@ describe("InstanceDiscoveryService - Edge Cases", () => {
   it("should handle special characters in search", () => {
     const results = service.searchInstancesByTopic("test@#$%");
     expect(results).toEqual([]);
+  });
+});
+
+describe("InstanceDiscoveryService response size cap (M2 followup)", () => {
+  const originalEnv = process.env;
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("getInstanceStats returns online:false when body exceeds MAX_RESPONSE_SIZE without Content-Length", async () => {
+    vi.resetModules();
+    process.env = { ...originalEnv, MAX_RESPONSE_SIZE: "10" };
+
+    const { InstanceDiscoveryService: Service } = await import(
+      "../../src/discovery/instance-discovery.js"
+    );
+
+    const huge = "x".repeat(500);
+    server.use(
+      http.get(
+        "https://toobig.social/api/v1/instance",
+        () =>
+          new HttpResponse(
+            new ReadableStream({
+              start(c) {
+                c.enqueue(
+                  new TextEncoder().encode(JSON.stringify({ version: "4.2.0", description: huge })),
+                );
+                c.close();
+              },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+      ),
+    );
+
+    const svc = new Service();
+    const result = await svc.getInstanceStats("toobig.social");
+
+    expect(result.online).toBe(false);
+    // No data fields should be populated on failure
+    expect((result as { users?: unknown }).users).toBeUndefined();
+    expect((result as { posts?: unknown }).posts).toBeUndefined();
   });
 });

@@ -8,13 +8,15 @@
     "verbatimModuleSyntax": true,
     "noEmit": false,
     "declaration": true,
-    "declarationMap": true,
+    "declarationMap": false,
     "sourceMap": true,
 
     // Strict type-checking options
     "strict": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "forceConsistentCasingInFileNames": true,
 
     "skipLibCheck": true,

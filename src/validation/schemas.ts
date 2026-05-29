@@ -24,6 +24,14 @@ export const DomainSchema = z
       !domain.endsWith(".") &&
       domain.includes("."), // Must contain at least one dot (no localhost/single-label domains)
     "Invalid domain format",
+  )
+  .refine(
+    (domain) => !/^\d{1,3}(\.\d{1,3}){3}$/.test(domain),
+    "IP addresses are not allowed as domain names (got IPv4 literal)",
+  )
+  .refine(
+    (domain) => !/[:[\]]/.test(domain),
+    "IP addresses are not allowed as domain names (got IPv6 literal)",
   );
 
 /**

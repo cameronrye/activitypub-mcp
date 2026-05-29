@@ -2,17 +2,25 @@
  * Unit tests for the HttpTransportServer class.
  */
 
-import { afterEach, describe, expect, it } from "vitest";
-import { HttpTransportServer } from "../../src/server/http-transport.js";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { HttpTransportServer } from "../../src/transport/http.js";
+
+const TEST_SECRET = "x".repeat(32);
 
 describe("HttpTransportServer", () => {
   let server: HttpTransportServer | null = null;
+
+  beforeAll(() => {
+    process.env.MCP_HTTP_SECRET = TEST_SECRET;
+  });
 
   afterEach(async () => {
     if (server) {
       await server.stop();
       server = null;
     }
+    // Restore the secret after each test in case auth describe cleared it
+    process.env.MCP_HTTP_SECRET = TEST_SECRET;
   });
 
   describe("constructor", () => {
@@ -88,7 +96,9 @@ describe("HttpTransportServer", () => {
       await server.start();
 
       const address = server.getAddress();
-      const response = await fetch(`http://${address?.host}:${address?.port}/metrics`);
+      const response = await fetch(`http://${address?.host}:${address?.port}/metrics`, {
+        headers: { Authorization: `Bearer ${TEST_SECRET}` },
+      });
 
       expect(response.status).toBe(200);
       const data = await response.json();
@@ -204,7 +214,9 @@ describe("HttpTransportServer", () => {
       expect(healthResponse.status).toBe(200);
 
       // Metrics endpoint with trailing slash
-      const metricsResponse = await fetch(`http://${address?.host}:${address?.port}/metrics/`);
+      const metricsResponse = await fetch(`http://${address?.host}:${address?.port}/metrics/`, {
+        headers: { Authorization: `Bearer ${TEST_SECRET}` },
+      });
       expect(metricsResponse.status).toBe(200);
     });
 
@@ -260,12 +272,56 @@ describe("HttpTransportServer", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${TEST_SECRET}`,
         },
         body: JSON.stringify({}),
       });
 
       // Should not be 404 - it reaches the MCP handler
       expect(response.status).not.toBe(404);
+    });
+  });
+
+  describe("HttpTransportServer auth (H1)", () => {
+    beforeEach(() => {
+      delete process.env.MCP_HTTP_SECRET;
+    });
+    afterEach(async () => {
+      delete process.env.MCP_HTTP_SECRET;
+    });
+
+    it("refuses to start without MCP_HTTP_SECRET", async () => {
+      const t = new HttpTransportServer({ port: 0 });
+      await expect(t.start()).rejects.toThrow(/MCP_HTTP_SECRET/);
+    });
+
+    it("starts when MCP_HTTP_SECRET is set", async () => {
+      process.env.MCP_HTTP_SECRET = "x".repeat(32);
+      const t = new HttpTransportServer({ port: 0 });
+      await t.start();
+      await t.stop();
+    });
+
+    it("/mcp returns 401 without Authorization", async () => {
+      process.env.MCP_HTTP_SECRET = "x".repeat(32);
+      const t = new HttpTransportServer({ port: 0 });
+      await t.start();
+      const address = t.getAddress();
+      if (!address) throw new Error("no address");
+      const res = await fetch(`http://127.0.0.1:${address.port}/mcp`, { method: "POST" });
+      expect(res.status).toBe(401);
+      await t.stop();
+    });
+
+    it("/health is reachable without auth", async () => {
+      process.env.MCP_HTTP_SECRET = "x".repeat(32);
+      const t = new HttpTransportServer({ port: 0 });
+      await t.start();
+      const address = t.getAddress();
+      if (!address) throw new Error("no address");
+      const res = await fetch(`http://127.0.0.1:${address.port}/health`);
+      expect([200, 503]).toContain(res.status); // health-check may legitimately fail
+      await t.stop();
     });
   });
 
@@ -320,5 +376,33 @@ describe("HttpTransportServer", () => {
       });
       expect(response3.headers.get("Access-Control-Allow-Origin")).toBe("http://c.com");
     });
+  });
+});
+
+describe("HEALTH_CHECK_EXTERNAL_PROBE behavioral (M7)", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+    vi.restoreAllMocks();
+  });
+
+  it("skips the external probe when HEALTH_CHECK_EXTERNAL_PROBE=false", async () => {
+    process.env.HEALTH_CHECK_EXTERNAL_PROBE = "false";
+    vi.resetModules();
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const { healthChecker } = await import("../../src/telemetry/health-check.js");
+    await healthChecker.performHealthCheck(true);
+    // The connectivity probe to HEALTH_CHECK_URL must NOT have fired.
+    const probeCalls = fetchSpy.mock.calls.filter(([url]) =>
+      String(url).includes("mastodon.social"),
+    );
+    expect(probeCalls).toHaveLength(0);
+    fetchSpy.mockRestore();
   });
 });

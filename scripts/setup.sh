@@ -71,7 +71,7 @@ check_node_version() {
     log_step "Checking Node.js version..."
 
     if ! command -v node &> /dev/null; then
-        log_error "Node.js is not installed. Please install Node.js 18+ first."
+        log_error "Node.js is not installed. Please install Node.js 20+ first."
         echo "Visit: https://nodejs.org/"
         exit 1
     fi
@@ -81,8 +81,8 @@ check_node_version() {
     local major_version
     major_version=$(echo "$node_version" | cut -d. -f1)
 
-    if [[ $major_version -lt 18 ]]; then
-        log_error "Node.js version $node_version is not supported. Please install Node.js 18+ first."
+    if [[ $major_version -lt 20 ]]; then
+        log_error "Node.js version $node_version is not supported. Please install Node.js 20+ first."
         exit 1
     fi
 

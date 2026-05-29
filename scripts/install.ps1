@@ -82,7 +82,8 @@ function Get-ConfigPath {
             return Join-Path $userProfile "AppData\Roaming\Claude\claude_desktop_config.json"
         }
         "cursor" {
-            return Join-Path $userProfile "AppData\Roaming\Cursor\User\globalStorage\mcp_config.json"
+            # Current Cursor reads ~/.cursor/mcp.json on every platform.
+            return Join-Path $userProfile ".cursor\mcp.json"
         }
         default {
             throw "Unsupported client: $ClientName"
@@ -103,7 +104,7 @@ function Test-Prerequisites {
             throw "Node.js not found"
         }
     } catch {
-        Write-Error "Node.js is not installed. Please install Node.js 18+ first."
+        Write-Error "Node.js is not installed. Please install Node.js 20+ first."
         Write-Host "Visit: https://nodejs.org/"
         exit 1
     }
@@ -151,7 +152,6 @@ function Update-Config {
         command = "npx"
         args = @("-y", $PACKAGE_NAME)
         env = @{
-            ACTIVITYPUB_BASE_URL = "http://localhost:8000"
             LOG_LEVEL = "info"
         }
     }

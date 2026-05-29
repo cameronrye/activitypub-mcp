@@ -20,11 +20,16 @@ const packageJsonPath = join(rootDir, "package.json");
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
 const packageVersion = packageJson.version;
 
+// Read package-lock.json (both top-level "version" and the root "" packages entry)
+const lockPath = join(rootDir, "package-lock.json");
+const lockJson = JSON.parse(readFileSync(lockPath, "utf-8"));
+const lockVersion = lockJson.version;
+const lockRootPkgVersion = lockJson.packages?.[""]?.version;
+
 // Read config.ts to find MCP_SERVER_VERSION default
 const configPath = join(rootDir, "src", "config.ts");
 const configContent = readFileSync(configPath, "utf-8");
 
-// Extract the default version from: SERVER_VERSION = process.env.MCP_SERVER_VERSION || "1.1.0"
 const versionMatch = configContent.match(
   /SERVER_VERSION\s*=\s*process\.env\.MCP_SERVER_VERSION\s*\|\|\s*["']([^"']+)["']/,
 );
@@ -36,22 +41,40 @@ if (!versionMatch) {
 
 const codeVersion = versionMatch[1];
 
-// Compare versions
 console.log("📦 Version Consistency Check");
 console.log("─────────────────────────────");
-console.log(`package.json version:        ${packageVersion}`);
-console.log(`MCP_SERVER_VERSION default:  ${codeVersion}`);
+console.log(`package.json version:           ${packageVersion}`);
+console.log(`package-lock.json version:      ${lockVersion}`);
+console.log(`package-lock.json root pkg:     ${lockRootPkgVersion}`);
+console.log(`MCP_SERVER_VERSION default:     ${codeVersion}`);
 console.log("─────────────────────────────");
 
-if (packageVersion === codeVersion) {
+const mismatches = [];
+if (packageVersion !== codeVersion) {
+  mismatches.push(`package.json (${packageVersion}) vs src/config.ts (${codeVersion})`);
+}
+if (packageVersion !== lockVersion) {
+  mismatches.push(
+    `package.json (${packageVersion}) vs package-lock.json top-level (${lockVersion})`,
+  );
+}
+if (packageVersion !== lockRootPkgVersion) {
+  mismatches.push(
+    `package.json (${packageVersion}) vs package-lock.json packages[""] (${lockRootPkgVersion})`,
+  );
+}
+
+if (mismatches.length === 0) {
   console.log("✅ Versions match!");
   process.exit(0);
-} else {
-  console.error("❌ Version mismatch detected!");
-  console.error("");
-  console.error("Please update one of the following:");
-  console.error(`  1. package.json version to "${codeVersion}"`);
-  console.error(`  2. SERVER_VERSION default in src/config.ts to "${packageVersion}"`);
-  console.error("");
-  process.exit(1);
 }
+
+console.error("❌ Version mismatch detected!");
+console.error("");
+for (const m of mismatches) {
+  console.error(`  • ${m}`);
+}
+console.error("");
+console.error("To fix package-lock.json drift, run: npm install --package-lock-only");
+console.error("To fix src/config.ts drift, update the SERVER_VERSION default.");
+process.exit(1);

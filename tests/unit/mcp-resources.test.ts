@@ -5,11 +5,12 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { McpError } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { capabilitiesRegistry } from "../../src/mcp/capabilities.js";
 import { type ResourceConfig, registerResources } from "../../src/mcp/resources.js";
-import { RateLimiter } from "../../src/server/rate-limiter.js";
+import { RateLimiter } from "../../src/resilience/rate-limiter.js";
 
 // Mock dependencies
-vi.mock("../../src/remote-client.js", () => ({
+vi.mock("../../src/activitypub/remote-client.js", () => ({
   remoteClient: {
     fetchRemoteActor: vi.fn(),
     fetchActorOutbox: vi.fn(),
@@ -33,7 +34,7 @@ vi.mock("@logtape/logtape", () => ({
   }),
 }));
 
-import { remoteClient } from "../../src/remote-client.js";
+import { remoteClient } from "../../src/activitypub/remote-client.js";
 
 describe("MCP Resources", () => {
   let mcpServer: McpServer;
@@ -58,6 +59,7 @@ describe("MCP Resources", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    capabilitiesRegistry.reset();
 
     // Create a mock MCP server that captures resource registrations
     registeredResources = new Map();
@@ -365,9 +367,8 @@ describe("MCP Resources", () => {
       });
 
       const resource = registeredResources.get("post-thread");
-      const encodedUrl = encodeURIComponent("https://mastodon.social/@user/123");
-      const uri = new URL(`activitypub://post-thread/${encodedUrl}`);
-      const result = await resource?.handler(uri, { postUrl: "https://mastodon.social/@user/123" });
+      const uri = new URL("activitypub://post-thread/mastodon.social/123");
+      const result = await resource?.handler(uri, { domain: "mastodon.social", statusId: "123" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
       const thread = JSON.parse(contents[0].text);
@@ -375,7 +376,7 @@ describe("MCP Resources", () => {
       expect(thread.replies).toHaveLength(1);
     });
 
-    it("should handle URL-encoded post URLs", async () => {
+    it("should construct the correct Mastodon URL from {domain}/{statusId}", async () => {
       (remoteClient.fetchPostThread as Mock).mockResolvedValue({
         post: { content: "Test" },
         ancestors: [],
@@ -384,23 +385,130 @@ describe("MCP Resources", () => {
       });
 
       const resource = registeredResources.get("post-thread");
-      const encodedUrl = encodeURIComponent("https://mastodon.social/@user/123");
-      const uri = new URL(`activitypub://post-thread/${encodedUrl}`);
-      await resource?.handler(uri, { postUrl: encodedUrl });
+      const uri = new URL("activitypub://post-thread/mastodon.social/123");
+      await resource?.handler(uri, { domain: "mastodon.social", statusId: "123" });
 
       expect(remoteClient.fetchPostThread).toHaveBeenCalledWith(
-        "https://mastodon.social/@user/123",
+        "https://mastodon.social/web/statuses/123",
         { depth: 2, maxReplies: 50 },
       );
     });
 
-    it("should reject invalid post URLs", async () => {
+    it("should reject missing domain or statusId", async () => {
       const resource = registeredResources.get("post-thread");
-      const uri = new URL("activitypub://post-thread/invalid");
+      const uri = new URL("activitypub://post-thread/mastodon.social/123");
 
-      await expect(resource?.handler(uri, { postUrl: "not-a-valid-url" })).rejects.toThrow(
-        "Invalid post URL",
+      await expect(resource?.handler(uri, { domain: "", statusId: "" })).rejects.toThrow(
+        "post-thread requires {domain} and {statusId}",
       );
+    });
+  });
+
+  describe("post-thread URI template (L10)", () => {
+    it("accepts the new {domain}/{statusId} form", async () => {
+      (remoteClient.fetchPostThread as Mock).mockResolvedValue({
+        post: { content: "Hello from mastodon" },
+        ancestors: [],
+        replies: [],
+        totalReplies: 0,
+      });
+
+      const resource = registeredResources.get("post-thread");
+      const uri = new URL("activitypub://post-thread/mastodon.social/123456");
+      const result = await resource?.handler(uri, {
+        domain: "mastodon.social",
+        statusId: "123456",
+      });
+
+      expect(result).toBeDefined();
+      const contents = (result as { contents: { text: string }[] }).contents;
+      const thread = JSON.parse(contents[0].text);
+      expect(thread.postUrl).toBe("https://mastodon.social/web/statuses/123456");
+    });
+
+    it("logs a deprecation warning and still works for the legacy {postUrl} form", async () => {
+      (remoteClient.fetchPostThread as Mock).mockResolvedValue({
+        post: { content: "Legacy post" },
+        ancestors: [],
+        replies: [],
+        totalReplies: 0,
+      });
+
+      const { getLogger } = await import("@logtape/logtape");
+      const mockLogger = getLogger("activitypub-mcp:resources");
+      const warnSpy = vi.spyOn(mockLogger, "warn");
+
+      const resource = registeredResources.get("post-thread");
+      const encodedPostUrl = encodeURIComponent("https://mastodon.social/@user/123456");
+      const uri = new URL(`activitypub://post-thread/${encodedPostUrl}`);
+      const result = await resource?.handler(uri, { domain: encodedPostUrl });
+
+      expect(result).toBeDefined();
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringMatching(/deprecat/i), expect.anything());
+
+      warnSpy.mockRestore();
+    });
+  });
+
+  describe("server-info dynamic capabilities (M6)", () => {
+    it("lists every prompt the server actually registered", async () => {
+      // The registry is reset in beforeEach and registerResources populates resources.
+      // Populate the prompts that the real server registers via registerPrompts().
+      // These match the names in src/mcp/prompts.ts exactly.
+      const actualPrompts = [
+        "explore-fediverse",
+        "discover-content",
+        "compare-instances",
+        "compare-accounts",
+        "analyze-user-activity",
+        "find-experts",
+        "summarize-trending",
+        "content-strategy",
+        "community-health",
+        "migration-helper",
+        "thread-composer",
+      ];
+      for (const name of actualPrompts) {
+        capabilitiesRegistry.addPrompt(name);
+      }
+
+      const resource = registeredResources.get("server-info");
+      expect(resource).toBeDefined();
+
+      const uri = new URL("activitypub://server-info");
+      const result = await resource?.handler(uri, {});
+      const contents = (result as { contents: { text: string }[] }).contents;
+      const data = JSON.parse(contents[0].text);
+
+      const advertisedPrompts: string[] = data.capabilities.prompts;
+
+      // Every registered prompt must appear in the server-info response.
+      for (const name of actualPrompts) {
+        expect(advertisedPrompts).toContain(name);
+      }
+
+      // No phantom prompts should appear that weren't registered.
+      for (const name of advertisedPrompts) {
+        expect(actualPrompts).toContain(name);
+      }
+    });
+
+    it("lists resources dynamically from the registry", async () => {
+      // registerResources is called in beforeEach and populates the registry.
+      const resource = registeredResources.get("server-info");
+      expect(resource).toBeDefined();
+
+      const uri = new URL("activitypub://server-info");
+      const result = await resource?.handler(uri, {});
+      const contents = (result as { contents: { text: string }[] }).contents;
+      const data = JSON.parse(contents[0].text);
+
+      const advertisedResources: string[] = data.capabilities.resources;
+      expect(advertisedResources).toContain("server-info");
+      expect(advertisedResources).toContain("remote-actor");
+      expect(advertisedResources).toContain("post-thread");
+      // Should be a flat array, not an object with categories.
+      expect(Array.isArray(advertisedResources)).toBe(true);
     });
   });
 

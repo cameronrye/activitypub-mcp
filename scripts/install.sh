@@ -139,17 +139,14 @@ get_config_path() {
             esac
             ;;
         cursor)
+            # Current Cursor reads ~/.cursor/mcp.json on every platform.
             case "$platform" in
-                darwin)
-                    echo "$HOME/Library/Application Support/Cursor/User/globalStorage/mcp_config.json"
-                    ;;
-                linux)
-                    echo "$HOME/.config/Cursor/User/globalStorage/mcp_config.json"
+                darwin|linux)
+                    echo "$HOME/.cursor/mcp.json"
                     ;;
                 win32)
-                    # Use USERPROFILE if available, fallback to HOME
                     local home_dir="${USERPROFILE:-$HOME}"
-                    echo "$home_dir/AppData/Roaming/Cursor/User/globalStorage/mcp_config.json"
+                    echo "$home_dir/.cursor/mcp.json"
                     ;;
             esac
             ;;
@@ -165,7 +162,7 @@ check_prerequisites() {
     log_step "Checking prerequisites..."
     
     if ! command -v node &> /dev/null; then
-        log_error "Node.js is not installed. Please install Node.js 18+ first."
+        log_error "Node.js is not installed. Please install Node.js 20+ first."
         exit 1
     fi
     log_info "Node.js is installed: $(node --version)"
@@ -175,14 +172,9 @@ check_prerequisites() {
         exit 1
     fi
     log_info "npm is installed: $(npm --version)"
-    
-    # Check if jq is available for JSON manipulation
-    if ! command -v jq &> /dev/null; then
-        log_warn "jq is not installed. Installing via npm for JSON manipulation..."
-        if ! $DRY_RUN; then
-            npm install -g jq-cli-wrapper 2>/dev/null || true
-        fi
-    fi
+
+    # JSON manipulation is done by inline node -e (see update_config below);
+    # no jq binary is required.
 }
 
 # Create directory if it doesn't exist
@@ -215,7 +207,6 @@ update_config() {
   "command": "npx",
   "args": ["-y", "$PACKAGE_NAME"],
   "env": {
-    "ACTIVITYPUB_BASE_URL": "http://localhost:8000",
     "LOG_LEVEL": "info"
   }
 }

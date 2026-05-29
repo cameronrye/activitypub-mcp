@@ -107,9 +107,7 @@ https://instance.com/@username</code></pre>
                     <pre><code>curl https://instance.com/.well-known/webfinger?resource=acct:username@instance.com</code></pre>
                   </li>
                   <li><strong>Try alternative discovery methods</strong></li>
-                  <li><strong>Clear cache and retry:</strong>
-                    <pre><code>clear-cache actors</code></pre>
-                  </li>
+                  <li><strong>Restart the server</strong> to flush the in-memory actor cache (cache TTL also expires naturally; configure via <code>ACTOR_CACHE_TTL</code>).</li>
                 </ol>
               </div>
             </div>
@@ -230,12 +228,10 @@ https://instance.com/@username</code></pre>
                 
                 <h4>Solutions:</h4>
                 <ol>
-                  <li><strong>Clear cache:</strong>
-                    <pre><code>clear-cache all</code></pre>
-                  </li>
-                  <li><strong>Reduce request size (limit results)</strong></li>
+                  <li><strong>Restart the server</strong> to flush in-memory caches, or shorten <code>CACHE_TTL</code> / <code>ACTOR_CACHE_TTL</code> in your env.</li>
+                  <li><strong>Reduce request size</strong> (limit results, narrow timelines with <code>limit</code> / <code>maxId</code> / <code>sinceId</code>).</li>
                   <li><strong>Use more specific queries</strong></li>
-                  <li><strong>Monitor system resources</strong></li>
+                  <li><strong>Monitor system resources</strong> with the <code>performance-metrics</code> tool.</li>
                 </ol>
               </div>
             </div>
