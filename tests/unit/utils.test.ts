@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { getErrorMessage } from "../../src/utils/errors.js";
+import { getErrorMessage, UnsupportedOnPlatformError } from "../../src/utils/errors.js";
 import { stripHtmlTags } from "../../src/utils/html.js";
 import {
   isBlockedHostname,
@@ -242,5 +242,16 @@ describe("stripHtmlTags", () => {
   it("should handle tags with attributes", () => {
     expect(stripHtmlTags('<a href="https://example.com">Link</a>')).toBe("Link");
     expect(stripHtmlTags('<div class="container" id="main">Content</div>')).toBe("Content");
+  });
+});
+
+describe("UnsupportedOnPlatformError", () => {
+  it("formats a clear message with op and platform", () => {
+    const err = new UnsupportedOnPlatformError("vote-on-poll", "Misskey");
+    expect(err).toBeInstanceOf(Error);
+    expect(err.name).toBe("UnsupportedOnPlatformError");
+    expect(err.op).toBe("vote-on-poll");
+    expect(err.platform).toBe("Misskey");
+    expect(err.message).toBe("vote-on-poll is not supported on Misskey");
   });
 });
