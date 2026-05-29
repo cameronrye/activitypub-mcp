@@ -10,8 +10,10 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { remoteClient } from "../activitypub/remote-client.js";
+import { auditLogger } from "../audit/logger.js";
 import { dynamicInstanceDiscovery } from "../discovery/dynamic-instance-discovery.js";
 import { instanceDiscovery } from "../discovery/instance-discovery.js";
+import { formatInstanceSoftware, getInstanceSoftware } from "../discovery/nodeinfo.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
 import { healthChecker } from "../telemetry/health-check.js";
 import { performanceMonitor } from "../telemetry/performance-monitor.js";
@@ -61,6 +63,7 @@ export function registerTools(mcpServer: McpServer, rateLimiter: RateLimiter): v
 
   // Instance tools
   registerGetInstanceInfoTool(mcpServer, rateLimiter);
+  registerGetInstanceSoftwareTool(mcpServer, rateLimiter);
 
   // Utility tools
   registerConvertUrlTool(mcpServer, rateLimiter);
@@ -2263,6 +2266,73 @@ ${failedList ? `**Failed Fetches:**\n${failedList}` : ""}
               text: `Failed to batch fetch posts: ${formatErrorWithSuggestion(errorMessage)}`,
             },
           ],
+          isError: true,
+        };
+      }
+    },
+  );
+}
+
+/**
+ * get-instance-software tool — detect ActivityPub software running on an instance via NodeInfo.
+ */
+function registerGetInstanceSoftwareTool(mcpServer: McpServer, rateLimiter: RateLimiter): void {
+  mcpServer.registerTool(
+    "get-instance-software",
+    {
+      title: "Detect Instance Software",
+      description:
+        "Detect the ActivityPub software (e.g. Mastodon, Pleroma, Misskey, Akkoma) and version " +
+        "running on a Fediverse instance via NodeInfo. Returns a description; if detection fails " +
+        "(no NodeInfo, malformed response, blocked host), returns a one-line 'could not detect' " +
+        "message with the reason. Never throws on detection failure.",
+      inputSchema: {
+        domain: DomainSchema.describe(
+          "Fediverse instance domain (e.g., 'mastodon.social'). Do not include scheme or path.",
+        ),
+      },
+    },
+    async ({ domain }) => {
+      const start = Date.now();
+      const validDomain = validateDomain(domain);
+
+      const requestId = performanceMonitor.startRequest("get-instance-software", {
+        domain: validDomain,
+      });
+
+      try {
+        checkRateLimit(rateLimiter, validDomain);
+
+        logger.info("Detecting instance software", { domain: validDomain });
+
+        const info = await getInstanceSoftware(validDomain);
+        performanceMonitor.endRequest(requestId, true);
+
+        auditLogger.logToolInvocation(
+          "get-instance-software",
+          { domain: validDomain },
+          { success: info.detection === "success", duration: Date.now() - start },
+        );
+
+        return { content: [{ type: "text", text: formatInstanceSoftware(info) }] };
+      } catch (error) {
+        const errorMessage = getErrorMessage(error);
+        performanceMonitor.endRequest(requestId, false, errorMessage);
+
+        logger.error("Failed to detect instance software", {
+          domain: validDomain,
+          error: errorMessage,
+        });
+
+        auditLogger.logToolInvocation(
+          "get-instance-software",
+          { domain: validDomain },
+          { success: false, duration: Date.now() - start, error: errorMessage },
+        );
+
+        if (error instanceof McpError) throw error;
+        return {
+          content: [{ type: "text", text: `Failed to detect instance software: ${errorMessage}` }],
           isError: true,
         };
       }

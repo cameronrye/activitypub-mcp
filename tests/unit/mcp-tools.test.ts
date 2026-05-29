@@ -106,10 +106,21 @@ vi.mock("@logtape/logtape", () => ({
   }),
 }));
 
+vi.mock("../../src/discovery/nodeinfo.js", () => ({
+  getInstanceSoftware: vi.fn(),
+  formatInstanceSoftware: vi.fn((info) =>
+    info.detection === "success"
+      ? `\`${info.domain}\` runs ${info.software.name} ${info.software.version}.`
+      : `Could not detect software for \`${info.domain}\`: ${info.reason}.`,
+  ),
+}));
+
 // Import mocked modules
 import { remoteClient } from "../../src/activitypub/remote-client.js";
+import { auditLogger } from "../../src/audit/logger.js";
 import { dynamicInstanceDiscovery } from "../../src/discovery/dynamic-instance-discovery.js";
 import { instanceDiscovery } from "../../src/discovery/instance-discovery.js";
+import { getInstanceSoftware } from "../../src/discovery/nodeinfo.js";
 import { healthChecker } from "../../src/telemetry/health-check.js";
 import { performanceMonitor } from "../../src/telemetry/performance-monitor.js";
 
@@ -163,6 +174,7 @@ describe("MCP Tools", () => {
         "get-local-timeline",
         "get-federated-timeline",
         "get-instance-info",
+        "get-instance-software",
         "convert-url",
         "batch-fetch-actors",
         "batch-fetch-posts",
@@ -954,6 +966,91 @@ describe("MCP Tools", () => {
       expect(text).toMatch(/x{400,}/);
       // Verify it's truncated to 500, not 200
       expect(text).toMatch(/x{450,}/);
+    });
+  });
+
+  describe("get-instance-software tool", () => {
+    it("returns a prose success message for a valid instance", async () => {
+      (getInstanceSoftware as Mock).mockResolvedValue({
+        domain: "tools-success.social",
+        detection: "success",
+        software: { name: "mastodon", version: "4.3.2" },
+        protocols: ["activitypub"],
+        openRegistrations: false,
+      });
+
+      const tool = registeredTools.get("get-instance-software");
+      expect(tool).toBeDefined();
+      const result = await tool?.handler({ domain: "tools-success.social" });
+      const text = (result as { content: { text: string }[] }).content[0].text;
+      expect(text).toContain("mastodon");
+      expect(text).toContain("4.3.2");
+    });
+
+    it("returns an unavailable prose message when detection fails", async () => {
+      (getInstanceSoftware as Mock).mockResolvedValue({
+        domain: "tools-fail.social",
+        detection: "unavailable",
+        software: null,
+        protocols: null,
+        openRegistrations: null,
+        reason: "HTTP 404 Not Found",
+      });
+
+      const tool = registeredTools.get("get-instance-software");
+      const result = await tool?.handler({ domain: "tools-fail.social" });
+      const text = (result as { content: { text: string }[] }).content[0].text;
+      expect(text).toMatch(/could not detect/i);
+      expect((result as { isError?: boolean }).isError).toBeUndefined();
+    });
+
+    it("throws InvalidParams for an invalid domain", async () => {
+      const tool = registeredTools.get("get-instance-software");
+      await expect(tool?.handler({ domain: "not a domain" })).rejects.toThrow();
+      expect(getInstanceSoftware).not.toHaveBeenCalled();
+    });
+
+    it("audit-logs success=true on a successful detection", async () => {
+      (getInstanceSoftware as Mock).mockResolvedValue({
+        domain: "audit-ok.social",
+        detection: "success",
+        software: { name: "mastodon", version: "4.3.2" },
+        protocols: ["activitypub"],
+        openRegistrations: false,
+      });
+      const auditSpy = vi.spyOn(auditLogger, "logToolInvocation").mockImplementation(() => {});
+
+      const tool = registeredTools.get("get-instance-software");
+      await tool?.handler({ domain: "audit-ok.social" });
+
+      expect(auditSpy).toHaveBeenCalledWith(
+        "get-instance-software",
+        { domain: "audit-ok.social" },
+        expect.objectContaining({ success: true }),
+      );
+      auditSpy.mockRestore();
+    });
+
+    it("audit-logs success=false when detection is unavailable", async () => {
+      (getInstanceSoftware as Mock).mockResolvedValue({
+        domain: "audit-bad.social",
+        detection: "unavailable",
+        software: null,
+        protocols: null,
+        openRegistrations: null,
+        reason: "HTTP 404 Not Found",
+      });
+      const auditSpy = vi.spyOn(auditLogger, "logToolInvocation").mockImplementation(() => {});
+
+      const tool = registeredTools.get("get-instance-software");
+      await tool?.handler({ domain: "audit-bad.social" });
+
+      expect(auditSpy).toHaveBeenCalledWith(
+        "get-instance-software",
+        { domain: "audit-bad.social" },
+        expect.objectContaining({ success: false }),
+      );
+      auditSpy.mockRestore();
     });
   });
 });

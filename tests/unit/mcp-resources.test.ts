@@ -34,7 +34,12 @@ vi.mock("@logtape/logtape", () => ({
   }),
 }));
 
+vi.mock("../../src/discovery/nodeinfo.js", () => ({
+  getInstanceSoftware: vi.fn(),
+}));
+
 import { remoteClient } from "../../src/activitypub/remote-client.js";
+import { getInstanceSoftware } from "../../src/discovery/nodeinfo.js";
 
 describe("MCP Resources", () => {
   let mcpServer: McpServer;
@@ -279,6 +284,56 @@ describe("MCP Resources", () => {
 
       await expect(resource?.handler(uri, { domain: "invalid" })).rejects.toThrow();
     });
+
+    it("includes software detection in the response on success", async () => {
+      (remoteClient.getInstanceInfo as Mock).mockResolvedValue({
+        domain: "enriched.social",
+        software: "mastodon",
+        version: "4.2.0",
+        description: "A social network",
+      });
+      (getInstanceSoftware as Mock).mockResolvedValue({
+        domain: "enriched.social",
+        detection: "success",
+        software: { name: "mastodon", version: "4.3.2" },
+        protocols: ["activitypub"],
+        openRegistrations: false,
+      });
+
+      const resource = registeredResources.get("instance-info");
+      const uri = new URL("activitypub://instance-info/enriched.social");
+      const result = await resource?.handler(uri, { domain: "enriched.social" });
+
+      const body = JSON.parse((result as { contents: { text: string }[] }).contents[0].text);
+      expect(body.software).toBeDefined();
+      expect(body.software.detection).toBe("success");
+      expect(body.software.software.name).toBe("mastodon");
+      expect(body.software.software.version).toBe("4.3.2");
+    });
+
+    it("returns successfully with software=unavailable when detection fails", async () => {
+      (remoteClient.getInstanceInfo as Mock).mockResolvedValue({
+        domain: "noinfo.social",
+        description: "A social network",
+      });
+      (getInstanceSoftware as Mock).mockResolvedValue({
+        domain: "noinfo.social",
+        detection: "unavailable",
+        software: null,
+        protocols: null,
+        openRegistrations: null,
+        reason: "HTTP 404 Not Found",
+      });
+
+      const resource = registeredResources.get("instance-info");
+      const uri = new URL("activitypub://instance-info/noinfo.social");
+      const result = await resource?.handler(uri, { domain: "noinfo.social" });
+
+      const body = JSON.parse((result as { contents: { text: string }[] }).contents[0].text);
+      expect(body.software).toBeDefined();
+      expect(body.software.detection).toBe("unavailable");
+      expect(body.software.reason).toMatch(/404/);
+    });
   });
 
   describe("trending resource", () => {
@@ -426,27 +481,14 @@ describe("MCP Resources", () => {
       expect(thread.postUrl).toBe("https://mastodon.social/web/statuses/123456");
     });
 
-    it("logs a deprecation warning and still works for the legacy {postUrl} form", async () => {
-      (remoteClient.fetchPostThread as Mock).mockResolvedValue({
-        post: { content: "Legacy post" },
-        ancestors: [],
-        replies: [],
-        totalReplies: 0,
-      });
-
-      const { getLogger } = await import("@logtape/logtape");
-      const mockLogger = getLogger("activitypub-mcp:resources");
-      const warnSpy = vi.spyOn(mockLogger, "warn");
-
+    it("rejects the legacy encoded-URL form with an InvalidParams error", async () => {
       const resource = registeredResources.get("post-thread");
       const encodedPostUrl = encodeURIComponent("https://mastodon.social/@user/123456");
       const uri = new URL(`activitypub://post-thread/${encodedPostUrl}`);
-      const result = await resource?.handler(uri, { domain: encodedPostUrl });
 
-      expect(result).toBeDefined();
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringMatching(/deprecat/i), expect.anything());
-
-      warnSpy.mockRestore();
+      await expect(
+        resource?.handler(uri, { domain: encodedPostUrl, statusId: "" }),
+      ).rejects.toThrow(/removed in 2\.1\.0/);
     });
   });
 

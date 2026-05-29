@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-05-28
+
+### Added
+
+- **`get-instance-software` tool.** Detects ActivityPub software (Mastodon, Pleroma, Misskey, Akkoma, Sharkey, GotoSocial, Friendica, etc.) and version via NodeInfo 2.0/2.1. Returns a structured `{detection, software, protocols, openRegistrations}` shape, rendered as prose in the MCP response. Failure modes return `detection: "unavailable"` with a one-line reason — the tool never throws on detection failure.
+- **`activitypub://instance-info/{domain}` resource enrichment.** Resource responses now include a structured `software:` block from the same NodeInfo detection, fetched in parallel with the existing instance-info payload. Resource fetches succeed even when software detection returns `unavailable`.
+- **`MCP_INSTANCE_SOFTWARE_TTL_MS` env var.** Tunes the positive-cache TTL for NodeInfo detection results. Default: `86_400_000` (24h). Negative-cache TTL (for detection failures) is hardcoded at 1h.
+- **Dependabot config.** Weekly npm and GitHub Actions update PRs, with minor+patch updates grouped to reduce noise; major bumps surface as individual PRs for explicit review.
+
+### Breaking changes
+
+- **`activitypub://post-thread/{postUrl}` URI form removed.** Deprecated in v2.0.0 with a warning; removed in 2.1.0. Use the canonical `activitypub://post-thread/{domain}/{statusId}` form. Callers using the legacy form receive an `InvalidParams` error with a migration message.
+- **`activitypub://instance-info/{domain}` `software` field is now an object.** Previously a plain string (e.g. `"mastodon"`) sourced from the upstream instance metadata. v2.1 replaces it with the structured `{detection, software, protocols, openRegistrations}` block from NodeInfo detection. The old string is no longer present in the response. Consumers reading `body.software` as a string should switch to `body.software.software?.name`.
+
+### Internal
+
+- Windows smoke-test bin-shim resolution.
+- Windows CRLF lint failure + CodeQL URL-sanitization alert.
+- Replaced hardcoded absolute path in `upload-media` test with relative resolution.
+- New `src/discovery/nodeinfo.ts` module: NodeInfo Zod schemas, `getInstanceSoftware` with positive + negative LRU caches, SSRF/blocklist guards, same-host/subdomain check on the linked NodeInfo URL, single-flight dedup for concurrent lookups.
+- Live-Fediverse integration test against `mastodon.social` for NodeInfo detection.
+
 ## [2.0.0] - 2026-05-27
 
 > **Major release.** v2 is a security, correctness, and ergonomics overhaul of the v1 server. See `MIGRATION-v2.md` for the full upgrade guide.

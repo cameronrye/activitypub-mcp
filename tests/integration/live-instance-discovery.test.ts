@@ -13,6 +13,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DynamicInstanceDiscoveryService } from "../../src/discovery/dynamic-instance-discovery.js";
+import { clearNodeInfoCache, getInstanceSoftware } from "../../src/discovery/nodeinfo.js";
 
 describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)(
   "DynamicInstanceDiscoveryService - Live API Tests",
@@ -215,6 +216,20 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)(
           expect(instance.domain.length).toBeGreaterThan(0);
         }
       });
+    });
+
+    describe("live NodeInfo detection", () => {
+      beforeEach(() => {
+        clearNodeInfoCache();
+      });
+
+      it("detects mastodon.social as Mastodon", async () => {
+        const info = await getInstanceSoftware("mastodon.social");
+        expect(info.detection).toBe("success");
+        expect(info.software?.name.toLowerCase()).toBe("mastodon");
+        expect(info.software?.version).toMatch(/^\d+/);
+        expect(info.protocols).toContain("activitypub");
+      }, 15_000);
     });
   },
 );
