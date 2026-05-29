@@ -64,20 +64,48 @@ const cache = new LRUCache<string, InstanceSoftwareInfo>({
   ttl: POSITIVE_TTL_MS,
 });
 
+const NEGATIVE_TTL_MS = 60 * 60 * 1000; // 1h
+
+const negativeCache = new LRUCache<string, InstanceSoftwareInfo>({
+  maxSize: Math.min(CACHE_MAX_SIZE, 256),
+  ttl: NEGATIVE_TTL_MS,
+});
+
 export function clearNodeInfoCache(): void {
   cache.clear();
+  negativeCache.clear();
 }
 
 export async function getInstanceSoftware(domain: string): Promise<InstanceSoftwareInfo> {
   const normalizedDomain = domain.toLowerCase();
 
-  const cached = cache.get(normalizedDomain);
-  if (cached) {
-    logger.debug("NodeInfo cache hit", { domain: normalizedDomain });
-    return cached;
-  }
+  const positive = cache.get(normalizedDomain);
+  if (positive) return positive;
+  const negative = negativeCache.get(normalizedDomain);
+  if (negative) return negative;
 
-  const discoveryUrl = `https://${normalizedDomain}/.well-known/nodeinfo`;
+  try {
+    const info = await performDetection(normalizedDomain);
+    cache.set(normalizedDomain, info);
+    return info;
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    const info: InstanceSoftwareInfo = {
+      domain: normalizedDomain,
+      detection: "unavailable",
+      software: null,
+      protocols: null,
+      openRegistrations: null,
+      reason,
+    };
+    logger.info("NodeInfo detection unavailable", { domain: normalizedDomain, reason });
+    negativeCache.set(normalizedDomain, info);
+    return info;
+  }
+}
+
+async function performDetection(domain: string): Promise<InstanceSoftwareInfo> {
+  const discoveryUrl = `https://${domain}/.well-known/nodeinfo`;
   const discoveryDoc = await fetchJson(discoveryUrl);
   const discovery = NodeInfoDiscoverySchema.parse(discoveryDoc);
 
@@ -89,19 +117,13 @@ export async function getInstanceSoftware(domain: string): Promise<InstanceSoftw
   const body = await fetchJson(link.href);
   const nodeInfo = NodeInfoSchema.parse(body);
 
-  const info: InstanceSoftwareInfo = {
-    domain: normalizedDomain,
+  return {
+    domain,
     detection: "success",
-    software: {
-      name: nodeInfo.software.name,
-      version: nodeInfo.software.version,
-    },
+    software: { name: nodeInfo.software.name, version: nodeInfo.software.version },
     protocols: nodeInfo.protocols,
     openRegistrations: nodeInfo.openRegistrations ?? null,
   };
-
-  cache.set(normalizedDomain, info);
-  return info;
 }
 
 function pickHighestNodeInfo2Link(

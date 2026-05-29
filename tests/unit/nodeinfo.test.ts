@@ -199,3 +199,92 @@ describe("getInstanceSoftware — happy path + cache", () => {
     expect(fetchCount).toBe(2); // discovery + nodeinfo fetched ONCE
   });
 });
+
+describe("getInstanceSoftware — failure modes (never throws)", () => {
+  beforeEach(() => {
+    clearNodeInfoCache();
+  });
+
+  it("returns unavailable when discovery returns 404", async () => {
+    server.use(
+      http.get(
+        "https://missing.social/.well-known/nodeinfo",
+        () => new HttpResponse(null, { status: 404 }),
+      ),
+    );
+
+    const info = await getInstanceSoftware("missing.social");
+    expect(info.detection).toBe("unavailable");
+    expect(info.software).toBeNull();
+    expect(info.reason).toMatch(/404/);
+  });
+
+  it("returns unavailable when discovery returns malformed JSON", async () => {
+    server.use(
+      http.get(
+        "https://malformed.social/.well-known/nodeinfo",
+        () =>
+          new HttpResponse("not json", { status: 200, headers: { "content-type": "text/plain" } }),
+      ),
+    );
+
+    const info = await getInstanceSoftware("malformed.social");
+    expect(info.detection).toBe("unavailable");
+    expect(info.reason).toBeDefined();
+  });
+
+  it("returns unavailable when NodeInfo body fails schema", async () => {
+    server.use(
+      http.get("https://badschema.social/.well-known/nodeinfo", () =>
+        HttpResponse.json({
+          links: [
+            {
+              rel: "http://nodeinfo.diaspora.software/ns/schema/2.0",
+              href: "https://badschema.social/nodeinfo/2.0",
+            },
+          ],
+        }),
+      ),
+      http.get(
+        "https://badschema.social/nodeinfo/2.0",
+        () => HttpResponse.json({ software: { name: "mastodon" } }), // missing version, protocols
+      ),
+    );
+
+    const info = await getInstanceSoftware("badschema.social");
+    expect(info.detection).toBe("unavailable");
+  });
+
+  it("returns unavailable when discovery has no 2.0/2.1 link", async () => {
+    server.use(
+      http.get("https://onlyv1.social/.well-known/nodeinfo", () =>
+        HttpResponse.json({
+          links: [
+            {
+              rel: "http://nodeinfo.diaspora.software/ns/schema/1.0",
+              href: "https://onlyv1.social/nodeinfo/1.0",
+            },
+          ],
+        }),
+      ),
+    );
+
+    const info = await getInstanceSoftware("onlyv1.social");
+    expect(info.detection).toBe("unavailable");
+    expect(info.reason).toMatch(/no NodeInfo 2/i);
+  });
+
+  it("caches unavailable results — repeated failures do not refetch", async () => {
+    let fetchCount = 0;
+    server.use(
+      http.get("https://flaky.social/.well-known/nodeinfo", () => {
+        fetchCount++;
+        return new HttpResponse(null, { status: 500 });
+      }),
+    );
+
+    await getInstanceSoftware("flaky.social");
+    await getInstanceSoftware("flaky.social");
+    expect(fetchCount).toBe(1);
+  });
+});
