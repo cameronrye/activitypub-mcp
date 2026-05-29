@@ -64,7 +64,14 @@ export type InstanceSoftwareInfo = {
 
 const logger = getLogger("activitypub-mcp:nodeinfo");
 
-const NODEINFO_2_REL_PREFIX = "http://nodeinfo.diaspora.software/ns/schema/2.";
+// Only NodeInfo 2.0 and 2.1 are in scope. Match these rels exactly — a prefix
+// match would also accept bogus rels like ".../2.1-evil" or ".../2.x", and a
+// lexical sort could rank such a rel above the genuine link. 2.1 is preferred
+// over 2.0 when both are advertised.
+const SUPPORTED_NODEINFO_RELS = [
+  "http://nodeinfo.diaspora.software/ns/schema/2.1",
+  "http://nodeinfo.diaspora.software/ns/schema/2.0",
+] as const;
 
 const cache = new LRUCache<string, InstanceSoftwareInfo>({
   maxSize: Math.min(CACHE_MAX_SIZE, 256),
@@ -170,10 +177,11 @@ function isSameOrSubdomain(input: string, candidate: string): boolean {
 function pickHighestNodeInfo2Link(
   doc: NodeInfoDiscovery,
 ): { rel: string; href: string } | undefined {
-  const matches = doc.links
-    .filter((l) => l.rel.startsWith(NODEINFO_2_REL_PREFIX))
-    .sort((a, b) => b.rel.localeCompare(a.rel));
-  return matches[0];
+  for (const rel of SUPPORTED_NODEINFO_RELS) {
+    const match = doc.links.find((l) => l.rel === rel);
+    if (match) return match;
+  }
+  return undefined;
 }
 
 function titleCase(name: string): string {

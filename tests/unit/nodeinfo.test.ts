@@ -172,6 +172,46 @@ describe("getInstanceSoftware — happy path + cache", () => {
     expect(info.software).toEqual({ name: "pleroma", version: "2.7.0" });
   });
 
+  it("ignores a bogus rel that sorts above the genuine 2.1 link", async () => {
+    // A misbehaving instance advertises a real 2.1 link plus a same-host rel
+    // ("2.1-evil") that lexically sorts higher. Only the exact 2.0/2.1 schema
+    // rels are valid, so the genuine link must win regardless of sort order.
+    server.use(
+      http.get("https://relbug.social/.well-known/nodeinfo", () =>
+        HttpResponse.json({
+          links: [
+            {
+              rel: "http://nodeinfo.diaspora.software/ns/schema/2.1",
+              href: "https://relbug.social/nodeinfo/2.1",
+            },
+            {
+              rel: "http://nodeinfo.diaspora.software/ns/schema/2.1-evil",
+              href: "https://relbug.social/nodeinfo/evil",
+            },
+          ],
+        }),
+      ),
+      http.get("https://relbug.social/nodeinfo/2.1", () =>
+        HttpResponse.json({
+          version: "2.1",
+          software: { name: "mastodon", version: "4.3.2" },
+          protocols: ["activitypub"],
+        }),
+      ),
+      http.get("https://relbug.social/nodeinfo/evil", () =>
+        HttpResponse.json({
+          version: "2.1",
+          software: { name: "pleroma", version: "9.9.9" },
+          protocols: ["activitypub"],
+        }),
+      ),
+    );
+
+    const info = await getInstanceSoftware("relbug.social");
+    expect(info.detection).toBe("success");
+    expect(info.software).toEqual({ name: "mastodon", version: "4.3.2" });
+  });
+
   it("caches positive results — second call does not hit the network", async () => {
     let fetchCount = 0;
     server.use(
