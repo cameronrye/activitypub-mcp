@@ -10,6 +10,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { remoteClient } from "../activitypub/remote-client.js";
+import { auditLogger } from "../audit/logger.js";
 import { dynamicInstanceDiscovery } from "../discovery/dynamic-instance-discovery.js";
 import { instanceDiscovery } from "../discovery/instance-discovery.js";
 import { formatInstanceSoftware, getInstanceSoftware } from "../discovery/nodeinfo.js";
@@ -2292,6 +2293,7 @@ function registerGetInstanceSoftwareTool(mcpServer: McpServer, rateLimiter: Rate
       },
     },
     async ({ domain }) => {
+      const start = Date.now();
       const validDomain = validateDomain(domain);
 
       const requestId = performanceMonitor.startRequest("get-instance-software", {
@@ -2306,6 +2308,12 @@ function registerGetInstanceSoftwareTool(mcpServer: McpServer, rateLimiter: Rate
         const info = await getInstanceSoftware(validDomain);
         performanceMonitor.endRequest(requestId, true);
 
+        auditLogger.logToolInvocation(
+          "get-instance-software",
+          { domain: validDomain },
+          { success: info.detection === "success", duration: Date.now() - start },
+        );
+
         return { content: [{ type: "text", text: formatInstanceSoftware(info) }] };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
@@ -2315,6 +2323,12 @@ function registerGetInstanceSoftwareTool(mcpServer: McpServer, rateLimiter: Rate
           domain: validDomain,
           error: errorMessage,
         });
+
+        auditLogger.logToolInvocation(
+          "get-instance-software",
+          { domain: validDomain },
+          { success: false, duration: Date.now() - start, error: errorMessage },
+        );
 
         if (error instanceof McpError) throw error;
         return {
