@@ -5,6 +5,9 @@
  * Values can be overridden via environment variables.
  */
 
+import { homedir } from "node:os";
+import { join } from "node:path";
+
 // =============================================================================
 // Helper Functions
 // =============================================================================
@@ -236,6 +239,21 @@ export const AUDIT_LOG_ENABLED = parseBoolEnv(process.env.AUDIT_LOG_ENABLED, tru
 
 /** Maximum audit log entries to keep in memory */
 export const AUDIT_LOG_MAX_ENTRIES = parseIntEnv(process.env.AUDIT_LOG_MAX_ENTRIES, 10000);
+
+// =============================================================================
+// OAuth / MiAuth Onboarding
+// =============================================================================
+
+/** Path to the persisted acquired-accounts store (written with mode 0600). */
+export const TOKEN_STORE_PATH =
+  process.env.MCP_TOKEN_STORE || join(homedir(), ".config", "activitypub-mcp", "accounts.json");
+
+/** App name used for Mastodon app registration / MiAuth. */
+export const OAUTH_APP_NAME = process.env.MCP_OAUTH_APP_NAME || "activitypub-mcp";
+
+/** Optional website advertised during Mastodon app registration. */
+export const OAUTH_APP_WEBSITE =
+  process.env.MCP_OAUTH_APP_WEBSITE || "https://github.com/cameronrye/activitypub-mcp";
 
 // =============================================================================
 // Instance Blocklist Configuration
