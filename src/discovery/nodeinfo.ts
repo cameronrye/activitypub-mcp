@@ -1,8 +1,10 @@
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import { CACHE_MAX_SIZE, MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
+import { instanceBlocklist } from "../policy/instance-blocklist.js";
 import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
+import { validateExternalUrl } from "../validation/url.js";
 
 /**
  * NodeInfo discovery document (RFC-style `/.well-known/nodeinfo` index).
@@ -106,7 +108,11 @@ export async function getInstanceSoftware(domain: string): Promise<InstanceSoftw
 }
 
 async function performDetection(domain: string): Promise<InstanceSoftwareInfo> {
+  // Policy + SSRF gate on input domain.
+  instanceBlocklist.validateNotBlocked(domain);
+
   const discoveryUrl = `https://${domain}/.well-known/nodeinfo`;
+  await validateExternalUrl(discoveryUrl);
   const discoveryDoc = await fetchJson(discoveryUrl);
   const discovery = NodeInfoDiscoverySchema.parse(discoveryDoc);
 
@@ -114,6 +120,11 @@ async function performDetection(domain: string): Promise<InstanceSoftwareInfo> {
   if (!link) {
     throw new Error("no NodeInfo 2.0/2.1 link in discovery document");
   }
+
+  // SSRF guard + blocklist on the linked NodeInfo URL.
+  await validateExternalUrl(link.href);
+  const linkedHost = new URL(link.href).hostname.toLowerCase();
+  instanceBlocklist.validateNotBlocked(linkedHost);
 
   const body = await fetchJson(link.href);
   const nodeInfo = NodeInfoSchema.parse(body);
@@ -145,14 +156,14 @@ async function fetchJson(url: string): Promise<unknown> {
       url,
       {
         method: "GET",
-        headers: {
-          Accept: "application/json",
-          "User-Agent": USER_AGENT,
-        },
+        headers: { Accept: "application/json", "User-Agent": USER_AGENT },
         signal: controller.signal,
       },
-      // No-op validate for now; replaced with SSRF guard in Task 4.
-      () => Promise.resolve(),
+      async (target) => {
+        await validateExternalUrl(target);
+        const targetHost = new URL(target).hostname;
+        instanceBlocklist.validateNotBlocked(targetHost);
+      },
     );
     if (!response.ok) {
       throw new Error(`HTTP ${response.status} ${response.statusText}`);

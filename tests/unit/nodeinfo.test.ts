@@ -10,6 +10,7 @@ import {
   NodeInfoDiscoverySchema,
   NodeInfoSchema,
 } from "../../src/discovery/nodeinfo.js";
+import { instanceBlocklist } from "../../src/policy/instance-blocklist.js";
 import { server } from "../mocks/server.js";
 
 describe("NodeInfo schemas", () => {
@@ -288,5 +289,65 @@ describe("getInstanceSoftware — failure modes (never throws)", () => {
     expect(fetchCount).toBe(1);
     expect(second.detection).toBe("unavailable");
     expect(second.reason).toBe(first.reason);
+  });
+});
+
+describe("getInstanceSoftware — SSRF + blocklist", () => {
+  beforeEach(() => {
+    clearNodeInfoCache();
+    instanceBlocklist.clear();
+  });
+
+  it("returns unavailable when NodeInfo link points to a private IP", async () => {
+    server.use(
+      http.get("https://ssrf.social/.well-known/nodeinfo", () =>
+        HttpResponse.json({
+          links: [
+            {
+              rel: "http://nodeinfo.diaspora.software/ns/schema/2.0",
+              href: "https://127.0.0.1/nodeinfo/2.0",
+            },
+          ],
+        }),
+      ),
+    );
+
+    const info = await getInstanceSoftware("ssrf.social");
+    expect(info.detection).toBe("unavailable");
+    expect(info.reason).toMatch(/not allowed|private/i);
+  });
+
+  it("returns unavailable when input domain is blocklisted", async () => {
+    instanceBlocklist.addBlock({
+      domain: "blocked.social",
+      reason: "policy",
+      description: "test block",
+      addedAt: new Date().toISOString(),
+    });
+
+    const info = await getInstanceSoftware("blocked.social");
+    expect(info.detection).toBe("unavailable");
+    expect(info.reason).toMatch(/block/i);
+  });
+
+  it("returns unavailable when discovery URL uses non-https scheme", async () => {
+    // Discovery URL is constructed as https:// so this is enforced by validateExternalUrl
+    // when the user supplies a domain that resolves weirdly. Sanity-check the validator
+    // path runs by checking a domain whose resolution would be blocked.
+    server.use(
+      http.get("https://localhost.social/.well-known/nodeinfo", () =>
+        HttpResponse.json({
+          links: [
+            {
+              rel: "http://nodeinfo.diaspora.software/ns/schema/2.0",
+              href: "http://example.com/nodeinfo/2.0",
+            },
+          ],
+        }),
+      ),
+    );
+
+    const info = await getInstanceSoftware("localhost.social");
+    expect(info.detection).toBe("unavailable");
   });
 });
