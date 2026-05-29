@@ -244,15 +244,15 @@ activitypub://post-thread/mastodon.social/123456
 ```
 
 The new form constructs `https://{domain}/web/statuses/{statusId}` internally,
-which is the Mastodon-compatible ActivityPub URL. Non-Mastodon instances
-(Pleroma, Misskey, etc.) that do not support this path can continue using the
-legacy `{postUrl}` form until 2.1.0.
+which is the Mastodon-compatible ActivityPub URL.
 
-> **Note:** The new `{domain}/{statusId}` template constructs a Mastodon-style URL
-> (`https://{domain}/web/statuses/{statusId}`). Non-Mastodon ActivityPub implementations
-> (Pleroma, Akkoma, Misskey, etc.) have different status URL shapes and may not resolve
-> via this form. For non-Mastodon instances, continue using the legacy `{postUrl}` form
-> until instance-software detection lands in a future release.
+> **Note:** The legacy `{postUrl}` form was **removed in v2.1.0** (deprecated in
+> v2.0.0); callers using it now receive an `InvalidParams` error. The
+> `{domain}/{statusId}` template constructs a Mastodon-style URL
+> (`https://{domain}/web/statuses/{statusId}`); non-Mastodon implementations
+> (Pleroma, Akkoma, Misskey, etc.) have different status URL shapes and may not
+> resolve via this form. To identify an instance's software before constructing a
+> URL, use the `get-instance-software` tool added in v2.1.0.
 
 Reference commit: `a6f8049`
 
