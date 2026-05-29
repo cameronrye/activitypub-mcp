@@ -274,6 +274,16 @@ After restarting your MCP client, ask it something like:
 
 The model will pick `discover-actor` to fetch the profile, then `fetch-timeline` to read recent posts.
 
+### Connecting an account (OAuth / MiAuth)
+
+Instead of manually creating an app and copying a token, ask your LLM to connect an account:
+
+1. "Connect my fosstodon.org account" → the `start-login` tool returns a URL.
+2. Open the URL and approve access. For Mastodon, copy the authorization code it shows; for Misskey, just approve.
+3. The LLM calls `complete-login` (with the code for Mastodon) and the account is saved to `~/.config/activitypub-mcp/accounts.json` (mode `0600`), persisting across restarts. Override the path with `MCP_TOKEN_STORE`.
+
+Tokens are never shown in tool output or logs. If the token-store path lives inside a repo, add it to your `.gitignore`.
+
 ## Documentation
 
 ### Quick Reference
