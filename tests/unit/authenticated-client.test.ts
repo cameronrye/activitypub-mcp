@@ -7,6 +7,8 @@ import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { accountManager } from "../../src/auth/account-manager.js";
 import { AuthenticatedClient } from "../../src/auth/authenticated-client.js";
+import { getInstanceSoftware } from "../../src/discovery/nodeinfo.js";
+import { UnsupportedOnPlatformError } from "../../src/utils/errors.js";
 
 // Mock logtape
 vi.mock("@logtape/logtape", () => ({
@@ -30,6 +32,19 @@ vi.mock("../../src/auth/account-manager.js", () => ({
 
 vi.mock("../../src/validation/url.js", () => ({
   validateExternalUrl: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Force the Mastodon path offline: without this the router would fetch
+// /.well-known/nodeinfo from example.social over the real network.
+vi.mock("../../src/discovery/nodeinfo.js", () => ({
+  getInstanceSoftware: vi.fn().mockResolvedValue({
+    domain: "example.social",
+    detection: "success",
+    software: { name: "mastodon", version: "4.3.0" },
+    protocols: ["activitypub"],
+    openRegistrations: true,
+  }),
+  clearNodeInfoCache: vi.fn(),
 }));
 
 // Create MSW server
@@ -998,6 +1013,52 @@ describe("AuthenticatedClient", () => {
 
       const result = await client.updateScheduledPost("scheduled-1", "2024-12-26T10:00:00Z");
       expect(result.scheduled_at).toBe("2024-12-26T10:00:00Z");
+    });
+  });
+
+  describe("Mastodon-only ops on Misskey", () => {
+    beforeEach(() => {
+      vi.mocked(getInstanceSoftware).mockResolvedValue({
+        domain: "example.social",
+        detection: "success",
+        software: { name: "misskey", version: "2024.1" },
+        protocols: ["activitypub"],
+        openRegistrations: true,
+      } as never);
+    });
+
+    // Restore the Mastodon default so the misskey override doesn't leak into
+    // later describe blocks (the mock persists across vi.resetModules()).
+    afterEach(() => {
+      vi.mocked(getInstanceSoftware).mockResolvedValue({
+        domain: "example.social",
+        detection: "success",
+        software: { name: "mastodon", version: "4.3.0" },
+        protocols: ["activitypub"],
+        openRegistrations: true,
+      } as never);
+    });
+
+    it("throws UnsupportedOnPlatformError for voteOnPoll", async () => {
+      await expect(client.voteOnPoll("poll-1", [0])).rejects.toBeInstanceOf(
+        UnsupportedOnPlatformError,
+      );
+    });
+
+    it("throws UnsupportedOnPlatformError for bookmarkPost without making a request", async () => {
+      let bookmarkCalled = false;
+      server.use(
+        http.post("https://example.social/api/v1/statuses/post-1/bookmark", () => {
+          bookmarkCalled = true;
+          return HttpResponse.json({});
+        }),
+      );
+      await expect(client.bookmarkPost("post-1")).rejects.toThrow(/not supported on Misskey/);
+      expect(bookmarkCalled).toBe(false);
+    });
+
+    it("throws UnsupportedOnPlatformError for getScheduledPosts", async () => {
+      await expect(client.getScheduledPosts()).rejects.toBeInstanceOf(UnsupportedOnPlatformError);
     });
   });
 });
