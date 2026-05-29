@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - 'v*'
+  # Manual fallback: auto-release.yml pushes the tag with GITHUB_TOKEN, which
+  # cannot trigger this workflow (GitHub anti-recursion). Run this manually
+  # against the vX.Y.Z tag to publish + create the release without a re-push.
+  workflow_dispatch:
 
 # id-token: write is required for OIDC-based npm provenance attestations.
 permissions:
