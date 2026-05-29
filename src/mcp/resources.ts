@@ -698,8 +698,8 @@ function registerFederatedTimelineResource(mcpServer: McpServer, rateLimiter: Ra
 /**
  * Post thread resource - get a post and its full conversation thread.
  *
- * URI template (v2.0.x): activitypub://post-thread/{domain}/{statusId}
- * Legacy form (deprecated, removed in 2.1.0): activitypub://post-thread/{postUrl}
+ * URI template: activitypub://post-thread/{domain}/{statusId}
+ * (Legacy {postUrl} form removed in v2.1.0; was deprecated in v2.0.0.)
  */
 function registerPostThreadResource(mcpServer: McpServer, rateLimiter: RateLimiter): void {
   mcpServer.registerResource(
@@ -730,48 +730,30 @@ function registerPostThreadResource(mcpServer: McpServer, rateLimiter: RateLimit
     },
     async (uri, params) => {
       try {
-        // The {domain} segment will look like a hostname for the new form
-        // (e.g. "mastodon.social") or an encoded URL for the legacy form
-        // (e.g. "https%3A%2F%2Fmastodon.social%2F%40user%2F123456").
-        const firstSegment = extractSingleValue(params.domain ?? "");
+        const domain = extractSingleValue(params.domain ?? "");
+        const statusId = extractSingleValue(params.statusId ?? "");
 
-        let postUrl: string;
-        const looksLikeEncodedUrl =
-          firstSegment.includes("%3A%2F%2F") || firstSegment.includes("://");
-
-        if (looksLikeEncodedUrl) {
-          // Legacy form — still supported in 2.0.x with a deprecation warning.
-          logger.warn(
-            "post-thread URI template `{postUrl}` is deprecated; pass `{domain}/{statusId}` instead. Will be removed in 2.1.0.",
-            { receivedUri: uri.href },
+        // Reject the v1 encoded-URL form explicitly to give callers a clear migration message.
+        if (domain.includes("%3A%2F%2F") || domain.includes("://")) {
+          throw new McpError(
+            ErrorCode.InvalidParams,
+            "post-thread URI template `{postUrl}` was removed in 2.1.0. " +
+              "Use activitypub://post-thread/{domain}/{statusId} instead.",
           );
-          try {
-            postUrl = new URL(decodeURIComponent(firstSegment)).href;
-          } catch {
-            throw new McpError(
-              ErrorCode.InvalidParams,
-              `Invalid post URL in legacy template: ${firstSegment}`,
-            );
-          }
-        } else {
-          // New form: {domain}/{statusId}
-          const domain = firstSegment;
-          const statusId = extractSingleValue(params.statusId ?? "");
-          if (!domain || !statusId) {
-            throw new McpError(
-              ErrorCode.InvalidParams,
-              "post-thread requires {domain} and {statusId} in the URI (e.g. activitypub://post-thread/mastodon.social/123456)",
-            );
-          }
-          // Mastodon-compatible URL — works for Mastodon and most Mastodon-API-compatible
-          // implementations. Non-Mastodon instances may need the legacy {postUrl} form.
-          postUrl = `https://${domain}/web/statuses/${statusId}`;
         }
 
+        if (!domain || !statusId) {
+          throw new McpError(
+            ErrorCode.InvalidParams,
+            "post-thread requires {domain} and {statusId} in the URI (e.g. activitypub://post-thread/mastodon.social/123456)",
+          );
+        }
+
+        const postUrl = `https://${domain}/web/statuses/${statusId}`;
         const parsedUrl = new URL(postUrl);
         checkRateLimit(rateLimiter, parsedUrl.hostname);
 
-        logger.info("Fetching post thread", { postUrl, legacyForm: looksLikeEncodedUrl });
+        logger.info("Fetching post thread", { postUrl });
 
         const threadData = await remoteClient.fetchPostThread(parsedUrl.href, {
           depth: 2,
@@ -800,7 +782,6 @@ function registerPostThreadResource(mcpServer: McpServer, rateLimiter: RateLimit
         if (error instanceof McpError) {
           throw error;
         }
-
         throw new McpError(
           ErrorCode.InternalError,
           `Failed to fetch post thread: ${error instanceof Error ? error.message : String(error)}`,

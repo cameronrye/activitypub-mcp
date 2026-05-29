@@ -481,27 +481,14 @@ describe("MCP Resources", () => {
       expect(thread.postUrl).toBe("https://mastodon.social/web/statuses/123456");
     });
 
-    it("logs a deprecation warning and still works for the legacy {postUrl} form", async () => {
-      (remoteClient.fetchPostThread as Mock).mockResolvedValue({
-        post: { content: "Legacy post" },
-        ancestors: [],
-        replies: [],
-        totalReplies: 0,
-      });
-
-      const { getLogger } = await import("@logtape/logtape");
-      const mockLogger = getLogger("activitypub-mcp:resources");
-      const warnSpy = vi.spyOn(mockLogger, "warn");
-
+    it("rejects the legacy encoded-URL form with an InvalidParams error", async () => {
       const resource = registeredResources.get("post-thread");
       const encodedPostUrl = encodeURIComponent("https://mastodon.social/@user/123456");
       const uri = new URL(`activitypub://post-thread/${encodedPostUrl}`);
-      const result = await resource?.handler(uri, { domain: encodedPostUrl });
 
-      expect(result).toBeDefined();
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringMatching(/deprecat/i), expect.anything());
-
-      warnSpy.mockRestore();
+      await expect(
+        resource?.handler(uri, { domain: encodedPostUrl, statusId: "" }),
+      ).rejects.toThrow(/removed in 2\.1\.0/);
     });
   });
 
