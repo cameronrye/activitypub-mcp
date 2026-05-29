@@ -74,13 +74,11 @@ updates:
       - dependency-type: "direct"
       - dependency-type: "indirect"
     
-    # Ignore specific packages that need manual review
+    # Ignore specific packages that need manual review.
+    # NOTE: major bumps are intentionally NOT ignored wholesale — Dependabot
+    # surfaces them as individual (ungrouped) PRs so each gets explicit review.
     ignore:
-      # Major version updates require manual review
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
-      
-      # Ignore specific packages that are known to have breaking changes
+      # Node engine major bumps are coordinated manually with the engines field.
       - dependency-name: "node"
         update-types: ["version-update:semver-major"]
 
