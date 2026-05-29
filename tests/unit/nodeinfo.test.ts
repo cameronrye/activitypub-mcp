@@ -349,5 +349,6 @@ describe("getInstanceSoftware — SSRF + blocklist", () => {
 
     const info = await getInstanceSoftware("localhost.social");
     expect(info.detection).toBe("unavailable");
+    expect(info.reason).toMatch(/not allowed|scheme/i);
   });
 });
