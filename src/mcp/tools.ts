@@ -10,7 +10,6 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { remoteClient } from "../activitypub/remote-client.js";
-import { auditLogger } from "../audit/logger.js";
 import { dynamicInstanceDiscovery } from "../discovery/dynamic-instance-discovery.js";
 import { instanceDiscovery } from "../discovery/instance-discovery.js";
 import { formatInstanceSoftware, getInstanceSoftware } from "../discovery/nodeinfo.js";
@@ -2293,37 +2292,30 @@ function registerGetInstanceSoftwareTool(mcpServer: McpServer, rateLimiter: Rate
       },
     },
     async ({ domain }) => {
-      const start = Date.now();
-      const parsed = DomainSchema.safeParse(domain);
-      if (!parsed.success) {
-        const errorMessage = `Invalid domain: ${parsed.error.issues.map((e) => e.message).join(", ")}`;
-        auditLogger.logToolInvocation(
-          "get-instance-software",
-          { domain },
-          { success: false, duration: Date.now() - start, error: errorMessage },
-        );
-        return {
-          content: [{ type: "text", text: `Failed to detect instance software: ${errorMessage}` }],
-          isError: true,
-        };
-      }
-      const validDomain = parsed.data;
+      const validDomain = validateDomain(domain);
+
+      const requestId = performanceMonitor.startRequest("get-instance-software", {
+        domain: validDomain,
+      });
+
       try {
         checkRateLimit(rateLimiter, validDomain);
+
+        logger.info("Detecting instance software", { domain: validDomain });
+
         const info = await getInstanceSoftware(validDomain);
-        auditLogger.logToolInvocation(
-          "get-instance-software",
-          { domain: validDomain },
-          { success: info.detection === "success", duration: Date.now() - start },
-        );
+        performanceMonitor.endRequest(requestId, true);
+
         return { content: [{ type: "text", text: formatInstanceSoftware(info) }] };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        auditLogger.logToolInvocation(
-          "get-instance-software",
-          { domain: validDomain },
-          { success: false, duration: Date.now() - start, error: errorMessage },
-        );
+        performanceMonitor.endRequest(requestId, false, errorMessage);
+
+        logger.error("Failed to detect instance software", {
+          domain: validDomain,
+          error: errorMessage,
+        });
+
         if (error instanceof McpError) throw error;
         return {
           content: [{ type: "text", text: `Failed to detect instance software: ${errorMessage}` }],

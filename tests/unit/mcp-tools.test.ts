@@ -1000,18 +1000,13 @@ describe("MCP Tools", () => {
       const result = await tool?.handler({ domain: "tools-fail.social" });
       const text = (result as { content: { text: string }[] }).content[0].text;
       expect(text).toMatch(/could not detect/i);
+      expect((result as { isError?: boolean }).isError).toBeUndefined();
     });
 
-    it("returns an error result for an invalid domain", async () => {
-      // The handler validates via DomainSchema; an invalid domain (containing space)
-      // should produce an error response (not throw to the caller).
+    it("throws InvalidParams for an invalid domain", async () => {
       const tool = registeredTools.get("get-instance-software");
-      // Accept either: result.isError = true OR the call threw.
-      // Our mcp tool pattern throws McpError for schema parse failures.
-      // If the framework calls .parse before .handler, the call will reject.
-      // Either is acceptable behavior — assert that detection was NOT attempted.
-      await tool?.handler({ domain: "not a domain" }).catch(() => undefined);
-      expect(getInstanceSoftware).not.toHaveBeenCalledWith("not a domain");
+      await expect(tool?.handler({ domain: "not a domain" })).rejects.toThrow();
+      expect(getInstanceSoftware).not.toHaveBeenCalled();
     });
   });
 });
