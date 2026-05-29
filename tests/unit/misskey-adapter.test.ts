@@ -114,3 +114,95 @@ describe("MisskeyWriteAdapter.favouritePost", () => {
     expect(status.id).toBe("note1");
   });
 });
+
+describe("MisskeyWriteAdapter social ops", () => {
+  it("follows then normalizes users/relation to a Relationship", async () => {
+    let relBody: Record<string, unknown> | undefined;
+    server.use(
+      http.post("https://misskey.test/api/following/create", () => HttpResponse.json({ id: "u2" })),
+      http.post("https://misskey.test/api/users/relation", async ({ request }) => {
+        relBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({
+          isFollowing: true,
+          isFollowed: false,
+          isBlocking: false,
+          isMuted: false,
+          hasPendingFollowRequestFromYou: false,
+        });
+      }),
+    );
+    const rel = await adapter.followAccount(account, "u2");
+    expect(relBody?.userId).toBe("u2");
+    expect(rel.following).toBe(true);
+    expect(rel.muting).toBe(false);
+    expect(rel.id).toBe("u2");
+  });
+
+  it("mutes an account", async () => {
+    server.use(
+      http.post(
+        "https://misskey.test/api/mute/create",
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+      http.post("https://misskey.test/api/users/relation", () =>
+        HttpResponse.json({ isMuted: true }),
+      ),
+    );
+    const rel = await adapter.muteAccount(account, "u2");
+    expect(rel.muting).toBe(true);
+  });
+});
+
+describe("MisskeyWriteAdapter account ops", () => {
+  it("verifyCredentials maps /api/i to AccountInfo", async () => {
+    server.use(
+      http.post("https://misskey.test/api/i", () =>
+        HttpResponse.json({
+          id: "u1",
+          username: "alice",
+          host: null,
+          name: "Alice",
+          followersCount: 10,
+          followingCount: 5,
+          notesCount: 42,
+          url: "https://misskey.test/@alice",
+        }),
+      ),
+    );
+    const info = await adapter.verifyCredentials(account);
+    expect(info.id).toBe("u1");
+    expect(info.acct).toBe("alice");
+    expect(info.followers_count).toBe(10);
+    expect(info.statuses_count).toBe(42);
+  });
+
+  it("lookupAccount splits acct into username/host", async () => {
+    let body: Record<string, unknown> | undefined;
+    server.use(
+      http.post("https://misskey.test/api/users/show", async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({
+          id: "u3",
+          username: "bob",
+          host: "remote.example",
+          url: "https://remote.example/@bob",
+        });
+      }),
+    );
+    const r = await adapter.lookupAccount(account, "bob@remote.example");
+    expect(body?.username).toBe("bob");
+    expect(body?.host).toBe("remote.example");
+    expect(r.acct).toBe("bob@remote.example");
+  });
+});
+
+describe("MisskeyWriteAdapter timeline", () => {
+  it("getHomeTimeline normalizes notes", async () => {
+    server.use(
+      http.post("https://misskey.test/api/notes/timeline", () => HttpResponse.json([sampleNote])),
+    );
+    const tl = await adapter.getHomeTimeline(account, { limit: 5 });
+    expect(tl).toHaveLength(1);
+    expect(tl[0].id).toBe("note1");
+  });
+});
