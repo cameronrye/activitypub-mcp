@@ -184,8 +184,11 @@ export async function guardedFetch<T = unknown>(
     if (response.status !== 204) {
       try {
         data = await readJsonWithLimit<T>(response, MAX_RESPONSE_SIZE);
-      } catch {
-        data = undefined; // empty / non-JSON body
+      } catch (error) {
+        // A too-large body is a real failure callers must see — don't mask it as
+        // a successful empty response. Only an empty / non-JSON body → undefined.
+        if (error instanceof ResponseTooLargeError) throw error;
+        data = undefined;
       }
     }
     return { ok: response.ok, status: response.status, statusText: response.statusText, data };
