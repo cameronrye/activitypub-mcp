@@ -1,110 +1,45 @@
 /**
- * Authenticated Client for write operations.
+ * Authenticated client for write operations.
  *
- * Provides authenticated API calls for posting, boosting, favouriting,
- * and other write operations on Mastodon-compatible instances.
+ * Thin router over platform write adapters: interface ops delegate to the
+ * adapter resolved from the instance's detected software; Mastodon-only ops
+ * (bookmarks, polls, scheduled posts) guard against Misskey accounts and
+ * otherwise call the Mastodon REST API directly via the shared fetch helper.
  */
 
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
-import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
-import { instanceBlocklist } from "../policy/instance-blocklist.js";
-import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
-import { validateExternalUrl } from "../validation/url.js";
+import { MAX_RESPONSE_SIZE } from "../config.js";
+import { UnsupportedOnPlatformError } from "../utils/errors.js";
+import { readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { type AccountCredentials, accountManager } from "./account-manager.js";
+import { resolveSoftwareKind, resolveWriteAdapter } from "./adapters/resolve.js";
+import {
+  authenticatedFetch,
+  type CreatePostOptions,
+  type ListPageOptions,
+  type MediaAttachment,
+  MediaAttachmentSchema,
+  type NotificationItem,
+  type NotificationOptions,
+  type Relationship,
+  type Status,
+  StatusSchema,
+  type WriteAdapter,
+} from "./adapters/write-adapter.js";
+
+// Re-export shared types so existing importers (auth/index.ts, tools-write.ts) are unaffected.
+export type {
+  CreatePostOptions,
+  MediaAttachment,
+  PostVisibility,
+  Relationship,
+  Status,
+} from "./adapters/write-adapter.js";
 
 const logger = getLogger("activitypub-mcp:authenticated-client");
 
-/**
- * Visibility options for posts
- */
-export type PostVisibility = "public" | "unlisted" | "private" | "direct";
-
-/**
- * Options for creating a new post
- */
-export interface CreatePostOptions {
-  /** Post content (required) */
-  content: string;
-  /** Content warning / spoiler text */
-  spoilerText?: string;
-  /** Post visibility */
-  visibility?: PostVisibility;
-  /** ID of post to reply to */
-  inReplyToId?: string;
-  /** Language code (ISO 639-1) */
-  language?: string;
-  /** Whether post is sensitive */
-  sensitive?: boolean;
-  /** Media attachment IDs */
-  mediaIds?: string[];
-  /** Poll options */
-  poll?: {
-    options: string[];
-    expiresIn: number;
-    multiple?: boolean;
-    hideTotals?: boolean;
-  };
-  /** Scheduled time (ISO 8601) */
-  scheduledAt?: string;
-  /** Idempotency key to prevent duplicate posts */
-  idempotencyKey?: string;
-}
-
-/**
- * Schema for created status response
- */
-const StatusSchema = z.object({
-  id: z.string(),
-  uri: z.string(),
-  url: z.string().nullable().optional(),
-  created_at: z.string(),
-  content: z.string(),
-  visibility: z.enum(["public", "unlisted", "private", "direct"]),
-  sensitive: z.boolean(),
-  spoiler_text: z.string(),
-  reblogs_count: z.number(),
-  favourites_count: z.number(),
-  replies_count: z.number(),
-  in_reply_to_id: z.string().nullable().optional(),
-  in_reply_to_account_id: z.string().nullable().optional(),
-  account: z.object({
-    id: z.string(),
-    username: z.string(),
-    acct: z.string(),
-    display_name: z.string().optional(),
-    url: z.string(),
-  }),
-  media_attachments: z.array(z.any()).optional(),
-  mentions: z.array(z.any()).optional(),
-  tags: z.array(z.any()).optional(),
-  poll: z.any().nullable().optional(),
-});
-
-export type Status = z.infer<typeof StatusSchema>;
-
-/**
- * Schema for relationship response
- */
-const RelationshipSchema = z.object({
-  id: z.string(),
-  following: z.boolean(),
-  followed_by: z.boolean(),
-  blocking: z.boolean(),
-  blocked_by: z.boolean(),
-  muting: z.boolean(),
-  muting_notifications: z.boolean(),
-  requested: z.boolean(),
-  domain_blocking: z.boolean(),
-  endorsed: z.boolean(),
-  note: z.string().optional(),
-});
-
-export type Relationship = z.infer<typeof RelationshipSchema>;
-
-/**
- * Schema for poll response
- */
+// Poll + scheduled-status schemas stay here — they back Mastodon-only ops.
 const PollSchema = z.object({
   id: z.string(),
   expires_at: z.string().nullable(),
@@ -114,34 +49,10 @@ const PollSchema = z.object({
   voters_count: z.number().nullable().optional(),
   voted: z.boolean().optional(),
   own_votes: z.array(z.number()).optional(),
-  options: z.array(
-    z.object({
-      title: z.string(),
-      votes_count: z.number().nullable(),
-    }),
-  ),
+  options: z.array(z.object({ title: z.string(), votes_count: z.number().nullable() })),
 });
-
 export type Poll = z.infer<typeof PollSchema>;
 
-/**
- * Schema for media attachment response
- */
-const MediaAttachmentSchema = z.object({
-  id: z.string(),
-  type: z.enum(["unknown", "image", "gifv", "video", "audio"]),
-  url: z.string().nullable(),
-  preview_url: z.string().nullable().optional(),
-  remote_url: z.string().nullable().optional(),
-  description: z.string().nullable().optional(),
-  blurhash: z.string().nullable().optional(),
-});
-
-export type MediaAttachment = z.infer<typeof MediaAttachmentSchema>;
-
-/**
- * Schema for scheduled status response
- */
 const ScheduledStatusSchema = z.object({
   id: z.string(),
   scheduled_at: z.string(),
@@ -161,78 +72,11 @@ const ScheduledStatusSchema = z.object({
       .nullable()
       .optional(),
   }),
-  media_attachments: z.array(MediaAttachmentSchema).optional(),
+  media_attachments: z.array(z.any()).optional(),
 });
-
 export type ScheduledStatus = z.infer<typeof ScheduledStatusSchema>;
 
-/**
- * Authenticated client for write operations.
- */
 export class AuthenticatedClient {
-  private requestTimeout = REQUEST_TIMEOUT;
-
-  /**
-   * Get the authorization header for an account.
-   */
-  private getAuthHeader(account: AccountCredentials): string {
-    return `${account.tokenType} ${account.accessToken}`;
-  }
-
-  /**
-   * Make an authenticated request.
-   */
-  private async authenticatedFetch(
-    account: AccountCredentials,
-    endpoint: string,
-    options: RequestInit = {},
-  ): Promise<Response> {
-    const url = `https://${account.instance}${endpoint}`;
-
-    // SSRF protection
-    await validateExternalUrl(url);
-
-    // Policy: respect operator blocklist for authenticated writes too.
-    instanceBlocklist.validateNotBlocked(account.instance);
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
-
-    try {
-      const response = await fetchWithRedirectGuard(
-        url,
-        {
-          ...options,
-          signal: controller.signal,
-          headers: {
-            Authorization: this.getAuthHeader(account),
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            "User-Agent": USER_AGENT,
-            ...options.headers,
-          },
-        },
-        async (target) => {
-          await validateExternalUrl(target);
-          instanceBlocklist.validateNotBlocked(new URL(target).hostname);
-        },
-      );
-
-      clearTimeout(timeoutId);
-
-      return response;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new Error(`Request timed out: ${endpoint}`);
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Require an active account or throw.
-   */
   private requireActiveAccount(): AccountCredentials {
     const account = accountManager.getActiveAccount();
     if (!account) {
@@ -243,611 +87,152 @@ export class AuthenticatedClient {
     return account;
   }
 
-  /**
-   * Get account by ID or use active account.
-   */
   private getAccountOrActive(accountId?: string): AccountCredentials {
     if (accountId) {
       const account = accountManager.getAccount(accountId);
-      if (!account) {
-        throw new Error(`Account not found: ${accountId}`);
-      }
+      if (!account) throw new Error(`Account not found: ${accountId}`);
       return account;
     }
     return this.requireActiveAccount();
   }
 
-  /**
-   * Create a new post/status.
-   */
-  async createPost(options: CreatePostOptions, accountId?: string): Promise<Status> {
+  /** Resolve account + its platform adapter for an interface op. */
+  private async resolve(
+    accountId?: string,
+  ): Promise<{ account: AccountCredentials; adapter: WriteAdapter }> {
     const account = this.getAccountOrActive(accountId);
+    const adapter = await resolveWriteAdapter(account);
+    return { account, adapter };
+  }
 
+  /** Guard a Mastodon-only op; throw a clear error on Misskey accounts. */
+  private async assertMastodonApi(op: string, accountId?: string): Promise<AccountCredentials> {
+    const account = this.getAccountOrActive(accountId);
+    const kind = await resolveSoftwareKind(account);
+    if (kind === "misskey") throw new UnsupportedOnPlatformError(op, "Misskey");
+    return account;
+  }
+
+  // --- Interface ops: delegate to the resolved adapter ---
+
+  async createPost(options: CreatePostOptions, accountId?: string): Promise<Status> {
+    const { account, adapter } = await this.resolve(accountId);
     logger.info("Creating post", {
       instance: account.instance,
       visibility: options.visibility || "public",
-      hasReplyTo: !!options.inReplyToId,
-      hasMedia: (options.mediaIds?.length || 0) > 0,
     });
-
-    const body: Record<string, unknown> = {
-      status: options.content,
-    };
-
-    if (options.spoilerText) body.spoiler_text = options.spoilerText;
-    if (options.visibility) body.visibility = options.visibility;
-    if (options.inReplyToId) body.in_reply_to_id = options.inReplyToId;
-    if (options.language) body.language = options.language;
-    if (options.sensitive !== undefined) body.sensitive = options.sensitive;
-    if (options.mediaIds?.length) body.media_ids = options.mediaIds;
-    if (options.poll) body.poll = options.poll;
-    if (options.scheduledAt) body.scheduled_at = options.scheduledAt;
-
-    const headers: Record<string, string> = {};
-    if (options.idempotencyKey) {
-      headers["Idempotency-Key"] = options.idempotencyKey;
-    }
-
-    const response = await this.authenticatedFetch(account, "/api/v1/statuses", {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to create post: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return StatusSchema.parse(data);
+    return adapter.createPost(account, options);
   }
 
-  /**
-   * Delete a post.
-   */
   async deletePost(statusId: string, accountId?: string): Promise<void> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Deleting post", { instance: account.instance, statusId });
-
-    const response = await this.authenticatedFetch(account, `/api/v1/statuses/${statusId}`, {
-      method: "DELETE",
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to delete post: HTTP ${response.status} - ${errorText}`);
-    }
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.deletePost(account, statusId);
   }
 
-  /**
-   * Boost/reblog a post.
-   */
   async boostPost(statusId: string, accountId?: string): Promise<Status> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Boosting post", { instance: account.instance, statusId });
-
-    const response = await this.authenticatedFetch(account, `/api/v1/statuses/${statusId}/reblog`, {
-      method: "POST",
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to boost post: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return StatusSchema.parse(data);
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.boostPost(account, statusId);
   }
 
-  /**
-   * Unboost/unreblog a post.
-   */
   async unboostPost(statusId: string, accountId?: string): Promise<Status> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Unboosting post", { instance: account.instance, statusId });
-
-    const response = await this.authenticatedFetch(
-      account,
-      `/api/v1/statuses/${statusId}/unreblog`,
-      {
-        method: "POST",
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to unboost post: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return StatusSchema.parse(data);
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.unboostPost(account, statusId);
   }
 
-  /**
-   * Favourite a post.
-   */
   async favouritePost(statusId: string, accountId?: string): Promise<Status> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Favouriting post", { instance: account.instance, statusId });
-
-    const response = await this.authenticatedFetch(
-      account,
-      `/api/v1/statuses/${statusId}/favourite`,
-      {
-        method: "POST",
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to favourite post: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return StatusSchema.parse(data);
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.favouritePost(account, statusId);
   }
 
-  /**
-   * Unfavourite a post.
-   */
   async unfavouritePost(statusId: string, accountId?: string): Promise<Status> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Unfavouriting post", { instance: account.instance, statusId });
-
-    const response = await this.authenticatedFetch(
-      account,
-      `/api/v1/statuses/${statusId}/unfavourite`,
-      {
-        method: "POST",
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to unfavourite post: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return StatusSchema.parse(data);
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.unfavouritePost(account, statusId);
   }
 
-  /**
-   * Bookmark a post.
-   */
-  async bookmarkPost(statusId: string, accountId?: string): Promise<Status> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Bookmarking post", { instance: account.instance, statusId });
-
-    const response = await this.authenticatedFetch(
-      account,
-      `/api/v1/statuses/${statusId}/bookmark`,
-      {
-        method: "POST",
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to bookmark post: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return StatusSchema.parse(data);
-  }
-
-  /**
-   * Unbookmark a post.
-   */
-  async unbookmarkPost(statusId: string, accountId?: string): Promise<Status> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Unbookmarking post", { instance: account.instance, statusId });
-
-    const response = await this.authenticatedFetch(
-      account,
-      `/api/v1/statuses/${statusId}/unbookmark`,
-      {
-        method: "POST",
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to unbookmark post: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return StatusSchema.parse(data);
-  }
-
-  /**
-   * Follow an account.
-   */
   async followAccount(
     targetAccountId: string,
     options?: { reblogs?: boolean; notify?: boolean; languages?: string[] },
     accountId?: string,
   ): Promise<Relationship> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Following account", { instance: account.instance, targetAccountId });
-
-    const body: Record<string, unknown> = {};
-    if (options?.reblogs !== undefined) body.reblogs = options.reblogs;
-    if (options?.notify !== undefined) body.notify = options.notify;
-    if (options?.languages) body.languages = options.languages;
-
-    const response = await this.authenticatedFetch(
-      account,
-      `/api/v1/accounts/${targetAccountId}/follow`,
-      {
-        method: "POST",
-        body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to follow account: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return RelationshipSchema.parse(data);
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.followAccount(account, targetAccountId, options);
   }
 
-  /**
-   * Unfollow an account.
-   */
   async unfollowAccount(targetAccountId: string, accountId?: string): Promise<Relationship> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Unfollowing account", { instance: account.instance, targetAccountId });
-
-    const response = await this.authenticatedFetch(
-      account,
-      `/api/v1/accounts/${targetAccountId}/unfollow`,
-      {
-        method: "POST",
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to unfollow account: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return RelationshipSchema.parse(data);
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.unfollowAccount(account, targetAccountId);
   }
 
-  /**
-   * Mute an account.
-   */
   async muteAccount(
     targetAccountId: string,
     options?: { notifications?: boolean; duration?: number },
     accountId?: string,
   ): Promise<Relationship> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Muting account", { instance: account.instance, targetAccountId });
-
-    const body: Record<string, unknown> = {};
-    if (options?.notifications !== undefined) body.notifications = options.notifications;
-    if (options?.duration !== undefined) body.duration = options.duration;
-
-    const response = await this.authenticatedFetch(
-      account,
-      `/api/v1/accounts/${targetAccountId}/mute`,
-      {
-        method: "POST",
-        body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to mute account: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return RelationshipSchema.parse(data);
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.muteAccount(account, targetAccountId, options);
   }
 
-  /**
-   * Unmute an account.
-   */
   async unmuteAccount(targetAccountId: string, accountId?: string): Promise<Relationship> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Unmuting account", { instance: account.instance, targetAccountId });
-
-    const response = await this.authenticatedFetch(
-      account,
-      `/api/v1/accounts/${targetAccountId}/unmute`,
-      {
-        method: "POST",
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to unmute account: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return RelationshipSchema.parse(data);
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.unmuteAccount(account, targetAccountId);
   }
 
-  /**
-   * Block an account.
-   */
   async blockAccount(targetAccountId: string, accountId?: string): Promise<Relationship> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Blocking account", { instance: account.instance, targetAccountId });
-
-    const response = await this.authenticatedFetch(
-      account,
-      `/api/v1/accounts/${targetAccountId}/block`,
-      {
-        method: "POST",
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to block account: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return RelationshipSchema.parse(data);
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.blockAccount(account, targetAccountId);
   }
 
-  /**
-   * Unblock an account.
-   */
   async unblockAccount(targetAccountId: string, accountId?: string): Promise<Relationship> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Unblocking account", { instance: account.instance, targetAccountId });
-
-    const response = await this.authenticatedFetch(
-      account,
-      `/api/v1/accounts/${targetAccountId}/unblock`,
-      {
-        method: "POST",
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to unblock account: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return RelationshipSchema.parse(data);
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.unblockAccount(account, targetAccountId);
   }
 
-  /**
-   * Get relationship with an account.
-   */
   async getRelationship(targetAccountId: string, accountId?: string): Promise<Relationship> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Getting relationship", { instance: account.instance, targetAccountId });
-
-    const response = await this.authenticatedFetch(
-      account,
-      `/api/v1/accounts/relationships?id[]=${targetAccountId}`,
-      {
-        method: "GET",
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to get relationship: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    if (!Array.isArray(data) || data.length === 0) {
-      throw new Error("No relationship data returned");
-    }
-
-    return RelationshipSchema.parse(data[0]);
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.getRelationship(account, targetAccountId);
   }
 
-  /**
-   * Lookup an account by username@instance.
-   */
+  async getRelationships(targetAccountIds: string[], accountId?: string): Promise<Relationship[]> {
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.getRelationships(account, targetAccountIds);
+  }
+
   async lookupAccount(
     acct: string,
     accountId?: string,
   ): Promise<{ id: string; username: string; acct: string; url: string }> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Looking up account", { instance: account.instance, acct });
-
-    const response = await this.authenticatedFetch(
-      account,
-      `/api/v1/accounts/lookup?acct=${encodeURIComponent(acct)}`,
-      {
-        method: "GET",
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to lookup account: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit<{
-      id: string;
-      username: string;
-      acct: string;
-      url: string;
-    }>(response, MAX_RESPONSE_SIZE);
-    return data;
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.lookupAccount(account, acct);
   }
 
-  /**
-   * Get bookmarked posts.
-   */
-  async getBookmarks(
-    options?: { limit?: number; maxId?: string; minId?: string },
+  async uploadMedia(
+    file: Buffer | Blob,
+    options?: { filename?: string; description?: string; focus?: { x: number; y: number } },
     accountId?: string,
-  ): Promise<Status[]> {
-    const account = this.getAccountOrActive(accountId);
-    const { limit = 20, maxId, minId } = options || {};
-
-    logger.info("Getting bookmarks", { instance: account.instance, limit });
-
-    const params = new URLSearchParams({ limit: String(limit) });
-    if (maxId) params.set("max_id", maxId);
-    if (minId) params.set("min_id", minId);
-
-    const response = await this.authenticatedFetch(account, `/api/v1/bookmarks?${params}`, {
-      method: "GET",
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to get bookmarks: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return z.array(StatusSchema).parse(data);
+  ): Promise<MediaAttachment> {
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.uploadMedia(account, file, options);
   }
 
-  /**
-   * Get favourited posts.
-   */
-  async getFavourites(
-    options?: { limit?: number; maxId?: string; minId?: string },
-    accountId?: string,
-  ): Promise<Status[]> {
-    const account = this.getAccountOrActive(accountId);
-    const { limit = 20, maxId, minId } = options || {};
-
-    logger.info("Getting favourites", { instance: account.instance, limit });
-
-    const params = new URLSearchParams({ limit: String(limit) });
-    if (maxId) params.set("max_id", maxId);
-    if (minId) params.set("min_id", minId);
-
-    const response = await this.authenticatedFetch(account, `/api/v1/favourites?${params}`, {
-      method: "GET",
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to get favourites: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return z.array(StatusSchema).parse(data);
+  async getHomeTimeline(options?: ListPageOptions, accountId?: string): Promise<Status[]> {
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.getHomeTimeline(account, options);
   }
 
-  /**
-   * Get home timeline (authenticated).
-   */
-  async getHomeTimeline(
-    options?: { limit?: number; maxId?: string; minId?: string; sinceId?: string },
-    accountId?: string,
-  ): Promise<Status[]> {
-    const account = this.getAccountOrActive(accountId);
-    const { limit = 20, maxId, minId, sinceId } = options || {};
-
-    logger.info("Getting home timeline", { instance: account.instance, limit });
-
-    const params = new URLSearchParams({ limit: String(limit) });
-    if (maxId) params.set("max_id", maxId);
-    if (minId) params.set("min_id", minId);
-    if (sinceId) params.set("since_id", sinceId);
-
-    const response = await this.authenticatedFetch(account, `/api/v1/timelines/home?${params}`, {
-      method: "GET",
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to get home timeline: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return z.array(StatusSchema).parse(data);
-  }
-
-  /**
-   * Get notifications.
-   */
   async getNotifications(
-    options?: {
-      limit?: number;
-      maxId?: string;
-      minId?: string;
-      types?: string[];
-      excludeTypes?: string[];
-    },
+    options?: NotificationOptions,
     accountId?: string,
-  ): Promise<
-    Array<{
-      id: string;
-      type: string;
-      created_at: string;
-      account: { id: string; username: string; acct: string };
-      status?: Status;
-    }>
-  > {
-    const account = this.getAccountOrActive(accountId);
-    const { limit = 20, maxId, minId, types, excludeTypes } = options || {};
-
-    logger.info("Getting notifications", { instance: account.instance, limit });
-
-    const params = new URLSearchParams({ limit: String(limit) });
-    if (maxId) params.set("max_id", maxId);
-    if (minId) params.set("min_id", minId);
-    if (types) {
-      for (const type of types) {
-        params.append("types[]", type);
-      }
-    }
-    if (excludeTypes) {
-      for (const type of excludeTypes) {
-        params.append("exclude_types[]", type);
-      }
-    }
-
-    const response = await this.authenticatedFetch(account, `/api/v1/notifications?${params}`, {
-      method: "GET",
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to get notifications: HTTP ${response.status} - ${errorText}`);
-    }
-
-    return await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
+  ): Promise<NotificationItem[]> {
+    const { account, adapter } = await this.resolve(accountId);
+    return adapter.getNotifications(account, options);
   }
 
-  /**
-   * Check if write operations are available.
-   */
+  // --- Status helpers (unchanged) ---
+
   isWriteEnabled(): boolean {
     return accountManager.hasAccounts();
   }
 
-  /**
-   * Get write status information.
-   */
   getWriteStatus(): {
     enabled: boolean;
     accountCount: number;
@@ -863,309 +248,181 @@ export class AuthenticatedClient {
     };
   }
 
-  /**
-   * Vote on a poll.
-   */
+  // --- Mastodon-only ops: guard against Misskey, else call Mastodon REST ---
+
+  async getBookmarks(
+    options?: { limit?: number; maxId?: string; minId?: string },
+    accountId?: string,
+  ): Promise<Status[]> {
+    const account = await this.assertMastodonApi("get-bookmarks", accountId);
+    const { limit = 20, maxId, minId } = options || {};
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (maxId) params.set("max_id", maxId);
+    if (minId) params.set("min_id", minId);
+    const response = await authenticatedFetch(account, `/api/v1/bookmarks?${params}`, {
+      method: "GET",
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to get bookmarks: HTTP ${response.status} - ${errorText}`);
+    }
+    return z.array(StatusSchema).parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
+  }
+
+  async getFavourites(
+    options?: { limit?: number; maxId?: string; minId?: string },
+    accountId?: string,
+  ): Promise<Status[]> {
+    const account = await this.assertMastodonApi("get-favourites", accountId);
+    const { limit = 20, maxId, minId } = options || {};
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (maxId) params.set("max_id", maxId);
+    if (minId) params.set("min_id", minId);
+    const response = await authenticatedFetch(account, `/api/v1/favourites?${params}`, {
+      method: "GET",
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to get favourites: HTTP ${response.status} - ${errorText}`);
+    }
+    return z.array(StatusSchema).parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
+  }
+
+  async bookmarkPost(statusId: string, accountId?: string): Promise<Status> {
+    const account = await this.assertMastodonApi("bookmark-post", accountId);
+    const response = await authenticatedFetch(account, `/api/v1/statuses/${statusId}/bookmark`, {
+      method: "POST",
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to bookmark post: HTTP ${response.status} - ${errorText}`);
+    }
+    return StatusSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
+  }
+
+  async unbookmarkPost(statusId: string, accountId?: string): Promise<Status> {
+    const account = await this.assertMastodonApi("unbookmark-post", accountId);
+    const response = await authenticatedFetch(account, `/api/v1/statuses/${statusId}/unbookmark`, {
+      method: "POST",
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to unbookmark post: HTTP ${response.status} - ${errorText}`);
+    }
+    return StatusSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
+  }
+
   async voteOnPoll(pollId: string, choices: number[], accountId?: string): Promise<Poll> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Voting on poll", { instance: account.instance, pollId, choices });
-
-    const response = await this.authenticatedFetch(account, `/api/v1/polls/${pollId}/votes`, {
+    const account = await this.assertMastodonApi("vote-on-poll", accountId);
+    const response = await authenticatedFetch(account, `/api/v1/polls/${pollId}/votes`, {
       method: "POST",
       body: JSON.stringify({ choices }),
     });
-
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Failed to vote on poll: HTTP ${response.status} - ${errorText}`);
     }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return PollSchema.parse(data);
+    return PollSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
   }
 
-  /**
-   * Get a poll by ID.
-   */
   async getPoll(pollId: string, accountId?: string): Promise<Poll> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Getting poll", { instance: account.instance, pollId });
-
-    const response = await this.authenticatedFetch(account, `/api/v1/polls/${pollId}`, {
+    const account = await this.assertMastodonApi("get-poll", accountId);
+    const response = await authenticatedFetch(account, `/api/v1/polls/${pollId}`, {
       method: "GET",
     });
-
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Failed to get poll: HTTP ${response.status} - ${errorText}`);
     }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return PollSchema.parse(data);
+    return PollSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
   }
 
-  /**
-   * Upload media attachment.
-   */
-  async uploadMedia(
-    file: Buffer | Blob,
-    options?: {
-      filename?: string;
-      description?: string;
-      focus?: { x: number; y: number };
-    },
-    accountId?: string,
-  ): Promise<MediaAttachment> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Uploading media", {
-      instance: account.instance,
-      filename: options?.filename,
-      hasDescription: !!options?.description,
-    });
-
-    const formData = new FormData();
-
-    // Handle the file - if it's a Buffer, convert to Blob via Uint8Array
-    const blob = file instanceof Blob ? file : new Blob([new Uint8Array(file)]);
-    formData.append("file", blob, options?.filename || "upload");
-
-    if (options?.description) {
-      formData.append("description", options.description);
-    }
-
-    if (options?.focus) {
-      formData.append("focus", `${options.focus.x},${options.focus.y}`);
-    }
-
-    const url = `https://${account.instance}/api/v2/media`;
-    await validateExternalUrl(url);
-    instanceBlocklist.validateNotBlocked(account.instance);
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout * 3); // Longer timeout for uploads
-
-    try {
-      const response = await fetchWithRedirectGuard(
-        url,
-        {
-          method: "POST",
-          signal: controller.signal,
-          headers: {
-            Authorization: this.getAuthHeader(account),
-            Accept: "application/json",
-            "User-Agent": USER_AGENT,
-            // Note: Don't set Content-Type for FormData - browser will set it with boundary
-          },
-          body: formData,
-        },
-        async (target) => {
-          await validateExternalUrl(target);
-          instanceBlocklist.validateNotBlocked(new URL(target).hostname);
-        },
-      );
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to upload media: HTTP ${response.status} - ${errorText}`);
-      }
-
-      const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-      return MediaAttachmentSchema.parse(data);
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new Error("Media upload timed out");
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Update media attachment description/metadata.
-   */
   async updateMedia(
     mediaId: string,
-    options: {
-      description?: string;
-      focus?: { x: number; y: number };
-    },
+    options: { description?: string; focus?: { x: number; y: number } },
     accountId?: string,
   ): Promise<MediaAttachment> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Updating media", { instance: account.instance, mediaId });
-
+    const account = await this.assertMastodonApi("update-media", accountId);
     const body: Record<string, unknown> = {};
     if (options.description !== undefined) body.description = options.description;
     if (options.focus) body.focus = `${options.focus.x},${options.focus.y}`;
-
-    const response = await this.authenticatedFetch(account, `/api/v1/media/${mediaId}`, {
+    const response = await authenticatedFetch(account, `/api/v1/media/${mediaId}`, {
       method: "PUT",
       body: JSON.stringify(body),
     });
-
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Failed to update media: HTTP ${response.status} - ${errorText}`);
     }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return MediaAttachmentSchema.parse(data);
+    return MediaAttachmentSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
   }
 
-  /**
-   * Get scheduled posts.
-   */
   async getScheduledPosts(
     options?: { limit?: number; maxId?: string; sinceId?: string; minId?: string },
     accountId?: string,
   ): Promise<ScheduledStatus[]> {
-    const account = this.getAccountOrActive(accountId);
+    const account = await this.assertMastodonApi("get-scheduled-posts", accountId);
     const { limit = 20, maxId, sinceId, minId } = options || {};
-
-    logger.info("Getting scheduled posts", { instance: account.instance, limit });
-
     const params = new URLSearchParams({ limit: String(limit) });
     if (maxId) params.set("max_id", maxId);
     if (sinceId) params.set("since_id", sinceId);
     if (minId) params.set("min_id", minId);
-
-    const response = await this.authenticatedFetch(
-      account,
-      `/api/v1/scheduled_statuses?${params}`,
-      {
-        method: "GET",
-      },
-    );
-
+    const response = await authenticatedFetch(account, `/api/v1/scheduled_statuses?${params}`, {
+      method: "GET",
+    });
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Failed to get scheduled posts: HTTP ${response.status} - ${errorText}`);
     }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return z.array(ScheduledStatusSchema).parse(data);
+    return z
+      .array(ScheduledStatusSchema)
+      .parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
   }
 
-  /**
-   * Get a single scheduled post.
-   */
   async getScheduledPost(scheduledId: string, accountId?: string): Promise<ScheduledStatus> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Getting scheduled post", { instance: account.instance, scheduledId });
-
-    const response = await this.authenticatedFetch(
+    const account = await this.assertMastodonApi("get-scheduled-post", accountId);
+    const response = await authenticatedFetch(
       account,
       `/api/v1/scheduled_statuses/${scheduledId}`,
-      {
-        method: "GET",
-      },
+      { method: "GET" },
     );
-
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Failed to get scheduled post: HTTP ${response.status} - ${errorText}`);
     }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return ScheduledStatusSchema.parse(data);
+    return ScheduledStatusSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
   }
 
-  /**
-   * Update a scheduled post's scheduled time.
-   */
   async updateScheduledPost(
     scheduledId: string,
     scheduledAt: string,
     accountId?: string,
   ): Promise<ScheduledStatus> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Updating scheduled post", {
-      instance: account.instance,
-      scheduledId,
-      scheduledAt,
-    });
-
-    const response = await this.authenticatedFetch(
+    const account = await this.assertMastodonApi("update-scheduled-post", accountId);
+    const response = await authenticatedFetch(
       account,
       `/api/v1/scheduled_statuses/${scheduledId}`,
-      {
-        method: "PUT",
-        body: JSON.stringify({ scheduled_at: scheduledAt }),
-      },
+      { method: "PUT", body: JSON.stringify({ scheduled_at: scheduledAt }) },
     );
-
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Failed to update scheduled post: HTTP ${response.status} - ${errorText}`);
     }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return ScheduledStatusSchema.parse(data);
+    return ScheduledStatusSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
   }
 
-  /**
-   * Cancel a scheduled post.
-   */
   async cancelScheduledPost(scheduledId: string, accountId?: string): Promise<void> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Canceling scheduled post", { instance: account.instance, scheduledId });
-
-    const response = await this.authenticatedFetch(
+    const account = await this.assertMastodonApi("cancel-scheduled-post", accountId);
+    const response = await authenticatedFetch(
       account,
       `/api/v1/scheduled_statuses/${scheduledId}`,
-      {
-        method: "DELETE",
-      },
+      { method: "DELETE" },
     );
-
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Failed to cancel scheduled post: HTTP ${response.status} - ${errorText}`);
     }
   }
-
-  /**
-   * Get relationships with multiple accounts.
-   */
-  async getRelationships(targetAccountIds: string[], accountId?: string): Promise<Relationship[]> {
-    const account = this.getAccountOrActive(accountId);
-
-    logger.info("Getting relationships", {
-      instance: account.instance,
-      targetCount: targetAccountIds.length,
-    });
-
-    const params = new URLSearchParams();
-    for (const id of targetAccountIds) {
-      params.append("id[]", id);
-    }
-
-    const response = await this.authenticatedFetch(
-      account,
-      `/api/v1/accounts/relationships?${params}`,
-      {
-        method: "GET",
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to get relationships: HTTP ${response.status} - ${errorText}`);
-    }
-
-    const data = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-    return z.array(RelationshipSchema).parse(data);
-  }
 }
 
-// Export singleton instance
 export const authenticatedClient = new AuthenticatedClient();

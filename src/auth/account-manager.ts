@@ -7,12 +7,14 @@
 
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
-import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT } from "../config.js";
-import { instanceBlocklist } from "../policy/instance-blocklist.js";
-import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
-import { validateExternalUrl } from "../validation/url.js";
+import { resolveWriteAdapter } from "./adapters/resolve.js";
+import type { AccountInfo } from "./adapters/write-adapter.js";
 
 const logger = getLogger("activitypub-mcp:account-manager");
+
+// Re-export so existing importers (auth/index.ts) keep working; the canonical
+// definition lives in the adapter layer alongside the other normalized types.
+export type { AccountInfo };
 
 /**
  * Schema for account credentials
@@ -37,26 +39,6 @@ const AccountCredentialsSchema = z.object({
 });
 
 export type AccountCredentials = z.infer<typeof AccountCredentialsSchema>;
-
-/**
- * Schema for account information returned from API
- */
-const AccountInfoSchema = z.object({
-  id: z.string(),
-  username: z.string(),
-  acct: z.string(),
-  display_name: z.string().optional(),
-  note: z.string().optional(),
-  url: z.string(),
-  avatar: z.string().optional(),
-  header: z.string().optional(),
-  followers_count: z.number(),
-  following_count: z.number(),
-  statuses_count: z.number(),
-  created_at: z.string().optional(),
-});
-
-export type AccountInfo = z.infer<typeof AccountInfoSchema>;
 
 /**
  * Account manager for handling multiple authenticated accounts.
@@ -276,7 +258,9 @@ export class AccountManager {
   }
 
   /**
-   * Verify an access token is still valid.
+   * Verify an access token is still valid by calling the platform adapter's
+   * verifyCredentials. Returns null on any failure (not found, network, auth,
+   * or SSRF/policy rejection — the adapter's guarded fetch enforces those).
    */
   async verifyAccount(accountId: string): Promise<AccountInfo | null> {
     const account = this.accounts.get(accountId);
@@ -284,51 +268,15 @@ export class AccountManager {
       logger.warn("Cannot verify account - not found", { id: accountId });
       return null;
     }
-
-    const url = `https://${account.instance}/api/v1/accounts/verify_credentials`;
-
     try {
-      await validateExternalUrl(url);
-      instanceBlocklist.validateNotBlocked(account.instance);
+      const adapter = await resolveWriteAdapter(account);
+      return await adapter.verifyCredentials(account);
     } catch (error) {
-      logger.error("Account verification refused (URL or policy validation failed)", {
+      logger.error("Account verification error", {
         id: accountId,
         error: error instanceof Error ? error.message : String(error),
       });
       return null;
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-
-    try {
-      const response = await fetchWithRedirectGuard(
-        url,
-        {
-          headers: {
-            Authorization: `${account.tokenType} ${account.accessToken}`,
-            Accept: "application/json",
-          },
-          signal: controller.signal,
-        },
-        async (target) => {
-          await validateExternalUrl(target);
-          instanceBlocklist.validateNotBlocked(new URL(target).hostname);
-        },
-      );
-
-      if (!response.ok) {
-        logger.warn("Account verification failed", { id: accountId, status: response.status });
-        return null;
-      }
-
-      const data = await readJsonWithLimit<unknown>(response, MAX_RESPONSE_SIZE);
-      return AccountInfoSchema.parse(data);
-    } catch (error) {
-      logger.error("Account verification error", { id: accountId, error });
-      return null;
-    } finally {
-      clearTimeout(timeoutId);
     }
   }
 

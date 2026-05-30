@@ -90,6 +90,8 @@
 - **Post Threads**: Fetch complete conversation threads with replies
 - **WebFinger Support**: Resolve actor identifiers across the network
 - **Multi-Platform Support**: Works with Mastodon, Pleroma, Misskey, and more
+- **Misskey/Foundkey write support**: Authenticated actions (post, renote, react, follow, mute/block, media upload, home timeline, notifications) route to the native Misskey API automatically when an instance is detected as Misskey or Foundkey. All other software (Mastodon, Pleroma, Akkoma, GotoSocial, Sharkey, Firefish) uses the Mastodon-compatible API. Bookmarks, poll voting, and scheduled posts are Mastodon-only and return a clear "not supported on Misskey" message on Misskey accounts.
+- **Platform-scoped IDs**: status/account IDs passed to write tools must come from the same instance's API — IDs are not translated across platforms.
 - **Follower/Following Lists**: Access social connections
 - **Batch Operations**: Fetch multiple actors or posts in a single request
 

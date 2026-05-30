@@ -316,3 +316,68 @@ describe("verifyAccount SSRF protection (M8)", () => {
     fetchSpy.mockRestore();
   });
 });
+
+describe("verifyAccount delegates to the platform adapter", () => {
+  const originalEnv = process.env;
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+    delete process.env.ACTIVITYPUB_DEFAULT_INSTANCE;
+    delete process.env.ACTIVITYPUB_DEFAULT_TOKEN;
+    delete process.env.ACTIVITYPUB_ACCOUNTS;
+  });
+  afterEach(() => {
+    process.env = originalEnv;
+    vi.restoreAllMocks();
+    vi.doUnmock("../../src/auth/adapters/resolve.js");
+  });
+
+  it("returns adapter.verifyCredentials() result", async () => {
+    const fakeInfo = {
+      id: "u1",
+      username: "alice",
+      acct: "alice",
+      url: "https://misskey.test/@alice",
+      followers_count: 1,
+      following_count: 2,
+      statuses_count: 3,
+    };
+    vi.doMock("../../src/auth/adapters/resolve.js", () => ({
+      resolveWriteAdapter: vi.fn().mockResolvedValue({
+        verifyCredentials: vi.fn().mockResolvedValue(fakeInfo),
+      }),
+    }));
+    const { AccountManager } = await import("../../src/auth/account-manager.js");
+    const manager = new AccountManager();
+    manager.addAccount({
+      id: "mk",
+      instance: "misskey.test",
+      username: "alice",
+      accessToken: "tok",
+      tokenType: "Bearer",
+      scopes: ["read", "write"],
+    });
+    const info = await manager.verifyAccount("mk");
+    expect(info?.id).toBe("u1");
+    expect(info?.statuses_count).toBe(3);
+  });
+
+  it("returns null when the adapter throws", async () => {
+    vi.doMock("../../src/auth/adapters/resolve.js", () => ({
+      resolveWriteAdapter: vi.fn().mockResolvedValue({
+        verifyCredentials: vi.fn().mockRejectedValue(new Error("401")),
+      }),
+    }));
+    const { AccountManager } = await import("../../src/auth/account-manager.js");
+    const manager = new AccountManager();
+    manager.addAccount({
+      id: "x",
+      instance: "example.test",
+      username: "u",
+      accessToken: "t",
+      tokenType: "Bearer",
+      scopes: ["read"],
+    });
+    expect(await manager.verifyAccount("x")).toBeNull();
+  });
+});

@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Platform-aware write layer.** Authenticated operations now route to the
+  correct fediverse API per instance via NodeInfo software detection. A new
+  Misskey/Foundkey adapter covers core-parity ops (post/reply, renote, reaction,
+  follow/unfollow, mute/block, account verify, media upload, home timeline,
+  notifications), normalizing responses into the existing Mastodon-shaped types.
+  Mastodon-API-compatible software (Pleroma, Akkoma, GotoSocial, Sharkey,
+  Firefish) and undetected instances continue to use the Mastodon adapter.
+- **`UnsupportedOnPlatformError`.** Bookmarks, poll voting, and scheduled posts —
+  which have no Misskey equivalent — now return a clear "not supported on
+  Misskey" error instead of an opaque HTTP failure.
+
+### Internal
+
+- New `src/auth/adapters/` module: `WriteAdapter` interface + shared guarded
+  `authenticatedFetch`, `MastodonWriteAdapter` (existing logic), and
+  `MisskeyWriteAdapter`. `AuthenticatedClient` is now a thin router resolving the
+  adapter from detected software; `account-manager.verifyAccount` routes through
+  the adapter so Misskey accounts verify against `/api/i`.
+
 ## [2.1.0] - 2026-05-28
 
 ### Added

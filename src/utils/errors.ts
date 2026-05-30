@@ -130,3 +130,18 @@ export function getErrorMessage(error: unknown): string {
   }
   return String(error);
 }
+
+/**
+ * Thrown when an operation has no equivalent on the target fediverse software
+ * (e.g. poll voting or scheduled posts on Misskey). Surfaced to the LLM as a
+ * clear, actionable error instead of an opaque HTTP failure.
+ */
+export class UnsupportedOnPlatformError extends Error {
+  constructor(
+    public readonly op: string,
+    public readonly platform: string,
+  ) {
+    super(`${op} is not supported on ${platform}`);
+    this.name = "UnsupportedOnPlatformError";
+  }
+}
