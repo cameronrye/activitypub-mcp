@@ -27,9 +27,14 @@ export function openBrowser(url: string): Promise<void> {
     }
     try {
       const child = spawn(command, args, { stdio: "ignore", detached: true });
-      child.on("error", reject);
-      child.unref();
-      resolve();
+      // Resolve only once the child actually spawns; reject if the OS can't exec
+      // the opener (e.g. the binary is missing) so the caller can fall back to
+      // printing the URL. Resolving eagerly would swallow that async failure.
+      child.once("error", reject);
+      child.once("spawn", () => {
+        child.unref();
+        resolve();
+      });
     } catch (error) {
       reject(error instanceof Error ? error : new Error(String(error)));
     }
