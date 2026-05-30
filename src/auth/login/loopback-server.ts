@@ -81,6 +81,14 @@ export function createLoopbackServer(port = 0): Promise<LoopbackServer> {
       resolveServer({
         redirectUri,
         waitForCallback(expected) {
+          if (!expected.state && !expected.session) {
+            return Promise.reject(
+              new Error("waitForCallback requires at least one of state or session"),
+            );
+          }
+          if (resolveCb !== null) {
+            return Promise.reject(new Error("waitForCallback is already pending"));
+          }
           expectation = expected;
           return new Promise<URLSearchParams>((resolve, reject) => {
             const ms = expected.timeoutMs ?? DEFAULT_TIMEOUT_MS;

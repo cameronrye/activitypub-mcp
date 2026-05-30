@@ -23,9 +23,11 @@ describe("createLoopbackServer", () => {
   it("does NOT resolve on a mismatched state (responds 404)", async () => {
     const lb = await createLoopbackServer();
     let resolved = false;
-    lb.waitForCallback({ state: "abc" }).then(() => {
-      resolved = true;
-    });
+    lb.waitForCallback({ state: "abc" })
+      .then(() => {
+        resolved = true;
+      })
+      .catch(() => {}); // close() doesn't reject today; stay unhandled-rejection-safe
     const res = await fetch(`${lb.redirectUri}?code=xyz&state=WRONG`);
     expect(res.status).toBe(404);
     await new Promise((r) => setTimeout(r, 20));
