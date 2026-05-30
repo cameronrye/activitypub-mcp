@@ -9,7 +9,7 @@
 
 import { randomBytes } from "node:crypto";
 import { chmodSync, mkdirSync } from "node:fs";
-import { open, readFile, rename, stat, unlink } from "node:fs/promises";
+import { lstat, open, readFile, rename, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
@@ -47,15 +47,44 @@ export class CredentialStore {
 
   /** Load all persisted accounts. Absent file → []. */
   async loadAccounts(): Promise<StoredAccount[]> {
-    let raw: string;
+    let info: Awaited<ReturnType<typeof lstat>>;
     try {
-      raw = await readFile(this.file, "utf-8");
+      info = await lstat(this.file);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
       throw error;
     }
-    const parsed = FileSchema.parse(JSON.parse(raw));
-    return parsed.accounts;
+    if (info.isSymbolicLink()) {
+      throw new Error(`Refusing to read credential file: ${this.file} is a symlink`);
+    }
+    // Refuse a file owned by another user (POSIX only; getuid is undefined on Windows).
+    // Not unit-tested: chown to a foreign uid needs root, so this is impl-only defense.
+    if (typeof process.getuid === "function" && info.uid !== process.getuid()) {
+      throw new Error(
+        `Refusing to read credential file: ${this.file} is not owned by the current user`,
+      );
+    }
+    // Relax over-permissive files back to 0600 rather than only warning.
+    if ((info.mode & 0o077) !== 0) {
+      logger.warn("Credential file was group/other-accessible; tightening to 0600", {
+        file: this.file,
+      });
+      chmodSync(this.file, 0o600);
+    }
+
+    const raw = await readFile(this.file, "utf-8");
+    try {
+      return FileSchema.parse(JSON.parse(raw)).accounts;
+    } catch (error) {
+      const corrupt = `${this.file}.corrupt-${Date.now()}`;
+      await rename(this.file, corrupt);
+      logger.error("Credential file invalid; preserved and treating store as empty", {
+        file: this.file,
+        preservedAs: corrupt,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return [];
+    }
   }
 
   async getAccount(id: string): Promise<StoredAccount | undefined> {
@@ -108,11 +137,6 @@ export class CredentialStore {
   }
   get dirPath(): string {
     return this.dir;
-  }
-
-  // `stat` is imported for Task 2; referenced here to keep the import used.
-  protected statFile(): ReturnType<typeof stat> {
-    return stat(this.file);
   }
 }
 
