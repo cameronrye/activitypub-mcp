@@ -9,7 +9,7 @@
 
 import { randomBytes } from "node:crypto";
 import { chmodSync, mkdirSync } from "node:fs";
-import { open, readFile, rename, stat } from "node:fs/promises";
+import { open, readFile, rename, stat, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
@@ -93,7 +93,12 @@ export class CredentialStore {
     } finally {
       await handle.close();
     }
-    await rename(tmp, this.file);
+    try {
+      await rename(tmp, this.file);
+    } catch (error) {
+      await unlink(tmp).catch(() => {}); // best-effort cleanup; don't mask the original error
+      throw error;
+    }
     chmodSync(this.file, 0o600);
   }
 
