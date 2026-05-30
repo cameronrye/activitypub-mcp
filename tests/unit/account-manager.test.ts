@@ -356,7 +356,11 @@ describe("AccountManager.loadPersisted", () => {
     const { AccountManager } = await import("../../src/auth/account-manager.js");
     const manager = new AccountManager();
     await manager.loadPersisted(store);
-    expect(manager.getAccount("bob@misskey.test")?.username).toBe("bob");
+    const acct = manager.getAccount("bob@misskey.test");
+    expect(acct?.username).toBe("bob");
+    expect(acct?.instance).toBe("misskey.test");
+    expect(acct?.accessToken).toBe("tok");
+    expect(acct?.scopes).toEqual(["read:account"]);
   });
 
   it("env-var account wins on id collision (persisted skipped)", async () => {
