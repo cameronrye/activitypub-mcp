@@ -6,9 +6,10 @@ import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { accountManager } from "../../src/auth/account-manager.js";
+import { authenticatedFetch } from "../../src/auth/adapters/write-adapter.js";
 import { AuthenticatedClient } from "../../src/auth/authenticated-client.js";
 import { getInstanceSoftware } from "../../src/discovery/nodeinfo.js";
-import { UnsupportedOnPlatformError } from "../../src/utils/errors.js";
+import { TokenRejectedError, UnsupportedOnPlatformError } from "../../src/utils/errors.js";
 
 // Mock logtape
 vi.mock("@logtape/logtape", () => ({
@@ -1115,5 +1116,27 @@ describe("AuthenticatedClient response size cap (M2)", () => {
     await expect(client.createPost({ content: "hi", visibility: "public" })).rejects.toBeInstanceOf(
       ResponseTooLargeError,
     );
+  });
+});
+
+describe("authenticatedFetch token rejection", () => {
+  const account = {
+    id: "a",
+    instance: "example.social",
+    username: "alice",
+    accessToken: "tok",
+    tokenType: "Bearer",
+    scopes: ["read", "write"],
+    createdAt: "2026-01-01T00:00:00.000Z",
+  };
+
+  it("throws TokenRejectedError on HTTP 401", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response("nope", { status: 401 }));
+    await expect(
+      authenticatedFetch(account, "/api/v1/accounts/verify_credentials"),
+    ).rejects.toBeInstanceOf(TokenRejectedError);
+    fetchSpy.mockRestore();
   });
 });
