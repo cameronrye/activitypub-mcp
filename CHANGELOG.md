@@ -26,6 +26,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `~/.config/activitypub-mcp/accounts.json`), loaded at startup alongside
   env-configured accounts (env wins on id conflict). Tokens are never echoed in
   tool output or logs.
+- **Account & content feature tools (Mastodon).** `edit-post`,
+  `pin-post`/`unpin-post`, `follow-hashtag`/`unfollow-hashtag`, list management
+  (`create-list`, `get-lists`, `update-list`, `delete-list`, `get-list-timeline`,
+  `add-list-accounts`, `remove-list-accounts`, `get-list-accounts`), keyword
+  filters (`get-filters`, `create-filter`, `delete-filter`), `update-profile`,
+  and follow-request management (`get-follow-requests`, `accept-follow-request`,
+  `reject-follow-request`). All Mastodon-only; they return a clear "not supported
+  on Misskey" error on Misskey accounts.
 
 ### Internal
 

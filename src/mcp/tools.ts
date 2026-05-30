@@ -27,6 +27,7 @@ import {
 } from "../validation/validators.js";
 import { trackedMcpServer } from "./capabilities.js";
 import { registerAuthTools } from "./tools-auth.js";
+import { registerContentTools } from "./tools-content.js";
 import { registerExportTools } from "./tools-export.js";
 import { registerWriteTools } from "./tools-write.js";
 
@@ -80,6 +81,9 @@ export function registerTools(mcpServer: McpServer, rateLimiter: RateLimiter): v
 
   // Account onboarding tools (OAuth / MiAuth)
   registerAuthTools(mcpServer);
+
+  // Content & account feature tools (Mastodon)
+  registerContentTools(mcpServer);
 
   // Export tools
   registerExportTools(mcpServer, rateLimiter);
