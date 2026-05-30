@@ -97,7 +97,7 @@ export class MastodonOAuthStrategy implements LoginStrategy {
     if (!tokenRes.ok || !tokenRes.data?.access_token) {
       throw new Error(`Token exchange failed: ${platformError(tokenRes.data, tokenRes.status)}`);
     }
-    const granted = tokenRes.data.scope ? tokenRes.data.scope.split(" ") : ctx.scopes;
+    const granted = tokenRes.data?.scope ? tokenRes.data.scope.split(" ") : ctx.scopes;
 
     // 6. Whoami.
     const whoami = await guardedFetch<{ username: string }>(

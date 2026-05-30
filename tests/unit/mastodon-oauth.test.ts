@@ -91,6 +91,27 @@ describe("MastodonOAuthStrategy.authorize", () => {
     );
     await expect(strategy.authorize(ctx())).rejects.toThrow(/bad client|422/);
   });
+
+  it("rejects on an issuer (iss) mismatch (mix-up defense)", async () => {
+    server.use(
+      http.post("https://mastodon.test/api/v1/apps", () =>
+        HttpResponse.json({ client_id: "cid", client_secret: "csecret" }),
+      ),
+    );
+    await expect(
+      strategy.authorize(
+        ctx({
+          waitForCallback: vi.fn(async (exp: { state?: string }) => {
+            const p = new URLSearchParams();
+            p.set("code", "auth-code");
+            if (exp.state) p.set("state", exp.state);
+            p.set("iss", "https://evil.test"); // wrong issuer host
+            return p;
+          }),
+        }),
+      ),
+    ).rejects.toThrow(/issuer mismatch|mix-up/i);
+  });
 });
 
 describe("MastodonOAuthStrategy.revoke", () => {
@@ -115,5 +136,6 @@ describe("MastodonOAuthStrategy.revoke", () => {
     });
     expect(body).toContain("token=tok");
     expect(body).toContain("client_id=cid");
+    expect(body).toContain("client_secret=csecret");
   });
 });
