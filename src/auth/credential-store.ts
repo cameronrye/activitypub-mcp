@@ -8,8 +8,8 @@
  */
 
 import { randomBytes } from "node:crypto";
-import { chmodSync, mkdirSync } from "node:fs";
-import { lstat, open, readFile, rename, unlink } from "node:fs/promises";
+import { chmodSync, constants, mkdirSync } from "node:fs";
+import { lstat, open, rename, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
@@ -72,17 +72,42 @@ export class CredentialStore {
       chmodSync(this.file, 0o600);
     }
 
-    const raw = await readFile(this.file, "utf-8");
+    // Read through O_NOFOLLOW to close the lstat→read TOCTOU: if a symlink is
+    // swapped in after the lstat above, open() fails ELOOP rather than following it.
+    let raw: string;
+    const handle = await open(this.file, constants.O_RDONLY | constants.O_NOFOLLOW).catch(
+      (error: NodeJS.ErrnoException) => {
+        if (error.code === "ELOOP") {
+          throw new Error(`Refusing to read credential file: ${this.file} is a symlink`);
+        }
+        throw error;
+      },
+    );
+    try {
+      raw = await handle.readFile("utf-8");
+    } finally {
+      await handle.close();
+    }
+
     try {
       return FileSchema.parse(JSON.parse(raw)).accounts;
-    } catch (error) {
+    } catch (parseError) {
+      // Preserve the unreadable file for recovery, then treat the store as empty.
+      // Never throw on a malformed file — even if the rename itself fails.
       const corrupt = `${this.file}.corrupt-${Date.now()}`;
-      await rename(this.file, corrupt);
-      logger.error("Credential file invalid; preserved and treating store as empty", {
-        file: this.file,
-        preservedAs: corrupt,
-        error: error instanceof Error ? error.message : String(error),
-      });
+      try {
+        await rename(this.file, corrupt);
+        logger.error("Credential file invalid; preserved and treating store as empty", {
+          file: this.file,
+          preservedAs: corrupt,
+          error: parseError instanceof Error ? parseError.message : String(parseError),
+        });
+      } catch {
+        logger.error("Credential file invalid and could not be preserved; treating as empty", {
+          file: this.file,
+          error: parseError instanceof Error ? parseError.message : String(parseError),
+        });
+      }
       return [];
     }
   }

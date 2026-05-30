@@ -124,7 +124,6 @@ describe("CredentialStore hardening", () => {
   it("refuses to read a symlinked accounts file", async () => {
     const { CredentialStore } = await freshStore();
     const cfg = process.env.ACTIVITYPUB_CONFIG_DIR as string;
-    mkdtempSync; // noop to keep import; real dir below
     const target = join(dir, "evil.json");
     writeFileSync(target, JSON.stringify({ version: 1, accounts: [] }));
     // Build the config dir and symlink accounts.json -> evil.json.
