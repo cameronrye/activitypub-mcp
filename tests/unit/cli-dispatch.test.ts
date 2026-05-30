@@ -7,6 +7,7 @@ vi.mock("../../src/cli/accounts.js", () => ({ runAccounts: vi.fn().mockResolvedV
 import { runAccounts } from "../../src/cli/accounts.js";
 import { dispatchCli } from "../../src/cli/index.js";
 import { runLogin } from "../../src/cli/login.js";
+import { runLogout } from "../../src/cli/logout.js";
 
 afterEach(() => vi.clearAllMocks());
 
@@ -14,6 +15,11 @@ describe("dispatchCli", () => {
   it("routes login and reports handled=true", async () => {
     expect(await dispatchCli(["login", "mastodon.test"])).toBe(true);
     expect(runLogin).toHaveBeenCalledWith(["mastodon.test"]);
+  });
+
+  it("routes logout", async () => {
+    expect(await dispatchCli(["logout", "alice@mastodon.test"])).toBe(true);
+    expect(runLogout).toHaveBeenCalledWith(["alice@mastodon.test"]);
   });
 
   it("routes accounts", async () => {
