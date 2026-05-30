@@ -37,7 +37,7 @@ function parseBoolEnv(value: string | undefined, defaultValue: boolean): boolean
 export const SERVER_NAME = process.env.MCP_SERVER_NAME || "activitypub-mcp";
 
 /** MCP Server version */
-export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "2.1.0";
+export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "2.2.0";
 
 /** Log level for the application */
 export const LOG_LEVEL = process.env.LOG_LEVEL || "info";
