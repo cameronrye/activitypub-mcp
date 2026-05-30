@@ -181,3 +181,28 @@ describe("HEALTH_CHECK_EXTERNAL_PROBE config (M7)", () => {
     expect(mod.HEALTH_CHECK_EXTERNAL_PROBE).toBe(false);
   });
 });
+
+describe("OAuth onboarding config", () => {
+  const orig = process.env;
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...orig };
+  });
+  afterEach(() => {
+    process.env = orig;
+  });
+
+  it("defaults the token store path under the home config dir", async () => {
+    delete process.env.MCP_TOKEN_STORE;
+    const { TOKEN_STORE_PATH } = await import("../../src/config.js");
+    expect(TOKEN_STORE_PATH).toMatch(/activitypub-mcp[/\\]accounts\.json$/);
+  });
+
+  it("honors MCP_TOKEN_STORE override and app-name default", async () => {
+    process.env.MCP_TOKEN_STORE = "/tmp/custom-accounts.json";
+    delete process.env.MCP_OAUTH_APP_NAME;
+    const { TOKEN_STORE_PATH, OAUTH_APP_NAME } = await import("../../src/config.js");
+    expect(TOKEN_STORE_PATH).toBe("/tmp/custom-accounts.json");
+    expect(OAUTH_APP_NAME).toBe("activitypub-mcp");
+  });
+});

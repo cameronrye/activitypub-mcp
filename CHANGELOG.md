@@ -19,6 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`UnsupportedOnPlatformError`.** Bookmarks, poll voting, and scheduled posts —
   which have no Misskey equivalent — now return a clear "not supported on
   Misskey" error instead of an opaque HTTP failure.
+- **Account onboarding via `start-login` / `complete-login`.** Connect a Mastodon
+  (OAuth) or Misskey (MiAuth) account end-to-end through an out-of-band code
+  paste — no manual app registration. Acquired credentials persist to a 0600
+  token-store file (`MCP_TOKEN_STORE`, default
+  `~/.config/activitypub-mcp/accounts.json`), loaded at startup alongside
+  env-configured accounts (env wins on id conflict). Tokens are never echoed in
+  tool output or logs.
 
 ### Internal
 

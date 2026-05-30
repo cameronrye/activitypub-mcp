@@ -49,19 +49,26 @@ vi.mock("@logtape/logtape", () => ({
   }),
 }));
 
-vi.mock("../../src/config.js", () => ({
-  SERVER_NAME: "test-server",
-  SERVER_VERSION: "1.0.0",
-  LOG_LEVEL: "error",
-  RATE_LIMIT_ENABLED: false,
-  RATE_LIMIT_MAX: 100,
-  RATE_LIMIT_WINDOW: 60000,
-  RATE_LIMIT_CLEANUP_INTERVAL: 60000,
-  TRANSPORT_MODE: "stdio",
-  HTTP_PORT: 3000,
-  HTTP_HOST: "localhost",
-  MAX_REQUEST_HISTORY: 1000,
-}));
+vi.mock("../../src/config.js", async (importOriginal) => {
+  // Spread the real config so the full auth/policy graph (now imported by
+  // mcp-server for accountManager.ready()) finds every export it needs;
+  // override only the values this test cares about.
+  const actual = await importOriginal<typeof import("../../src/config.js")>();
+  return {
+    ...actual,
+    SERVER_NAME: "test-server",
+    SERVER_VERSION: "1.0.0",
+    LOG_LEVEL: "error",
+    RATE_LIMIT_ENABLED: false,
+    RATE_LIMIT_MAX: 100,
+    RATE_LIMIT_WINDOW: 60000,
+    RATE_LIMIT_CLEANUP_INTERVAL: 60000,
+    TRANSPORT_MODE: "stdio",
+    HTTP_PORT: 3000,
+    HTTP_HOST: "localhost",
+    MAX_REQUEST_HISTORY: 1000,
+  };
+});
 
 describe("ActivityPubMCPServer", () => {
   beforeEach(() => {

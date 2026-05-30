@@ -26,6 +26,7 @@ import {
   validateQuery,
 } from "../validation/validators.js";
 import { trackedMcpServer } from "./capabilities.js";
+import { registerAuthTools } from "./tools-auth.js";
 import { registerExportTools } from "./tools-export.js";
 import { registerWriteTools } from "./tools-write.js";
 
@@ -76,6 +77,9 @@ export function registerTools(mcpServer: McpServer, rateLimiter: RateLimiter): v
 
   // Write operation tools (authenticated)
   registerWriteTools(mcpServer, rateLimiter);
+
+  // Account onboarding tools (OAuth / MiAuth)
+  registerAuthTools(mcpServer);
 
   // Export tools
   registerExportTools(mcpServer, rateLimiter);

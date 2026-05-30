@@ -11,6 +11,7 @@
 import { getLogger } from "@logtape/logtape";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { accountManager } from "./auth/index.js";
 import {
   HTTP_HOST,
   HTTP_PORT,
@@ -170,6 +171,10 @@ class ActivityPubMCPServer {
    */
   async start(transportMode?: "stdio" | "http"): Promise<void> {
     const mode = transportMode ?? CONFIG.transportMode;
+
+    // Ensure persisted (OAuth/MiAuth-acquired) accounts finish loading before
+    // we accept tool calls.
+    await accountManager.ready();
 
     if (mode === "http") {
       await this.startHttpTransport();
