@@ -16,6 +16,7 @@ interface MiAuthCheck {
   ok: boolean;
   token?: string;
   user?: { username?: string };
+  error?: { message?: string };
 }
 
 export class MisskeyMiAuthStrategy implements LoginStrategy {
@@ -43,7 +44,10 @@ export class MisskeyMiAuthStrategy implements LoginStrategy {
       body: "{}",
     });
     if (!res.ok || !res.data?.ok || !res.data.token) {
-      throw new Error("MiAuth authorization was not approved");
+      const detail = res.data?.error?.message
+        ? `: ${res.data.error.message}`
+        : ` (HTTP ${res.status})`;
+      throw new Error(`MiAuth authorization was not approved${detail}`);
     }
     const username = res.data.user?.username;
     if (!username) throw new Error("MiAuth check returned no user identity");

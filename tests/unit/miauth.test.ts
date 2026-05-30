@@ -70,4 +70,25 @@ describe("MisskeyMiAuthStrategy.authorize", () => {
       }),
     ).rejects.toThrow(/authorization (was )?(not approved|failed|denied)|ok:false|not approved/i);
   });
+
+  it("rejects when the check response carries no user identity", async () => {
+    server.use(
+      http.post("https://misskey.test/api/miauth/:uuid/check", () =>
+        HttpResponse.json({ ok: true, token: "mk-token", user: {} }),
+      ),
+    );
+    await expect(
+      strategy.authorize({
+        instance: "misskey.test",
+        redirectUri: "http://127.0.0.1:7777/callback",
+        scopes: ["write:notes"],
+        openBrowser: vi.fn().mockResolvedValue(undefined),
+        waitForCallback: vi.fn(async (exp: { session?: string }) => {
+          const p = new URLSearchParams();
+          if (exp.session) p.set("session", exp.session);
+          return p;
+        }),
+      }),
+    ).rejects.toThrow(/no user identity/i);
+  });
 });
