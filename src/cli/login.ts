@@ -24,8 +24,13 @@ function parseFlags(rest: string[]): LoginFlags {
   const flags: LoginFlags = {};
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i];
-    if (arg === "--port") flags.port = Number.parseInt(rest[++i] ?? "", 10);
-    else if (arg === "--id") flags.id = rest[++i];
+    if (arg === "--port") {
+      const port = Number.parseInt(rest[++i] ?? "", 10);
+      if (!Number.isInteger(port) || port < 0 || port > 65535) {
+        throw new Error("--port must be an integer between 0 and 65535");
+      }
+      flags.port = port;
+    } else if (arg === "--id") flags.id = rest[++i];
     else if (arg === "--label") flags.label = rest[++i];
   }
   return flags;

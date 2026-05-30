@@ -62,4 +62,9 @@ describe("runLogin", () => {
     await expect(runLogin(["not a domain"])).rejects.toThrow();
     expect(resolveLoginStrategy).not.toHaveBeenCalled();
   });
+
+  it("rejects a non-numeric --port", async () => {
+    const { runLogin } = await import(/* @vite-ignore */ "../../src/cli/login.js");
+    await expect(runLogin(["mastodon.test", "--port", "abc"])).rejects.toThrow(/--port must be/);
+  });
 });
