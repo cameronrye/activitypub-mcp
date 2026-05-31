@@ -7,9 +7,17 @@
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { registerTools } from "../../src/mcp/tools.js";
 import { RateLimiter } from "../../src/resilience/rate-limiter.js";
+
+// resolveAndPin resolves the actor's host via node:dns and now fails closed when
+// it doesn't resolve. The fixture host (example.social) doesn't exist on the
+// real resolver, so pin DNS to a public IP — the pinned fetch is then
+// intercepted by MSW (started globally in tests/setup.ts).
+vi.mock("node:dns/promises", () => ({
+  lookup: async () => [{ address: "93.184.216.34", family: 4 }],
+}));
 
 // MSW server is started globally in tests/setup.ts — no import needed here.
 
