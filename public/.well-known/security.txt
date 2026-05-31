@@ -3,8 +3,8 @@ Contact: mailto:c@meron.io
 Expires: 2026-12-31T23:59:59.000Z
 Preferred-Languages: en
 Canonical: https://cameronrye.github.io/activitypub-mcp/.well-known/security.txt
-Policy: https://github.com/cameronrye/activitypub-mcp/blob/master/SECURITY.md
-Acknowledgments: https://github.com/cameronrye/activitypub-mcp/blob/master/SECURITY.md#acknowledgments
+Policy: https://github.com/cameronrye/activitypub-mcp/blob/main/SECURITY.md
+Acknowledgments: https://github.com/cameronrye/activitypub-mcp/blob/main/SECURITY.md#acknowledgments
 
 # Security Policy
 

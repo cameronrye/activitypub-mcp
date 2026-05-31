@@ -13,7 +13,7 @@ Thank you for your interest in contributing to the ActivityPub MCP Server! This 
 
 ### Submitting Pull Requests
 
-1. **Fork the repository** and create a new branch from `master`
+1. **Fork the repository** and create a new branch from `main`
 2. **Follow the coding standards** outlined below
 3. **Write or update tests** for your changes
 4. **Update documentation** as needed

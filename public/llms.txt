@@ -109,7 +109,7 @@ For comprehensive documentation including detailed API reference, examples, trou
 
 ### v2 Migration
 
-Upgrading from v1.x? See [MIGRATION-v2.md](https://github.com/cameronrye/activitypub-mcp/blob/master/MIGRATION-v2.md) for the breaking-change checklist: Node 20+, required `MCP_HTTP_SECRET` for HTTP transport, empty CORS default, pipe-delimited `ACTIVITYPUB_ACCOUNTS`, `HEALTH_CHECK_EXTERNAL_PROBE` in place of removed `HEALTH_CHECK_ENABLED`, `scheduledId` → `scheduledPostId`, and `get-relationship` taking single `acct` (not `accountIds[]`).
+Upgrading from v1.x? See [MIGRATION-v2.md](https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v2.md) for the breaking-change checklist: Node 20+, required `MCP_HTTP_SECRET` for HTTP transport, empty CORS default, pipe-delimited `ACTIVITYPUB_ACCOUNTS`, `HEALTH_CHECK_EXTERNAL_PROBE` in place of removed `HEALTH_CHECK_ENABLED`, `scheduledId` → `scheduledPostId`, and `get-relationship` taking single `acct` (not `accountIds[]`).
 
 ---
 

@@ -106,7 +106,7 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
 npm install -g activitypub-mcp
 
 # Using the installation script
-curl -fsSL https://raw.githubusercontent.com/cameronrye/activitypub-mcp/master/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/cameronrye/activitypub-mcp/main/scripts/install.sh | bash
 
 # Or clone and build from source
 git clone https://github.com/cameronrye/activitypub-mcp.git
@@ -122,7 +122,7 @@ npm run build
 npm install -g activitypub-mcp
 
 # Using the installation script
-iwr -useb https://raw.githubusercontent.com/cameronrye/activitypub-mcp/master/scripts/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/cameronrye/activitypub-mcp/main/scripts/install.ps1 | iex
 
 # Or clone and build from source
 git clone https://github.com/cameronrye/activitypub-mcp.git
@@ -926,7 +926,7 @@ Log levels:
 
 ## Changelog
 
-The canonical changelog lives in [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/master/CHANGELOG.md). Highlights:
+The canonical changelog lives in [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md). Highlights:
 
 ### Version 2.0.0 (Current) — 2026-05-27
 
