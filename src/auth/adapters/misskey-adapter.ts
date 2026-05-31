@@ -9,7 +9,7 @@
 
 import { MAX_RESPONSE_SIZE, USER_AGENT } from "../../config.js";
 import { instanceBlocklist } from "../../policy/instance-blocklist.js";
-import { pinnedFetch, readJsonWithLimit } from "../../utils/fetch-helpers.js";
+import { pinnedFetch, readErrorText, readJsonWithLimit } from "../../utils/fetch-helpers.js";
 import type { AccountCredentials } from "../account-manager.js";
 import {
   type AccountInfo,
@@ -406,7 +406,7 @@ export class MisskeyWriteAdapter implements WriteAdapter {
       (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname),
     );
     if (!response.ok) {
-      const text = await response.text();
+      const text = await readErrorText(response);
       throw new Error(`Failed to upload media: HTTP ${response.status} - ${text}`);
     }
     const f = await readJsonWithLimit<MisskeyDriveFile>(response, MAX_RESPONSE_SIZE);

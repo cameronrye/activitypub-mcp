@@ -7,7 +7,7 @@
 import { z } from "zod";
 import { MAX_RESPONSE_SIZE, USER_AGENT } from "../../config.js";
 import { instanceBlocklist } from "../../policy/instance-blocklist.js";
-import { pinnedFetch, readJsonWithLimit } from "../../utils/fetch-helpers.js";
+import { pinnedFetch, readErrorText, readJsonWithLimit } from "../../utils/fetch-helpers.js";
 import type { AccountCredentials } from "../account-manager.js";
 import {
   type AccountInfo,
@@ -38,7 +38,7 @@ async function postAndParseStatus(
 ): Promise<Status> {
   const response = await authenticatedFetch(account, endpoint, init);
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await readErrorText(response);
     throw new Error(`Failed to ${failVerb}: HTTP ${response.status} - ${errorText}`);
   }
   return StatusSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
@@ -52,7 +52,7 @@ async function postAndParseRelationship(
 ): Promise<Relationship> {
   const response = await authenticatedFetch(account, endpoint, init);
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await readErrorText(response);
     throw new Error(`Failed to ${failVerb}: HTTP ${response.status} - ${errorText}`);
   }
   return RelationshipSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
@@ -86,7 +86,7 @@ export class MastodonWriteAdapter implements WriteAdapter {
       method: "DELETE",
     });
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to delete post: HTTP ${response.status} - ${errorText}`);
     }
   }
@@ -212,7 +212,7 @@ export class MastodonWriteAdapter implements WriteAdapter {
       method: "GET",
     });
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to get relationship: HTTP ${response.status} - ${errorText}`);
     }
     return z.array(RelationshipSchema).parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
@@ -225,7 +225,7 @@ export class MastodonWriteAdapter implements WriteAdapter {
       { method: "GET" },
     );
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to lookup account: HTTP ${response.status} - ${errorText}`);
     }
     return await readJsonWithLimit<AccountLookup>(response, MAX_RESPONSE_SIZE);
@@ -270,7 +270,7 @@ export class MastodonWriteAdapter implements WriteAdapter {
       (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname),
     );
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to upload media: HTTP ${response.status} - ${errorText}`);
     }
     return MediaAttachmentSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
@@ -286,7 +286,7 @@ export class MastodonWriteAdapter implements WriteAdapter {
       method: "GET",
     });
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to get home timeline: HTTP ${response.status} - ${errorText}`);
     }
     return z.array(StatusSchema).parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
@@ -306,7 +306,7 @@ export class MastodonWriteAdapter implements WriteAdapter {
       method: "GET",
     });
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to get notifications: HTTP ${response.status} - ${errorText}`);
     }
     return await readJsonWithLimit<NotificationItem[]>(response, MAX_RESPONSE_SIZE);

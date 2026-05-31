@@ -176,6 +176,48 @@ export async function readJsonWithLimit<T = unknown>(
   return JSON.parse(text) as T;
 }
 
+/**
+ * Read a Response body as text for an ERROR message, bounded to `maxBytes`.
+ *
+ * Error bodies are attacker-influenceable (a hostile/misconfigured instance
+ * controls them) and flow into thrown Error messages, logs, and the audit trail.
+ * Unlike the success readers, the legacy error path used an UNcapped
+ * `response.text()`, giving the remote an unbounded write channel into those
+ * sinks. This streams and stops at the cap, appending a truncation marker, and
+ * never throws (returns "" if the body can't be read) so it is safe in a catch.
+ */
+export async function readErrorText(response: Response, maxBytes = 2048): Promise<string> {
+  const mark = (t: string) => (t.length > maxBytes ? `${t.slice(0, maxBytes)}…[truncated]` : t);
+  try {
+    const reader = response.body?.getReader();
+    if (!reader) return mark(await response.text());
+
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    try {
+      while (total < maxBytes) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        total += value.byteLength;
+      }
+      await reader.cancel().catch(() => {});
+    } finally {
+      reader.releaseLock();
+    }
+
+    const merged = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+      merged.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return mark(new TextDecoder("utf-8").decode(merged));
+  } catch {
+    return "";
+  }
+}
+
 export interface GuardedFetchOptions {
   method?: string;
   headers?: Record<string, string>;

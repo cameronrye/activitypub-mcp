@@ -106,6 +106,25 @@ export class AuditLogger {
   }
 
   /**
+   * Scrub the `error` field before it is stored or logged. Error strings are
+   * attacker-influenceable — they embed remote (now length-capped) response
+   * bodies, which a hostile/misconfigured instance can fill with bearer-token
+   * reflections, log-injection bytes, or second-order prompt-injection text.
+   * sanitizeParams only ever touched `params`, never `error`, so this closes the
+   * parallel channel: redact credential patterns and cap length for storage.
+   */
+  private scrubError(error?: string): string | undefined {
+    if (!error) return error;
+    const redacted = error
+      .replace(/Bearer\s+\S+/gi, "Bearer [REDACTED]")
+      .replace(
+        /\b(access_token|refresh_token|client_secret|token|secret|password|authorization|api[-_]?key)\b(["':=\s]+)\S+/gi,
+        "$1$2[REDACTED]",
+      );
+    return redacted.length > 500 ? `${redacted.slice(0, 500)}... [truncated]` : redacted;
+  }
+
+  /**
    * Log a tool invocation.
    */
   logToolInvocation(
@@ -123,7 +142,7 @@ export class AuditLogger {
       params: this.sanitizeParams(params),
       success: result.success,
       duration: result.duration,
-      error: result.error,
+      error: this.scrubError(result.error),
       domain: this.extractDomain(params),
       actor: this.extractActor(params),
     };
@@ -139,7 +158,7 @@ export class AuditLogger {
     } else {
       logger.warn("Tool invocation failed", {
         tool: toolName,
-        error: result.error,
+        error: entry.error,
         domain: entry.domain,
       });
     }
@@ -163,7 +182,7 @@ export class AuditLogger {
       params: this.sanitizeParams(params),
       success: result.success,
       duration: result.duration,
-      error: result.error,
+      error: this.scrubError(result.error),
       domain: this.extractDomain(params),
       actor: this.extractActor(params),
     };
@@ -212,13 +231,13 @@ export class AuditLogger {
       name: "instance_block",
       params: { domain, reason },
       success: false,
-      error: reason,
+      error: this.scrubError(reason),
       domain,
     };
 
     this.addEntry(entry);
 
-    logger.warn("Blocked instance access attempt", { domain, reason });
+    logger.warn("Blocked instance access attempt", { domain, reason: entry.error });
   }
 
   /**
@@ -262,13 +281,13 @@ export class AuditLogger {
       eventType: "error",
       name: context,
       success: false,
-      error,
+      error: this.scrubError(error),
       metadata,
     };
 
     this.addEntry(entry);
 
-    logger.error("Error occurred", { context, error, metadata });
+    logger.error("Error occurred", { context, error: entry.error, metadata });
   }
 
   /**

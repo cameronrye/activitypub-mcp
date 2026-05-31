@@ -69,6 +69,30 @@ describe("AuditLogger", () => {
       expect(param.length).toBeLessThan(600);
       expect(param).toContain("[truncated]");
     });
+
+    it("redacts a bearer token reflected into the error field", () => {
+      auditLogger.logToolInvocation(
+        "post-status",
+        { acct: "user" },
+        {
+          success: false,
+          error: "Failed: HTTP 500 - upstream echoed Authorization: Bearer SECRET-TOKEN-abc123",
+        },
+      );
+      const entries = auditLogger.getRecentEntries();
+      expect(entries[0].error).not.toContain("SECRET-TOKEN-abc123");
+      expect(entries[0].error).toContain("[REDACTED]");
+    });
+
+    it("caps an unbounded attacker-controlled error body in the audit entry", () => {
+      auditLogger.logToolInvocation(
+        "post-status",
+        { acct: "user" },
+        { success: false, error: `HTTP 500 - ${"x".repeat(5000)}` },
+      );
+      const entries = auditLogger.getRecentEntries();
+      expect((entries[0].error as string).length).toBeLessThan(600);
+    });
   });
 
   describe("logResourceAccess", () => {
