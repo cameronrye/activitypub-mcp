@@ -2,7 +2,7 @@
  * Unit tests for the HttpTransportServer class.
  */
 
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { HttpTransportServer } from "../../src/transport/http.js";
 
 const TEST_SECRET = "x".repeat(32);
