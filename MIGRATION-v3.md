@@ -94,8 +94,8 @@ Update any automation, chat macros, or scripts that call these tools by name.
 | `export-hashtag` | None — ask the model to format the fetched data |
 | `health-check` | Removed — use the HTTP `/health` endpoint for liveness |
 | `performance-metrics` | Removed — `/metrics` endpoint removed entirely |
-| `batch-fetch-actors` | Call `get-actor` repeatedly |
-| `batch-fetch-posts` | Call `get-post` repeatedly |
+| `batch-fetch-actors` | Call `discover-actor` repeatedly |
+| `batch-fetch-posts` | Use `get-post-thread` for an individual post (returns the post and its thread) |
 | `convert-url` | Removed — no replacement |
 | `recommend-instances` | Use `discover-instances` (now live via instances.social) |
 | `discover-instances` (static) | Use `discover-instances` (same name, now live) |
@@ -216,10 +216,9 @@ The following are intentionally **unchanged** in v3:
   unchanged.
 - **Stdio transport.** Default transport, unchanged.
 - **Read-only tool names** not mentioned in the removal table above (e.g.,
-  `get-actor`, `get-post`, `fetch-timeline`, `get-post-thread`,
-  `get-trending-hashtags`, `get-trending-posts`, `get-home-timeline`,
-  `get-notifications`, `get-bookmarks`, `get-favourites`,
-  `get-instance-info`, `search`) are unchanged.
+  `discover-actor`, `fetch-timeline`, `get-post-thread`,
+  `get-instance-info`, `get-public-timeline`, `get-trending-hashtags`, `get-trending-posts`,
+  `search`, `discover-instances`) are unchanged.
 - **MCP resource scheme.** Resources are still served under `activitypub://`.
 - **`ACTIVITYPUB_ACCOUNTS` pipe delimiter.** Still `id|instance|token|username|label`.
 - **Node version requirement.** Still `>=20.0.0`.
