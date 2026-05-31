@@ -52,8 +52,7 @@ export function registerTools(mcpServer: McpServer, rateLimiter: RateLimiter): v
   // Timeline tools
   registerGetTrendingHashtagsTool(mcpServer, rateLimiter);
   registerGetTrendingPostsTool(mcpServer, rateLimiter);
-  registerGetLocalTimelineTool(mcpServer, rateLimiter);
-  registerGetFederatedTimelineTool(mcpServer, rateLimiter);
+  registerGetPublicTimelineTool(mcpServer, rateLimiter);
 
   // Instance tools
   registerGetInstanceInfoTool(mcpServer, rateLimiter);
@@ -836,7 +835,7 @@ ${hashtagsList || "No trending hashtags found"}
 
 💡 **Tips:**
 - Use \`search-hashtags\` to explore posts with a specific hashtag
-- Use \`get-local-timeline\` to see recent posts from this instance`,
+- Use \`get-public-timeline\` to see recent posts from this instance`,
             },
           ],
         };
@@ -947,17 +946,20 @@ ${postsList || "No trending posts found"}${moreText}
 }
 
 /**
- * Get local timeline tool.
+ * Get public timeline tool (local or federated scope).
  */
-function registerGetLocalTimelineTool(mcpServer: McpServer, rateLimiter: RateLimiter): void {
+function registerGetPublicTimelineTool(mcpServer: McpServer, rateLimiter: RateLimiter): void {
   mcpServer.registerTool(
-    "get-local-timeline",
+    "get-public-timeline",
     {
-      title: "Get Local Timeline",
+      title: "Get Public Timeline",
       description:
-        "Get the local public timeline from a fediverse instance (posts from local users only)",
+        "Fetch an instance's public timeline. scope 'federated' (default) shows " +
+        "posts the instance has seen from across the fediverse; 'local' shows only " +
+        "posts authored on that instance.",
       inputSchema: {
-        domain: DomainSchema.describe("Instance domain (e.g., mastodon.social)"),
+        domain: DomainSchema.describe("Instance domain, e.g. mastodon.social"),
+        scope: z.enum(["local", "federated"]).optional().describe("default: federated"),
         limit: z
           .number()
           .min(1)
@@ -968,15 +970,18 @@ function registerGetLocalTimelineTool(mcpServer: McpServer, rateLimiter: RateLim
       },
       annotations: { readOnlyHint: true },
     },
-    async ({ domain, limit = 20, maxId }) => {
+    async ({ domain, scope = "federated", limit = 20, maxId }) => {
       const validDomain = validateDomain(domain);
 
       try {
         checkRateLimit(rateLimiter, validDomain);
 
-        logger.info("Fetching local timeline", { domain: validDomain, limit, maxId });
+        logger.info("Fetching public timeline", { domain: validDomain, scope, limit, maxId });
 
-        const result = await remoteClient.fetchLocalTimeline(validDomain, { limit, maxId });
+        const result =
+          scope === "local"
+            ? await remoteClient.fetchLocalTimeline(validDomain, { limit, maxId })
+            : await remoteClient.fetchFederatedTimeline(validDomain, { limit, maxId });
 
         const postsList = result.posts
           .slice(0, 15)
@@ -996,17 +1001,22 @@ function registerGetLocalTimelineTool(mcpServer: McpServer, rateLimiter: RateLim
             ? `\n📄 **More posts available** - use maxId: "${result.nextMaxId}" for next page`
             : "";
 
+        const header =
+          scope === "local"
+            ? `🏠 **Local Timeline for ${validDomain}**`
+            : `🌐 **Federated Timeline via ${validDomain}**`;
+
         return {
           content: [
             {
               type: "text",
-              text: `🏠 **Local Timeline for ${validDomain}**
+              text: `${header}
 
 ${postsList || "No posts found"}${paginationInfo}
 
 💡 **Tips:**
-- Local timeline shows posts from users on this instance only
-- Use \`get-federated-timeline\` to see posts from all connected instances
+- Use scope "local" to see posts from ${validDomain} users only
+- Use scope "federated" to see posts from all connected instances
 - Use \`get-trending-posts\` to see what's popular`,
             },
           ],
@@ -1014,8 +1024,9 @@ ${postsList || "No posts found"}${paginationInfo}
       } catch (error) {
         const errorMessage = getErrorMessage(error);
 
-        logger.error("Failed to fetch local timeline", {
+        logger.error("Failed to fetch public timeline", {
           domain: validDomain,
+          scope,
           error: errorMessage,
         });
 
@@ -1023,94 +1034,7 @@ ${postsList || "No posts found"}${paginationInfo}
           content: [
             {
               type: "text",
-              text: `Failed to fetch local timeline: ${formatErrorWithSuggestion(errorMessage)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
-  );
-}
-
-/**
- * Get federated timeline tool.
- */
-function registerGetFederatedTimelineTool(mcpServer: McpServer, rateLimiter: RateLimiter): void {
-  mcpServer.registerTool(
-    "get-federated-timeline",
-    {
-      title: "Get Federated Timeline",
-      description:
-        "Get the federated public timeline from a fediverse instance (posts from all connected instances)",
-      inputSchema: {
-        domain: DomainSchema.describe("Instance domain (e.g., mastodon.social)"),
-        limit: z
-          .number()
-          .min(1)
-          .max(40)
-          .optional()
-          .describe("Number of posts to fetch (default: 20)"),
-        maxId: z.string().optional().describe("Return results older than this ID (for pagination)"),
-      },
-      annotations: { readOnlyHint: true },
-    },
-    async ({ domain, limit = 20, maxId }) => {
-      const validDomain = validateDomain(domain);
-
-      try {
-        checkRateLimit(rateLimiter, validDomain);
-
-        logger.info("Fetching federated timeline", { domain: validDomain, limit, maxId });
-
-        const result = await remoteClient.fetchFederatedTimeline(validDomain, { limit, maxId });
-
-        const postsList = result.posts
-          .slice(0, 15)
-          .map((post, i) => {
-            const content = wrapUntrusted(post.content || "", `post on ${validDomain}`);
-            const cw = post.spoiler_text
-              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, `content warning on ${validDomain}`)}\n`
-              : "";
-            return `${i + 1}. **@${post.account.username}**
-   ${cw}${content}
-   ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
-          })
-          .join("\n\n");
-
-        const paginationInfo =
-          result.hasMore && result.nextMaxId
-            ? `\n📄 **More posts available** - use maxId: "${result.nextMaxId}" for next page`
-            : "";
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `🌐 **Federated Timeline via ${validDomain}**
-
-${postsList || "No posts found"}${paginationInfo}
-
-💡 **Tips:**
-- Federated timeline includes posts from all instances connected to ${validDomain}
-- Use \`get-local-timeline\` to see posts from ${validDomain} users only
-- Use \`discover-actor\` to learn more about any user`,
-            },
-          ],
-        };
-      } catch (error) {
-        const errorMessage = getErrorMessage(error);
-
-        logger.error("Failed to fetch federated timeline", {
-          domain: validDomain,
-          error: errorMessage,
-        });
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Failed to fetch federated timeline: ${formatErrorWithSuggestion(errorMessage)}`,
+              text: `Failed to fetch ${scope} timeline: ${formatErrorWithSuggestion(errorMessage)}`,
             },
           ],
           isError: true,

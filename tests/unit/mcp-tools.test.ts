@@ -123,8 +123,7 @@ describe("MCP Tools", () => {
         "search",
         "get-trending-hashtags",
         "get-trending-posts",
-        "get-local-timeline",
-        "get-federated-timeline",
+        "get-public-timeline",
         "get-instance-info",
         "get-instance-software",
         "convert-url",
@@ -384,12 +383,13 @@ describe("MCP Tools", () => {
     });
   });
 
-  describe("get-local-timeline tool", () => {
-    it("should fetch local timeline", async () => {
+  describe("get-public-timeline tool", () => {
+    it("should fetch local timeline when scope is local", async () => {
       (remoteClient.fetchLocalTimeline as Mock).mockResolvedValue({
         posts: [
           {
             content: "<p>Local post</p>",
+            spoiler_text: "",
             account: { username: "localuser" },
             favourites_count: 10,
             reblogs_count: 5,
@@ -400,21 +400,22 @@ describe("MCP Tools", () => {
         nextMaxId: "123",
       });
 
-      const tool = registeredTools.get("get-local-timeline");
-      const result = await tool?.handler({ domain: "mastodon.social" });
+      const tool = registeredTools.get("get-public-timeline");
+      const result = await tool?.handler({ domain: "mastodon.social", scope: "local" });
 
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "Local Timeline",
       );
+      expect((result as { content: { text: string }[] }).content[0].text).toContain("localuser");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain("123");
     });
-  });
 
-  describe("get-federated-timeline tool", () => {
-    it("should fetch federated timeline", async () => {
+    it("should fetch federated timeline when scope is federated", async () => {
       (remoteClient.fetchFederatedTimeline as Mock).mockResolvedValue({
         posts: [
           {
             content: "<p>Federated post</p>",
+            spoiler_text: "",
             account: { username: "remoteuser" },
             favourites_count: 20,
             reblogs_count: 10,
@@ -424,9 +425,28 @@ describe("MCP Tools", () => {
         hasMore: false,
       });
 
-      const tool = registeredTools.get("get-federated-timeline");
+      const tool = registeredTools.get("get-public-timeline");
+      const result = await tool?.handler({ domain: "mastodon.social", scope: "federated" });
+
+      expect((result as { content: { text: string }[] }).content[0].text).toContain(
+        "Federated Timeline",
+      );
+      expect((result as { content: { text: string }[] }).content[0].text).toContain("remoteuser");
+    });
+
+    it("should default to federated scope when scope is omitted", async () => {
+      (remoteClient.fetchFederatedTimeline as Mock).mockResolvedValue({
+        posts: [],
+        hasMore: false,
+      });
+
+      const tool = registeredTools.get("get-public-timeline");
       const result = await tool?.handler({ domain: "mastodon.social" });
 
+      expect(remoteClient.fetchFederatedTimeline).toHaveBeenCalledWith("mastodon.social", {
+        limit: 20,
+        maxId: undefined,
+      });
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "Federated Timeline",
       );
