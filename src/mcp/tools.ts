@@ -10,10 +10,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { remoteClient } from "../activitypub/remote-client.js";
-import { auditLogger } from "../audit/logger.js";
 import { dynamicInstanceDiscovery } from "../discovery/dynamic-instance-discovery.js";
-import { instanceDiscovery } from "../discovery/instance-discovery.js";
-import { formatInstanceSoftware, getInstanceSoftware } from "../discovery/nodeinfo.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
 import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
 import { stripHtmlTags } from "../utils/html.js";
@@ -40,9 +37,7 @@ export function registerTools(mcpServer: McpServer, rateLimiter: RateLimiter): v
 
   // Discovery tools
   registerDiscoverActorTool(mcpServer, rateLimiter);
-  registerDiscoverInstancesTool(mcpServer);
   registerDiscoverInstancesLiveTool(mcpServer, rateLimiter);
-  registerRecommendInstancesTool(mcpServer);
 
   // Content tools
   registerFetchTimelineTool(mcpServer, rateLimiter);
@@ -56,12 +51,6 @@ export function registerTools(mcpServer: McpServer, rateLimiter: RateLimiter): v
 
   // Instance tools
   registerGetInstanceInfoTool(mcpServer, rateLimiter);
-  registerGetInstanceSoftwareTool(mcpServer, rateLimiter);
-
-  // Utility tools
-  registerConvertUrlTool(mcpServer, rateLimiter);
-  registerBatchFetchActorsTool(mcpServer, rateLimiter);
-  registerBatchFetchPostsTool(mcpServer, rateLimiter);
 
   // Write operation tools (authenticated)
   registerWriteTools(mcpServer, rateLimiter);
@@ -350,106 +339,14 @@ ${instanceInfo.contact_account ? `📞 Contact: @${instanceInfo.contact_account.
 /**
  * Discover instances tool.
  */
-function registerDiscoverInstancesTool(mcpServer: McpServer): void {
+/**
+ * Discover instances tool - fetches real-time data from instances.social API
+ */
+function registerDiscoverInstancesLiveTool(mcpServer: McpServer, rateLimiter: RateLimiter): void {
   mcpServer.registerTool(
     "discover-instances",
     {
       title: "Discover Fediverse Instances",
-      description: "Discover popular fediverse instances by category, topic, or size",
-      inputSchema: {
-        category: z
-          .enum(["mastodon", "pleroma", "misskey", "peertube", "pixelfed", "lemmy", "all"])
-          .optional()
-          .describe("Type of fediverse software"),
-        topic: z.string().optional().describe("Topic or interest to search for"),
-        size: z.enum(["small", "medium", "large"]).optional().describe("Instance size preference"),
-        region: z.string().optional().describe("Geographic region or language"),
-        beginnerFriendly: z.boolean().optional().describe("Show only beginner-friendly instances"),
-      },
-      annotations: { readOnlyHint: true },
-    },
-    async ({ category, topic, size, region, beginnerFriendly }) => {
-      try {
-        logger.info("Discovering instances", { category, topic, size, region, beginnerFriendly });
-
-        let instances = instanceDiscovery.getPopularInstances(
-          category === "all" ? undefined : category,
-        );
-
-        if (topic) {
-          const topicSet = new Set(
-            instanceDiscovery.searchInstancesByTopic(topic).map((i) => i.domain),
-          );
-          instances = instances.filter((i) => topicSet.has(i.domain));
-        }
-
-        if (size) {
-          const sizeSet = new Set(instanceDiscovery.getInstancesBySize(size).map((i) => i.domain));
-          instances = instances.filter((i) => sizeSet.has(i.domain));
-        }
-
-        if (region) {
-          const regionSet = new Set(
-            instanceDiscovery.getInstancesByRegion(region).map((i) => i.domain),
-          );
-          instances = instances.filter((i) => regionSet.has(i.domain));
-        }
-
-        if (beginnerFriendly) {
-          const beginnerSet = new Set(
-            instanceDiscovery.getBeginnerFriendlyInstances().map((i) => i.domain),
-          );
-          instances = instances.filter((i) => beginnerSet.has(i.domain));
-        }
-
-        const limitedInstances = instances.slice(0, 20);
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Found ${instances.length} fediverse instances${limitedInstances.length < instances.length ? ` (showing first ${limitedInstances.length})` : ""}:
-
-${limitedInstances
-  .map(
-    (instance, index) =>
-      `${index + 1}. **${instance.domain}** ${instance.software ? `(${instance.software})` : ""}
-   👥 Users: ${instance.users}
-   📝 ${instance.description}`,
-  )
-  .join("\n\n")}
-
-${limitedInstances.length < instances.length ? `\n... and ${instances.length - limitedInstances.length} more instances` : ""}
-
-💡 **Tip**: Use the \`get-instance-info\` tool to get detailed information about any specific instance.`,
-            },
-          ],
-        };
-      } catch (error) {
-        logger.error("Failed to discover instances", { error: getErrorMessage(error) });
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Failed to discover instances: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
-  );
-}
-
-/**
- * Discover instances live tool - fetches real-time data from instances.social API
- */
-function registerDiscoverInstancesLiveTool(mcpServer: McpServer, rateLimiter: RateLimiter): void {
-  mcpServer.registerTool(
-    "discover-instances-live",
-    {
-      title: "Discover Instances (Live)",
       description:
         "Discover fediverse instances in real-time using the instances.social API with advanced filtering",
       inputSchema: {
@@ -487,7 +384,7 @@ function registerDiscoverInstancesLiveTool(mcpServer: McpServer, rateLimiter: Ra
       limit = 20,
     }) => {
       try {
-        checkRateLimit(rateLimiter, "discover-instances-live");
+        checkRateLimit(rateLimiter, "discover-instances");
 
         logger.info("Discovering instances live", {
           software,
@@ -590,75 +487,6 @@ ${instanceList}${hasMoreText}
             {
               type: "text",
               text: `Failed to discover instances: ${formatErrorWithSuggestion(errorMessage)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
-  );
-}
-
-/**
- * Get instance recommendations tool.
- */
-function registerRecommendInstancesTool(mcpServer: McpServer): void {
-  mcpServer.registerTool(
-    "recommend-instances",
-    {
-      title: "Get Instance Recommendations",
-      description: "Get personalized fediverse instance recommendations based on interests",
-      inputSchema: {
-        interests: z.array(z.string()).describe("List of your interests or topics"),
-      },
-      annotations: { readOnlyHint: true },
-    },
-    async ({ interests }) => {
-      try {
-        logger.info("Getting instance recommendations", { interests });
-
-        const recommendations = instanceDiscovery.getInstanceRecommendations(interests);
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Based on your interests (${interests.join(", ")}), here are some recommended fediverse instances:
-
-${recommendations
-  .map(
-    (instance, index) =>
-      `${index + 1}. **${instance.domain}** ${instance.software ? `(${instance.software})` : ""}
-   👥 Users: ${instance.users}
-   📝 ${instance.description}
-   🎯 Why recommended: Matches your interest in ${
-     interests.find(
-       (i) =>
-         instance.description.toLowerCase().includes(i.toLowerCase()) ||
-         instance.domain.toLowerCase().includes(i.toLowerCase()),
-     ) || "general topics"
-}`,
-  )
-  .join("\n\n")}
-
-💡 **Next steps**:
-- Use \`get-instance-info\` to learn more about any instance
-- Use \`discover-actor\` to find interesting people on these instances
-- Check out the instance's local timeline to see the community vibe`,
-            },
-          ],
-        };
-      } catch (error) {
-        logger.error("Failed to get instance recommendations", {
-          interests,
-          error: getErrorMessage(error),
-        });
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Failed to get instance recommendations: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
             },
           ],
           isError: true,
@@ -1216,344 +1044,6 @@ ${resultsText}
               text: `Failed to search: ${formatErrorWithSuggestion(errorMessage)}`,
             },
           ],
-          isError: true,
-        };
-      }
-    },
-  );
-}
-
-/**
- * Convert URL tool - convert between web URLs and ActivityPub URIs.
- */
-function registerConvertUrlTool(mcpServer: McpServer, rateLimiter: RateLimiter): void {
-  mcpServer.registerTool(
-    "convert-url",
-    {
-      title: "Convert URL",
-      description:
-        "Convert between web URLs and ActivityPub URIs (e.g., https://mastodon.social/@user/123 <-> ActivityPub URI)",
-      inputSchema: {
-        url: z.string().url().describe("The URL to convert"),
-        direction: z
-          .enum(["to-activitypub", "to-web", "auto"])
-          .optional()
-          .describe("Conversion direction: to-activitypub, to-web, or auto-detect (default: auto)"),
-      },
-      annotations: { readOnlyHint: true },
-    },
-    async ({ url, direction = "auto" }) => {
-      try {
-        const domain = new URL(url).hostname;
-        checkRateLimit(rateLimiter, domain);
-
-        logger.info("Converting URL", { url, direction });
-
-        let result: { url: string; type: string; domain: string };
-
-        if (direction === "to-activitypub" || (direction === "auto" && url.includes("/@"))) {
-          const converted = await remoteClient.convertWebUrlToActivityPub(url);
-          result = {
-            url: converted.activityPubUri,
-            type: converted.type,
-            domain: converted.domain,
-          };
-        } else if (direction === "to-web") {
-          const converted = remoteClient.convertActivityPubToWebUrl(url);
-          result = { url: converted.webUrl, type: converted.type, domain: converted.domain };
-        } else {
-          // Auto-detect: try to determine if it's already an ActivityPub URI
-          const isActivityPub =
-            url.includes("/users/") || url.includes("/statuses/") || url.includes("/objects/");
-
-          if (isActivityPub) {
-            const converted = remoteClient.convertActivityPubToWebUrl(url);
-            result = { url: converted.webUrl, type: converted.type, domain: converted.domain };
-          } else {
-            const converted = await remoteClient.convertWebUrlToActivityPub(url);
-            result = {
-              url: converted.activityPubUri,
-              type: converted.type,
-              domain: converted.domain,
-            };
-          }
-        }
-
-        const typeEmoji = result.type === "actor" ? "👤" : result.type === "post" ? "📝" : "❓";
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `🔄 **URL Conversion**
-
-**Input**: ${url}
-**Output**: ${result.url}
-**Type**: ${typeEmoji} ${result.type}
-**Domain**: ${result.domain}
-
-💡 **Tips:**
-- Use the converted URL with other tools like \`get-post-thread\` or \`discover-actor\`
-- ActivityPub URIs are used for federation, web URLs are for browsers`,
-            },
-          ],
-        };
-      } catch (error) {
-        const errorMessage = getErrorMessage(error);
-
-        logger.error("Failed to convert URL", { url, error: errorMessage });
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Failed to convert URL: ${formatErrorWithSuggestion(errorMessage)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
-  );
-}
-
-/**
- * Batch fetch actors tool.
- */
-function registerBatchFetchActorsTool(mcpServer: McpServer, rateLimiter: RateLimiter): void {
-  mcpServer.registerTool(
-    "batch-fetch-actors",
-    {
-      title: "Batch Fetch Actors",
-      description: "Fetch multiple actor profiles at once for efficient bulk lookups",
-      inputSchema: {
-        identifiers: z
-          .array(ActorIdentifierSchema)
-          .min(1)
-          .max(20)
-          .describe(
-            "Array of actor identifiers (e.g., ['user1@mastodon.social', 'user2@fosstodon.org'])",
-          ),
-      },
-      annotations: { readOnlyHint: true },
-    },
-    async ({ identifiers }) => {
-      try {
-        // Check rate limit for each unique domain
-        const domains = new Set(identifiers.map((id) => id.split("@").pop()?.toLowerCase()));
-        for (const domain of domains) {
-          if (domain) {
-            checkRateLimit(rateLimiter, domain);
-          }
-        }
-
-        logger.info("Batch fetching actors", { count: identifiers.length });
-
-        const result = await remoteClient.batchFetchActors(identifiers);
-
-        const successList = result.results
-          .filter(
-            (r): r is typeof r & { actor: NonNullable<typeof r.actor> } =>
-              r.actor !== null && r.actor !== undefined,
-          )
-          .map((r, i) => {
-            const actor = r.actor;
-            const safeName = stripHtmlTags(actor.name || "");
-            const safeSummary = actor.summary
-              ? wrapUntrusted(actor.summary, `bio of ${r.identifier}`)
-              : "No bio";
-            return `${i + 1}. ✅ **${stripHtmlTags(actor.preferredUsername || r.identifier)}** (@${r.identifier})
-   ${safeName || "No display name"} - ${safeSummary}`;
-          })
-          .join("\n\n");
-
-        const failedList = result.results
-          .filter((r) => r.error)
-          .map((r) => `• ❌ ${r.identifier}: ${r.error}`)
-          .join("\n");
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `👥 **Batch Actor Fetch Results**
-
-**Summary**: ${result.successful} successful, ${result.failed} failed
-
-${successList ? `**Successful Fetches:**\n${successList}` : ""}
-
-${failedList ? `**Failed Fetches:**\n${failedList}` : ""}
-
-💡 **Tips:**
-- Use \`fetch-timeline\` to see posts from any of these actors
-- Failed fetches may be due to rate limits or private accounts`,
-            },
-          ],
-        };
-      } catch (error) {
-        const errorMessage = getErrorMessage(error);
-
-        logger.error("Failed batch fetch actors", { error: errorMessage });
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Failed to batch fetch actors: ${formatErrorWithSuggestion(errorMessage)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
-  );
-}
-
-/**
- * Batch fetch posts tool.
- */
-function registerBatchFetchPostsTool(mcpServer: McpServer, rateLimiter: RateLimiter): void {
-  mcpServer.registerTool(
-    "batch-fetch-posts",
-    {
-      title: "Batch Fetch Posts",
-      description: "Fetch multiple posts at once for efficient bulk lookups",
-      inputSchema: {
-        postUrls: z.array(z.string().url()).min(1).max(20).describe("Array of post URLs to fetch"),
-      },
-      annotations: { readOnlyHint: true },
-    },
-    async ({ postUrls }) => {
-      try {
-        // Check rate limit for each unique domain
-        const domains = new Set(postUrls.map((url) => new URL(url).hostname));
-        for (const domain of domains) {
-          checkRateLimit(rateLimiter, domain);
-        }
-
-        logger.info("Batch fetching posts", { count: postUrls.length });
-
-        const result = await remoteClient.batchFetchPosts(postUrls);
-
-        const successList = result.results
-          .filter(
-            (r): r is typeof r & { post: NonNullable<typeof r.post> } =>
-              r.post !== null && r.post !== undefined,
-          )
-          .map((r, i) => {
-            const post = r.post;
-            const postDomain = (() => {
-              try {
-                return new URL(r.url).hostname;
-              } catch {
-                return r.url;
-              }
-            })();
-            const content = wrapUntrusted(
-              post.content || post.summary || "",
-              `post on ${postDomain}`,
-            );
-            return `${i + 1}. ✅ ${content}`;
-          })
-          .join("\n\n");
-
-        const failedList = result.results
-          .filter((r) => r.error)
-          .map((r) => `• ❌ ${r.url}: ${r.error}`)
-          .join("\n");
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `📝 **Batch Post Fetch Results**
-
-**Summary**: ${result.successful} successful, ${result.failed} failed
-
-${successList ? `**Successful Fetches:**\n${successList}` : ""}
-
-${failedList ? `**Failed Fetches:**\n${failedList}` : ""}
-
-💡 **Tips:**
-- Use \`get-post-thread\` to see the full conversation for any post
-- Failed fetches may be due to deleted posts or private visibility`,
-            },
-          ],
-        };
-      } catch (error) {
-        const errorMessage = getErrorMessage(error);
-
-        logger.error("Failed batch fetch posts", { error: errorMessage });
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Failed to batch fetch posts: ${formatErrorWithSuggestion(errorMessage)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
-  );
-}
-
-/**
- * get-instance-software tool — detect ActivityPub software running on an instance via NodeInfo.
- */
-function registerGetInstanceSoftwareTool(mcpServer: McpServer, rateLimiter: RateLimiter): void {
-  mcpServer.registerTool(
-    "get-instance-software",
-    {
-      title: "Detect Instance Software",
-      description:
-        "Detect the ActivityPub software (e.g. Mastodon, Pleroma, Misskey, Akkoma) and version " +
-        "running on a Fediverse instance via NodeInfo. Returns a description; if detection fails " +
-        "(no NodeInfo, malformed response, blocked host), returns a one-line 'could not detect' " +
-        "message with the reason. Never throws on detection failure.",
-      inputSchema: {
-        domain: DomainSchema.describe(
-          "Fediverse instance domain (e.g., 'mastodon.social'). Do not include scheme or path.",
-        ),
-      },
-      annotations: { readOnlyHint: true },
-    },
-    async ({ domain }) => {
-      const start = Date.now();
-      const validDomain = validateDomain(domain);
-
-      try {
-        checkRateLimit(rateLimiter, validDomain);
-
-        logger.info("Detecting instance software", { domain: validDomain });
-
-        const info = await getInstanceSoftware(validDomain);
-
-        auditLogger.logToolInvocation(
-          "get-instance-software",
-          { domain: validDomain },
-          { success: info.detection === "success", duration: Date.now() - start },
-        );
-
-        return { content: [{ type: "text", text: formatInstanceSoftware(info) }] };
-      } catch (error) {
-        const errorMessage = getErrorMessage(error);
-
-        logger.error("Failed to detect instance software", {
-          domain: validDomain,
-          error: errorMessage,
-        });
-
-        auditLogger.logToolInvocation(
-          "get-instance-software",
-          { domain: validDomain },
-          { success: false, duration: Date.now() - start, error: errorMessage },
-        );
-
-        if (error instanceof McpError) throw error;
-        return {
-          content: [{ type: "text", text: `Failed to detect instance software: ${errorMessage}` }],
           isError: true,
         };
       }
