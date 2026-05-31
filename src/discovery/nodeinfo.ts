@@ -4,7 +4,7 @@ import { CACHE_MAX_SIZE, INSTANCE_SOFTWARE_TTL } from "../config.js";
 import { instanceBlocklist } from "../policy/instance-blocklist.js";
 import { guardedFetch } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
-import { validateExternalUrl } from "../validation/url.js";
+import { resolveAndPin } from "../validation/url.js";
 
 /**
  * NodeInfo discovery document (RFC-style `/.well-known/nodeinfo` index).
@@ -131,7 +131,10 @@ async function performDetection(domain: string): Promise<InstanceSoftwareInfo> {
   instanceBlocklist.validateNotBlocked(domain);
 
   const discoveryUrl = `https://${domain}/.well-known/nodeinfo`;
-  await validateExternalUrl(discoveryUrl);
+  // SSRF gate: validate the discovery URL (throws on private/blocked addresses).
+  // The real fetch goes through guardedFetch, which re-resolves and pins the
+  // validated IP onto the connection (closes the DNS-rebinding TOCTOU).
+  await resolveAndPin(discoveryUrl);
   const discoveryDoc = await fetchJson(discoveryUrl);
   const discovery = NodeInfoDiscoverySchema.parse(discoveryDoc);
 
@@ -140,8 +143,9 @@ async function performDetection(domain: string): Promise<InstanceSoftwareInfo> {
     throw new Error("no NodeInfo 2.0/2.1 link in discovery document");
   }
 
-  // SSRF guard + same-host + blocklist on the linked NodeInfo URL.
-  await validateExternalUrl(link.href);
+  // SSRF guard + same-host + blocklist on the linked NodeInfo URL. The real
+  // fetch goes through guardedFetch, which re-resolves and pins the validated IP.
+  await resolveAndPin(link.href);
   const linkedHost = new URL(link.href).hostname.toLowerCase();
   if (!isSameOrSubdomain(domain, linkedHost)) {
     throw new Error(

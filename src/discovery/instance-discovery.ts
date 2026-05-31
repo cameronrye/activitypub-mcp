@@ -2,7 +2,7 @@ import { getLogger } from "@logtape/logtape";
 import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
 import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { DomainSchema } from "../validation/schemas.js";
-import { validateExternalUrl } from "../validation/url.js";
+import { resolveAndPin } from "../validation/url.js";
 import { POPULAR_INSTANCES } from "./data/instances.js";
 
 const logger = getLogger("activitypub-mcp");
@@ -149,8 +149,11 @@ export class InstanceDiscoveryService {
       };
     }
     const url = `https://${validDomain.data}/api/v1/instance`;
+    let dispatcher: import("undici").Agent | undefined;
     try {
-      await validateExternalUrl(url);
+      // Resolve once and pin the validated IP onto the connection (closes the
+      // DNS-rebinding TOCTOU). Throws on private/blocked addresses.
+      ({ dispatcher } = await resolveAndPin(url));
     } catch (error) {
       return { online: false, error: error instanceof Error ? error.message : String(error) };
     }
@@ -166,8 +169,10 @@ export class InstanceDiscoveryService {
         {
           method: "HEAD",
           signal: controller.signal,
-        },
-        (target) => validateExternalUrl(target),
+          dispatcher,
+        } as RequestInit & { dispatcher?: import("undici").Agent },
+        // Re-resolve + re-pin every redirect hop, then return the dispatcher.
+        async (target) => (await resolveAndPin(target)).dispatcher,
       );
 
       clearTimeout(timeoutId);
@@ -202,8 +207,11 @@ export class InstanceDiscoveryService {
       return { domain, online: false };
     }
     const url = `https://${validDomain.data}/api/v1/instance`;
+    let dispatcher: import("undici").Agent | undefined;
     try {
-      await validateExternalUrl(url);
+      // Resolve once and pin the validated IP onto the connection (closes the
+      // DNS-rebinding TOCTOU). Throws on private/blocked addresses.
+      ({ dispatcher } = await resolveAndPin(url));
     } catch (_error) {
       return { domain, online: false };
     }
@@ -220,8 +228,10 @@ export class InstanceDiscoveryService {
             "User-Agent": USER_AGENT,
           },
           signal: controller.signal,
-        },
-        (target) => validateExternalUrl(target),
+          dispatcher,
+        } as RequestInit & { dispatcher?: import("undici").Agent },
+        // Re-resolve + re-pin every redirect hop, then return the dispatcher.
+        async (target) => (await resolveAndPin(target)).dispatcher,
       );
 
       clearTimeout(timeoutId);

@@ -8,7 +8,7 @@ import { z } from "zod";
 import { MAX_RESPONSE_SIZE, USER_AGENT } from "../../config.js";
 import { instanceBlocklist } from "../../policy/instance-blocklist.js";
 import { fetchWithRedirectGuard, readJsonWithLimit } from "../../utils/fetch-helpers.js";
-import { validateExternalUrl } from "../../validation/url.js";
+import { resolveAndPin } from "../../validation/url.js";
 import type { AccountCredentials } from "../account-manager.js";
 import {
   type AccountInfo,
@@ -254,7 +254,9 @@ export class MastodonWriteAdapter implements WriteAdapter {
     if (options?.focus) formData.append("focus", `${options.focus.x},${options.focus.y}`);
 
     const url = `https://${account.instance}/api/v2/media`;
-    await validateExternalUrl(url);
+    // Resolve once and pin the validated IP onto the connection (closes the
+    // DNS-rebinding TOCTOU). Throws on private/blocked addresses.
+    const { dispatcher } = await resolveAndPin(url);
     instanceBlocklist.validateNotBlocked(account.instance);
 
     const response = await fetchWithRedirectGuard(
@@ -267,10 +269,13 @@ export class MastodonWriteAdapter implements WriteAdapter {
           "User-Agent": USER_AGENT,
         },
         body: formData,
-      },
+        dispatcher,
+      } as RequestInit & { dispatcher?: import("undici").Agent },
       async (target) => {
-        await validateExternalUrl(target);
+        // Re-resolve + re-pin every redirect hop, then return the dispatcher.
+        const pinned = await resolveAndPin(target);
         instanceBlocklist.validateNotBlocked(new URL(target).hostname);
+        return pinned.dispatcher;
       },
     );
     if (!response.ok) {

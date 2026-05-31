@@ -11,7 +11,7 @@ import { instanceBlocklist } from "../policy/instance-blocklist.js";
 import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
 import { ActorIdentifierSchema } from "../validation/schemas.js";
-import { validateExternalUrl } from "../validation/url.js";
+import { resolveAndPin } from "../validation/url.js";
 
 const logger = getLogger("activitypub-mcp");
 
@@ -172,8 +172,9 @@ export class WebFingerClient {
 
     const webfingerUrl = `https://${domain}/.well-known/webfinger?resource=acct:${username}@${domain}`;
 
-    // SSRF protection: validate URL with async DNS resolution for rebinding detection
-    await validateExternalUrl(webfingerUrl);
+    // SSRF protection: resolve once and pin the validated IP onto the connection
+    // (closes the DNS-rebinding TOCTOU). Throws on private/blocked addresses.
+    const { dispatcher } = await resolveAndPin(webfingerUrl);
 
     // Policy: respect operator blocklist for WebFinger lookups too.
     instanceBlocklist.validateNotBlocked(domain);
@@ -196,11 +197,15 @@ export class WebFingerClient {
             "User-Agent": USER_AGENT,
           },
           signal: controller.signal,
-        },
+          dispatcher,
+        } as RequestInit & { dispatcher?: import("undici").Agent },
         async (target) => {
-          await validateExternalUrl(target);
+          // Re-resolve + re-pin every redirect hop, then return the dispatcher so
+          // the next fetch connects to the exact IP we just validated.
+          const pinned = await resolveAndPin(target);
           const targetHost = new URL(target).hostname;
           instanceBlocklist.validateNotBlocked(targetHost);
+          return pinned.dispatcher;
         },
       );
 
@@ -243,8 +248,9 @@ export class WebFingerClient {
    * Fetch ActivityPub actor from URL
    */
   private async fetchActor(actorUrl: string): Promise<ActivityPubActor> {
-    // SSRF protection: validate URL with async DNS resolution for rebinding detection
-    await validateExternalUrl(actorUrl);
+    // SSRF protection: resolve once and pin the validated IP onto the connection
+    // (closes the DNS-rebinding TOCTOU). Throws on private/blocked addresses.
+    const { dispatcher } = await resolveAndPin(actorUrl);
 
     // Policy: respect operator blocklist for actor fetches too.
     try {
@@ -273,11 +279,15 @@ export class WebFingerClient {
             "User-Agent": USER_AGENT,
           },
           signal: controller.signal,
-        },
+          dispatcher,
+        } as RequestInit & { dispatcher?: import("undici").Agent },
         async (target) => {
-          await validateExternalUrl(target);
+          // Re-resolve + re-pin every redirect hop, then return the dispatcher so
+          // the next fetch connects to the exact IP we just validated.
+          const pinned = await resolveAndPin(target);
           const targetHost = new URL(target).hostname;
           instanceBlocklist.validateNotBlocked(targetHost);
+          return pinned.dispatcher;
         },
       );
 

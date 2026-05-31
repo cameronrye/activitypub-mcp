@@ -18,7 +18,7 @@ import {
 } from "../config.js";
 import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
-import { validateExternalUrl } from "../validation/url.js";
+import { resolveAndPin } from "../validation/url.js";
 
 const logger = getLogger("activitypub-mcp:discovery");
 
@@ -259,8 +259,9 @@ export class DynamicInstanceDiscoveryService {
       url.searchParams.set("offset", options.offset.toString());
     }
 
-    // Validate URL for SSRF protection
-    await validateExternalUrl(url.toString());
+    // SSRF protection: resolve once and pin the validated IP onto the connection
+    // (closes the DNS-rebinding TOCTOU). Throws on private/blocked addresses.
+    const { dispatcher } = await resolveAndPin(url.toString());
 
     logger.info("Fetching instances from instances.social", { url: url.toString() });
 
@@ -283,8 +284,10 @@ export class DynamicInstanceDiscoveryService {
         {
           headers,
           signal: controller.signal,
-        },
-        (target) => validateExternalUrl(target),
+          dispatcher,
+        } as RequestInit & { dispatcher?: import("undici").Agent },
+        // Re-resolve + re-pin every redirect hop, then return the dispatcher.
+        async (target) => (await resolveAndPin(target)).dispatcher,
       );
 
       clearTimeout(timeoutId);
@@ -345,8 +348,11 @@ export class DynamicInstanceDiscoveryService {
       }
     }`;
 
-    // Validate URL for SSRF protection
-    await validateExternalUrl(DynamicInstanceDiscoveryService.FEDIVERSE_OBSERVER_API);
+    // SSRF protection: resolve once and pin the validated IP onto the connection
+    // (closes the DNS-rebinding TOCTOU). Throws on private/blocked addresses.
+    const { dispatcher } = await resolveAndPin(
+      DynamicInstanceDiscoveryService.FEDIVERSE_OBSERVER_API,
+    );
 
     logger.info("Fetching instances from Fediverse Observer", { software: options.software });
 
@@ -365,8 +371,10 @@ export class DynamicInstanceDiscoveryService {
           },
           body: JSON.stringify({ query }),
           signal: controller.signal,
-        },
-        (target) => validateExternalUrl(target),
+          dispatcher,
+        } as RequestInit & { dispatcher?: import("undici").Agent },
+        // Re-resolve + re-pin every redirect hop, then return the dispatcher.
+        async (target) => (await resolveAndPin(target)).dispatcher,
       );
 
       clearTimeout(timeoutId);

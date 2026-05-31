@@ -12,7 +12,7 @@ import { REQUEST_TIMEOUT, USER_AGENT } from "../../config.js";
 import { instanceBlocklist } from "../../policy/instance-blocklist.js";
 import { TokenRejectedError } from "../../utils/errors.js";
 import { fetchWithRedirectGuard } from "../../utils/fetch-helpers.js";
-import { validateExternalUrl } from "../../validation/url.js";
+import { resolveAndPin } from "../../validation/url.js";
 import type { AccountCredentials } from "../account-manager.js";
 
 export type PostVisibility = "public" | "unlisted" | "private" | "direct";
@@ -200,7 +200,9 @@ export async function authenticatedFetch(
   options: RequestInit = {},
 ): Promise<Response> {
   const url = `https://${account.instance}${endpoint}`;
-  await validateExternalUrl(url);
+  // Resolve once and pin the validated IP onto the connection (closes the
+  // DNS-rebinding TOCTOU). Throws on private/blocked addresses.
+  const { dispatcher } = await resolveAndPin(url);
   instanceBlocklist.validateNotBlocked(account.instance);
 
   const controller = new AbortController();
@@ -219,10 +221,13 @@ export async function authenticatedFetch(
           "User-Agent": USER_AGENT,
           ...options.headers,
         },
-      },
+        dispatcher,
+      } as RequestInit & { dispatcher?: import("undici").Agent },
       async (target) => {
-        await validateExternalUrl(target);
+        // Re-resolve + re-pin every redirect hop, then return the dispatcher.
+        const pinned = await resolveAndPin(target);
         instanceBlocklist.validateNotBlocked(new URL(target).hostname);
+        return pinned.dispatcher;
       },
     );
     clearTimeout(timeoutId);
