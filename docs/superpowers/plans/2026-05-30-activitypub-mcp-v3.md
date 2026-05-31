@@ -362,12 +362,16 @@ The SDK `registerTool(name, { title, description, inputSchema, annotations }, ha
 
 ```ts
 // tests/unit/tool-annotations.test.ts
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerTools } from "../../src/mcp/tools.js";
 import { RateLimiter } from "../../src/resilience/rate-limiter.js";
 
-function collectAnnotations() {
+// Re-import tools.js fresh with writes enabled so mutation tools register
+// regardless of whether Task 5's gating has landed yet (order-independent).
+async function collectAnnotations(): Promise<Map<string, Record<string, boolean> | undefined>> {
+  vi.resetModules();
+  vi.stubEnv("ACTIVITYPUB_ENABLE_WRITES", "true");
+  const { registerTools } = await import("../../src/mcp/tools.js");
   const server = new McpServer({ name: "t", version: "0" });
   const annotations = new Map<string, Record<string, boolean> | undefined>();
   const orig = server.registerTool.bind(server);
@@ -376,21 +380,24 @@ function collectAnnotations() {
     annotations.set(name, def?.annotations);
     return orig(name, def, handler);
   };
-  // Enable writes so mutation tools register for this test.
-  process.env.ACTIVITYPUB_ENABLE_WRITES = "true";
   registerTools(server, new RateLimiter({ enabled: false, maxRequests: 1, windowMs: 1 }));
   return annotations;
 }
 
 describe("tool annotations", () => {
-  const ann = collectAnnotations();
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
 
-  it("marks reads readOnly", () => {
+  it("marks reads readOnly", async () => {
+    const ann = await collectAnnotations();
     expect(ann.get("discover-actor")?.readOnlyHint).toBe(true);
     expect(ann.get("fetch-timeline")?.readOnlyHint).toBe(true);
   });
 
-  it("marks mutations destructive", () => {
+  it("marks mutations destructive", async () => {
+    const ann = await collectAnnotations();
     expect(ann.get("post-status")?.destructiveHint).toBe(true);
     expect(ann.get("delete-post")?.destructiveHint).toBe(true);
     expect(ann.get("post-status")?.readOnlyHint).toBe(false);
@@ -398,7 +405,7 @@ describe("tool annotations", () => {
 });
 ```
 
-> Note: this test depends on Task 5's write-gating reading `ENABLE_WRITES`. If Task 4 is done before Task 5, set the env var as shown and the mutation tools still register (they currently register unconditionally). The assertions hold either way.
+> The reset-modules + stubEnv pattern re-evaluates `config.js` with writes enabled, so this test holds whether or not Task 5's gating has landed.
 
 - [ ] **Step 2: Run it, expect failure**
 
