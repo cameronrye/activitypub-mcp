@@ -145,8 +145,12 @@ export class CredentialStore {
     // don't own (e.g. an operator-managed shared path).
     try {
       chmodSync(this.dir, 0o700);
-    } catch {
-      // leave as-is; the file itself is still written 0600 below
+    } catch (e) {
+      // Only ignore the documented "not ours to chmod" cases. Any other failure
+      // (e.g. the dir was swapped for something unexpected) should surface rather
+      // than silently leave the token file inside a directory we couldn't tighten.
+      const code = (e as NodeJS.ErrnoException).code;
+      if (code !== "EPERM" && code !== "ENOENT") throw e;
     }
     const body = `${JSON.stringify({ version: 1, accounts }, null, 2)}\n`;
     const tmp = join(this.dir, `accounts.json.${randomBytes(6).toString("hex")}.tmp`);

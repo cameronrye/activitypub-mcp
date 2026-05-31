@@ -73,7 +73,9 @@ export function createLoopbackServer(port = 0): Promise<LoopbackServer> {
       // clicked Deny) or omits the code/session must not be told "Authorized" —
       // that contradicts the failure the strategy is about to report. We still
       // resolve with the params so the strategy can surface the precise error.
-      const authorized = !params.get("error") && (params.has("code") || params.has("session"));
+      // Test the VALUE, not just key presence, so an empty ?code= (which the
+      // strategy treats as failure) doesn't get a 200 "Authorized" page.
+      const authorized = !params.get("error") && (!!params.get("code") || !!params.get("session"));
       res
         .writeHead(authorized ? 200 : 400, { "Content-Type": "text/html; charset=utf-8" })
         .end(authorized ? SUCCESS_PAGE : FAILURE_PAGE);

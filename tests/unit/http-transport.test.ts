@@ -19,6 +19,16 @@ describe("httpRebindingWarnings", () => {
     ).toEqual([]);
   });
 
+  it("is silent for any 127.0.0.0/8 loopback alias", () => {
+    expect(
+      httpRebindingWarnings({
+        host: "127.0.0.2",
+        hasExplicitAllowedHosts: false,
+        hasAllowedOrigins: false,
+      }),
+    ).toEqual([]);
+  });
+
   it("warns about the inert Host allowlist when bound to 0.0.0.0 without MCP_HTTP_ALLOWED_HOSTS", () => {
     const warnings = httpRebindingWarnings({
       host: "0.0.0.0",

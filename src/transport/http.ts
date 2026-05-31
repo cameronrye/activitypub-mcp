@@ -26,7 +26,13 @@ import { checkBearerAuth } from "./auth-middleware.js";
 
 const logger = getLogger("activitypub-mcp:http");
 
-const LOOPBACK_HOSTS = new Set(["127.0.0.1", "::1", "[::1]", "localhost"]);
+const LOOPBACK_HOSTS = new Set(["::1", "[::1]", "localhost"]);
+
+/** True for any loopback bind: 127.0.0.0/8, ::1, [::1], or localhost. */
+function isLoopbackHost(host: string): boolean {
+  const h = host.toLowerCase();
+  return LOOPBACK_HOSTS.has(h) || /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(h);
+}
 
 /**
  * Compute startup security warnings for the HTTP transport. Pure function so the
@@ -45,7 +51,7 @@ export function httpRebindingWarnings(opts: {
   hasExplicitAllowedHosts: boolean;
   hasAllowedOrigins: boolean;
 }): string[] {
-  if (LOOPBACK_HOSTS.has(opts.host.toLowerCase())) return [];
+  if (isLoopbackHost(opts.host)) return [];
   const warnings: string[] = [];
   if (!opts.hasExplicitAllowedHosts) {
     warnings.push(

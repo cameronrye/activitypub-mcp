@@ -69,6 +69,18 @@ describe("createLoopbackServer", () => {
     lb.close();
   });
 
+  it("does not respond 200 for an empty-valued code (?code=&state=...)", async () => {
+    // The strategy treats an empty code as failure (params.get('code') is falsy);
+    // the success page must mirror that and not say "Authorized".
+    const lb = await createLoopbackServer();
+    const pending = lb.waitForCallback({ state: "abc" });
+    const res = await fetch(`${lb.redirectUri}?code=&state=abc`);
+    expect(res.status).toBe(400);
+    expect(await res.text()).not.toContain("Authorized");
+    await pending;
+    lb.close();
+  });
+
   it("rejects after the timeout", async () => {
     const lb = await createLoopbackServer();
     await expect(lb.waitForCallback({ state: "abc", timeoutMs: 30 })).rejects.toThrow(/timed out/i);

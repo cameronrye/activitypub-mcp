@@ -81,7 +81,11 @@ export class AccountManager {
         this.activeAccountId = "default";
         logger.info("Loaded default account from environment", { instance: defaultInstance });
       } catch (error) {
-        logger.warn("Failed to load default account from environment", { error });
+        // Log the message only (mirrors the entry-loop catch) so a future change
+        // that surfaces token-derived context in an Error can't leak it.
+        logger.warn("Failed to load default account from environment", {
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
 
