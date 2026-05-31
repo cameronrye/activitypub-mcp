@@ -11,6 +11,7 @@ import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { auditLogger } from "../audit/logger.js";
 import { accountManager, authenticatedClient } from "../auth/index.js";
+import { ENABLE_WRITES } from "../config.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
 import { performanceMonitor } from "../telemetry/performance-monitor.js";
 import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
@@ -25,48 +26,40 @@ const logger = getLogger("activitypub-mcp:tools-write");
 export function registerWriteTools(mcpServer: McpServer, rateLimiter: RateLimiter): void {
   trackedMcpServer(mcpServer);
 
-  // Account management tools
+  // Always on: account management + authenticated reads
   registerListAccountsTool(mcpServer);
   registerSwitchAccountTool(mcpServer);
   registerVerifyAccountTool(mcpServer, rateLimiter);
+  registerGetHomeTimelineTool(mcpServer, rateLimiter);
+  registerGetNotificationsTool(mcpServer, rateLimiter);
+  registerGetBookmarksTool(mcpServer, rateLimiter);
+  registerGetFavouritesTool(mcpServer, rateLimiter);
+  registerGetRelationshipTool(mcpServer, rateLimiter);
 
-  // Posting tools
+  if (!ENABLE_WRITES) {
+    logger.info("Write tools disabled (set ACTIVITYPUB_ENABLE_WRITES=true to enable)");
+    return;
+  }
+
+  logger.info("Write tools ENABLED");
+  // Mutations
   registerPostStatusTool(mcpServer, rateLimiter);
   registerReplyToPostTool(mcpServer, rateLimiter);
   registerDeletePostTool(mcpServer, rateLimiter);
-
-  // Interaction tools
   registerBoostPostTool(mcpServer, rateLimiter);
   registerUnboostPostTool(mcpServer, rateLimiter);
   registerFavouritePostTool(mcpServer, rateLimiter);
   registerUnfavouritePostTool(mcpServer, rateLimiter);
   registerBookmarkPostTool(mcpServer, rateLimiter);
   registerUnbookmarkPostTool(mcpServer, rateLimiter);
-
-  // Follow/relationship tools
   registerFollowAccountTool(mcpServer, rateLimiter);
   registerUnfollowAccountTool(mcpServer, rateLimiter);
   registerMuteAccountTool(mcpServer, rateLimiter);
   registerUnmuteAccountTool(mcpServer, rateLimiter);
   registerBlockAccountTool(mcpServer, rateLimiter);
   registerUnblockAccountTool(mcpServer, rateLimiter);
-
-  // Authenticated timeline tools
-  registerGetHomeTimelineTool(mcpServer, rateLimiter);
-  registerGetNotificationsTool(mcpServer, rateLimiter);
-  registerGetBookmarksTool(mcpServer, rateLimiter);
-  registerGetFavouritesTool(mcpServer, rateLimiter);
-
-  // Relationship tools
-  registerGetRelationshipTool(mcpServer, rateLimiter);
-
-  // Poll tools
   registerVoteOnPollTool(mcpServer, rateLimiter);
-
-  // Media tools
   registerUploadMediaTool(mcpServer, rateLimiter);
-
-  // Scheduled posts tools
   registerGetScheduledPostsTool(mcpServer, rateLimiter);
   registerCancelScheduledPostTool(mcpServer, rateLimiter);
   registerUpdateScheduledPostTool(mcpServer, rateLimiter);
