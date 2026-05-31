@@ -229,7 +229,13 @@ export class AuthenticatedClient {
 
   // --- Status helpers (unchanged) ---
 
-  isWriteEnabled(): boolean {
+  /**
+   * Whether at least one authenticated account is configured. Named for what it
+   * actually checks — it does NOT consult ENABLE_WRITES (that gate lives in
+   * tools-write via {@link writeBlockReason}); the two are deliberately separate
+   * so authenticated READS work without writes being enabled.
+   */
+  hasAuthenticatedAccount(): boolean {
     return accountManager.hasAccounts();
   }
 

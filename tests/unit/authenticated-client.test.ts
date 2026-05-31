@@ -83,14 +83,14 @@ describe("AuthenticatedClient", () => {
     server.resetHandlers();
   });
 
-  describe("isWriteEnabled", () => {
+  describe("hasAuthenticatedAccount", () => {
     it("should return true when active account exists", () => {
-      expect(client.isWriteEnabled()).toBe(true);
+      expect(client.hasAuthenticatedAccount()).toBe(true);
     });
 
     it("should return false when no accounts", () => {
       vi.mocked(accountManager.hasAccounts).mockReturnValue(false);
-      expect(client.isWriteEnabled()).toBe(false);
+      expect(client.hasAuthenticatedAccount()).toBe(false);
     });
   });
 

@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getErrorMessage,
+  getErrorSuggestion,
   TokenRejectedError,
   UnsupportedOnPlatformError,
 } from "../../src/utils/errors.js";
@@ -16,6 +17,23 @@ import {
   isPrivateIPv6,
   validateExternalUrlSync,
 } from "../../src/validation/url.js";
+
+describe("getErrorSuggestion", () => {
+  it("suggests re-login with --write on an insufficient-scope 403", () => {
+    // Mastodon returns 403 with this body when the token lacks write scope —
+    // the exact footgun after a read-only login then ENABLE_WRITES=true.
+    const msg =
+      'Failed to create post: HTTP 403 - {"error":"This action is outside the authorized scopes"}';
+    const suggestion = getErrorSuggestion(msg);
+    expect(suggestion).toMatch(/--write/);
+  });
+
+  it("keeps the generic 403 suggestion when the body is not scope-related", () => {
+    const suggestion = getErrorSuggestion("HTTP 403 - blocked by server policy");
+    expect(suggestion).toBeDefined();
+    expect(suggestion).not.toMatch(/--write/);
+  });
+});
 
 describe("getErrorMessage", () => {
   it("should extract message from Error objects", () => {

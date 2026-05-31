@@ -96,7 +96,7 @@ export function writeBlockReason(
  * authenticated account exists.
  */
 function requireWriteEnabled(): void {
-  const reason = writeBlockReason(ENABLE_WRITES, authenticatedClient.isWriteEnabled());
+  const reason = writeBlockReason(ENABLE_WRITES, authenticatedClient.hasAuthenticatedAccount());
   if (reason === "writes-disabled") {
     throw new McpError(
       ErrorCode.InternalError,
@@ -118,7 +118,7 @@ function requireWriteEnabled(): void {
  * 'write' for a read.
  */
 function requireAuthEnabled(): void {
-  if (!authenticatedClient.isWriteEnabled()) {
+  if (!authenticatedClient.hasAuthenticatedAccount()) {
     throw new McpError(
       ErrorCode.InternalError,
       "This tool requires an authenticated account. Run `activitypub-mcp login <instance>` to sign in, " +

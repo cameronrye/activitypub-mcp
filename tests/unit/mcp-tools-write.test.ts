@@ -51,7 +51,7 @@ vi.mock("../../src/auth/index.js", () => ({
     }),
   },
   authenticatedClient: {
-    isWriteEnabled: vi.fn().mockReturnValue(true),
+    hasAuthenticatedAccount: vi.fn().mockReturnValue(true),
     getWriteStatus: vi.fn().mockReturnValue({
       enabled: true,
       activeAccount: {
@@ -311,7 +311,7 @@ describe("MCP Write Tools", () => {
       // With no account configured, switch-account must refuse rather than call
       // setActiveAccount — a prompt-injected switch on an unconfigured server
       // should fail closed.
-      (authenticatedClient.isWriteEnabled as Mock).mockReturnValueOnce(false);
+      (authenticatedClient.hasAuthenticatedAccount as Mock).mockReturnValueOnce(false);
 
       const tool = registeredTools.get("switch-account");
       await expect(tool?.handler({ accountId: "1" })).rejects.toThrow(/authenticated|requires/i);
@@ -331,7 +331,7 @@ describe("MCP Write Tools", () => {
     });
 
     it("should handle write not enabled", async () => {
-      (authenticatedClient.isWriteEnabled as Mock).mockReturnValueOnce(false);
+      (authenticatedClient.hasAuthenticatedAccount as Mock).mockReturnValueOnce(false);
 
       const tool = registeredTools.get("verify-account");
       await expect(tool?.handler({})).rejects.toThrow(
