@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-05-31
+
+> **Major release.** v3 is a security and surface-reduction overhaul of the v2 server. See `MIGRATION-v3.md` for the full upgrade guide.
+
+### Added
+
+- **`ACTIVITYPUB_ENABLE_WRITES` env var.** Master switch for all mutation tools. Default `false` — mutation tools are not registered at server start unless explicitly opted in, so prompt-injected Fediverse content cannot name a tool that does not exist.
+- **`MCP_HTTP_ALLOWED_HOSTS` / `MCP_HTTP_ALLOWED_ORIGINS` env vars.** Explicit allowlists for HTTP transport DNS-rebinding protection. Required when binding to a non-localhost interface.
+
+### Changed
+
+- **Read-only by default.** Mutation tools (post-status, reply-to-post, delete-post, boost/unboost, favourite/unfavourite, bookmark/unbookmark, follow/unfollow, mute/unmute, block/unblock, vote-on-poll, upload-media, get/cancel/update-scheduled-post) are only registered when `ACTIVITYPUB_ENABLE_WRITES=true`.
+- **`discover-instances-live` renamed to `discover-instances`.** The static fallback `recommend-instances` and old static `discover-instances` are removed; the live instances.social-backed implementation is now the only `discover-instances`.
+- **`search-instance`, `search-accounts`, `search-hashtags`, `search-posts` consolidated into `search`.** Pass `type: "all" | "accounts" | "posts" | "hashtags"` to the unified `search` tool.
+- **`get-local-timeline` + `get-federated-timeline` consolidated into `get-public-timeline`.** Pass `scope: "local" | "federated"`.
+- **`get-instance-software` removed.** `get-instance-info` now includes the software detection block.
+- **All remote Fediverse content wrapped in `<untrusted-content>` envelope** before it reaches the model. Defense in depth against prompt-injection from posts, profiles, and instance descriptions.
+- **MCP tool annotations added.** All tools carry `readOnly: true` or `destructive: true` annotations per MCP spec.
+- **`/health` is now a trivial liveness probe.** No longer performs an outbound connectivity check. Returns `200 OK`.
+- **Full DNS-rebinding IP-pinning on all outbound fetch paths** (previously only on HTTP transport). All `undici`-based fetches block requests that resolve to private/loopback IPs.
+- **Docs consolidated to the site; README is a project overview.**
+
+### Removed
+
+- **Export tools** (`export-timeline`, `export-thread`, `export-account-info`, `export-hashtag`) — the model formats fetched data directly.
+- **`health-check` tool** — removed along with the `/metrics` HTTP endpoint and the telemetry subsystem.
+- **`performance-metrics` tool** — telemetry subsystem removed.
+- **`batch-fetch-actors` / `batch-fetch-posts`** — call single-item tools in a loop.
+- **`convert-url` tool** — no replacement.
+- **`recommend-instances`** — superseded by the live `discover-instances`.
+- **`get-instance-software` tool** — superseded by `get-instance-info`.
+- **`/metrics` HTTP endpoint** — removed entirely.
+- **MCP prompts:** `community-health`, `compare-instances`, `content-strategy`, `discover-content`, `migration-helper`, `thread-composer`. Five prompts remain: `explore-fediverse`, `summarize-trending`, `analyze-user-activity`, `compare-accounts`, `find-experts`.
+- **Removed env vars:** `HEALTH_CHECK_TIMEOUT`, `HEALTH_CHECK_URL`, `HEALTH_CHECK_EXTERNAL_PROBE`, `MEMORY_WARN_THRESHOLD_MB`, `MEMORY_WARN_THRESHOLD_PERCENT`, `MAX_REQUEST_HISTORY`.
+
+### Security
+
+- **Read-only by default.** Unregistered mutation tools cannot be invoked by model or user, eliminating the prompt-injection write surface entirely when writes are not needed.
+- **`<untrusted-content>` envelope.** Fediverse-sourced text is structurally isolated from trusted context before reaching the model.
+- **Complete DNS-rebinding IP-pinning.** All outbound HTTP paths now pin resolved IPs via `undici`, blocking SSRF to internal hosts regardless of trigger path.
+- **HTTP transport `MCP_HTTP_ALLOWED_HOSTS` / `MCP_HTTP_ALLOWED_ORIGINS` checks.** Requests to the HTTP transport from unexpected Host/Origin headers are rejected `403`, closing the DNS-rebinding attack surface for non-localhost deployments.
+
 ### Added
 
 - **Browser-based login.** New `activitypub-mcp login <instance>` acquires an

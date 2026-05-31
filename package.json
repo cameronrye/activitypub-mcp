@@ -1,6 +1,6 @@
 {
   "name": "activitypub-mcp",
-  "version": "2.2.0",
+  "version": "3.0.0",
   "description": "A Model Context Protocol server for exploring and interacting with the existing Fediverse",
   "main": "dist/mcp-main.js",
   "bin": {
@@ -16,7 +16,8 @@
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
-    "MIGRATION-v2.md"
+    "MIGRATION-v2.md",
+    "MIGRATION-v3.md"
   ],
   "keywords": [
     "activitypub",
