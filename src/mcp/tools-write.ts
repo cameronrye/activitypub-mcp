@@ -120,6 +120,7 @@ function registerListAccountsTool(mcpServer: McpServer): void {
       title: "List Configured Accounts",
       description: "List all configured authenticated accounts for write operations",
       inputSchema: {},
+      annotations: { readOnlyHint: true },
     },
     async () => {
       const accounts = accountManager.listAccounts();
@@ -188,6 +189,7 @@ function registerSwitchAccountTool(mcpServer: McpServer): void {
           .string()
           .describe("The account ID to switch to (use list-accounts to see IDs)"),
       },
+      annotations: { readOnlyHint: false },
     },
     async ({ accountId }) => {
       const startTime = Date.now();
@@ -251,6 +253,7 @@ function registerVerifyAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
           .optional()
           .describe("The account ID to verify (defaults to active account)"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ accountId }) => {
       requireAuthEnabled();
@@ -401,6 +404,7 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
           .optional()
           .describe("ISO 8601 datetime to schedule the post (e.g., one hour from now in ISO 8601)"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({
       content,
@@ -532,6 +536,7 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
         spoilerText: z.string().max(500).optional().describe("Content warning"),
         accountId: z.string().optional().describe("Account ID to reply from"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, content, visibility, spoilerText, accountId }) => {
       requireWriteEnabled();
@@ -626,6 +631,7 @@ function registerDeletePostTool(mcpServer: McpServer, rateLimiter: RateLimiter):
         statusId: z.string().describe("The ID of your post to delete"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
@@ -709,6 +715,7 @@ function registerBoostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter): 
         statusId: z.string().describe("The ID of the post to boost"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
@@ -790,6 +797,7 @@ function registerUnboostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
         statusId: z.string().describe("The ID of the post to unboost"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
@@ -862,6 +870,7 @@ function registerFavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimite
         statusId: z.string().describe("The ID of the post to favourite"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
@@ -936,6 +945,7 @@ function registerUnfavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimi
         statusId: z.string().describe("The ID of the post to unfavourite"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
@@ -1008,6 +1018,7 @@ function registerBookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimiter
         statusId: z.string().describe("The ID of the post to bookmark"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
@@ -1082,6 +1093,7 @@ function registerUnbookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimit
         statusId: z.string().describe("The ID of the post to unbookmark"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
@@ -1168,6 +1180,7 @@ function registerFollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
           .describe("Get notifications when this account posts (default: false)"),
         accountId: z.string().optional().describe("Your account ID to follow from"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ acct, showBoosts = true, notify = false, accountId }) => {
       requireWriteEnabled();
@@ -1263,6 +1276,7 @@ function registerUnfollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimi
         acct: z.string().describe("Account to unfollow (username@instance)"),
         accountId: z.string().optional().describe("Your account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ acct, accountId }) => {
       requireWriteEnabled();
@@ -1345,6 +1359,7 @@ function registerMuteAccountTool(mcpServer: McpServer, rateLimiter: RateLimiter)
           .describe("Mute duration in seconds (0 = indefinite, default: indefinite)"),
         accountId: z.string().optional().describe("Your account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ acct, muteNotifications = true, duration = 0, accountId }) => {
       requireWriteEnabled();
@@ -1425,6 +1440,7 @@ function registerUnmuteAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
         acct: z.string().describe("Account to unmute"),
         accountId: z.string().optional().describe("Your account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ acct, accountId }) => {
       requireWriteEnabled();
@@ -1499,6 +1515,7 @@ function registerBlockAccountTool(mcpServer: McpServer, rateLimiter: RateLimiter
         acct: z.string().describe("Account to block"),
         accountId: z.string().optional().describe("Your account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ acct, accountId }) => {
       requireWriteEnabled();
@@ -1573,6 +1590,7 @@ function registerUnblockAccountTool(mcpServer: McpServer, rateLimiter: RateLimit
         acct: z.string().describe("Account to unblock"),
         accountId: z.string().optional().describe("Your account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ acct, accountId }) => {
       requireWriteEnabled();
@@ -1653,6 +1671,7 @@ function registerGetHomeTimelineTool(mcpServer: McpServer, rateLimiter: RateLimi
         sinceId: z.string().optional().describe("Return posts newer than this ID"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ limit = 20, maxId, sinceId, accountId }) => {
       requireAuthEnabled();
@@ -1764,6 +1783,7 @@ function registerGetNotificationsTool(mcpServer: McpServer, rateLimiter: RateLim
           .describe("Filter by notification types"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ limit = 20, types, accountId }) => {
       requireAuthEnabled();
@@ -1862,6 +1882,7 @@ function registerGetBookmarksTool(mcpServer: McpServer, rateLimiter: RateLimiter
         limit: z.number().min(1).max(40).optional().describe("Number of posts (default: 20)"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ limit = 20, accountId }) => {
       requireAuthEnabled();
@@ -1944,6 +1965,7 @@ function registerGetFavouritesTool(mcpServer: McpServer, rateLimiter: RateLimite
         limit: z.number().min(1).max(40).optional().describe("Number of posts (default: 20)"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ limit = 20, accountId }) => {
       requireAuthEnabled();
@@ -2042,6 +2064,7 @@ function registerGetRelationshipTool(mcpServer: McpServer, rateLimiter: RateLimi
           })
           .optional(),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ acct, accountId }) => {
       requireAuthEnabled();
@@ -2155,6 +2178,7 @@ function registerVoteOnPollTool(mcpServer: McpServer, rateLimiter: RateLimiter):
           ),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ pollId, choices, accountId }) => {
       requireWriteEnabled();
@@ -2289,6 +2313,7 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
           .describe("Focal point Y coordinate (-1 to 1, 0 is center)"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ filePath, description, focusX, focusY, accountId }) => {
       requireWriteEnabled();
@@ -2399,6 +2424,7 @@ function registerGetScheduledPostsTool(mcpServer: McpServer, rateLimiter: RateLi
         limit: z.number().min(1).max(40).optional().describe("Number of posts (default: 20)"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ limit = 20, accountId }) => {
       requireAuthEnabled();
@@ -2522,6 +2548,7 @@ function registerCancelScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
           })
           .optional(),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ scheduledPostId, accountId }) => {
       requireWriteEnabled();
@@ -2614,6 +2641,7 @@ function registerUpdateScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
           })
           .optional(),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ scheduledPostId, scheduledAt, accountId }) => {
       requireWriteEnabled();

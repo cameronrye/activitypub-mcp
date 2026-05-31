@@ -108,6 +108,7 @@ function registerDiscoverActorTool(mcpServer: McpServer, rateLimiter: RateLimite
           "Actor handle in 'user@domain' or '@user@domain' form (e.g., 'alice@mastodon.social')",
         ),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ identifier }) => {
       const validIdentifier = validateActorIdentifier(identifier);
@@ -193,6 +194,7 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
         maxId: z.string().optional().describe("Return results older than this ID"),
         sinceId: z.string().optional().describe("Return results since this ID"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ identifier, limit = 20, cursor, minId, maxId, sinceId }) => {
       const validIdentifier = validateActorIdentifier(identifier);
@@ -317,6 +319,7 @@ function registerSearchInstanceTool(mcpServer: McpServer, rateLimiter: RateLimit
           .optional()
           .describe("Type of content to search for"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ domain, query, type = "accounts" }) => {
       const validDomain = validateDomain(domain);
@@ -457,6 +460,7 @@ function registerGetInstanceInfoTool(mcpServer: McpServer, rateLimiter: RateLimi
       inputSchema: {
         domain: DomainSchema.describe("Instance domain (e.g., example.social)"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ domain }) => {
       const validDomain = validateDomain(domain);
@@ -546,6 +550,7 @@ function registerDiscoverInstancesTool(mcpServer: McpServer): void {
         region: z.string().optional().describe("Geographic region or language"),
         beginnerFriendly: z.boolean().optional().describe("Show only beginner-friendly instances"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ category, topic, size, region, beginnerFriendly }) => {
       try {
@@ -653,6 +658,7 @@ function registerDiscoverInstancesLiveTool(mcpServer: McpServer, rateLimiter: Ra
         sortOrder: z.enum(["asc", "desc"]).optional().describe("Sort order (default: desc)"),
         limit: z.number().min(1).max(50).optional().describe("Number of results (default: 20)"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({
       software,
@@ -802,6 +808,7 @@ function registerRecommendInstancesTool(mcpServer: McpServer): void {
       inputSchema: {
         interests: z.array(z.string()).describe("List of your interests or topics"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ interests }) => {
       try {
@@ -873,6 +880,7 @@ function registerHealthCheckTool(mcpServer: McpServer): void {
           .optional()
           .describe("Include detailed performance metrics in the response"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ includeMetrics = false }) => {
       const requestId = performanceMonitor.startRequest("health-check", { includeMetrics });
@@ -946,6 +954,7 @@ function registerPerformanceMetricsTool(mcpServer: McpServer): void {
           .optional()
           .describe("Specific operation to get metrics for (e.g., 'discover-actor')"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ operation }) => {
       const requestId = performanceMonitor.startRequest("performance-metrics", { operation });
@@ -1045,6 +1054,7 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
           .optional()
           .describe("Maximum number of replies to fetch (default: 50)"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ postUrl, depth = 2, maxReplies = 50 }) => {
       const requestId = performanceMonitor.startRequest("get-post-thread", {
@@ -1163,6 +1173,7 @@ function registerGetTrendingHashtagsTool(mcpServer: McpServer, rateLimiter: Rate
           .optional()
           .describe("Number of hashtags to fetch (default: 20)"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ domain, limit = 20 }) => {
       const validDomain = validateDomain(domain);
@@ -1244,6 +1255,7 @@ function registerGetTrendingPostsTool(mcpServer: McpServer, rateLimiter: RateLim
           .optional()
           .describe("Number of posts to fetch (default: 20)"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ domain, limit = 20 }) => {
       const validDomain = validateDomain(domain);
@@ -1336,6 +1348,7 @@ function registerGetLocalTimelineTool(mcpServer: McpServer, rateLimiter: RateLim
           .describe("Number of posts to fetch (default: 20)"),
         maxId: z.string().optional().describe("Return results older than this ID (for pagination)"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ domain, limit = 20, maxId }) => {
       const validDomain = validateDomain(domain);
@@ -1430,6 +1443,7 @@ function registerGetFederatedTimelineTool(mcpServer: McpServer, rateLimiter: Rat
           .describe("Number of posts to fetch (default: 20)"),
         maxId: z.string().optional().describe("Return results older than this ID (for pagination)"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ domain, limit = 20, maxId }) => {
       const validDomain = validateDomain(domain);
@@ -1523,6 +1537,7 @@ function registerSearchAccountsTool(mcpServer: McpServer, rateLimiter: RateLimit
           .optional()
           .describe("Number of results to fetch (default: 20)"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ domain, query, limit = 20 }) => {
       const validDomain = validateDomain(domain);
@@ -1627,6 +1642,7 @@ function registerSearchHashtagsTool(mcpServer: McpServer, rateLimiter: RateLimit
           .optional()
           .describe("Number of results to fetch (default: 20)"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ domain, query, limit = 20 }) => {
       const validDomain = validateDomain(domain);
@@ -1726,6 +1742,7 @@ function registerSearchPostsTool(mcpServer: McpServer, rateLimiter: RateLimiter)
           .optional()
           .describe("Number of results to fetch (default: 20)"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ domain, query, limit = 20 }) => {
       const validDomain = validateDomain(domain);
@@ -1841,6 +1858,7 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
           .optional()
           .describe("Number of results per type (default: 10)"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ query, domain = "mastodon.social", type = "all", limit = 10 }) => {
       const validDomain = validateDomain(domain);
@@ -2020,6 +2038,7 @@ function registerConvertUrlTool(mcpServer: McpServer, rateLimiter: RateLimiter):
           .optional()
           .describe("Conversion direction: to-activitypub, to-web, or auto-detect (default: auto)"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ url, direction = "auto" }) => {
       const requestId = performanceMonitor.startRequest("convert-url", { url, direction });
@@ -2119,6 +2138,7 @@ function registerBatchFetchActorsTool(mcpServer: McpServer, rateLimiter: RateLim
             "Array of actor identifiers (e.g., ['user1@mastodon.social', 'user2@fosstodon.org'])",
           ),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ identifiers }) => {
       const requestId = performanceMonitor.startRequest("batch-fetch-actors", {
@@ -2210,6 +2230,7 @@ function registerBatchFetchPostsTool(mcpServer: McpServer, rateLimiter: RateLimi
       inputSchema: {
         postUrls: z.array(z.string().url()).min(1).max(20).describe("Array of post URLs to fetch"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ postUrls }) => {
       const requestId = performanceMonitor.startRequest("batch-fetch-posts", {
@@ -2311,6 +2332,7 @@ function registerGetInstanceSoftwareTool(mcpServer: McpServer, rateLimiter: Rate
           "Fediverse instance domain (e.g., 'mastodon.social'). Do not include scheme or path.",
         ),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ domain }) => {
       const start = Date.now();
