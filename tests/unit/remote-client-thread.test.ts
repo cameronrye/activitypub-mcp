@@ -2,6 +2,14 @@ import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Pin DNS to a public IP so resolveAndPin succeeds for fixture hosts (which
+// don't resolve on the real resolver) and MSW intercepts the pinned fetch.
+// resolveAndPin now fails closed on an unresolved host, so without this the
+// thread fetches would reject before reaching MSW.
+vi.mock("node:dns/promises", () => ({
+  lookup: async () => [{ address: "93.184.216.34", family: 4 }],
+}));
+
 const server = setupServer();
 // Note: the production fetch helper catches and silently skips unmatched
 // requests, so MSW's "error" mode would only add console noise without

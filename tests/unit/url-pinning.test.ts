@@ -87,6 +87,23 @@ describe("resolveAndPin", () => {
 
     await expect(resolveAndPin("https://flaky.example/")).rejects.toThrow(/DNS validation failed/i);
   });
+
+  it("fails closed on ENOTFOUND instead of returning an unpinned target", async () => {
+    // resolveAndPin pins an actual outbound fetch. If it returned an empty
+    // (dispatcher-less) target on ENOTFOUND, the caller would fetch UNPINNED and
+    // undici would re-resolve the hostname itself — reopening the exact
+    // DNS-rebinding TOCTOU the pin exists to close (attacker answers NXDOMAIN to
+    // this lookup, then a private IP to undici's resolution). There is no IP to
+    // pin, so it must reject rather than hand back {}.
+    const err = Object.assign(new Error("getaddrinfo ENOTFOUND nope.example"), {
+      code: "ENOTFOUND",
+    });
+    lookupMock.mockRejectedValue(err);
+
+    await expect(resolveAndPin("https://nope.example/")).rejects.toThrow(
+      /no address|does not exist/i,
+    );
+  });
 });
 
 describe("validateExternalUrl fails closed on unexpected resolver errors", () => {

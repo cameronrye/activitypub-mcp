@@ -20,6 +20,8 @@ const PRIVATE_IPV4_RANGES = [
   /^100\.(6[4-9]|[7-9]\d|1[0-1]\d|12[0-7])\./, // Carrier-grade NAT (100.64.0.0/10)
   /^192\.0\.0\./, // IETF Protocol Assignments (192.0.0.0/24)
   /^192\.0\.2\./, // Documentation (TEST-NET-1)
+  /^192\.88\.99\./, // 6to4 relay anycast (192.88.99.0/24, deprecated)
+  /^198\.1[89]\./, // Benchmarking (198.18.0.0/15, RFC 2544)
   /^198\.51\.100\./, // Documentation (TEST-NET-2)
   /^203\.0\.113\./, // Documentation (TEST-NET-3)
   /^224\./, // Multicast (224.0.0.0/4)
@@ -121,6 +123,23 @@ export function isPrivateIPv6(ip: string): boolean {
     return isPrivateIPv4(ipv4MappedMatch[1]);
   }
 
+  // Check for IPv4-COMPATIBLE IPv6 addresses (::x.x.x.x, deprecated per RFC 4291).
+  // These embed an IPv4 in the low 32 bits with the ::ffff: marker absent, so the
+  // mapped guard above misses them. The WHATWG URL parser emits the hex-compressed
+  // form (e.g. ::127.0.0.1 → ::7f00:1), so handle both the dotted and two-hex-group
+  // forms and validate the embedded IPv4. (::, ::1 are caught by the ranges below.)
+  const ipv4CompatDotted = /^::(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/.exec(normalizedIp);
+  if (ipv4CompatDotted) {
+    return isPrivateIPv4(ipv4CompatDotted[1]);
+  }
+  const ipv4CompatHex = /^::([\da-f]{1,4}):([\da-f]{1,4})$/i.exec(normalizedIp);
+  if (ipv4CompatHex) {
+    const hi = Number.parseInt(ipv4CompatHex[1], 16);
+    const lo = Number.parseInt(ipv4CompatHex[2], 16);
+    const embedded = `${hi >>> 8}.${hi & 0xff}.${lo >>> 8}.${lo & 0xff}`;
+    return isPrivateIPv4(embedded);
+  }
+
   return PRIVATE_IPV6_RANGES.some((range) => range.test(normalizedIp));
 }
 
@@ -145,7 +164,10 @@ export function isPrivateIP(ip: string): boolean {
  * @returns True if the hostname is blocked
  */
 export function isBlockedHostname(hostname: string): boolean {
-  const lowerHostname = hostname.toLowerCase();
+  // Strip a single trailing FQDN dot ("localhost." / "foo.internal.") that the
+  // WHATWG URL parser preserves, so the exact-name Set and suffix checks below
+  // can't be bypassed by appending a dot.
+  const lowerHostname = hostname.toLowerCase().replace(/\.$/, "");
 
   // Check exact matches
   if (BLOCKED_HOSTNAMES.has(lowerHostname)) {
@@ -262,13 +284,13 @@ export async function validateExternalUrl(url: string): Promise<void> {
 export interface PinnedTarget {
   /**
    * undici dispatcher pinned to {@link address}, to pass as the fetch
-   * `dispatcher`. May be undefined when the host could not be resolved
-   * (ENOTFOUND) — there is no IP to pin, so the caller fetches unpinned and the
-   * real fetch will itself fail to resolve (no SSRF window exists in that case).
+   * `dispatcher`. Always set on a successful return — `resolveAndPin` rejects
+   * (rather than handing back an unpinned target) whenever there is no validated
+   * IP to pin, so the caller never fetches a host whose connection isn't pinned.
    */
-  dispatcher?: Agent;
-  /** The validated IP pinned for the connection, or undefined when unresolved. */
-  address?: string;
+  dispatcher: Agent;
+  /** The validated IP pinned for the connection. */
+  address: string;
 }
 
 /**
@@ -363,10 +385,17 @@ export async function resolveAndPin(url: string): Promise<PinnedTarget> {
     const pinned = addresses[0].address;
     return { dispatcher: pinDispatcher(pinned), address: pinned };
   } catch (error) {
-    // Fails closed on unexpected errors; ENOTFOUND falls through to an unpinned
-    // target (nothing to pin, and the real fetch will also fail to resolve).
+    // Fail closed. handleDnsLookupError re-throws unexpected resolver errors and
+    // our own security errors. For ENOTFOUND it returns (host genuinely doesn't
+    // exist), but we must NOT then hand back an unpinned target: the caller would
+    // fetch with no pinned dispatcher and undici would re-resolve the hostname
+    // independently, reopening the exact DNS-rebinding TOCTOU this function
+    // closes (attacker answers NXDOMAIN here, then a private IP to undici).
+    // There is no validated IP to pin, so reject.
     handleDnsLookupError(error);
-    return {};
+    throw new Error(
+      `DNS resolution for "${hostname}" found no address to pin (host does not exist)`,
+    );
   }
 }
 

@@ -69,6 +69,17 @@ describe("isPrivateIPv4", () => {
   it("should detect broadcast address", () => {
     expect(isPrivateIPv4("255.255.255.255")).toBe(true);
   });
+
+  it("should detect the 198.18.0.0/15 benchmarking range", () => {
+    expect(isPrivateIPv4("198.18.0.5")).toBe(true);
+    expect(isPrivateIPv4("198.19.200.1")).toBe(true);
+    expect(isPrivateIPv4("198.17.0.1")).toBe(false);
+    expect(isPrivateIPv4("198.20.0.1")).toBe(false);
+  });
+
+  it("should detect the 192.88.99.0/24 6to4-relay anycast range", () => {
+    expect(isPrivateIPv4("192.88.99.1")).toBe(true);
+  });
 });
 
 describe("isPrivateIPv6", () => {
@@ -102,6 +113,16 @@ describe("isPrivateIPv6", () => {
 
   it("should allow public IPv6 addresses", () => {
     expect(isPrivateIPv6("2607:f8b0:4004:800::200e")).toBe(false);
+  });
+
+  it("should detect IPv4-compatible IPv6 embedding a private IPv4", () => {
+    // ::127.0.0.1 — the deprecated IPv4-compatible form the URL parser emits as
+    // ::7f00:1. The ::ffff: (mapped) guard does not cover this sibling form.
+    expect(isPrivateIPv6("::7f00:1")).toBe(true);
+    expect(isPrivateIPv6("::127.0.0.1")).toBe(true);
+    expect(isPrivateIPv6("[::7f00:1]")).toBe(true);
+    // ::169.254.169.254 (cloud metadata) → ::a9fe:a9fe
+    expect(isPrivateIPv6("::a9fe:a9fe")).toBe(true);
   });
 
   it("should handle bracketed addresses", () => {
@@ -152,6 +173,14 @@ describe("isBlockedHostname", () => {
     expect(isBlockedHostname("example.com")).toBe(false);
     expect(isBlockedHostname("mastodon.social")).toBe(false);
     expect(isBlockedHostname("api.github.com")).toBe(false);
+  });
+
+  it("should not be bypassed by a trailing FQDN dot", () => {
+    // The WHATWG URL parser keeps a trailing dot ("localhost." / "foo.internal.")
+    // — the blocklist must normalize it away so the exact/suffix checks still fire.
+    expect(isBlockedHostname("localhost.")).toBe(true);
+    expect(isBlockedHostname("db.internal.")).toBe(true);
+    expect(isBlockedHostname("kubernetes.default.svc.cluster.local.")).toBe(true);
   });
 });
 
