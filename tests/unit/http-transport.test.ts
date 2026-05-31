@@ -2,6 +2,7 @@
  * Unit tests for the HttpTransportServer class.
  */
 
+import { request as httpRequest } from "node:http";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { HttpTransportServer } from "../../src/transport/http.js";
 
@@ -276,6 +277,41 @@ describe("HttpTransportServer", () => {
 
       // Should not be 404 - it reaches the MCP handler
       expect(response.status).not.toBe(404);
+    });
+
+    it("should reject /mcp requests with a disallowed Host header (DNS-rebinding protection)", async () => {
+      server = new HttpTransportServer({ port: 0 });
+      await server.start();
+
+      const address = server.getAddress();
+      if (!address) throw new Error("no address");
+
+      // Node.js `fetch` (undici) treats Host as a forbidden header and always
+      // sends the real host, so we use node:http's `request` directly to spoof
+      // a Host header that looks like a DNS-rebinding attack (attacker domain
+      // resolving to 127.0.0.1). The SDK should reject this with 403.
+      const statusCode = await new Promise<number>((resolve, reject) => {
+        const body = JSON.stringify({});
+        const req = httpRequest(
+          {
+            hostname: "127.0.0.1",
+            port: address.port,
+            path: "/mcp",
+            method: "POST",
+            headers: {
+              Host: "evil.attacker.com",
+              "Content-Type": "application/json",
+              "Content-Length": Buffer.byteLength(body),
+              Authorization: `Bearer ${TEST_SECRET}`,
+            },
+          },
+          (res) => resolve(res.statusCode ?? 0),
+        );
+        req.on("error", reject);
+        req.end(body);
+      });
+
+      expect(statusCode).toBe(403);
     });
   });
 

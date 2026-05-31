@@ -117,17 +117,12 @@ export class HttpTransportServer {
 
     if (this.corsEnabled && this.corsOrigins.includes("*")) {
       logger.warn(
-        "CORS is enabled with wildcard origin '*'. Auth still protects /mcp " +
-          "and /metrics, but explicit origins are strongly recommended.",
+        "CORS is enabled with wildcard origin '*'. Auth still protects /mcp, " +
+          "but explicit origins are strongly recommended.",
       );
     }
 
     return new Promise((resolve, reject) => {
-      // Create the streamable HTTP transport
-      this.transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => crypto.randomUUID(),
-      });
-
       this.server = createServer(async (req, res) => {
         // Track active connections for graceful shutdown
         this.activeConnections.add(res);
@@ -188,19 +183,45 @@ export class HttpTransportServer {
       });
 
       this.server.listen(this.port, this.host, () => {
+        // Resolve the actual bound address so we can populate allowedHosts with
+        // the real port (this.port may be 0 when the OS picks an ephemeral port).
+        const boundAddress = this.server?.address();
+        const actualPort =
+          typeof boundAddress === "object" && boundAddress !== null ? boundAddress.port : this.port;
+
+        // Build the allowed-hosts list using the actual bound port.
+        // Both "host" and "host:port" forms are included because HTTP clients
+        // may omit the port when it is the scheme's default (80/443).
+        const allowedHosts = [this.host, `${this.host}:${actualPort}`];
+
+        // Pass corsOrigins to the SDK's allowedOrigins only when they are
+        // concrete origins. A wildcard ("*") is not a valid Origin value and
+        // would cause the SDK to reject every cross-origin request, so we omit
+        // it in that case and let bearer-auth remain the gate.
+        const hasWildcard = this.corsOrigins.includes("*");
+        const allowedOrigins = hasWildcard ? undefined : this.corsOrigins.filter(Boolean);
+
+        // Create the streamable HTTP transport with DNS-rebinding protection.
+        // The SDK options are marked @deprecated in favour of external middleware,
+        // but they are still fully functional and provide defence-in-depth against
+        // DNS-rebinding attacks at the SDK layer.
+        this.transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => crypto.randomUUID(),
+          enableDnsRebindingProtection: true,
+          allowedHosts,
+          allowedOrigins: allowedOrigins && allowedOrigins.length > 0 ? allowedOrigins : undefined,
+        });
+
         logger.info("HTTP transport server started", {
           host: this.host,
-          port: this.port,
+          port: actualPort,
           endpoints: {
-            mcp: `http://${this.host}:${this.port}/mcp`,
-            health: `http://${this.host}:${this.port}/health`,
+            mcp: `http://${this.host}:${actualPort}/mcp`,
+            health: `http://${this.host}:${actualPort}/health`,
           },
         });
-        if (this.transport) {
-          resolve(this.transport);
-        } else {
-          reject(new Error("Transport was not initialized"));
-        }
+
+        resolve(this.transport);
       });
     });
   }

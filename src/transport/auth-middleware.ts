@@ -4,7 +4,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 /**
  * Constant-time string comparison used for Bearer secret verification.
  *
- * Called once per inbound HTTP request to `/mcp` and `/metrics` to compare
+ * Called once per inbound HTTP request to `/mcp` to compare
  * the provided token against `MCP_HTTP_SECRET`.
  *
  * **Guarantee:** The byte-by-byte comparison itself runs in constant time via
