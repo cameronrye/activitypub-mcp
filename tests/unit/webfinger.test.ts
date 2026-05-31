@@ -3,7 +3,18 @@
  */
 
 import { HttpResponse, http } from "msw";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// discoverActor fetches through resolveAndPin (src/validation/url.ts), which does a
+// real DNS lookup before the MSW-mocked fetch. Mock the resolver so the fake test
+// domains pin a fixed public IP deterministically across platforms (CI Linux/Windows
+// resolve them differently than macOS). The SSRF tests below use IP literals
+// (192.168.1.1) and blocked hostnames (localhost) that are caught before this lookup,
+// so they remain unaffected.
+vi.mock("node:dns/promises", () => ({
+  lookup: vi.fn(async () => [{ address: "93.184.216.34", family: 4 }]),
+}));
+
 import { WebFingerClient } from "../../src/discovery/webfinger.js";
 import { server } from "../mocks/server.js";
 

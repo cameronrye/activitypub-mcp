@@ -3,7 +3,20 @@
  */
 
 import { HttpResponse, http } from "msw";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// getInstanceSoftware fetches through guardedFetch → pinnedFetch → resolveAndPin,
+// which performs a real DNS lookup before the (MSW-mocked) fetch. The fake test
+// domains below do not resolve consistently across platforms — on CI Linux/Windows
+// they resolve to something that makes resolveAndPin throw before MSW can intercept,
+// while on macOS they fall through benignly. Mock the resolver so every test domain
+// pins a fixed public IP: resolveAndPin succeeds, MSW intercepts the fetch, and the
+// result is deterministic everywhere. IP-literal and same-host SSRF guards are
+// unaffected (127.0.0.1 is caught as a literal, never reaching this lookup).
+vi.mock("node:dns/promises", () => ({
+  lookup: vi.fn(async () => [{ address: "93.184.216.34", family: 4 }]),
+}));
+
 import {
   clearNodeInfoCache,
   getInstanceSoftware,
