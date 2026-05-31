@@ -210,6 +210,18 @@ export const HTTP_CORS_ORIGINS = process.env.MCP_HTTP_CORS_ORIGINS ?? "";
 export const HTTP_SECRET = process.env.MCP_HTTP_SECRET || "";
 
 // =============================================================================
+// Write Authorization
+// =============================================================================
+
+/**
+ * Master switch for mutation tools (post, reply, delete, boost, follow, block,
+ * etc.). Default: false. When false, mutation tools are NOT registered at all,
+ * so prompt-injected content cannot name a tool that does not exist. Read tools
+ * (public and authenticated) are unaffected.
+ */
+export const ENABLE_WRITES = parseBoolEnv(process.env.ACTIVITYPUB_ENABLE_WRITES, false);
+
+// =============================================================================
 // Dynamic Instance Discovery Configuration
 // =============================================================================
 
