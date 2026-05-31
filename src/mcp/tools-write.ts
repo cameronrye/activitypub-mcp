@@ -74,10 +74,36 @@ function checkRateLimit(rateLimiter: RateLimiter, identifier: string): void {
 }
 
 /**
- * Helper for write tools: requires that an authenticated account exists.
+ * Pure predicate for whether a mutation may proceed. Returns a reason code when
+ * blocked, or null when allowed. `writes-disabled` takes precedence so a
+ * read-only deployment never leaks that an account exists.
+ *
+ * Exported so the rule is unit-tested directly: it is the runtime
+ * belt-and-suspenders behind tool-registration gating — even if a mutation
+ * handler is ever reachable with writes off, it must independently refuse.
+ */
+export function writeBlockReason(
+  enableWrites: boolean,
+  hasAccounts: boolean,
+): "writes-disabled" | "no-auth" | null {
+  if (!enableWrites) return "writes-disabled";
+  if (!hasAccounts) return "no-auth";
+  return null;
+}
+
+/**
+ * Helper for write tools: requires both that writes are enabled and that an
+ * authenticated account exists.
  */
 function requireWriteEnabled(): void {
-  if (!authenticatedClient.isWriteEnabled()) {
+  const reason = writeBlockReason(ENABLE_WRITES, authenticatedClient.isWriteEnabled());
+  if (reason === "writes-disabled") {
+    throw new McpError(
+      ErrorCode.InternalError,
+      "Write operations are disabled. Set ACTIVITYPUB_ENABLE_WRITES=true to enable mutation tools.",
+    );
+  }
+  if (reason === "no-auth") {
     throw new McpError(
       ErrorCode.InternalError,
       "This write operation requires authentication. Run `activitypub-mcp login <instance>` to sign in, " +
@@ -184,6 +210,7 @@ function registerSwitchAccountTool(mcpServer: McpServer): void {
       annotations: { readOnlyHint: false },
     },
     async ({ accountId }) => {
+      requireAuthEnabled();
       const startTime = Date.now();
       const auditParams = { accountId };
 

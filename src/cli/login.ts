@@ -10,7 +10,8 @@ import { credentialStore, type StoredAccount } from "../auth/credential-store.js
 import { openBrowser } from "../auth/login/browser.js";
 import { createLoopbackServer } from "../auth/login/loopback-server.js";
 import { resolveLoginStrategy } from "../auth/login/resolve.js";
-import { MASTODON_SCOPES, MISSKEY_PERMISSIONS } from "../auth/login/scopes.js";
+import { scopesFor } from "../auth/login/scopes.js";
+import { ENABLE_WRITES } from "../config.js";
 import { instanceBlocklist } from "../policy/instance-blocklist.js";
 import { DomainSchema } from "../validation/schemas.js";
 
@@ -18,6 +19,7 @@ interface LoginFlags {
   port?: number;
   id?: string;
   label?: string;
+  write?: boolean;
 }
 
 function parseFlags(rest: string[]): LoginFlags {
@@ -32,6 +34,7 @@ function parseFlags(rest: string[]): LoginFlags {
       flags.port = port;
     } else if (arg === "--id") flags.id = rest[++i];
     else if (arg === "--label") flags.label = rest[++i];
+    else if (arg === "--write") flags.write = true;
   }
   return flags;
 }
@@ -39,7 +42,9 @@ function parseFlags(rest: string[]): LoginFlags {
 export async function runLogin(argv: string[]): Promise<void> {
   const [rawInstance, ...rest] = argv;
   if (!rawInstance) {
-    throw new Error("Usage: activitypub-mcp login <instance> [--port N] [--id ID] [--label L]");
+    throw new Error(
+      "Usage: activitypub-mcp login <instance> [--port N] [--id ID] [--label L] [--write]",
+    );
   }
 
   const instance = DomainSchema.parse(rawInstance).toLowerCase();
@@ -47,8 +52,11 @@ export async function runLogin(argv: string[]): Promise<void> {
   const flags = parseFlags(rest);
 
   const strategy = await resolveLoginStrategy(instance);
-  const scopes =
-    strategy.kind === "misskey" ? [...MISSKEY_PERMISSIONS] : MASTODON_SCOPES.split(" ");
+  // Least-privilege by default: only request write scopes when the deployment
+  // intends writes (ACTIVITYPUB_ENABLE_WRITES=true) or the user opts in with
+  // --write. A read-only server then stores a read-only token.
+  const wantWrites = ENABLE_WRITES || flags.write === true;
+  const scopes = scopesFor(strategy.kind, wantWrites);
 
   const loopback = await createLoopbackServer(flags.port ?? 0);
   try {

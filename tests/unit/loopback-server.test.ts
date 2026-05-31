@@ -44,6 +44,31 @@ describe("createLoopbackServer", () => {
     lb.close();
   });
 
+  it("does not respond 200 'Authorized' when the provider returns an error", async () => {
+    // The user clicked Deny: the provider redirects with ?error=... and no code.
+    // The state still matches, but the loopback must NOT serve the success page —
+    // otherwise the browser says "Authorized" while the login actually failed.
+    const lb = await createLoopbackServer();
+    const pending = lb.waitForCallback({ state: "abc" });
+    const res = await fetch(`${lb.redirectUri}?error=access_denied&state=abc`);
+    expect(res.status).toBe(400);
+    expect(await res.text()).not.toContain("Authorized");
+    // Still resolves so the strategy can surface the precise error to the user.
+    const params = await pending;
+    expect(params.get("error")).toBe("access_denied");
+    lb.close();
+  });
+
+  it("does not respond 200 when a Mastodon callback carries neither code nor error", async () => {
+    const lb = await createLoopbackServer();
+    const pending = lb.waitForCallback({ state: "abc" });
+    const res = await fetch(`${lb.redirectUri}?state=abc`);
+    expect(res.status).toBe(400);
+    const params = await pending;
+    expect(params.has("code")).toBe(false);
+    lb.close();
+  });
+
   it("rejects after the timeout", async () => {
     const lb = await createLoopbackServer();
     await expect(lb.waitForCallback({ state: "abc", timeoutMs: 30 })).rejects.toThrow(/timed out/i);

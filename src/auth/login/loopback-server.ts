@@ -16,6 +16,12 @@ const SUCCESS_PAGE =
   '<body style="font-family:sans-serif;padding:2rem">' +
   "<h1>Authorized</h1><p>You can close this window and return to the terminal.</p>";
 
+const FAILURE_PAGE =
+  "<!doctype html><meta charset=utf-8><title>activitypub-mcp</title>" +
+  '<body style="font-family:sans-serif;padding:2rem">' +
+  "<h1>Authorization failed</h1><p>The login did not complete. " +
+  "Return to the terminal for details.</p>";
+
 function safeEqual(a: string, b: string): boolean {
   const ab = Buffer.from(a);
   const bb = Buffer.from(b);
@@ -62,7 +68,15 @@ export function createLoopbackServer(port = 0): Promise<LoopbackServer> {
         res.writeHead(404).end();
         return;
       }
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }).end(SUCCESS_PAGE);
+      // Only show the success page when the callback actually carries an
+      // authorization result. A provider that redirects with ?error=... (user
+      // clicked Deny) or omits the code/session must not be told "Authorized" —
+      // that contradicts the failure the strategy is about to report. We still
+      // resolve with the params so the strategy can surface the precise error.
+      const authorized = !params.get("error") && (params.has("code") || params.has("session"));
+      res
+        .writeHead(authorized ? 200 : 400, { "Content-Type": "text/html; charset=utf-8" })
+        .end(authorized ? SUCCESS_PAGE : FAILURE_PAGE);
       const done = resolveCb;
       resolveCb = null;
       done(params);

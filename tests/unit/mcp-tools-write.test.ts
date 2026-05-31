@@ -306,6 +306,17 @@ describe("MCP Write Tools", () => {
         "Account Not Found",
       );
     });
+
+    it("requires an authenticated account before mutating active-account state", async () => {
+      // With no account configured, switch-account must refuse rather than call
+      // setActiveAccount — a prompt-injected switch on an unconfigured server
+      // should fail closed.
+      (authenticatedClient.isWriteEnabled as Mock).mockReturnValueOnce(false);
+
+      const tool = registeredTools.get("switch-account");
+      await expect(tool?.handler({ accountId: "1" })).rejects.toThrow(/authenticated|requires/i);
+      expect(accountManager.setActiveAccount).not.toHaveBeenCalled();
+    });
   });
 
   describe("verify-account tool", () => {

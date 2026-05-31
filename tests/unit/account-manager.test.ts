@@ -48,6 +48,30 @@ describe("AccountManager", () => {
     expect(accounts[0].isActive).toBe(true);
   });
 
+  it("does not log the raw access token when skipping a malformed account entry", async () => {
+    // A malformed entry (here: empty instance field) must not have its raw
+    // pipe-delimited string — which still contains the access token — written to
+    // the log sink. Regression guard for a secret-in-logs leak.
+    const warn = vi.fn();
+    vi.doMock("@logtape/logtape", () => ({
+      getLogger: () => ({ info: vi.fn(), warn, error: vi.fn(), debug: vi.fn() }),
+    }));
+    try {
+      delete process.env.ACTIVITYPUB_DEFAULT_INSTANCE;
+      delete process.env.ACTIVITYPUB_DEFAULT_TOKEN;
+      // id present, instance EMPTY, token present → malformed but token-bearing.
+      process.env.ACTIVITYPUB_ACCOUNTS = "acct1||SECRET-TOKEN-xyz|user|label";
+
+      const { AccountManager } = await import("../../src/auth/account-manager.js");
+      new AccountManager();
+
+      expect(warn).toHaveBeenCalled();
+      expect(JSON.stringify(warn.mock.calls)).not.toContain("SECRET-TOKEN-xyz");
+    } finally {
+      vi.doUnmock("@logtape/logtape");
+    }
+  });
+
   it("should add and remove accounts", async () => {
     delete process.env.ACTIVITYPUB_DEFAULT_INSTANCE;
     delete process.env.ACTIVITYPUB_DEFAULT_TOKEN;

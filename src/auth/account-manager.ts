@@ -105,12 +105,20 @@ export class AccountManager {
             "See MIGRATION-v2.md.",
         );
       }
-      for (const entry of entries) {
+      for (const [index, entry] of entries.entries()) {
         try {
           const parts = entry.split("|");
           const [id, instance, token, username = "user", label] = parts;
           if (!id || !instance || !token) {
-            logger.warn("Skipping malformed account entry", { entry });
+            // Never log the raw entry — it still contains the access token. Log
+            // the position and which required fields were missing instead.
+            const missing = [!id && "id", !instance && "instance", !token && "token"]
+              .filter(Boolean)
+              .join(", ");
+            logger.warn("Skipping malformed account entry", {
+              index,
+              missingFields: missing,
+            });
             continue;
           }
           this.addAccount({
