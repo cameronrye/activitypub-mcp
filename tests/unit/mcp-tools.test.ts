@@ -933,8 +933,8 @@ describe("MCP Tools", () => {
       expect(text).not.toMatch(/\d+ more posts in this page/);
     });
 
-    it("truncates each post to 500 chars (not 200)", async () => {
-      // Create a post with a 1000-char body
+    it("delivers post content inside the untrusted-content envelope", async () => {
+      // Create a post with a 1000-char body — content should arrive intact inside the envelope
       const longContent = "x".repeat(1000);
       const posts = [
         {
@@ -961,11 +961,11 @@ describe("MCP Tools", () => {
 
       const text = ((result as { content: { text: string }[] }).content[0].text ?? "") as string;
 
-      // Assert that we have roughly 500 chars of content (plus some overhead for formatting)
-      // The pattern should have 500 x's followed by an ellipsis or truncation marker
-      expect(text).toMatch(/x{400,}/);
-      // Verify it's truncated to 500, not 200
-      expect(text).toMatch(/x{450,}/);
+      // Content must be wrapped in the untrusted envelope
+      expect(text).toContain("<untrusted-content");
+      expect(text).toContain("</untrusted-content>");
+      // All 1000 x's must be present inside the envelope
+      expect(text).toMatch(/x{900,}/);
     });
   });
 

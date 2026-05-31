@@ -14,7 +14,7 @@ import { accountManager, authenticatedClient } from "../auth/index.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
 import { performanceMonitor } from "../telemetry/performance-monitor.js";
 import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
-import { stripHtmlTags } from "../utils/html.js";
+import { wrapUntrusted } from "../utils/untrusted.js";
 import { trackedMcpServer } from "./capabilities.js";
 
 const logger = getLogger("activitypub-mcp:tools-write");
@@ -476,12 +476,12 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
               type: "text",
               text: `✅ **Post Created!**
 
-📝 ${stripHtmlTags(status.content).slice(0, 200)}${status.content.length > 200 ? "..." : ""}
+📝 ${wrapUntrusted(status.content, `post on ${status.account?.acct?.split("@")[2] || status.account?.username || "unknown"}`)}
 
 🆔 ID: ${status.id}
 🔗 ${status.url || status.uri}
 👁️ Visibility: ${status.visibility}
-${status.spoiler_text ? `⚠️ CW: ${status.spoiler_text}` : ""}
+${status.spoiler_text ? `⚠️ CW: ${wrapUntrusted(status.spoiler_text, "content warning")}` : ""}
 
 Posted as @${status.account.username}`,
             },
@@ -584,7 +584,7 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
               type: "text",
               text: `✅ **Reply Posted!**
 
-📝 ${stripHtmlTags(status.content).slice(0, 200)}
+📝 ${wrapUntrusted(status.content, `post on ${status.account?.acct?.split("@")[2] || status.account?.username || "unknown"}`)}
 
 🆔 ID: ${status.id}
 🔗 ${status.url || status.uri}
@@ -1686,11 +1686,12 @@ function registerGetHomeTimelineTool(mcpServer: McpServer, rateLimiter: RateLimi
         const postsList = posts
           .slice(0, 15)
           .map((post, i) => {
-            const content = stripHtmlTags(post.content);
-            const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
-            const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
+            const content = wrapUntrusted(post.content, `notification on ${account.instance}`);
+            const cw = post.spoiler_text
+              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, "content warning")}\n`
+              : "";
             return `${i + 1}. **@${post.account.acct}**
-   ${cw}${truncated}
+   ${cw}${content}
    ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
           })
           .join("\n\n");
@@ -1809,7 +1810,7 @@ function registerGetNotificationsTool(mcpServer: McpServer, rateLimiter: RateLim
           .map((n) => {
             const emoji = typeEmoji[n.type] || "🔔";
             const statusPreview = n.status
-              ? `\n   "${stripHtmlTags(n.status.content).slice(0, 100)}..."`
+              ? `\n   ${wrapUntrusted(n.status.content, `notification on ${account.instance}`)}`
               : "";
             return `${emoji} **${n.type}** from @${n.account.acct}${statusPreview}`;
           })
@@ -1891,10 +1892,9 @@ function registerGetBookmarksTool(mcpServer: McpServer, rateLimiter: RateLimiter
         const bookmarkList = bookmarks
           .slice(0, 15)
           .map((post, i) => {
-            const content = stripHtmlTags(post.content);
-            const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
+            const content = wrapUntrusted(post.content, `post on ${account.instance}`);
             return `${i + 1}. **@${post.account.acct}**
-   ${truncated}`;
+   ${content}`;
           })
           .join("\n\n");
 
@@ -1974,10 +1974,9 @@ function registerGetFavouritesTool(mcpServer: McpServer, rateLimiter: RateLimite
         const favouriteList = favourites
           .slice(0, 15)
           .map((post, i) => {
-            const content = stripHtmlTags(post.content);
-            const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
+            const content = wrapUntrusted(post.content, `post on ${account.instance}`);
             return `${i + 1}. **@${post.account.acct}**
-   ${truncated}`;
+   ${content}`;
           })
           .join("\n\n");
 

@@ -13,6 +13,7 @@ import { remoteClient } from "../activitypub/remote-client.js";
 import { getInstanceSoftware } from "../discovery/nodeinfo.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
 import { getErrorMessage } from "../utils/errors.js";
+import { wrapUntrustedBlock } from "../utils/untrusted.js";
 import { DomainSchema } from "../validation/schemas.js";
 import { extractSingleValue, validateActorIdentifier } from "../validation/validators.js";
 import { capabilitiesRegistry, trackedMcpServer } from "./capabilities.js";
@@ -180,7 +181,10 @@ function registerRemoteActorResource(mcpServer: McpServer, rateLimiter: RateLimi
             {
               uri: uri.href,
               mimeType: "application/json",
-              text: JSON.stringify(actorData, null, 2),
+              text: wrapUntrustedBlock(
+                JSON.stringify(actorData, null, 2),
+                `remote-actor/${validIdentifier}`,
+              ),
             },
           ],
         };
@@ -253,7 +257,10 @@ function registerRemoteTimelineResource(mcpServer: McpServer, rateLimiter: RateL
             {
               uri: uri.href,
               mimeType: "application/json",
-              text: JSON.stringify(normalizedTimeline, null, 2),
+              text: wrapUntrustedBlock(
+                JSON.stringify(normalizedTimeline, null, 2),
+                `remote-timeline/${validIdentifier}`,
+              ),
             },
           ],
         };
@@ -325,7 +332,10 @@ function registerInstanceInfoResource(mcpServer: McpServer, rateLimiter: RateLim
             {
               uri: uri.href,
               mimeType: "application/json",
-              text: JSON.stringify(normalizedInstanceInfo, null, 2),
+              text: wrapUntrustedBlock(
+                JSON.stringify(normalizedInstanceInfo, null, 2),
+                `instance-info/${validDomain}`,
+              ),
             },
           ],
         };
@@ -387,7 +397,10 @@ function registerRemoteFollowersResource(mcpServer: McpServer, rateLimiter: Rate
             {
               uri: uri.href,
               mimeType: "application/json",
-              text: JSON.stringify(followersData, null, 2),
+              text: wrapUntrustedBlock(
+                JSON.stringify(followersData, null, 2),
+                `remote-followers/${validIdentifier}`,
+              ),
             },
           ],
         };
@@ -449,7 +462,10 @@ function registerRemoteFollowingResource(mcpServer: McpServer, rateLimiter: Rate
             {
               uri: uri.href,
               mimeType: "application/json",
-              text: JSON.stringify(followingData, null, 2),
+              text: wrapUntrustedBlock(
+                JSON.stringify(followingData, null, 2),
+                `remote-following/${validIdentifier}`,
+              ),
             },
           ],
         };
@@ -528,7 +544,10 @@ function registerTrendingResource(mcpServer: McpServer, rateLimiter: RateLimiter
             {
               uri: uri.href,
               mimeType: "application/json",
-              text: JSON.stringify(trendingData, null, 2),
+              text: wrapUntrustedBlock(
+                JSON.stringify(trendingData, null, 2),
+                `trending/${validDomain}`,
+              ),
             },
           ],
         };
@@ -600,7 +619,10 @@ function registerLocalTimelineResource(mcpServer: McpServer, rateLimiter: RateLi
             {
               uri: uri.href,
               mimeType: "application/json",
-              text: JSON.stringify(resourceData, null, 2),
+              text: wrapUntrustedBlock(
+                JSON.stringify(resourceData, null, 2),
+                `local-timeline/${validDomain}`,
+              ),
             },
           ],
         };
@@ -672,7 +694,10 @@ function registerFederatedTimelineResource(mcpServer: McpServer, rateLimiter: Ra
             {
               uri: uri.href,
               mimeType: "application/json",
-              text: JSON.stringify(resourceData, null, 2),
+              text: wrapUntrustedBlock(
+                JSON.stringify(resourceData, null, 2),
+                `federated-timeline/${validDomain}`,
+              ),
             },
           ],
         };
@@ -774,7 +799,10 @@ function registerPostThreadResource(mcpServer: McpServer, rateLimiter: RateLimit
             {
               uri: uri.href,
               mimeType: "application/json",
-              text: JSON.stringify(resourceData, null, 2),
+              text: wrapUntrustedBlock(
+                JSON.stringify(resourceData, null, 2),
+                `post-thread/${parsedUrl.hostname}`,
+              ),
             },
           ],
         };

@@ -19,6 +19,7 @@ import { healthChecker } from "../telemetry/health-check.js";
 import { performanceMonitor } from "../telemetry/performance-monitor.js";
 import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
 import { stripHtmlTags } from "../utils/html.js";
+import { wrapUntrusted } from "../utils/untrusted.js";
 import { ActorIdentifierSchema, DomainSchema, QuerySchema } from "../validation/schemas.js";
 import {
   validateActorIdentifier,
@@ -131,7 +132,7 @@ function registerDiscoverActorTool(mcpServer: McpServer, rateLimiter: RateLimite
 
 🆔 ID: ${actor.id}
 👤 Name: ${stripHtmlTags(actor.name || "") || "Not specified"}
-📝 Summary: ${stripHtmlTags(actor.summary || "") || "No bio provided"}
+📝 Summary: ${actor.summary ? wrapUntrusted(actor.summary, `bio of ${validIdentifier}`) : "No bio provided"}
 🔗 URL: ${actor.url || actor.id}
 📥 Inbox: ${actor.inbox}
 📤 Outbox: ${actor.outbox}
@@ -246,10 +247,12 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
         const postsSection = posts
           .map((post: unknown, index: number) => {
             const p = post as { type?: string; content?: string; summary?: string; id?: string };
-            const content = stripHtmlTags(p.content || p.summary || "") || "No content";
-            const truncated = content.length > 500 ? `${content.slice(0, 500)}…` : content;
+            const content = wrapUntrusted(
+              p.content || p.summary || "",
+              `post by ${validIdentifier}`,
+            );
             const postType = p.type || "Post";
-            return `${index + 1}. [${postType}] ${truncated}`;
+            return `${index + 1}. [${postType}] ${content}`;
           })
           .join("\n\n");
 
@@ -368,10 +371,9 @@ function registerSearchInstanceTool(mcpServer: McpServer, rateLimiter: RateLimit
             accounts
               .slice(0, 15)
               .map((acc, i) => {
-                const note = stripHtmlTags(acc.note || "") || "No bio";
-                const truncatedNote = note.length > 100 ? `${note.slice(0, 100)}...` : note;
+                const note = wrapUntrusted(acc.note || "", `bio on ${validDomain}`);
                 return `${i + 1}. **@${acc.acct}** (${acc.display_name || acc.username})
-   ${truncatedNote}
+   ${note}
    👥 ${acc.followers_count || 0} followers | 📝 ${acc.statuses_count || 0} posts`;
               })
               .join("\n\n") || "No accounts found";
@@ -382,11 +384,12 @@ function registerSearchInstanceTool(mcpServer: McpServer, rateLimiter: RateLimit
             statuses
               .slice(0, 10)
               .map((post, i) => {
-                const content = stripHtmlTags(post.content || "") || "No content";
-                const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
-                const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
+                const content = wrapUntrusted(post.content || "", `post on ${validDomain}`);
+                const cw = post.spoiler_text
+                  ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, "content warning")}\n`
+                  : "";
                 return `${i + 1}. **@${post.account.acct}** (${post.account.display_name || post.account.username})
-   ${cw}${truncated}
+   ${cw}${content}
    ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
               })
               .join("\n\n") || "No posts found";
@@ -1064,19 +1067,20 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
           thread.ancestors.length > 0
             ? `**Conversation Context** (${thread.ancestors.length} parent posts):\n${thread.ancestors
                 .map((a, i) => {
-                  const content = stripHtmlTags(a.content || a.summary || "") || "No content";
-                  const truncated = content.length > 150 ? `${content.slice(0, 150)}...` : content;
-                  return `${i + 1}. ${truncated}`;
+                  const content = wrapUntrusted(a.content || a.summary || "", `post on ${domain}`);
+                  return `${i + 1}. ${content}`;
                 })
                 .join("\n")}\n\n`
             : "";
 
         // Format main post
-        const postContent =
-          stripHtmlTags(thread.post.content || thread.post.summary || "") || "No content";
+        const postContent = wrapUntrusted(
+          thread.post.content || thread.post.summary || "",
+          `post on ${domain}`,
+        );
         const spoilerText =
           thread.post.summary && thread.post.content
-            ? `⚠️ CW: ${stripHtmlTags(thread.post.summary)}\n`
+            ? `⚠️ CW: ${wrapUntrusted(thread.post.summary, "content warning")}\n`
             : "";
 
         // Format replies
@@ -1089,10 +1093,12 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
                   if (stub.crossOrigin === true && stub.fetched === false) {
                     return `${i + 1}. _(cross-origin, not fetched)_ ${r.id}`;
                   }
-                  const content = stripHtmlTags(r.content || r.summary || "") || "No content";
-                  const truncated = content.length > 150 ? `${content.slice(0, 150)}...` : content;
-                  const cw = r.summary && r.content ? `[CW: ${stripHtmlTags(r.summary)}] ` : "";
-                  return `${i + 1}. ${cw}${truncated}`;
+                  const content = wrapUntrusted(r.content || r.summary || "", `post on ${domain}`);
+                  const cw =
+                    r.summary && r.content
+                      ? `[CW: ${wrapUntrusted(r.summary, "content warning")}] `
+                      : "";
+                  return `${i + 1}. ${cw}${content}`;
                 })
                 .join(
                   "\n",
@@ -1258,11 +1264,12 @@ function registerGetTrendingPostsTool(mcpServer: McpServer, rateLimiter: RateLim
         const postsList = result.posts
           .slice(0, 10)
           .map((post, i) => {
-            const content = stripHtmlTags(post.content || "") || "No content";
-            const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
-            const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
+            const content = wrapUntrusted(post.content || "", `post on ${validDomain}`);
+            const cw = post.spoiler_text
+              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, "content warning")}\n`
+              : "";
             return `${i + 1}. **@${post.account.username}** (${post.account.display_name || post.account.username})
-   ${cw}${truncated}
+   ${cw}${content}
    ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
           })
           .join("\n\n");
@@ -1350,11 +1357,12 @@ function registerGetLocalTimelineTool(mcpServer: McpServer, rateLimiter: RateLim
         const postsList = result.posts
           .slice(0, 15)
           .map((post, i) => {
-            const content = stripHtmlTags(post.content || "") || "No content";
-            const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
-            const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
+            const content = wrapUntrusted(post.content || "", `post on ${validDomain}`);
+            const cw = post.spoiler_text
+              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, "content warning")}\n`
+              : "";
             return `${i + 1}. **@${post.account.username}**
-   ${cw}${truncated}
+   ${cw}${content}
    ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
           })
           .join("\n\n");
@@ -1443,11 +1451,12 @@ function registerGetFederatedTimelineTool(mcpServer: McpServer, rateLimiter: Rat
         const postsList = result.posts
           .slice(0, 15)
           .map((post, i) => {
-            const content = stripHtmlTags(post.content || "") || "No content";
-            const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
-            const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
+            const content = wrapUntrusted(post.content || "", `post on ${validDomain}`);
+            const cw = post.spoiler_text
+              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, "content warning")}\n`
+              : "";
             return `${i + 1}. **@${post.account.username}**
-   ${cw}${truncated}
+   ${cw}${content}
    ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
           })
           .join("\n\n");
@@ -1552,10 +1561,9 @@ function registerSearchAccountsTool(mcpServer: McpServer, rateLimiter: RateLimit
         const accountsList = accounts
           .slice(0, 15)
           .map((acc, i) => {
-            const note = stripHtmlTags(acc.note || "") || "No bio";
-            const truncatedNote = note.length > 100 ? `${note.slice(0, 100)}...` : note;
+            const note = wrapUntrusted(acc.note || "", `bio on ${validDomain}`);
             return `${i + 1}. **@${acc.acct}** (${acc.display_name || acc.username})
-   ${truncatedNote}
+   ${note}
    👥 ${acc.followers_count || 0} followers | 📝 ${acc.statuses_count || 0} posts`;
           })
           .join("\n\n");
@@ -1757,11 +1765,12 @@ function registerSearchPostsTool(mcpServer: McpServer, rateLimiter: RateLimiter)
         const postsList = statuses
           .slice(0, 10)
           .map((post, i) => {
-            const content = stripHtmlTags(post.content || "") || "No content";
-            const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
-            const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
+            const content = wrapUntrusted(post.content || "", `post on ${validDomain}`);
+            const cw = post.spoiler_text
+              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, "content warning")}\n`
+              : "";
             return `${i + 1}. **@${post.account.acct}** (${post.account.display_name || post.account.username})
-   ${cw}${truncated}
+   ${cw}${content}
    ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
           })
           .join("\n\n");
@@ -1872,10 +1881,9 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
           if (accounts.length > 0) {
             const accountsList = accounts
               .map((acc, i) => {
-                const note = stripHtmlTags(acc.note || "");
-                const truncatedNote = note.length > 80 ? `${note.slice(0, 80)}...` : note;
+                const note = wrapUntrusted(acc.note || "", `bio on ${validDomain}`);
                 return `${i + 1}. **@${acc.acct}** (${acc.display_name || acc.username})
-   👥 ${acc.followers_count || 0} followers | ${truncatedNote}`;
+   👥 ${acc.followers_count || 0} followers | ${note}`;
               })
               .join("\n\n");
             sections.push(`## 👤 Accounts (${accounts.length})\n\n${accountsList}`);
@@ -1905,11 +1913,12 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
           if (posts.length > 0) {
             const postsList = posts
               .map((post, i) => {
-                const content = stripHtmlTags(post.content || "") || "No content";
-                const truncated = content.length > 150 ? `${content.slice(0, 150)}...` : content;
-                const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
+                const content = wrapUntrusted(post.content || "", `post on ${validDomain}`);
+                const cw = post.spoiler_text
+                  ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, "content warning")}\n`
+                  : "";
                 return `${i + 1}. **@${post.account.acct}**
-   ${cw}${truncated}
+   ${cw}${content}
    ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
               })
               .join("\n\n");
@@ -2138,9 +2147,11 @@ function registerBatchFetchActorsTool(mcpServer: McpServer, rateLimiter: RateLim
           .map((r, i) => {
             const actor = r.actor;
             const safeName = stripHtmlTags(actor.name || "");
-            const safeSummary = stripHtmlTags(actor.summary || "").slice(0, 100);
+            const safeSummary = actor.summary
+              ? wrapUntrusted(actor.summary, `bio of ${r.identifier}`)
+              : "No bio";
             return `${i + 1}. ✅ **${stripHtmlTags(actor.preferredUsername || r.identifier)}** (@${r.identifier})
-   ${safeName || "No display name"} - ${safeSummary || "No bio"}...`;
+   ${safeName || "No display name"} - ${safeSummary}`;
           })
           .join("\n\n");
 
@@ -2224,9 +2235,18 @@ function registerBatchFetchPostsTool(mcpServer: McpServer, rateLimiter: RateLimi
           )
           .map((r, i) => {
             const post = r.post;
-            const content = stripHtmlTags(post.content || post.summary || "No content");
-            const truncated = content.length > 150 ? `${content.slice(0, 150)}...` : content;
-            return `${i + 1}. ✅ ${truncated}`;
+            const postDomain = (() => {
+              try {
+                return new URL(r.url).hostname;
+              } catch {
+                return r.url;
+              }
+            })();
+            const content = wrapUntrusted(
+              post.content || post.summary || "",
+              `post on ${postDomain}`,
+            );
+            return `${i + 1}. ✅ ${content}`;
           })
           .join("\n\n");
 
