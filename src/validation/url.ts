@@ -132,9 +132,11 @@ export function isPrivateIPv6(ip: string): boolean {
   if (ipv4CompatDotted) {
     return isPrivateIPv4(ipv4CompatDotted[1]);
   }
-  const ipv4CompatHex = /^::([\da-f]{1,4}):([\da-f]{1,4})$/i.exec(normalizedIp);
+  // The high group is optional: when the embedded IPv4's top 16 bits are zero
+  // (e.g. ::0.0.127.1) the parser compresses it to a single group like ::7f01.
+  const ipv4CompatHex = /^::(?:([\da-f]{1,4}):)?([\da-f]{1,4})$/i.exec(normalizedIp);
   if (ipv4CompatHex) {
-    const hi = Number.parseInt(ipv4CompatHex[1], 16);
+    const hi = ipv4CompatHex[1] ? Number.parseInt(ipv4CompatHex[1], 16) : 0;
     const lo = Number.parseInt(ipv4CompatHex[2], 16);
     const embedded = `${hi >>> 8}.${hi & 0xff}.${lo >>> 8}.${lo & 0xff}`;
     return isPrivateIPv4(embedded);
@@ -164,10 +166,10 @@ export function isPrivateIP(ip: string): boolean {
  * @returns True if the hostname is blocked
  */
 export function isBlockedHostname(hostname: string): boolean {
-  // Strip a single trailing FQDN dot ("localhost." / "foo.internal.") that the
-  // WHATWG URL parser preserves, so the exact-name Set and suffix checks below
-  // can't be bypassed by appending a dot.
-  const lowerHostname = hostname.toLowerCase().replace(/\.$/, "");
+  // Strip ALL trailing FQDN dots ("localhost." / "foo.internal." / "localhost..")
+  // that the WHATWG URL parser preserves, so the exact-name Set and suffix checks
+  // below can't be bypassed by appending one or more dots.
+  const lowerHostname = hostname.toLowerCase().replace(/\.+$/, "");
 
   // Check exact matches
   if (BLOCKED_HOSTNAMES.has(lowerHostname)) {
@@ -343,13 +345,14 @@ function pinDispatcher(ip: string): Agent {
  *
  * Fails CLOSED on unexpected resolver errors (see {@link handleDnsLookupError}).
  * For an IP literal, validates and pins directly with no DNS. For a host that
- * genuinely does not exist (ENOTFOUND), returns an empty target so the caller
- * fetches unpinned — the real fetch then fails to resolve too, so no SSRF
- * window is opened.
+ * genuinely does not exist (ENOTFOUND), throws rather than returning an unpinned
+ * target — there is no validated IP to pin, and fetching unpinned would let
+ * undici independently re-resolve the hostname, reopening the DNS-rebinding
+ * TOCTOU this function closes.
  *
  * @param url - The URL whose host to resolve and pin.
- * @throws Error if the URL scheme is disallowed, the host is blocked, or any
- *   resolved address is private/internal.
+ * @throws Error if the URL scheme is disallowed, the host is blocked, the host
+ *   does not resolve (ENOTFOUND), or any resolved address is private/internal.
  */
 export async function resolveAndPin(url: string): Promise<PinnedTarget> {
   const parsed = new URL(url);

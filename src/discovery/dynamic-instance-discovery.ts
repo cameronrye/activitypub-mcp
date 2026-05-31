@@ -16,8 +16,13 @@ import {
   REQUEST_TIMEOUT,
   USER_AGENT,
 } from "../config.js";
+import { instanceBlocklist } from "../policy/instance-blocklist.js";
 import { pinnedFetch, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
+
+/** Operator instance-blocklist check for the initial URL and every redirect hop. */
+const blocklistHop = (target: string): void =>
+  instanceBlocklist.validateNotBlocked(new URL(target).hostname);
 
 const logger = getLogger("activitypub-mcp:discovery");
 
@@ -276,10 +281,14 @@ export class DynamicInstanceDiscoveryService {
 
       // pinnedFetch resolves + validates + pins the connection's IP and re-pins
       // every redirect hop (closes the DNS-rebinding TOCTOU).
-      const response = await pinnedFetch(url.toString(), {
-        headers,
-        signal: controller.signal,
-      });
+      const response = await pinnedFetch(
+        url.toString(),
+        {
+          headers,
+          signal: controller.signal,
+        },
+        blocklistHop,
+      );
 
       clearTimeout(timeoutId);
 
@@ -347,16 +356,20 @@ export class DynamicInstanceDiscoveryService {
     try {
       // pinnedFetch resolves + validates + pins the connection's IP and re-pins
       // every redirect hop (closes the DNS-rebinding TOCTOU).
-      const response = await pinnedFetch(DynamicInstanceDiscoveryService.FEDIVERSE_OBSERVER_API, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          "User-Agent": USER_AGENT,
+      const response = await pinnedFetch(
+        DynamicInstanceDiscoveryService.FEDIVERSE_OBSERVER_API,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "User-Agent": USER_AGENT,
+          },
+          body: JSON.stringify({ query }),
+          signal: controller.signal,
         },
-        body: JSON.stringify({ query }),
-        signal: controller.signal,
-      });
+        blocklistHop,
+      );
 
       clearTimeout(timeoutId);
 

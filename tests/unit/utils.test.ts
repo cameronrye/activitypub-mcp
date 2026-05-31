@@ -123,6 +123,8 @@ describe("isPrivateIPv6", () => {
     expect(isPrivateIPv6("[::7f00:1]")).toBe(true);
     // ::169.254.169.254 (cloud metadata) → ::a9fe:a9fe
     expect(isPrivateIPv6("::a9fe:a9fe")).toBe(true);
+    // Single-hex-group compat form (embedded IPv4 high-16-bits zero): ::0.0.127.1 → ::7f01
+    expect(isPrivateIPv6("::7f01")).toBe(true);
   });
 
   it("should handle bracketed addresses", () => {
@@ -181,6 +183,9 @@ describe("isBlockedHostname", () => {
     expect(isBlockedHostname("localhost.")).toBe(true);
     expect(isBlockedHostname("db.internal.")).toBe(true);
     expect(isBlockedHostname("kubernetes.default.svc.cluster.local.")).toBe(true);
+    // Multiple trailing dots must not bypass the normalization either.
+    expect(isBlockedHostname("localhost..")).toBe(true);
+    expect(isBlockedHostname("db.internal..")).toBe(true);
   });
 });
 
