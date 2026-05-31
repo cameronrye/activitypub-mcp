@@ -124,7 +124,7 @@ The model will call `discover-actor` to fetch the profile, then `fetch-timeline`
 
 ## HTTP transport
 
-In addition to stdio (default), the server supports HTTP mode with a bearer-gated `/mcp` endpoint and `/health` liveness check. Set `ACTIVITYPUB_HTTP_SECRET` (min 16 chars) to enable. See the [docs](https://cameronrye.github.io/activitypub-mcp/docs/) for full configuration.
+In addition to stdio (default), the server supports HTTP mode with a bearer-gated `/mcp` endpoint and `/health` liveness check. Set `MCP_HTTP_SECRET` (min 16 chars) to enable. See the [docs](https://cameronrye.github.io/activitypub-mcp/docs/) for full configuration.
 
 ---
 

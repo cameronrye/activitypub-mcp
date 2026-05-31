@@ -662,7 +662,7 @@ function registerGetTrendingHashtagsTool(mcpServer: McpServer, rateLimiter: Rate
 ${hashtagsList || "No trending hashtags found"}
 
 💡 **Tips:**
-- Use \`search-hashtags\` to explore posts with a specific hashtag
+- Use \`search\` with \`type: "hashtags"\` to explore posts with a specific hashtag
 - Use \`get-public-timeline\` to see recent posts from this instance`,
             },
           ],
