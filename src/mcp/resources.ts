@@ -113,10 +113,8 @@ function registerServerInfoResource(mcpServer: McpServer, config: ResourceConfig
           auditLogging: true,
           instanceBlocklist: true,
           contentWarnings: true,
-          batchOperations: true,
           trendingContent: true,
           threadSupport: true,
-          urlConversion: true,
         },
         configuration: {
           rateLimitEnabled: config.rateLimitEnabled,

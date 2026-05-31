@@ -292,7 +292,7 @@ function registerGetInstanceInfoTool(mcpServer: McpServer, rateLimiter: RateLimi
 🌐 Domain: ${instanceInfo.domain}
 💻 Software: ${instanceInfo.software || "Unknown"}
 📦 Version: ${instanceInfo.version || "Unknown"}
-📝 Description: ${instanceInfo.description || "No description"}
+📝 Description: ${instanceInfo.description ? wrapUntrusted(instanceInfo.description, `instance description of ${validDomain}`) : "No description"}
 🌍 Languages: ${instanceInfo.languages?.join(", ") || "Not specified"}
 📝 Registrations: ${instanceInfo.registrations ? "Open" : "Closed"}
 ✅ Approval Required: ${instanceInfo.approval_required ? "Yes" : "No"}
@@ -447,7 +447,9 @@ function registerDiscoverInstancesLiveTool(mcpServer: McpServer, rateLimiter: Ra
                 instance.description.length > 150
                   ? `${instance.description.slice(0, 150)}...`
                   : instance.description;
-              parts.push(`\n   📝 ${desc}`);
+              parts.push(
+                `\n   📝 ${wrapUntrusted(desc, `instance description of ${instance.domain}`)}`,
+              );
             }
 
             return parts.join(" ");
