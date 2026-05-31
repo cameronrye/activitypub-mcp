@@ -120,10 +120,6 @@ describe("MCP Tools", () => {
         "recommend-instances",
         "fetch-timeline",
         "get-post-thread",
-        "search-instance",
-        "search-accounts",
-        "search-hashtags",
-        "search-posts",
         "search",
         "get-trending-hashtags",
         "get-trending-posts",
@@ -221,30 +217,6 @@ describe("MCP Tools", () => {
 
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "Posts retrieved: 0",
-      );
-    });
-  });
-
-  describe("search-instance tool", () => {
-    it("should search for accounts on an instance", async () => {
-      (remoteClient.searchInstance as Mock).mockResolvedValue({
-        accounts: [{ id: "1", username: "testuser", display_name: "Test User" }],
-      });
-
-      const tool = registeredTools.get("search-instance");
-      const result = await tool?.handler({
-        domain: "mastodon.social",
-        query: "test",
-        type: "accounts",
-      });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Search Results",
-      );
-      expect(remoteClient.searchInstance).toHaveBeenCalledWith(
-        "mastodon.social",
-        "test",
-        "accounts",
       );
     });
   });
@@ -457,86 +429,6 @@ describe("MCP Tools", () => {
 
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "Federated Timeline",
-      );
-    });
-  });
-
-  describe("search-accounts tool", () => {
-    it("should search for accounts", async () => {
-      (remoteClient.searchInstance as Mock).mockResolvedValue({
-        accounts: [
-          {
-            id: "1",
-            username: "testuser",
-            acct: "testuser@example.social",
-            display_name: "Test User",
-            note: "<p>A test user bio</p>",
-            followers_count: 100,
-            statuses_count: 50,
-          },
-        ],
-      });
-
-      const tool = registeredTools.get("search-accounts");
-      const result = await tool?.handler({ domain: "mastodon.social", query: "test" });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Account Search Results",
-      );
-      expect(remoteClient.searchInstance).toHaveBeenCalledWith(
-        "mastodon.social",
-        "test",
-        "accounts",
-      );
-    });
-  });
-
-  describe("search-hashtags tool", () => {
-    it("should search for hashtags", async () => {
-      (remoteClient.searchInstance as Mock).mockResolvedValue({
-        hashtags: [{ name: "test", history: [{ uses: "50" }] }],
-      });
-
-      const tool = registeredTools.get("search-hashtags");
-      const result = await tool?.handler({ domain: "mastodon.social", query: "test" });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Hashtag Search Results",
-      );
-    });
-
-    it("should strip leading # from query", async () => {
-      const tool = registeredTools.get("search-hashtags");
-      await tool?.handler({ domain: "mastodon.social", query: "#test" });
-
-      expect(remoteClient.searchInstance).toHaveBeenCalledWith(
-        "mastodon.social",
-        "test",
-        "hashtags",
-      );
-    });
-  });
-
-  describe("search-posts tool", () => {
-    it("should search for posts", async () => {
-      (remoteClient.searchInstance as Mock).mockResolvedValue({
-        statuses: [
-          {
-            id: "1",
-            content: "<p>Test post content</p>",
-            account: { acct: "user@example.social", username: "user", display_name: "User" },
-            favourites_count: 10,
-            reblogs_count: 5,
-            replies_count: 2,
-          },
-        ],
-      });
-
-      const tool = registeredTools.get("search-posts");
-      const result = await tool?.handler({ domain: "mastodon.social", query: "test" });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Post Search Results",
       );
     });
   });
@@ -757,7 +649,7 @@ describe("MCP Tools", () => {
     });
   });
 
-  describe("search-instance prose render (M4)", () => {
+  describe("search prose render (M4)", () => {
     it("renders results as prose, not raw JSON", async () => {
       (remoteClient.searchInstance as Mock).mockResolvedValue({
         accounts: [
@@ -775,7 +667,7 @@ describe("MCP Tools", () => {
         hashtags: [],
       });
 
-      const tool = registeredTools.get("search-instance");
+      const tool = registeredTools.get("search");
       expect(tool).toBeDefined();
 
       const result = await tool?.handler({
