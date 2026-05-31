@@ -386,7 +386,7 @@ function registerSearchInstanceTool(mcpServer: McpServer, rateLimiter: RateLimit
               .map((post, i) => {
                 const content = wrapUntrusted(post.content || "", `post on ${validDomain}`);
                 const cw = post.spoiler_text
-                  ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, "content warning")}\n`
+                  ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, `content warning on ${validDomain}`)}\n`
                   : "";
                 return `${i + 1}. **@${post.account.acct}** (${post.account.display_name || post.account.username})
    ${cw}${content}
@@ -1080,7 +1080,7 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
         );
         const spoilerText =
           thread.post.summary && thread.post.content
-            ? `⚠️ CW: ${wrapUntrusted(thread.post.summary, "content warning")}\n`
+            ? `⚠️ CW: ${wrapUntrusted(thread.post.summary, `content warning on ${domain}`)}\n`
             : "";
 
         // Format replies
@@ -1096,7 +1096,7 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
                   const content = wrapUntrusted(r.content || r.summary || "", `post on ${domain}`);
                   const cw =
                     r.summary && r.content
-                      ? `[CW: ${wrapUntrusted(r.summary, "content warning")}] `
+                      ? `[CW: ${wrapUntrusted(r.summary, `content warning on ${domain}`)}] `
                       : "";
                   return `${i + 1}. ${cw}${content}`;
                 })
@@ -1266,7 +1266,7 @@ function registerGetTrendingPostsTool(mcpServer: McpServer, rateLimiter: RateLim
           .map((post, i) => {
             const content = wrapUntrusted(post.content || "", `post on ${validDomain}`);
             const cw = post.spoiler_text
-              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, "content warning")}\n`
+              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, `content warning on ${validDomain}`)}\n`
               : "";
             return `${i + 1}. **@${post.account.username}** (${post.account.display_name || post.account.username})
    ${cw}${content}
@@ -1359,7 +1359,7 @@ function registerGetLocalTimelineTool(mcpServer: McpServer, rateLimiter: RateLim
           .map((post, i) => {
             const content = wrapUntrusted(post.content || "", `post on ${validDomain}`);
             const cw = post.spoiler_text
-              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, "content warning")}\n`
+              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, `content warning on ${validDomain}`)}\n`
               : "";
             return `${i + 1}. **@${post.account.username}**
    ${cw}${content}
@@ -1453,7 +1453,7 @@ function registerGetFederatedTimelineTool(mcpServer: McpServer, rateLimiter: Rat
           .map((post, i) => {
             const content = wrapUntrusted(post.content || "", `post on ${validDomain}`);
             const cw = post.spoiler_text
-              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, "content warning")}\n`
+              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, `content warning on ${validDomain}`)}\n`
               : "";
             return `${i + 1}. **@${post.account.username}**
    ${cw}${content}
@@ -1767,7 +1767,7 @@ function registerSearchPostsTool(mcpServer: McpServer, rateLimiter: RateLimiter)
           .map((post, i) => {
             const content = wrapUntrusted(post.content || "", `post on ${validDomain}`);
             const cw = post.spoiler_text
-              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, "content warning")}\n`
+              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, `content warning on ${validDomain}`)}\n`
               : "";
             return `${i + 1}. **@${post.account.acct}** (${post.account.display_name || post.account.username})
    ${cw}${content}
@@ -1915,7 +1915,7 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
               .map((post, i) => {
                 const content = wrapUntrusted(post.content || "", `post on ${validDomain}`);
                 const cw = post.spoiler_text
-                  ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, "content warning")}\n`
+                  ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, `content warning on ${validDomain}`)}\n`
                   : "";
                 return `${i + 1}. **@${post.account.acct}**
    ${cw}${content}

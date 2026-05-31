@@ -476,12 +476,12 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
               type: "text",
               text: `✅ **Post Created!**
 
-📝 ${wrapUntrusted(status.content, `post on ${status.account?.acct?.split("@")[2] || status.account?.username || "unknown"}`)}
+📝 ${wrapUntrusted(status.content, `post on ${account.instance}`)}
 
 🆔 ID: ${status.id}
 🔗 ${status.url || status.uri}
 👁️ Visibility: ${status.visibility}
-${status.spoiler_text ? `⚠️ CW: ${wrapUntrusted(status.spoiler_text, "content warning")}` : ""}
+${status.spoiler_text ? `⚠️ CW: ${wrapUntrusted(status.spoiler_text, `content warning on ${account.instance}`)}` : ""}
 
 Posted as @${status.account.username}`,
             },
@@ -584,7 +584,7 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
               type: "text",
               text: `✅ **Reply Posted!**
 
-📝 ${wrapUntrusted(status.content, `post on ${status.account?.acct?.split("@")[2] || status.account?.username || "unknown"}`)}
+📝 ${wrapUntrusted(status.content, `post on ${account.instance}`)}
 
 🆔 ID: ${status.id}
 🔗 ${status.url || status.uri}
@@ -1686,9 +1686,9 @@ function registerGetHomeTimelineTool(mcpServer: McpServer, rateLimiter: RateLimi
         const postsList = posts
           .slice(0, 15)
           .map((post, i) => {
-            const content = wrapUntrusted(post.content, `notification on ${account.instance}`);
+            const content = wrapUntrusted(post.content, `post on ${account.instance}`);
             const cw = post.spoiler_text
-              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, "content warning")}\n`
+              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, `content warning on ${account.instance}`)}\n`
               : "";
             return `${i + 1}. **@${post.account.acct}**
    ${cw}${content}
