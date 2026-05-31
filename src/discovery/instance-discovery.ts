@@ -1,8 +1,7 @@
 import { getLogger } from "@logtape/logtape";
 import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
-import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { pinnedFetch, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { DomainSchema } from "../validation/schemas.js";
-import { resolveAndPin } from "../validation/url.js";
 import { POPULAR_INSTANCES } from "./data/instances.js";
 
 const logger = getLogger("activitypub-mcp");
@@ -149,31 +148,18 @@ export class InstanceDiscoveryService {
       };
     }
     const url = `https://${validDomain.data}/api/v1/instance`;
-    let dispatcher: import("undici").Agent | undefined;
-    try {
-      // Resolve once and pin the validated IP onto the connection (closes the
-      // DNS-rebinding TOCTOU). Throws on private/blocked addresses.
-      ({ dispatcher } = await resolveAndPin(url));
-    } catch (error) {
-      return { online: false, error: error instanceof Error ? error.message : String(error) };
-    }
 
     const startTime = Date.now();
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
-      // Try to fetch the instance's nodeinfo or API endpoint
-      const response = await fetchWithRedirectGuard(
-        url,
-        {
-          method: "HEAD",
-          signal: controller.signal,
-          dispatcher,
-        } as RequestInit & { dispatcher?: import("undici").Agent },
-        // Re-resolve + re-pin every redirect hop, then return the dispatcher.
-        async (target) => (await resolveAndPin(target)).dispatcher,
-      );
+      // pinnedFetch resolves + validates + pins the connection's IP and re-pins
+      // every redirect hop (closes the DNS-rebinding TOCTOU).
+      const response = await pinnedFetch(url, {
+        method: "HEAD",
+        signal: controller.signal,
+      });
 
       clearTimeout(timeoutId);
       return {
@@ -207,32 +193,20 @@ export class InstanceDiscoveryService {
       return { domain, online: false };
     }
     const url = `https://${validDomain.data}/api/v1/instance`;
-    let dispatcher: import("undici").Agent | undefined;
-    try {
-      // Resolve once and pin the validated IP onto the connection (closes the
-      // DNS-rebinding TOCTOU). Throws on private/blocked addresses.
-      ({ dispatcher } = await resolveAndPin(url));
-    } catch (_error) {
-      return { domain, online: false };
-    }
 
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
-      const response = await fetchWithRedirectGuard(
-        url,
-        {
-          headers: {
-            Accept: "application/json",
-            "User-Agent": USER_AGENT,
-          },
-          signal: controller.signal,
-          dispatcher,
-        } as RequestInit & { dispatcher?: import("undici").Agent },
-        // Re-resolve + re-pin every redirect hop, then return the dispatcher.
-        async (target) => (await resolveAndPin(target)).dispatcher,
-      );
+      // pinnedFetch resolves + validates + pins the connection's IP and re-pins
+      // every redirect hop (closes the DNS-rebinding TOCTOU).
+      const response = await pinnedFetch(url, {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": USER_AGENT,
+        },
+        signal: controller.signal,
+      });
 
       clearTimeout(timeoutId);
 

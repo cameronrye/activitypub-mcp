@@ -17,10 +17,9 @@ import {
 import { type ActivityPubActor, webfingerClient } from "../discovery/webfinger.js";
 import { instanceBlocklist } from "../policy/instance-blocklist.js";
 import { getErrorMessage } from "../utils/errors.js";
-import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { pinnedFetch, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
 import { DomainSchema } from "../validation/schemas.js";
-import { resolveAndPin } from "../validation/url.js";
 
 const logger = getLogger("activitypub-mcp");
 
@@ -720,36 +719,19 @@ export class RemoteActivityPubClient {
    * @returns The fetch Response
    */
   private async fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
-    // SSRF protection: resolve once and pin the validated IP onto the connection
-    // (async DNS, closes the rebinding TOCTOU). The dispatcher is attached to the
-    // initial fetch below.
-    const { dispatcher } = await resolveAndPin(url);
-
-    // Instance blocklist check
-    if (INSTANCE_BLOCKING_ENABLED) {
-      const hostname = new URL(url).hostname;
-      instanceBlocklist.validateNotBlocked(hostname);
-    }
-
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
     try {
-      const response = await fetchWithRedirectGuard(
+      // pinnedFetch resolves + validates + pins the connection's IP and re-pins
+      // every redirect hop (closes the DNS-rebinding TOCTOU). The onHop callback
+      // applies the operator blocklist on the initial URL and each hop.
+      const response = await pinnedFetch(
         url,
-        { ...options, signal: controller.signal, dispatcher } as RequestInit & {
-          dispatcher?: import("undici").Agent;
-        },
-        async (target) => {
-          // Re-resolve + re-pin every redirect hop so a host that passed the
-          // initial SSRF check cannot 302 us to a private IP after the fact, and
-          // so the next connection lands on the exact IP we just validated.
-          const pinned = await resolveAndPin(target);
-          if (INSTANCE_BLOCKING_ENABLED) {
-            instanceBlocklist.validateNotBlocked(new URL(target).hostname);
-          }
-          return pinned.dispatcher;
-        },
+        { ...options, signal: controller.signal },
+        INSTANCE_BLOCKING_ENABLED
+          ? (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname)
+          : undefined,
       );
       clearTimeout(timeoutId);
 

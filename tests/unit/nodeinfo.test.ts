@@ -355,7 +355,10 @@ describe("getInstanceSoftware — SSRF + blocklist", () => {
 
     const info = await getInstanceSoftware("ssrf.social");
     expect(info.detection).toBe("unavailable");
-    expect(info.reason).toMatch(/not allowed|private/i);
+    // A public host pointing its NodeInfo link at a private IP is blocked: the
+    // same-host guard rejects it (127.0.0.1 is not ssrf.social or a subdomain)
+    // before any fetch, which is the SSRF defense for this cross-host case.
+    expect(info.reason).toMatch(/not allowed|private|different host/i);
   });
 
   it("returns unavailable when input domain is blocklisted", async () => {
@@ -371,17 +374,16 @@ describe("getInstanceSoftware — SSRF + blocklist", () => {
     expect(info.reason).toMatch(/block/i);
   });
 
-  it("returns unavailable when discovery URL uses non-https scheme", async () => {
-    // Discovery URL is constructed as https:// so this is enforced by validateExternalUrl
-    // when the user supplies a domain that resolves weirdly. Sanity-check the validator
-    // path runs by checking a domain whose resolution would be blocked.
+  it("returns unavailable when the NodeInfo link uses a non-https scheme", async () => {
+    // Same-host link (passes the subdomain guard) but on a forbidden scheme, so
+    // the https-only SSRF guard inside guardedFetch is the thing that rejects.
     server.use(
       http.get("https://localhost.social/.well-known/nodeinfo", () =>
         HttpResponse.json({
           links: [
             {
               rel: "http://nodeinfo.diaspora.software/ns/schema/2.0",
-              href: "http://example.com/nodeinfo/2.0",
+              href: "http://localhost.social/nodeinfo/2.0",
             },
           ],
         }),

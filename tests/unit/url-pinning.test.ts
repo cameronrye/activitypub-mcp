@@ -77,6 +77,16 @@ describe("resolveAndPin", () => {
     lookupMock.mockResolvedValue([]);
     await expect(resolveAndPin("https://empty.example/")).rejects.toThrow(/no addresses/i);
   });
+
+  it("fails closed when the resolver rejects with a non-ENOTFOUND error", async () => {
+    // An unexpected resolver error (ESERVFAIL-style) must reject so an attacker
+    // can't turn a forced/flaky resolver failure into an SSRF bypass. This is
+    // fail-closed coverage for resolveAndPin specifically (not validateExternalUrl).
+    const err = Object.assign(new Error("resolver exploded"), { code: "ESERVFAIL" });
+    lookupMock.mockRejectedValue(err);
+
+    await expect(resolveAndPin("https://flaky.example/")).rejects.toThrow(/DNS validation failed/i);
+  });
 });
 
 describe("validateExternalUrl fails closed on unexpected resolver errors", () => {

@@ -291,8 +291,9 @@ function pinDispatcher(ip: string): Agent {
       //   (hostname, options, callback)
       // and passes `options.all === true`, expecting an array of
       // { address, family }. We ignore the requested hostname entirely and
-      // always return the pinned IP. The single-result form is handled too for
-      // safety across undici versions.
+      // always return the pinned IP. The single-result `else` branch is a guard
+      // in case Node ever calls `lookup` without `{ all: true }` — Node >=20
+      // always passes all:true, so it isn't hit today, but we keep it correct.
       lookup: (
         _hostname: string,
         options: { all?: boolean } | undefined,

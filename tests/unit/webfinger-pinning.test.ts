@@ -21,12 +21,17 @@ const { WebFingerClient } = await import("../../src/discovery/webfinger.js");
 
 afterEach(() => {
   lookupMock.mockReset();
+  vi.restoreAllMocks();
 });
 
 describe("WebFinger DNS pinning (SSRF / rebinding)", () => {
   it("rejects a lookup whose host resolves to a private IP", async () => {
     // The webfinger host resolves only to loopback — a classic rebinding target.
     lookupMock.mockResolvedValue([{ address: "127.0.0.1", family: 4 }]);
+
+    // Spy on global fetch to prove the block happens pre-fetch: a rejected
+    // resolveAndPin must short-circuit before any outbound request is made.
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
 
     const client = new WebFingerClient();
 
@@ -35,6 +40,8 @@ describe("WebFinger DNS pinning (SSRF / rebinding)", () => {
     );
     // The resolver was consulted; the request was blocked before any fetch.
     expect(lookupMock).toHaveBeenCalled();
+    // No outbound fetch occurred — the private IP was rejected at the pin stage.
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("rejects when the host resolves to a mixed public/private answer set", async () => {

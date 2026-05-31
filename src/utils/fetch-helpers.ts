@@ -13,7 +13,7 @@ import { instanceBlocklist } from "../policy/instance-blocklist.js";
 import { resolveAndPin } from "../validation/url.js";
 
 /** RequestInit augmented with the undici `dispatcher` (not in the DOM types). */
-type DispatchInit = RequestInit & { dispatcher?: Agent };
+export type DispatchInit = RequestInit & { dispatcher?: Agent };
 
 /**
  * Fetch wrapper that follows up to `maxHops` redirects, but re-runs the
@@ -81,6 +81,32 @@ export async function fetchWithRedirectGuard(
 
   // Unreachable in practice — the loop either returns or throws.
   throw new Error(`Too many redirects (>${maxHops}) starting at ${url}`);
+}
+
+/**
+ * Outbound fetch with full SSRF protection: resolves + validates + PINS the
+ * connection to a validated IP, re-pinning on every redirect hop so a public
+ * host can't 302 to a private IP. `onHop(target)` runs an optional extra
+ * per-hop check (e.g. operator instance-blocklist) for both the initial URL
+ * and every redirect target; throw from it to reject.
+ *
+ * Note: a fresh undici Agent is created per request and intentionally NOT
+ * closed here — the Response body is streamed to the caller AFTER this returns,
+ * so closing the dispatcher now would abort it. Undici unref()s idle sockets
+ * and closes them after keepAliveTimeout (~4s), so they self-clean.
+ */
+export async function pinnedFetch(
+  url: string,
+  init: DispatchInit,
+  onHop?: (target: string) => Promise<void> | void,
+): Promise<Response> {
+  const { dispatcher } = await resolveAndPin(url);
+  if (onHop) await onHop(url);
+  return fetchWithRedirectGuard(url, { ...init, dispatcher }, async (target) => {
+    const pinned = await resolveAndPin(target);
+    if (onHop) await onHop(target);
+    return pinned.dispatcher;
+  });
 }
 
 export class ResponseTooLargeError extends Error {
@@ -176,15 +202,10 @@ export async function guardedFetch<T = unknown>(
   url: string,
   options: GuardedFetchOptions = {},
 ): Promise<GuardedResponse<T>> {
-  // Resolve once and pin the validated IP onto the connection (closes the DNS
-  // rebinding TOCTOU). The dispatcher is attached to the initial fetch.
-  const { dispatcher } = await resolveAndPin(url);
-  instanceBlocklist.validateNotBlocked(new URL(url).hostname);
-
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? REQUEST_TIMEOUT);
   try {
-    const response = await fetchWithRedirectGuard(
+    const response = await pinnedFetch(
       url,
       {
         method: options.method ?? "GET",
@@ -195,15 +216,9 @@ export async function guardedFetch<T = unknown>(
         },
         body: options.body,
         signal: controller.signal,
-        dispatcher,
-      } as DispatchInit,
-      async (target) => {
-        // Re-resolve + re-pin every redirect hop, then return the dispatcher so
-        // the next fetch connects to the exact IP we just validated.
-        const pinned = await resolveAndPin(target);
-        instanceBlocklist.validateNotBlocked(new URL(target).hostname);
-        return pinned.dispatcher;
       },
+      // Operator blocklist on the initial URL and every redirect hop.
+      (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname),
     );
 
     let data: T | undefined;
