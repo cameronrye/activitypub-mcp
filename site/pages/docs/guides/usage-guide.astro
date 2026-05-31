@@ -47,33 +47,32 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
             <h3>Discovery Tools</h3>
             <ul>
               <li><code>discover-actor</code> - Find and analyze fediverse users</li>
-              <li><code>discover-instances</code> / <code>discover-instances-live</code> - Search for instances by topic</li>
-              <li><code>search</code> - Unified search across accounts, posts, hashtags</li>
-              <li><code>search-posts</code> / <code>search-accounts</code> / <code>search-hashtags</code> - Targeted searches</li>
+              <li><code>discover-instances</code> - Live instance discovery via instances.social</li>
+              <li><code>search</code> - Unified search across accounts, posts, and hashtags (<code>type: all|accounts|posts|hashtags</code>)</li>
             </ul>
             <p><strong>Use for:</strong> Finding new communities, researching topics, identifying key actors</p>
           </div>
 
           <div class="category-card">
-            <h3>Information Tools</h3>
+            <h3>Information &amp; Timeline Tools</h3>
             <ul>
               <li><code>get-instance-info</code> - Instance metadata and statistics</li>
               <li><code>fetch-timeline</code> - Actor's recent posts (paginated)</li>
-              <li><code>get-post-thread</code> - Post with full conversation thread (depth/reply caps in v2)</li>
+              <li><code>get-post-thread</code> - Post with full conversation thread</li>
+              <li><code>get-public-timeline</code> - Public timeline with <code>scope: local|federated</code></li>
               <li><code>get-trending-hashtags</code> / <code>get-trending-posts</code> - What's trending</li>
             </ul>
             <p><strong>Use for:</strong> Understanding communities, analyzing content, tracking activity</p>
           </div>
 
           <div class="category-card">
-            <h3>Utility Tools</h3>
+            <h3>Write Tools (opt-in)</h3>
             <ul>
-              <li><code>health-check</code> - Server status and outbound connectivity</li>
-              <li><code>performance-metrics</code> - Cache hit rate, latency, error counts</li>
-              <li><code>convert-url</code> - Convert between identifier and URL forms</li>
-              <li><code>batch-fetch-actors</code> / <code>batch-fetch-posts</code> - Fetch many at once</li>
+              <li>Registered only when <code>ACTIVITYPUB_ENABLE_WRITES=true</code></li>
+              <li><code>post-status</code>, <code>reply-to-post</code>, <code>delete-post</code></li>
+              <li><code>boost-post</code>, <code>favourite-post</code>, <code>follow-account</code>, and more</li>
             </ul>
-            <p><strong>Use for:</strong> Troubleshooting, observability, bulk lookups</p>
+            <p><strong>Use for:</strong> Posting, interacting, and managing your fediverse presence</p>
           </div>
         </div>
       </section>

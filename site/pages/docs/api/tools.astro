@@ -22,6 +22,13 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
       </div>
 
       <div class="tools-content">
+
+        <div class="callout callout-info" style="margin-bottom: var(--space-8); padding: var(--space-4); background: var(--bg-secondary); border-left: 4px solid var(--color-primary); border-radius: var(--radius-md);">
+          <strong>Read-only by default.</strong> All tools listed here are available without any special configuration.
+          Write tools (post, reply, follow, boost, etc.) are only registered when <code>ACTIVITYPUB_ENABLE_WRITES=true</code> is set in the server environment.
+          See the <a href={`${baseURL}docs/setup/configuration-options/`}>Configuration Options</a> page for details.
+        </div>
+
         <section class="tools-section">
           <h2>Discovery Tools</h2>
           <p>Tools for discovering actors, instances, and content across the fediverse.</p>
@@ -147,55 +154,6 @@ discover-instances --region europe</code></pre>
             </div>
           </div>
 
-          <div class="tool-reference">
-            <h3><code>recommend-instances</code></h3>
-            <p>Get personalized fediverse instance recommendations based on interests.</p>
-
-            <div class="tool-details">
-              <div class="parameters">
-                <h4>Parameters</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Required</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><code>interests</code></td>
-                      <td>array</td>
-                      <td>Yes</td>
-                      <td>List of your interests or topics (e.g., ["technology", "opensource", "privacy"])</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="examples">
-                <h4>Examples</h4>
-                <pre><code># Get recommendations based on interests
-recommend-instances --interests ["technology", "opensource"]
-
-# Multiple interests
-recommend-instances --interests ["art", "photography", "design"]</code></pre>
-              </div>
-
-              <div class="response">
-                <h4>Response</h4>
-                <p>Returns personalized instance recommendations with:</p>
-                <ul>
-                  <li>Instance domain and name</li>
-                  <li>Match score based on interests</li>
-                  <li>Instance description and focus</li>
-                  <li>User statistics</li>
-                  <li>Registration status</li>
-                </ul>
-              </div>
-            </div>
-          </div>
         </section>
 
         <section class="tools-section">
@@ -309,9 +267,15 @@ fetch-timeline admin@fosstodon.org --limit 10</code></pre>
             </div>
           </div>
 
+        </section>
+
+        <section class="tools-section">
+          <h2>Timeline Tools</h2>
+          <p>Tools for accessing public timelines and trending content from fediverse instances.</p>
+
           <div class="tool-reference">
-            <h3><code>search-instance</code></h3>
-            <p>Search for content on a specific fediverse instance.</p>
+            <h3><code>get-public-timeline</code></h3>
+            <p>Get the public timeline from a fediverse instance — local posts only, or the full federated feed.</p>
 
             <div class="tool-details">
               <div class="parameters">
@@ -330,19 +294,25 @@ fetch-timeline admin@fosstodon.org --limit 10</code></pre>
                       <td><code>domain</code></td>
                       <td>string</td>
                       <td>Yes</td>
-                      <td>Instance domain (e.g., example.social)</td>
+                      <td>Instance domain (e.g., "mastodon.social")</td>
                     </tr>
                     <tr>
-                      <td><code>query</code></td>
-                      <td>string</td>
-                      <td>Yes</td>
-                      <td>Search query</td>
-                    </tr>
-                    <tr>
-                      <td><code>type</code></td>
+                      <td><code>scope</code></td>
                       <td>enum</td>
                       <td>No</td>
-                      <td>Type of content to search for: "accounts", "statuses", or "hashtags" (default: "accounts")</td>
+                      <td>Timeline scope: "local" (posts from the instance only) or "federated" (posts from all connected instances). Default: "local"</td>
+                    </tr>
+                    <tr>
+                      <td><code>limit</code></td>
+                      <td>number</td>
+                      <td>No</td>
+                      <td>Number of posts to fetch (default: 20, max: 40)</td>
+                    </tr>
+                    <tr>
+                      <td><code>maxId</code></td>
+                      <td>string</td>
+                      <td>No</td>
+                      <td>Return results older than this ID (for pagination)</td>
                     </tr>
                   </tbody>
                 </table>
@@ -350,32 +320,17 @@ fetch-timeline admin@fosstodon.org --limit 10</code></pre>
 
               <div class="examples">
                 <h4>Examples</h4>
-                <pre><code># Search for accounts
-search-instance mastodon.social "opensource"
+                <pre><code># Get local timeline
+get-public-timeline fosstodon.org
 
-# Search for posts/statuses
-search-instance fosstodon.org "linux" --type statuses
+# Get federated timeline
+get-public-timeline mastodon.social --scope federated
 
-# Search for hashtags
-search-instance pixelfed.social "photography" --type hashtags</code></pre>
-              </div>
-
-              <div class="response">
-                <h4>Response</h4>
-                <p>Returns search results based on type:</p>
-                <ul>
-                  <li><strong>accounts</strong>: User profiles matching the query</li>
-                  <li><strong>statuses</strong>: Posts/toots containing the search terms</li>
-                  <li><strong>hashtags</strong>: Hashtags matching the query</li>
-                </ul>
+# Paginate results
+get-public-timeline fosstodon.org --maxId 123456789</code></pre>
               </div>
             </div>
           </div>
-        </section>
-
-        <section class="tools-section">
-          <h2>Timeline Tools</h2>
-          <p>Tools for accessing public timelines and trending content from fediverse instances.</p>
 
           <div class="tool-reference">
             <h3><code>get-trending-hashtags</code></h3>
@@ -462,102 +417,6 @@ get-trending-posts mastodon.social</code></pre>
             </div>
           </div>
 
-          <div class="tool-reference">
-            <h3><code>get-local-timeline</code></h3>
-            <p>Get the local public timeline from a fediverse instance (posts from local users only).</p>
-
-            <div class="tool-details">
-              <div class="parameters">
-                <h4>Parameters</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Required</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><code>domain</code></td>
-                      <td>string</td>
-                      <td>Yes</td>
-                      <td>Instance domain (e.g., "mastodon.social")</td>
-                    </tr>
-                    <tr>
-                      <td><code>limit</code></td>
-                      <td>number</td>
-                      <td>No</td>
-                      <td>Number of posts to fetch (default: 20, max: 40)</td>
-                    </tr>
-                    <tr>
-                      <td><code>maxId</code></td>
-                      <td>string</td>
-                      <td>No</td>
-                      <td>Return results older than this ID (for pagination)</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="examples">
-                <h4>Examples</h4>
-                <pre><code># Get local timeline
-get-local-timeline fosstodon.org
-
-# Paginate results
-get-local-timeline fosstodon.org --maxId 123456789</code></pre>
-              </div>
-            </div>
-          </div>
-
-          <div class="tool-reference">
-            <h3><code>get-federated-timeline</code></h3>
-            <p>Get the federated public timeline from a fediverse instance (posts from all connected instances).</p>
-
-            <div class="tool-details">
-              <div class="parameters">
-                <h4>Parameters</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Required</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><code>domain</code></td>
-                      <td>string</td>
-                      <td>Yes</td>
-                      <td>Instance domain (e.g., "mastodon.social")</td>
-                    </tr>
-                    <tr>
-                      <td><code>limit</code></td>
-                      <td>number</td>
-                      <td>No</td>
-                      <td>Number of posts to fetch (default: 20, max: 40)</td>
-                    </tr>
-                    <tr>
-                      <td><code>maxId</code></td>
-                      <td>string</td>
-                      <td>No</td>
-                      <td>Return results older than this ID (for pagination)</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="examples">
-                <h4>Examples</h4>
-                <pre><code># Get federated timeline
-get-federated-timeline mastodon.social</code></pre>
-              </div>
-            </div>
-          </div>
         </section>
 
         <section class="tools-section">
@@ -615,148 +474,7 @@ get-post-thread https://mastodon.social/@user/123456789 --depth 3 --maxReplies 1
           </div>
 
           <div class="tool-reference">
-            <h3><code>search-accounts</code></h3>
-            <p>Search for accounts/users on a fediverse instance.</p>
-
-            <div class="tool-details">
-              <div class="parameters">
-                <h4>Parameters</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Required</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><code>domain</code></td>
-                      <td>string</td>
-                      <td>Yes</td>
-                      <td>Instance domain to search</td>
-                    </tr>
-                    <tr>
-                      <td><code>query</code></td>
-                      <td>string</td>
-                      <td>Yes</td>
-                      <td>Search query (username or display name)</td>
-                    </tr>
-                    <tr>
-                      <td><code>limit</code></td>
-                      <td>number</td>
-                      <td>No</td>
-                      <td>Number of results (default: 20, max: 40)</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="examples">
-                <h4>Examples</h4>
-                <pre><code># Search for accounts
-search-accounts mastodon.social "developer"</code></pre>
-              </div>
-            </div>
-          </div>
-
-          <div class="tool-reference">
-            <h3><code>search-hashtags</code></h3>
-            <p>Search for hashtags on a fediverse instance.</p>
-
-            <div class="tool-details">
-              <div class="parameters">
-                <h4>Parameters</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Required</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><code>domain</code></td>
-                      <td>string</td>
-                      <td>Yes</td>
-                      <td>Instance domain to search</td>
-                    </tr>
-                    <tr>
-                      <td><code>query</code></td>
-                      <td>string</td>
-                      <td>Yes</td>
-                      <td>Search query (hashtag name without #)</td>
-                    </tr>
-                    <tr>
-                      <td><code>limit</code></td>
-                      <td>number</td>
-                      <td>No</td>
-                      <td>Number of results (default: 20, max: 40)</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="examples">
-                <h4>Examples</h4>
-                <pre><code># Search for hashtags
-search-hashtags mastodon.social "programming"</code></pre>
-              </div>
-            </div>
-          </div>
-
-          <div class="tool-reference">
-            <h3><code>search-posts</code></h3>
-            <p>Search for posts/statuses on a fediverse instance.</p>
-
-            <div class="tool-details">
-              <div class="parameters">
-                <h4>Parameters</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Required</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><code>domain</code></td>
-                      <td>string</td>
-                      <td>Yes</td>
-                      <td>Instance domain to search</td>
-                    </tr>
-                    <tr>
-                      <td><code>query</code></td>
-                      <td>string</td>
-                      <td>Yes</td>
-                      <td>Search query (keywords or hashtag)</td>
-                    </tr>
-                    <tr>
-                      <td><code>limit</code></td>
-                      <td>number</td>
-                      <td>No</td>
-                      <td>Number of results (default: 20, max: 40)</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="examples">
-                <h4>Examples</h4>
-                <pre><code># Search for posts
-search-posts mastodon.social "typescript tutorial"</code></pre>
-              </div>
-            </div>
-          </div>
-
-          <div class="tool-reference">
-            <h3><code>search</code> <span class="new-badge">NEW</span></h3>
+            <h3><code>search</code></h3>
             <p>Unified search across accounts, posts, and hashtags in a single query. Combines all search types with optional filtering.</p>
 
             <div class="tool-details">
@@ -832,87 +550,13 @@ search fosstodon.org "@user@mastodon.social" --resolve true</code></pre>
           </div>
         </section>
 
-        <section class="tools-section">
-          <h2>Batch Tools</h2>
-          <p>Tools for fetching multiple items in a single request.</p>
-
-          <div class="tool-reference">
-            <h3><code>batch-fetch-actors</code></h3>
-            <p>Fetch multiple actors in a single request for efficiency.</p>
-
-            <div class="tool-details">
-              <div class="parameters">
-                <h4>Parameters</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Required</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><code>identifiers</code></td>
-                      <td>array</td>
-                      <td>Yes</td>
-                      <td>Array of actor identifiers (e.g., ["user1@mastodon.social", "user2@fosstodon.org"])</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="examples">
-                <h4>Examples</h4>
-                <pre><code># Fetch multiple actors
-batch-fetch-actors --identifiers ["user1@mastodon.social", "user2@fosstodon.org"]</code></pre>
-              </div>
-            </div>
-          </div>
-
-          <div class="tool-reference">
-            <h3><code>batch-fetch-posts</code></h3>
-            <p>Fetch multiple posts in a single request for efficiency.</p>
-
-            <div class="tool-details">
-              <div class="parameters">
-                <h4>Parameters</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Required</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><code>urls</code></td>
-                      <td>array</td>
-                      <td>Yes</td>
-                      <td>Array of post URLs</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="examples">
-                <h4>Examples</h4>
-                <pre><code># Fetch multiple posts
-batch-fetch-posts --urls ["https://mastodon.social/@user/123", "https://fosstodon.org/@user/456"]</code></pre>
-              </div>
-            </div>
-          </div>
-        </section>
 
         <section class="tools-section">
-          <h2>Live Discovery Tools</h2>
-          <p>Tools for real-time discovery using external APIs.</p>
+          <h2>Live Instance Discovery</h2>
+          <p>Real-time instance discovery using external APIs. The <code>discover-instances</code> tool queries instances.social for live data with advanced filtering.</p>
 
           <div class="tool-reference">
-            <h3><code>discover-instances-live</code></h3>
+            <h3><code>discover-instances</code> (live)</h3>
             <p>Discover fediverse instances in real-time using the instances.social API with advanced filtering.</p>
 
             <div class="tool-details">
@@ -977,125 +621,26 @@ batch-fetch-posts --urls ["https://mastodon.social/@user/123", "https://fosstodo
               <div class="examples">
                 <h4>Examples</h4>
                 <pre><code># Find Mastodon instances
-discover-instances-live --software mastodon
+discover-instances --software mastodon
 
 # Find large English instances with open registration
-discover-instances-live --language en --minUsers 10000 --openRegistrations true
+discover-instances --language en --minUsers 10000 --openRegistrations true
 
 # Find small community instances
-discover-instances-live --maxUsers 5000 --sortBy users</code></pre>
+discover-instances --maxUsers 5000 --sortBy users</code></pre>
               </div>
             </div>
           </div>
         </section>
 
-        <section class="tools-section">
-          <h2>Utility Tools</h2>
-          <p>Additional tools for server management and debugging.</p>
-
-          <div class="tool-reference">
-            <h3><code>health-check</code></h3>
-            <p>Check the health status of the ActivityPub MCP server.</p>
-
-            <div class="tool-details">
-              <div class="parameters">
-                <h4>Parameters</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Required</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><code>includeMetrics</code></td>
-                      <td>boolean</td>
-                      <td>No</td>
-                      <td>Include detailed performance metrics in the response</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="examples">
-                <h4>Examples</h4>
-                <pre><code># Basic health check
-health-check
-
-# Include detailed metrics
-health-check --includeMetrics true</code></pre>
-              </div>
-
-              <div class="response">
-                <h4>Response</h4>
-                <p>Returns server status including:</p>
-                <ul>
-                  <li>Server uptime</li>
-                  <li>Memory usage</li>
-                  <li>Health status (healthy/degraded/unhealthy)</li>
-                  <li>Optional: Detailed performance metrics</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <div class="tool-reference">
-            <h3><code>performance-metrics</code></h3>
-            <p>Get detailed performance metrics for the ActivityPub MCP server.</p>
-
-            <div class="tool-details">
-              <div class="parameters">
-                <h4>Parameters</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Required</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><code>operation</code></td>
-                      <td>string</td>
-                      <td>No</td>
-                      <td>Specific operation to get metrics for (e.g., 'discover-actor')</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="examples">
-                <h4>Examples</h4>
-                <pre><code># Get all performance metrics
-performance-metrics
-
-# Get metrics for a specific operation
-performance-metrics --operation discover-actor</code></pre>
-              </div>
-
-              <div class="response">
-                <h4>Response</h4>
-                <p>Returns performance data including:</p>
-                <ul>
-                  <li>Request counts by operation</li>
-                  <li>Average response times</li>
-                  <li>Success/failure rates</li>
-                  <li>Cache hit rates</li>
-                  <li>Resource utilization</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
 
         <section class="tools-section">
-          <h2>Authenticated Write Tools <span class="new-badge">v1.1.0</span></h2>
-          <p>Tools for authenticated write operations. Requires OAuth token configuration. See the <a href={`${baseURL}docs/setup/config-guide/`}>Configuration Guide</a> for setup instructions.</p>
+          <h2>Write Tools</h2>
+          <p>
+            Write tools are <strong>disabled by default</strong> and only registered when <code>ACTIVITYPUB_ENABLE_WRITES=true</code> is set in the server environment.
+            They additionally require OAuth token configuration via <code>ACTIVITYPUB_ACCOUNTS</code>.
+            See the <a href={`${baseURL}docs/setup/configuration-options/`}>Configuration Options</a> page for setup instructions.
+          </p>
 
           <h3 class="subsection-header">Account Management</h3>
 
@@ -2119,246 +1664,6 @@ cancel-scheduled-post --scheduledPostId "123"</code></pre>
           </div>
         </section>
 
-        <section class="tools-section">
-          <h2>Content Export Tools <span class="new-badge">v1.1.0</span></h2>
-          <p>Tools for exporting fediverse content in various formats (JSON, Markdown, CSV).</p>
-
-          <div class="tool-reference">
-            <h3><code>export-timeline</code></h3>
-            <p>Export an actor's timeline to a file in your chosen format.</p>
-
-            <div class="tool-details">
-              <div class="parameters">
-                <h4>Parameters</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Required</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><code>identifier</code></td>
-                      <td>string</td>
-                      <td>Yes</td>
-                      <td>Actor identifier (@user@domain or URL)</td>
-                    </tr>
-                    <tr>
-                      <td><code>format</code></td>
-                      <td>enum</td>
-                      <td>No</td>
-                      <td>Export format: "json", "markdown", "csv" (default: "json")</td>
-                    </tr>
-                    <tr>
-                      <td><code>limit</code></td>
-                      <td>number</td>
-                      <td>No</td>
-                      <td>Number of posts to export (default: 100, max: 500)</td>
-                    </tr>
-                    <tr>
-                      <td><code>includeBoosts</code></td>
-                      <td>boolean</td>
-                      <td>No</td>
-                      <td>Include boosted posts (default: true)</td>
-                    </tr>
-                    <tr>
-                      <td><code>includeReplies</code></td>
-                      <td>boolean</td>
-                      <td>No</td>
-                      <td>Include replies (default: true)</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="examples">
-                <h4>Examples</h4>
-                <pre><code># Export timeline as JSON
-export-timeline --identifier "@user@mastodon.social"
-
-# Export as Markdown, original posts only
-export-timeline --identifier "@user@mastodon.social" --format markdown --includeBoosts false --includeReplies false
-
-# Export as CSV with limit
-export-timeline --identifier "@user@mastodon.social" --format csv --limit 200</code></pre>
-              </div>
-            </div>
-          </div>
-
-          <div class="tool-reference">
-            <h3><code>export-thread</code></h3>
-            <p>Export a post thread with all ancestors and replies.</p>
-
-            <div class="tool-details">
-              <div class="parameters">
-                <h4>Parameters</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Required</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><code>postUrl</code></td>
-                      <td>string</td>
-                      <td>Yes</td>
-                      <td>URL of the post</td>
-                    </tr>
-                    <tr>
-                      <td><code>format</code></td>
-                      <td>enum</td>
-                      <td>No</td>
-                      <td>Export format: "json", "markdown", "csv" (default: "json")</td>
-                    </tr>
-                    <tr>
-                      <td><code>depth</code></td>
-                      <td>number</td>
-                      <td>No</td>
-                      <td>Max reply depth (default: 3, max: 10)</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="examples">
-                <h4>Examples</h4>
-                <pre><code># Export thread as JSON
-export-thread --postUrl "https://mastodon.social/@user/123456"
-
-# Export as readable Markdown
-export-thread --postUrl "https://mastodon.social/@user/123456" --format markdown --depth 5</code></pre>
-              </div>
-            </div>
-          </div>
-
-          <div class="tool-reference">
-            <h3><code>export-account-info</code></h3>
-            <p>Export comprehensive account information including profile, stats, and recent activity.</p>
-
-            <div class="tool-details">
-              <div class="parameters">
-                <h4>Parameters</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Required</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><code>identifier</code></td>
-                      <td>string</td>
-                      <td>Yes</td>
-                      <td>Account identifier (@user@domain or URL)</td>
-                    </tr>
-                    <tr>
-                      <td><code>format</code></td>
-                      <td>enum</td>
-                      <td>No</td>
-                      <td>Export format: "json", "markdown" (default: "json")</td>
-                    </tr>
-                    <tr>
-                      <td><code>includeTimeline</code></td>
-                      <td>boolean</td>
-                      <td>No</td>
-                      <td>Include recent posts (default: false)</td>
-                    </tr>
-                    <tr>
-                      <td><code>timelineLimit</code></td>
-                      <td>number</td>
-                      <td>No</td>
-                      <td>Number of posts if includeTimeline is true (default: 50)</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="examples">
-                <h4>Examples</h4>
-                <pre><code># Export account info as JSON
-export-account-info --identifier "@user@mastodon.social"
-
-# Export with timeline as Markdown
-export-account-info --identifier "@user@mastodon.social" --format markdown --includeTimeline true</code></pre>
-              </div>
-            </div>
-          </div>
-
-          <div class="tool-reference">
-            <h3><code>export-hashtag</code></h3>
-            <p>Export posts containing a specific hashtag from an instance.</p>
-
-            <div class="tool-details">
-              <div class="parameters">
-                <h4>Parameters</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Required</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><code>domain</code></td>
-                      <td>string</td>
-                      <td>Yes</td>
-                      <td>Instance domain to search</td>
-                    </tr>
-                    <tr>
-                      <td><code>hashtag</code></td>
-                      <td>string</td>
-                      <td>Yes</td>
-                      <td>Hashtag to export (without #)</td>
-                    </tr>
-                    <tr>
-                      <td><code>format</code></td>
-                      <td>enum</td>
-                      <td>No</td>
-                      <td>Export format: "json", "markdown", "csv" (default: "json")</td>
-                    </tr>
-                    <tr>
-                      <td><code>limit</code></td>
-                      <td>number</td>
-                      <td>No</td>
-                      <td>Number of posts (default: 100, max: 500)</td>
-                    </tr>
-                    <tr>
-                      <td><code>local</code></td>
-                      <td>boolean</td>
-                      <td>No</td>
-                      <td>Only local posts (default: false)</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="examples">
-                <h4>Examples</h4>
-                <pre><code># Export hashtag posts as JSON
-export-hashtag --domain mastodon.social --hashtag "programming"
-
-# Export local posts only as Markdown
-export-hashtag --domain fosstodon.org --hashtag "opensource" --format markdown --local true
-
-# Export as CSV for analysis
-export-hashtag --domain mastodon.social --hashtag "rust" --format csv --limit 200</code></pre>
-              </div>
-            </div>
-          </div>
-        </section>
 
         <section class="tools-section">
           <h2>Error Handling</h2>

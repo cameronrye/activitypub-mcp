@@ -8,10 +8,9 @@ import {
   USER_AGENT,
 } from "../config.js";
 import { instanceBlocklist } from "../policy/instance-blocklist.js";
-import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { pinnedFetch, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
 import { ActorIdentifierSchema } from "../validation/schemas.js";
-import { validateExternalUrl } from "../validation/url.js";
 
 const logger = getLogger("activitypub-mcp");
 
@@ -172,12 +171,6 @@ export class WebFingerClient {
 
     const webfingerUrl = `https://${domain}/.well-known/webfinger?resource=acct:${username}@${domain}`;
 
-    // SSRF protection: validate URL with async DNS resolution for rebinding detection
-    await validateExternalUrl(webfingerUrl);
-
-    // Policy: respect operator blocklist for WebFinger lookups too.
-    instanceBlocklist.validateNotBlocked(domain);
-
     logger.info("Performing WebFinger lookup", {
       identifier,
       url: webfingerUrl,
@@ -187,7 +180,10 @@ export class WebFingerClient {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
-      const response = await fetchWithRedirectGuard(
+      // pinnedFetch resolves + validates + pins the connection's IP and re-pins
+      // every redirect hop (closes the DNS-rebinding TOCTOU). The onHop callback
+      // applies the operator blocklist on the initial URL and each redirect hop.
+      const response = await pinnedFetch(
         webfingerUrl,
         {
           method: "GET",
@@ -197,11 +193,7 @@ export class WebFingerClient {
           },
           signal: controller.signal,
         },
-        async (target) => {
-          await validateExternalUrl(target);
-          const targetHost = new URL(target).hostname;
-          instanceBlocklist.validateNotBlocked(targetHost);
-        },
+        (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname),
       );
 
       clearTimeout(timeoutId);
@@ -243,13 +235,10 @@ export class WebFingerClient {
    * Fetch ActivityPub actor from URL
    */
   private async fetchActor(actorUrl: string): Promise<ActivityPubActor> {
-    // SSRF protection: validate URL with async DNS resolution for rebinding detection
-    await validateExternalUrl(actorUrl);
-
-    // Policy: respect operator blocklist for actor fetches too.
+    // Surface a friendly error for a malformed actor URL before we attempt to
+    // resolve/pin it (resolveAndPin would otherwise throw a raw TypeError).
     try {
-      const actorHost = new URL(actorUrl).hostname;
-      instanceBlocklist.validateNotBlocked(actorHost);
+      new URL(actorUrl);
     } catch (e) {
       if (e instanceof TypeError) {
         throw new Error(`Malformed actor URL: ${actorUrl}`);
@@ -263,7 +252,10 @@ export class WebFingerClient {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
-      const response = await fetchWithRedirectGuard(
+      // pinnedFetch resolves + validates + pins the connection's IP and re-pins
+      // every redirect hop (closes the DNS-rebinding TOCTOU). The onHop callback
+      // applies the operator blocklist on the initial URL and each redirect hop.
+      const response = await pinnedFetch(
         actorUrl,
         {
           method: "GET",
@@ -274,11 +266,7 @@ export class WebFingerClient {
           },
           signal: controller.signal,
         },
-        async (target) => {
-          await validateExternalUrl(target);
-          const targetHost = new URL(target).hostname;
-          instanceBlocklist.validateNotBlocked(targetHost);
-        },
+        (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname),
       );
 
       clearTimeout(timeoutId);

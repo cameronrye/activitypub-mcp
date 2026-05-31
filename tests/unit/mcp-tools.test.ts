@@ -19,28 +19,6 @@ vi.mock("../../src/activitypub/remote-client.js", () => ({
     fetchLocalTimeline: vi.fn(),
     fetchFederatedTimeline: vi.fn(),
     fetchPostThread: vi.fn(),
-    convertWebUrlToActivityPub: vi.fn(),
-    convertActivityPubToWebUrl: vi.fn(),
-    batchFetchActors: vi.fn(),
-    batchFetchPosts: vi.fn(),
-  },
-}));
-
-vi.mock("../../src/discovery/instance-discovery.js", () => ({
-  instanceDiscovery: {
-    getPopularInstances: vi.fn().mockReturnValue([
-      {
-        domain: "mastodon.social",
-        description: "General instance",
-        users: "1M+",
-        software: "mastodon",
-      },
-    ]),
-    searchInstancesByTopic: vi.fn().mockReturnValue([]),
-    getInstancesBySize: vi.fn().mockReturnValue([]),
-    getInstancesByRegion: vi.fn().mockReturnValue([]),
-    getBeginnerFriendlyInstances: vi.fn().mockReturnValue([]),
-    getInstanceRecommendations: vi.fn().mockReturnValue([]),
   },
 }));
 
@@ -55,48 +33,6 @@ vi.mock("../../src/discovery/dynamic-instance-discovery.js", () => ({
   },
 }));
 
-vi.mock("../../src/telemetry/health-check.js", () => ({
-  healthChecker: {
-    performHealthCheck: vi.fn().mockResolvedValue({
-      status: "healthy",
-      uptime: 60000,
-      version: "1.0.0",
-      timestamp: new Date().toISOString(),
-      checks: {
-        memory: { status: "pass", message: "OK", duration: 1 },
-      },
-    }),
-  },
-}));
-
-vi.mock("../../src/telemetry/performance-monitor.js", () => ({
-  performanceMonitor: {
-    startRequest: vi.fn().mockReturnValue("req-123"),
-    endRequest: vi.fn(),
-    getMetrics: vi.fn().mockReturnValue({
-      requestCount: 100,
-      errorCount: 5,
-      averageResponseTime: 50,
-      minResponseTime: 10,
-      maxResponseTime: 200,
-      p95ResponseTime: 150,
-      p99ResponseTime: 180,
-      memoryUsage: { heapUsed: 50000000 },
-      uptime: 60000,
-    }),
-    getOperationMetrics: vi.fn().mockReturnValue({
-      count: 10,
-      successCount: 9,
-      errorCount: 1,
-      successRate: 0.9,
-      averageResponseTime: 45,
-    }),
-    getRequestHistory: vi
-      .fn()
-      .mockReturnValue([{ operation: "discover-actor", duration: 50, success: true }]),
-  },
-}));
-
 vi.mock("@logtape/logtape", () => ({
   getLogger: vi.fn().mockReturnValue({
     info: vi.fn(),
@@ -106,23 +42,9 @@ vi.mock("@logtape/logtape", () => ({
   }),
 }));
 
-vi.mock("../../src/discovery/nodeinfo.js", () => ({
-  getInstanceSoftware: vi.fn(),
-  formatInstanceSoftware: vi.fn((info) =>
-    info.detection === "success"
-      ? `\`${info.domain}\` runs ${info.software.name} ${info.software.version}.`
-      : `Could not detect software for \`${info.domain}\`: ${info.reason}.`,
-  ),
-}));
-
 // Import mocked modules
 import { remoteClient } from "../../src/activitypub/remote-client.js";
-import { auditLogger } from "../../src/audit/logger.js";
 import { dynamicInstanceDiscovery } from "../../src/discovery/dynamic-instance-discovery.js";
-import { instanceDiscovery } from "../../src/discovery/instance-discovery.js";
-import { getInstanceSoftware } from "../../src/discovery/nodeinfo.js";
-import { healthChecker } from "../../src/telemetry/health-check.js";
-import { performanceMonitor } from "../../src/telemetry/performance-monitor.js";
 
 describe("MCP Tools", () => {
   let mcpServer: McpServer;
@@ -160,30 +82,32 @@ describe("MCP Tools", () => {
       const expectedTools = [
         "discover-actor",
         "discover-instances",
-        "discover-instances-live",
-        "recommend-instances",
         "fetch-timeline",
         "get-post-thread",
-        "search-instance",
-        "search-accounts",
-        "search-hashtags",
-        "search-posts",
         "search",
         "get-trending-hashtags",
         "get-trending-posts",
-        "get-local-timeline",
-        "get-federated-timeline",
+        "get-public-timeline",
         "get-instance-info",
-        "get-instance-software",
-        "convert-url",
-        "batch-fetch-actors",
-        "batch-fetch-posts",
-        "health-check",
-        "performance-metrics",
       ];
 
       for (const toolName of expectedTools) {
         expect(registeredTools.has(toolName), `Tool ${toolName} should be registered`).toBe(true);
+      }
+
+      // Removed tools must not be registered
+      const removedTools = [
+        "discover-instances-live",
+        "recommend-instances",
+        "get-instance-software",
+        "convert-url",
+        "batch-fetch-actors",
+        "batch-fetch-posts",
+      ];
+      for (const toolName of removedTools) {
+        expect(registeredTools.has(toolName), `Tool ${toolName} should NOT be registered`).toBe(
+          false,
+        );
       }
     });
   });
@@ -271,30 +195,6 @@ describe("MCP Tools", () => {
     });
   });
 
-  describe("search-instance tool", () => {
-    it("should search for accounts on an instance", async () => {
-      (remoteClient.searchInstance as Mock).mockResolvedValue({
-        accounts: [{ id: "1", username: "testuser", display_name: "Test User" }],
-      });
-
-      const tool = registeredTools.get("search-instance");
-      const result = await tool?.handler({
-        domain: "mastodon.social",
-        query: "test",
-        type: "accounts",
-      });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Search Results",
-      );
-      expect(remoteClient.searchInstance).toHaveBeenCalledWith(
-        "mastodon.social",
-        "test",
-        "accounts",
-      );
-    });
-  });
-
   describe("get-instance-info tool", () => {
     it("should get instance information", async () => {
       (remoteClient.getInstanceInfo as Mock).mockResolvedValue({
@@ -329,126 +229,14 @@ describe("MCP Tools", () => {
   });
 
   describe("discover-instances tool", () => {
-    it("should return popular instances", async () => {
+    it("should fetch live instance data from instances.social", async () => {
       const tool = registeredTools.get("discover-instances");
-      const result = await tool?.handler({});
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "fediverse instances",
-      );
-      expect(instanceDiscovery.getPopularInstances).toHaveBeenCalled();
-    });
-
-    it("should filter by topic", async () => {
-      (instanceDiscovery.searchInstancesByTopic as Mock).mockReturnValue([
-        { domain: "tech.social", description: "Tech focused", users: "10K", software: "mastodon" },
-      ]);
-
-      const tool = registeredTools.get("discover-instances");
-      await tool?.handler({ topic: "technology" });
-
-      expect(instanceDiscovery.searchInstancesByTopic).toHaveBeenCalledWith("technology");
-    });
-
-    it("should filter by size", async () => {
-      const tool = registeredTools.get("discover-instances");
-      await tool?.handler({ size: "large" });
-
-      expect(instanceDiscovery.getInstancesBySize).toHaveBeenCalledWith("large");
-    });
-  });
-
-  describe("discover-instances-live tool", () => {
-    it("should fetch live instance data", async () => {
-      const tool = registeredTools.get("discover-instances-live");
       const result = await tool?.handler({ limit: 10 });
 
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "Live Instance Discovery",
       );
       expect(dynamicInstanceDiscovery.searchInstances).toHaveBeenCalled();
-    });
-  });
-
-  describe("recommend-instances tool", () => {
-    it("should return instance recommendations based on interests", async () => {
-      (instanceDiscovery.getInstanceRecommendations as Mock).mockReturnValue([
-        {
-          domain: "fosstodon.org",
-          description: "FOSS enthusiasts",
-          users: "50K",
-          software: "mastodon",
-        },
-      ]);
-
-      const tool = registeredTools.get("recommend-instances");
-      const result = await tool?.handler({ interests: ["opensource", "linux"] });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "recommended fediverse instances",
-      );
-      expect(instanceDiscovery.getInstanceRecommendations).toHaveBeenCalledWith([
-        "opensource",
-        "linux",
-      ]);
-    });
-  });
-
-  describe("health-check tool", () => {
-    it("should return health status", async () => {
-      const tool = registeredTools.get("health-check");
-      const result = await tool?.handler({ includeMetrics: false });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Server Health Check",
-      );
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("HEALTHY");
-      expect(healthChecker.performHealthCheck).toHaveBeenCalledWith(false);
-    });
-
-    it("should include metrics when requested", async () => {
-      (healthChecker.performHealthCheck as Mock).mockResolvedValue({
-        status: "healthy",
-        uptime: 60000,
-        version: "1.0.0",
-        timestamp: new Date().toISOString(),
-        checks: { memory: { status: "pass", message: "OK", duration: 1 } },
-        metrics: {
-          requests: { total: 100, errors: 5, errorRate: 5 },
-          performance: { averageResponseTime: 50, p95ResponseTime: 100, p99ResponseTime: 150 },
-          system: { memoryUsageMB: 50, uptime: 60000 },
-        },
-      });
-
-      const tool = registeredTools.get("health-check");
-      const result = await tool?.handler({ includeMetrics: true });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Performance Metrics",
-      );
-      expect(healthChecker.performHealthCheck).toHaveBeenCalledWith(true);
-    });
-  });
-
-  describe("performance-metrics tool", () => {
-    it("should return overall metrics", async () => {
-      const tool = registeredTools.get("performance-metrics");
-      const result = await tool?.handler({});
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Overall Performance Metrics",
-      );
-      expect(performanceMonitor.getMetrics).toHaveBeenCalled();
-    });
-
-    it("should return metrics for specific operation", async () => {
-      const tool = registeredTools.get("performance-metrics");
-      const result = await tool?.handler({ operation: "discover-actor" });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        'Performance Metrics for "discover-actor"',
-      );
-      expect(performanceMonitor.getOperationMetrics).toHaveBeenCalledWith("discover-actor");
     });
   });
 
@@ -516,12 +304,13 @@ describe("MCP Tools", () => {
     });
   });
 
-  describe("get-local-timeline tool", () => {
-    it("should fetch local timeline", async () => {
+  describe("get-public-timeline tool", () => {
+    it("should fetch local timeline when scope is local", async () => {
       (remoteClient.fetchLocalTimeline as Mock).mockResolvedValue({
         posts: [
           {
             content: "<p>Local post</p>",
+            spoiler_text: "",
             account: { username: "localuser" },
             favourites_count: 10,
             reblogs_count: 5,
@@ -532,21 +321,22 @@ describe("MCP Tools", () => {
         nextMaxId: "123",
       });
 
-      const tool = registeredTools.get("get-local-timeline");
-      const result = await tool?.handler({ domain: "mastodon.social" });
+      const tool = registeredTools.get("get-public-timeline");
+      const result = await tool?.handler({ domain: "mastodon.social", scope: "local" });
 
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "Local Timeline",
       );
+      expect((result as { content: { text: string }[] }).content[0].text).toContain("localuser");
+      expect((result as { content: { text: string }[] }).content[0].text).toContain("123");
     });
-  });
 
-  describe("get-federated-timeline tool", () => {
-    it("should fetch federated timeline", async () => {
+    it("should fetch federated timeline when scope is federated", async () => {
       (remoteClient.fetchFederatedTimeline as Mock).mockResolvedValue({
         posts: [
           {
             content: "<p>Federated post</p>",
+            spoiler_text: "",
             account: { username: "remoteuser" },
             favourites_count: 20,
             reblogs_count: 10,
@@ -556,91 +346,30 @@ describe("MCP Tools", () => {
         hasMore: false,
       });
 
-      const tool = registeredTools.get("get-federated-timeline");
-      const result = await tool?.handler({ domain: "mastodon.social" });
+      const tool = registeredTools.get("get-public-timeline");
+      const result = await tool?.handler({ domain: "mastodon.social", scope: "federated" });
 
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "Federated Timeline",
       );
+      expect((result as { content: { text: string }[] }).content[0].text).toContain("remoteuser");
     });
-  });
 
-  describe("search-accounts tool", () => {
-    it("should search for accounts", async () => {
-      (remoteClient.searchInstance as Mock).mockResolvedValue({
-        accounts: [
-          {
-            id: "1",
-            username: "testuser",
-            acct: "testuser@example.social",
-            display_name: "Test User",
-            note: "<p>A test user bio</p>",
-            followers_count: 100,
-            statuses_count: 50,
-          },
-        ],
+    it("should default to federated scope when scope is omitted", async () => {
+      (remoteClient.fetchFederatedTimeline as Mock).mockResolvedValue({
+        posts: [],
+        hasMore: false,
       });
 
-      const tool = registeredTools.get("search-accounts");
-      const result = await tool?.handler({ domain: "mastodon.social", query: "test" });
+      const tool = registeredTools.get("get-public-timeline");
+      const result = await tool?.handler({ domain: "mastodon.social" });
 
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Account Search Results",
-      );
-      expect(remoteClient.searchInstance).toHaveBeenCalledWith(
-        "mastodon.social",
-        "test",
-        "accounts",
-      );
-    });
-  });
-
-  describe("search-hashtags tool", () => {
-    it("should search for hashtags", async () => {
-      (remoteClient.searchInstance as Mock).mockResolvedValue({
-        hashtags: [{ name: "test", history: [{ uses: "50" }] }],
+      expect(remoteClient.fetchFederatedTimeline).toHaveBeenCalledWith("mastodon.social", {
+        limit: 20,
+        maxId: undefined,
       });
-
-      const tool = registeredTools.get("search-hashtags");
-      const result = await tool?.handler({ domain: "mastodon.social", query: "test" });
-
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Hashtag Search Results",
-      );
-    });
-
-    it("should strip leading # from query", async () => {
-      const tool = registeredTools.get("search-hashtags");
-      await tool?.handler({ domain: "mastodon.social", query: "#test" });
-
-      expect(remoteClient.searchInstance).toHaveBeenCalledWith(
-        "mastodon.social",
-        "test",
-        "hashtags",
-      );
-    });
-  });
-
-  describe("search-posts tool", () => {
-    it("should search for posts", async () => {
-      (remoteClient.searchInstance as Mock).mockResolvedValue({
-        statuses: [
-          {
-            id: "1",
-            content: "<p>Test post content</p>",
-            account: { acct: "user@example.social", username: "user", display_name: "User" },
-            favourites_count: 10,
-            reblogs_count: 5,
-            replies_count: 2,
-          },
-        ],
-      });
-
-      const tool = registeredTools.get("search-posts");
-      const result = await tool?.handler({ domain: "mastodon.social", query: "test" });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Post Search Results",
+        "Federated Timeline",
       );
     });
   });
@@ -659,93 +388,6 @@ describe("MCP Tools", () => {
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "Search Results",
       );
-    });
-  });
-
-  describe("convert-url tool", () => {
-    it("should convert web URL to ActivityPub URI", async () => {
-      (remoteClient.convertWebUrlToActivityPub as Mock).mockResolvedValue({
-        activityPubUri: "https://example.social/users/testuser",
-        type: "actor",
-        domain: "example.social",
-      });
-
-      const tool = registeredTools.get("convert-url");
-      const result = await tool?.handler({ url: "https://example.social/@testuser" });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "URL Conversion",
-      );
-    });
-
-    it("should convert ActivityPub URI to web URL", async () => {
-      (remoteClient.convertActivityPubToWebUrl as Mock).mockReturnValue({
-        webUrl: "https://example.social/@testuser",
-        type: "actor",
-        domain: "example.social",
-      });
-
-      const tool = registeredTools.get("convert-url");
-      const result = await tool?.handler({
-        url: "https://example.social/users/testuser",
-        direction: "to-web",
-      });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "URL Conversion",
-      );
-    });
-  });
-
-  describe("batch-fetch-actors tool", () => {
-    it("should batch fetch multiple actors", async () => {
-      (remoteClient.batchFetchActors as Mock).mockResolvedValue({
-        results: [
-          {
-            identifier: "user1@example.social",
-            actor: { preferredUsername: "user1", name: "User 1" },
-          },
-          {
-            identifier: "user2@example.social",
-            actor: { preferredUsername: "user2", name: "User 2" },
-          },
-        ],
-        successful: 2,
-        failed: 0,
-      });
-
-      const tool = registeredTools.get("batch-fetch-actors");
-      const result = await tool?.handler({
-        identifiers: ["user1@example.social", "user2@example.social"],
-      });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Batch Actor Fetch Results",
-      );
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("2 successful");
-    });
-  });
-
-  describe("batch-fetch-posts tool", () => {
-    it("should batch fetch multiple posts", async () => {
-      (remoteClient.batchFetchPosts as Mock).mockResolvedValue({
-        results: [
-          { url: "https://example.social/1", post: { content: "Post 1" } },
-          { url: "https://example.social/2", post: { content: "Post 2" } },
-        ],
-        successful: 2,
-        failed: 0,
-      });
-
-      const tool = registeredTools.get("batch-fetch-posts");
-      const result = await tool?.handler({
-        postUrls: ["https://example.social/1", "https://example.social/2"],
-      });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Batch Post Fetch Results",
-      );
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("2 successful");
     });
   });
 
@@ -781,87 +423,7 @@ describe("MCP Tools", () => {
     });
   });
 
-  describe("discover-instances filter composition (H7)", () => {
-    it("applies multiple filters cumulatively", async () => {
-      const tool = registeredTools.get("discover-instances");
-      expect(tool).toBeDefined();
-
-      // Set up mocks so topic and size filters overlap partially:
-      // topic "tech" => [fosstodon.org, techhub.social]
-      // size "large" => [mastodon.social, techhub.social]
-      // combined => [techhub.social] only
-      const techInstances = [
-        {
-          domain: "fosstodon.org",
-          description: "FOSS and tech community",
-          users: "50K",
-          software: "mastodon",
-        },
-        {
-          domain: "techhub.social",
-          description: "Tech hub for developers",
-          users: "200K",
-          software: "mastodon",
-        },
-      ];
-      const largeInstances = [
-        {
-          domain: "mastodon.social",
-          description: "General instance",
-          users: "1M+",
-          software: "mastodon",
-        },
-        {
-          domain: "techhub.social",
-          description: "Tech hub for developers",
-          users: "200K",
-          software: "mastodon",
-        },
-      ];
-
-      (instanceDiscovery.getPopularInstances as Mock).mockReturnValue([
-        ...techInstances,
-        {
-          domain: "mastodon.social",
-          description: "General instance",
-          users: "1M+",
-          software: "mastodon",
-        },
-      ]);
-      (instanceDiscovery.searchInstancesByTopic as Mock).mockReturnValue(techInstances);
-      (instanceDiscovery.getInstancesBySize as Mock).mockReturnValue(largeInstances);
-
-      const both = await tool?.handler({ topic: "tech", size: "large" });
-      const topicOnly = await tool?.handler({ topic: "tech" });
-      const sizeOnly = await tool?.handler({ size: "large" });
-
-      const parseIds = (r: unknown): string[] => {
-        const text = ((r as { content: { text: string }[] })?.content?.[0]?.text ?? "") as string;
-        return text.match(/[a-z0-9.-]+\.[a-z]{2,}/gi) ?? [];
-      };
-
-      const bothIds = new Set(parseIds(both));
-      const topicIds = new Set(parseIds(topicOnly));
-      const sizeIds = new Set(parseIds(sizeOnly));
-
-      // Combined result must be a subset of each individual result
-      for (const id of bothIds) {
-        expect(topicIds.has(id)).toBe(true);
-        expect(sizeIds.has(id)).toBe(true);
-      }
-
-      // Sanity: combined ≤ each individual
-      expect(bothIds.size).toBeLessThanOrEqual(topicIds.size);
-      expect(bothIds.size).toBeLessThanOrEqual(sizeIds.size);
-
-      // techhub.social must appear in combined (it satisfies both filters)
-      expect(bothIds.has("techhub.social")).toBe(true);
-      // fosstodon.org must NOT appear in combined (large filter excludes it)
-      expect(bothIds.has("fosstodon.org")).toBe(false);
-    });
-  });
-
-  describe("search-instance prose render (M4)", () => {
+  describe("search prose render (M4)", () => {
     it("renders results as prose, not raw JSON", async () => {
       (remoteClient.searchInstance as Mock).mockResolvedValue({
         accounts: [
@@ -879,7 +441,7 @@ describe("MCP Tools", () => {
         hashtags: [],
       });
 
-      const tool = registeredTools.get("search-instance");
+      const tool = registeredTools.get("search");
       expect(tool).toBeDefined();
 
       const result = await tool?.handler({
@@ -933,8 +495,8 @@ describe("MCP Tools", () => {
       expect(text).not.toMatch(/\d+ more posts in this page/);
     });
 
-    it("truncates each post to 500 chars (not 200)", async () => {
-      // Create a post with a 1000-char body
+    it("delivers post content inside the untrusted-content envelope", async () => {
+      // Create a post with a 1000-char body — content should arrive intact inside the envelope
       const longContent = "x".repeat(1000);
       const posts = [
         {
@@ -961,96 +523,11 @@ describe("MCP Tools", () => {
 
       const text = ((result as { content: { text: string }[] }).content[0].text ?? "") as string;
 
-      // Assert that we have roughly 500 chars of content (plus some overhead for formatting)
-      // The pattern should have 500 x's followed by an ellipsis or truncation marker
-      expect(text).toMatch(/x{400,}/);
-      // Verify it's truncated to 500, not 200
-      expect(text).toMatch(/x{450,}/);
-    });
-  });
-
-  describe("get-instance-software tool", () => {
-    it("returns a prose success message for a valid instance", async () => {
-      (getInstanceSoftware as Mock).mockResolvedValue({
-        domain: "tools-success.social",
-        detection: "success",
-        software: { name: "mastodon", version: "4.3.2" },
-        protocols: ["activitypub"],
-        openRegistrations: false,
-      });
-
-      const tool = registeredTools.get("get-instance-software");
-      expect(tool).toBeDefined();
-      const result = await tool?.handler({ domain: "tools-success.social" });
-      const text = (result as { content: { text: string }[] }).content[0].text;
-      expect(text).toContain("mastodon");
-      expect(text).toContain("4.3.2");
-    });
-
-    it("returns an unavailable prose message when detection fails", async () => {
-      (getInstanceSoftware as Mock).mockResolvedValue({
-        domain: "tools-fail.social",
-        detection: "unavailable",
-        software: null,
-        protocols: null,
-        openRegistrations: null,
-        reason: "HTTP 404 Not Found",
-      });
-
-      const tool = registeredTools.get("get-instance-software");
-      const result = await tool?.handler({ domain: "tools-fail.social" });
-      const text = (result as { content: { text: string }[] }).content[0].text;
-      expect(text).toMatch(/could not detect/i);
-      expect((result as { isError?: boolean }).isError).toBeUndefined();
-    });
-
-    it("throws InvalidParams for an invalid domain", async () => {
-      const tool = registeredTools.get("get-instance-software");
-      await expect(tool?.handler({ domain: "not a domain" })).rejects.toThrow();
-      expect(getInstanceSoftware).not.toHaveBeenCalled();
-    });
-
-    it("audit-logs success=true on a successful detection", async () => {
-      (getInstanceSoftware as Mock).mockResolvedValue({
-        domain: "audit-ok.social",
-        detection: "success",
-        software: { name: "mastodon", version: "4.3.2" },
-        protocols: ["activitypub"],
-        openRegistrations: false,
-      });
-      const auditSpy = vi.spyOn(auditLogger, "logToolInvocation").mockImplementation(() => {});
-
-      const tool = registeredTools.get("get-instance-software");
-      await tool?.handler({ domain: "audit-ok.social" });
-
-      expect(auditSpy).toHaveBeenCalledWith(
-        "get-instance-software",
-        { domain: "audit-ok.social" },
-        expect.objectContaining({ success: true }),
-      );
-      auditSpy.mockRestore();
-    });
-
-    it("audit-logs success=false when detection is unavailable", async () => {
-      (getInstanceSoftware as Mock).mockResolvedValue({
-        domain: "audit-bad.social",
-        detection: "unavailable",
-        software: null,
-        protocols: null,
-        openRegistrations: null,
-        reason: "HTTP 404 Not Found",
-      });
-      const auditSpy = vi.spyOn(auditLogger, "logToolInvocation").mockImplementation(() => {});
-
-      const tool = registeredTools.get("get-instance-software");
-      await tool?.handler({ domain: "audit-bad.social" });
-
-      expect(auditSpy).toHaveBeenCalledWith(
-        "get-instance-software",
-        { domain: "audit-bad.social" },
-        expect.objectContaining({ success: false }),
-      );
-      auditSpy.mockRestore();
+      // Content must be wrapped in the untrusted envelope
+      expect(text).toContain("<untrusted-content");
+      expect(text).toContain("</untrusted-content>");
+      // All 1000 x's must be present inside the envelope
+      expect(text).toMatch(/x{900,}/);
     });
   });
 });

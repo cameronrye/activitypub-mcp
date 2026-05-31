@@ -13,6 +13,12 @@ import { RateLimiter } from "../../src/resilience/rate-limiter.js";
 const THIS_FILE = fileURLToPath(import.meta.url);
 const PKG_JSON_PATH = path.resolve(path.dirname(THIS_FILE), "../../package.json");
 
+// Force writes enabled so mutation tools are registered in this test file
+vi.mock("../../src/config.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../src/config.js")>();
+  return { ...actual, ENABLE_WRITES: true };
+});
+
 // Mock dependencies
 vi.mock("../../src/auth/index.js", () => ({
   accountManager: {
@@ -166,13 +172,6 @@ vi.mock("../../src/auth/index.js", () => ({
       id: "scheduled-1",
       scheduled_at: "2024-12-25T10:00:00Z",
     }),
-  },
-}));
-
-vi.mock("../../src/telemetry/performance-monitor.js", () => ({
-  performanceMonitor: {
-    startRequest: vi.fn().mockReturnValue("req-123"),
-    endRequest: vi.fn(),
   },
 }));
 

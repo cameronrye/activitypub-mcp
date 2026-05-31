@@ -132,7 +132,7 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
                 <div class="scenario-step">
                   <h4>Step 1: Use the Comparison Prompt</h4>
                   <p><strong>Ask Claude:</strong></p>
-                  <code>"Use the compare-instances prompt to compare 'fosstodon.org, hachyderm.io, mas.to' with criteria 'community size, technical focus, moderation style'"</code>
+                  <code>"Compare fosstodon.org, hachyderm.io, and mas.to — community size, technical focus, and moderation style"</code>
                   
                   <div class="expected-result">
                     <h5>Expected Result:</h5>
@@ -259,7 +259,7 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
                 <div class="example-flow">
                   <div class="flow-step">
                     <span class="flow-number">1</span>
-                    <p>Use discover-content prompt: <code>"machine learning, computer vision, academic research"</code></p>
+                    <p>Use <code>search</code> with topics like <code>"machine learning, computer vision, academic research"</code></p>
                   </div>
                   <div class="flow-step">
                     <span class="flow-number">2</span>
@@ -286,7 +286,7 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
                 <div class="example-flow">
                   <div class="flow-step">
                     <span class="flow-number">1</span>
-                    <p>Regular instance health checks using health-check tool</p>
+                    <p>Regular instance checks using <code>get-instance-info</code> to monitor statistics and activity</p>
                   </div>
                   <div class="flow-step">
                     <span class="flow-number">2</span>
@@ -342,8 +342,7 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
               <p>Efficiently analyze multiple instances while monitoring performance:</p>
               
               <pre><code>// Example conversation flow
-1. "Use the health-check tool with metrics enabled"
-2. "Get instance info for: mastodon.social, fosstodon.org, hachyderm.io"
+1. "Get instance info for: mastodon.social, fosstodon.org, hachyderm.io"
 3. "Compare their user counts and activity levels"
 4. "Check performance metrics again to see resource usage"</code></pre>
             </div>
@@ -377,12 +376,12 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
             
             <div class="tip">
               <h3>Use Prompts</h3>
-              <p>Leverage the built-in prompts (explore-fediverse, compare-instances, discover-content) for structured exploration.</p>
+              <p>Leverage the built-in prompts (explore-fediverse, summarize-trending, find-experts, compare-accounts, analyze-user-activity) for structured exploration.</p>
             </div>
             
             <div class="tip">
               <h3>Monitor Performance</h3>
-              <p>Use the health-check tool to monitor server performance and rate limiting.</p>
+              <p>Use <code>get-instance-info</code> to inspect instance statistics, and watch request logs for rate limiting signals.</p>
             </div>
           </div>
         </section>

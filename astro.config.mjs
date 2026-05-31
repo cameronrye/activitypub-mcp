@@ -6,6 +6,7 @@ import { defineConfig } from "astro/config";
 export default defineConfig({
   site: "https://cameronrye.github.io",
   base: "/activitypub-mcp",
+  srcDir: "./site",
   integrations: [mdx(), sitemap()],
   markdown: {
     shikiConfig: {

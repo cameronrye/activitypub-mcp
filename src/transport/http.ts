@@ -12,6 +12,8 @@ import { getLogger } from "@logtape/logtape";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import {
+  HTTP_ALLOWED_HOSTS,
+  HTTP_ALLOWED_ORIGINS,
   HTTP_CORS_ENABLED,
   HTTP_CORS_ORIGINS,
   HTTP_HOST,
@@ -20,8 +22,6 @@ import {
   SERVER_NAME,
   SERVER_VERSION,
 } from "../config.js";
-import { healthChecker } from "../telemetry/health-check.js";
-import { performanceMonitor } from "../telemetry/performance-monitor.js";
 import { checkBearerAuth } from "./auth-middleware.js";
 
 const logger = getLogger("activitypub-mcp:http");
@@ -75,36 +75,9 @@ export class HttpTransportServer {
   /**
    * Handle health check endpoint
    */
-  private async handleHealthCheck(res: ServerResponse): Promise<void> {
-    try {
-      const health = await healthChecker.performHealthCheck(true);
-      let statusCode: number;
-      if (health.status === "healthy" || health.status === "degraded") {
-        statusCode = 200;
-      } else {
-        statusCode = 503;
-      }
-
-      res.writeHead(statusCode, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(health, null, 2));
-    } catch {
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ status: "error", error: "Internal server error" }));
-    }
-  }
-
-  /**
-   * Handle metrics endpoint
-   */
-  private handleMetrics(res: ServerResponse): void {
-    try {
-      const metrics = performanceMonitor.getMetrics();
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(metrics, null, 2));
-    } catch {
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Internal server error" }));
-    }
+  private handleHealthCheck(res: ServerResponse): void {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "ok" }));
   }
 
   /**
@@ -121,7 +94,6 @@ export class HttpTransportServer {
           endpoints: {
             mcp: "/mcp",
             health: "/health",
-            metrics: "/metrics",
             info: "/",
           },
         },
@@ -147,17 +119,12 @@ export class HttpTransportServer {
 
     if (this.corsEnabled && this.corsOrigins.includes("*")) {
       logger.warn(
-        "CORS is enabled with wildcard origin '*'. Auth still protects /mcp " +
-          "and /metrics, but explicit origins are strongly recommended.",
+        "CORS is enabled with wildcard origin '*'. Auth still protects /mcp, " +
+          "but explicit origins are strongly recommended.",
       );
     }
 
     return new Promise((resolve, reject) => {
-      // Create the streamable HTTP transport
-      this.transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => crypto.randomUUID(),
-      });
-
       this.server = createServer(async (req, res) => {
         // Track active connections for graceful shutdown
         this.activeConnections.add(res);
@@ -178,13 +145,7 @@ export class HttpTransportServer {
 
         // Route requests
         if (pathname === "/health" || pathname === "/health/") {
-          await this.handleHealthCheck(res);
-          return;
-        }
-
-        if (pathname === "/metrics" || pathname === "/metrics/") {
-          if (!checkBearerAuth(req, res, secret)) return;
-          this.handleMetrics(res);
+          this.handleHealthCheck(res);
           return;
         }
 
@@ -224,20 +185,57 @@ export class HttpTransportServer {
       });
 
       this.server.listen(this.port, this.host, () => {
+        // Resolve the actual bound address so we can populate allowedHosts with
+        // the real port (this.port may be 0 when the OS picks an ephemeral port).
+        const boundAddress = this.server?.address();
+        const actualPort =
+          typeof boundAddress === "object" && boundAddress !== null ? boundAddress.port : this.port;
+
+        // Build the allowed-hosts list using the actual bound port.
+        // Operators binding to a public interface (e.g. 0.0.0.0 or a hostname
+        // other than 127.0.0.1) should set MCP_HTTP_ALLOWED_HOSTS to the
+        // Host value(s) that clients will send (comma-separated).
+        // Both "host" and "host:port" forms are included in the default so
+        // HTTP clients that omit the default-scheme port are still accepted.
+        const allowedHosts = HTTP_ALLOWED_HOSTS.length
+          ? HTTP_ALLOWED_HOSTS
+          : [this.host, `${this.host}:${actualPort}`];
+
+        // Pass corsOrigins to the SDK's allowedOrigins only when they are
+        // concrete origins. A wildcard ("*") is not a valid Origin value and
+        // would cause the SDK to reject every cross-origin request, so we omit
+        // it in that case and let bearer-auth remain the gate.
+        // MCP_HTTP_ALLOWED_ORIGINS takes precedence when set.
+        const hasWildcard = this.corsOrigins.includes("*");
+        const allowedOrigins = HTTP_ALLOWED_ORIGINS.length
+          ? HTTP_ALLOWED_ORIGINS
+          : hasWildcard
+            ? undefined
+            : this.corsOrigins.filter(Boolean).length
+              ? this.corsOrigins.filter(Boolean)
+              : undefined;
+
+        // Create the streamable HTTP transport with DNS-rebinding protection.
+        // The SDK options are marked @deprecated in favour of external middleware,
+        // but they are still fully functional and provide defence-in-depth against
+        // DNS-rebinding attacks at the SDK layer.
+        this.transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => crypto.randomUUID(),
+          enableDnsRebindingProtection: true,
+          allowedHosts,
+          allowedOrigins,
+        });
+
         logger.info("HTTP transport server started", {
           host: this.host,
-          port: this.port,
+          port: actualPort,
           endpoints: {
-            mcp: `http://${this.host}:${this.port}/mcp`,
-            health: `http://${this.host}:${this.port}/health`,
-            metrics: `http://${this.host}:${this.port}/metrics`,
+            mcp: `http://${this.host}:${actualPort}/mcp`,
+            health: `http://${this.host}:${actualPort}/health`,
           },
         });
-        if (this.transport) {
-          resolve(this.transport);
-        } else {
-          reject(new Error("Transport was not initialized"));
-        }
+
+        resolve(this.transport);
       });
     });
   }

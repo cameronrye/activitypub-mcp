@@ -78,14 +78,6 @@ describe("config", () => {
     expect(config.MIN_FETCH_LIMIT).toBe(1);
     expect(config.MAX_INSTANCE_RESULTS).toBe(20);
   });
-
-  it("should have correct health check defaults", async () => {
-    const config = await import("../../src/config.js");
-
-    expect(config.HEALTH_CHECK_TIMEOUT).toBe(5000);
-    expect(config.MEMORY_WARN_THRESHOLD_MB).toBe(500);
-    expect(config.MEMORY_WARN_THRESHOLD_PERCENT).toBe(80);
-  });
 });
 
 describe("Thread traversal config (M3)", () => {
@@ -154,30 +146,5 @@ describe("INSTANCE_SOFTWARE_TTL", () => {
     delete process.env.MCP_INSTANCE_SOFTWARE_TTL_MS;
     const mod = await import("../../src/config.js");
     expect(mod.INSTANCE_SOFTWARE_TTL).toBe(86_400_000);
-  });
-});
-
-describe("HEALTH_CHECK_EXTERNAL_PROBE config (M7)", () => {
-  const originalEnv = process.env;
-
-  beforeEach(() => {
-    vi.resetModules();
-    process.env = { ...originalEnv };
-  });
-
-  afterEach(() => {
-    process.env = originalEnv;
-  });
-
-  it("defaults to true", async () => {
-    delete process.env.HEALTH_CHECK_EXTERNAL_PROBE;
-    const mod = await import("../../src/config.js");
-    expect(mod.HEALTH_CHECK_EXTERNAL_PROBE).toBe(true);
-  });
-
-  it("can be disabled via env", async () => {
-    process.env.HEALTH_CHECK_EXTERNAL_PROBE = "false";
-    const mod = await import("../../src/config.js");
-    expect(mod.HEALTH_CHECK_EXTERNAL_PROBE).toBe(false);
   });
 });

@@ -7,9 +7,13 @@
  * whether the server sent an accurate Content-Length header.
  */
 
+import type { Agent } from "undici";
 import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
 import { instanceBlocklist } from "../policy/instance-blocklist.js";
-import { validateExternalUrl } from "../validation/url.js";
+import { resolveAndPin } from "../validation/url.js";
+
+/** RequestInit augmented with the undici `dispatcher` (not in the DOM types). */
+export type DispatchInit = RequestInit & { dispatcher?: Agent };
 
 /**
  * Fetch wrapper that follows up to `maxHops` redirects, but re-runs the
@@ -24,14 +28,23 @@ import { validateExternalUrl } from "../validation/url.js";
  */
 export async function fetchWithRedirectGuard(
   url: string,
-  init: RequestInit,
-  validate: (target: string) => Promise<void> | void,
+  init: DispatchInit,
+  // biome-ignore lint/suspicious/noConfusingVoidType: validators may return nothing (no re-pin) or an Agent pinned to the next hop
+  validate: (target: string) => Promise<Agent | void> | Agent | void,
   maxHops = 3,
 ): Promise<Response> {
   let currentUrl = url;
+  // The dispatcher pinned for the current hop. Starts from the caller-supplied
+  // init (pinned to the initial URL's validated IP) and is replaced per hop with
+  // the dispatcher the validator returns for the next target.
+  let currentDispatcher = init.dispatcher;
 
   for (let hop = 0; hop <= maxHops; hop++) {
-    const response = await fetch(currentUrl, { ...init, redirect: "manual" });
+    const response = await fetch(currentUrl, {
+      ...init,
+      dispatcher: currentDispatcher,
+      redirect: "manual",
+    } as DispatchInit);
 
     // Not a redirect — return the response as-is.
     if (response.status < 300 || response.status >= 400 || response.status === 304) {
@@ -55,12 +68,45 @@ export async function fetchWithRedirectGuard(
       throw new Error(`Redirect from ${currentUrl} has malformed Location: ${location}`);
     }
 
-    await validate(nextUrl);
+    // Re-validate the next hop. The validator may return a dispatcher pinned to
+    // the next target's validated IP; use it for the next fetch. When it returns
+    // nothing we deliberately drop the previous hop's pinned dispatcher rather
+    // than carrying it over — reusing it would force this hop's connection onto
+    // the prior hop's IP (wrong host). An unpinned fetch re-resolves the new
+    // hostname itself, which is the correct behaviour (e.g. ENOTFOUND fails as
+    // it should) and matches the non-pinning callers' expectations.
+    currentDispatcher = (await validate(nextUrl)) ?? undefined;
     currentUrl = nextUrl;
   }
 
   // Unreachable in practice — the loop either returns or throws.
   throw new Error(`Too many redirects (>${maxHops}) starting at ${url}`);
+}
+
+/**
+ * Outbound fetch with full SSRF protection: resolves + validates + PINS the
+ * connection to a validated IP, re-pinning on every redirect hop so a public
+ * host can't 302 to a private IP. `onHop(target)` runs an optional extra
+ * per-hop check (e.g. operator instance-blocklist) for both the initial URL
+ * and every redirect target; throw from it to reject.
+ *
+ * Note: a fresh undici Agent is created per request and intentionally NOT
+ * closed here — the Response body is streamed to the caller AFTER this returns,
+ * so closing the dispatcher now would abort it. Undici unref()s idle sockets
+ * and closes them after keepAliveTimeout (~4s), so they self-clean.
+ */
+export async function pinnedFetch(
+  url: string,
+  init: DispatchInit,
+  onHop?: (target: string) => Promise<void> | void,
+): Promise<Response> {
+  const { dispatcher } = await resolveAndPin(url);
+  if (onHop) await onHop(url);
+  return fetchWithRedirectGuard(url, { ...init, dispatcher }, async (target) => {
+    const pinned = await resolveAndPin(target);
+    if (onHop) await onHop(target);
+    return pinned.dispatcher;
+  });
 }
 
 export class ResponseTooLargeError extends Error {
@@ -156,13 +202,10 @@ export async function guardedFetch<T = unknown>(
   url: string,
   options: GuardedFetchOptions = {},
 ): Promise<GuardedResponse<T>> {
-  await validateExternalUrl(url);
-  instanceBlocklist.validateNotBlocked(new URL(url).hostname);
-
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? REQUEST_TIMEOUT);
   try {
-    const response = await fetchWithRedirectGuard(
+    const response = await pinnedFetch(
       url,
       {
         method: options.method ?? "GET",
@@ -174,10 +217,8 @@ export async function guardedFetch<T = unknown>(
         body: options.body,
         signal: controller.signal,
       },
-      async (target) => {
-        await validateExternalUrl(target);
-        instanceBlocklist.validateNotBlocked(new URL(target).hostname);
-      },
+      // Operator blocklist on the initial URL and every redirect hop.
+      (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname),
     );
 
     let data: T | undefined;

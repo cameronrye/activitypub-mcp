@@ -5,6 +5,7 @@ import { MisskeyMiAuthStrategy } from "../../src/auth/login/miauth.js";
 
 vi.mock("../../src/validation/url.js", () => ({
   validateExternalUrl: vi.fn().mockResolvedValue(undefined),
+  resolveAndPin: vi.fn().mockResolvedValue({}),
 }));
 
 const server = setupServer();

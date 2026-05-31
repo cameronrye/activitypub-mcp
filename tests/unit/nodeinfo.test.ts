@@ -3,10 +3,22 @@
  */
 
 import { HttpResponse, http } from "msw";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// getInstanceSoftware fetches through guardedFetch → pinnedFetch → resolveAndPin,
+// which performs a real DNS lookup before the (MSW-mocked) fetch. The fake test
+// domains below do not resolve consistently across platforms — on CI Linux/Windows
+// they resolve to something that makes resolveAndPin throw before MSW can intercept,
+// while on macOS they fall through benignly. Mock the resolver so every test domain
+// pins a fixed public IP: resolveAndPin succeeds, MSW intercepts the fetch, and the
+// result is deterministic everywhere. IP-literal and same-host SSRF guards are
+// unaffected (127.0.0.1 is caught as a literal, never reaching this lookup).
+vi.mock("node:dns/promises", () => ({
+  lookup: vi.fn(async () => [{ address: "93.184.216.34", family: 4 }]),
+}));
+
 import {
   clearNodeInfoCache,
-  formatInstanceSoftware,
   getInstanceSoftware,
   NodeInfoDiscoverySchema,
   NodeInfoSchema,
@@ -355,7 +367,10 @@ describe("getInstanceSoftware — SSRF + blocklist", () => {
 
     const info = await getInstanceSoftware("ssrf.social");
     expect(info.detection).toBe("unavailable");
-    expect(info.reason).toMatch(/not allowed|private/i);
+    // A public host pointing its NodeInfo link at a private IP is blocked: the
+    // same-host guard rejects it (127.0.0.1 is not ssrf.social or a subdomain)
+    // before any fetch, which is the SSRF defense for this cross-host case.
+    expect(info.reason).toMatch(/not allowed|private|different host/i);
   });
 
   it("returns unavailable when input domain is blocklisted", async () => {
@@ -371,17 +386,16 @@ describe("getInstanceSoftware — SSRF + blocklist", () => {
     expect(info.reason).toMatch(/block/i);
   });
 
-  it("returns unavailable when discovery URL uses non-https scheme", async () => {
-    // Discovery URL is constructed as https:// so this is enforced by validateExternalUrl
-    // when the user supplies a domain that resolves weirdly. Sanity-check the validator
-    // path runs by checking a domain whose resolution would be blocked.
+  it("returns unavailable when the NodeInfo link uses a non-https scheme", async () => {
+    // Same-host link (passes the subdomain guard) but on a forbidden scheme, so
+    // the https-only SSRF guard inside guardedFetch is the thing that rejects.
     server.use(
       http.get("https://localhost.social/.well-known/nodeinfo", () =>
         HttpResponse.json({
           links: [
             {
               rel: "http://nodeinfo.diaspora.software/ns/schema/2.0",
-              href: "http://example.com/nodeinfo/2.0",
+              href: "http://localhost.social/nodeinfo/2.0",
             },
           ],
         }),
@@ -529,47 +543,5 @@ describe("getInstanceSoftware — same-host check on linked URL", () => {
     const info = await getInstanceSoftware("victim.social");
     expect(info.detection).toBe("unavailable");
     expect(info.reason).toMatch(/different host|cross-host/i);
-  });
-});
-
-describe("formatInstanceSoftware", () => {
-  it("formats a success result as a single human-readable line", () => {
-    const text = formatInstanceSoftware({
-      domain: "mastodon.social",
-      detection: "success",
-      software: { name: "mastodon", version: "4.3.2" },
-      protocols: ["activitypub"],
-      openRegistrations: false,
-    });
-    expect(text).toContain("mastodon.social");
-    expect(text).toContain("Mastodon");
-    expect(text).toContain("4.3.2");
-    expect(text).toContain("activitypub");
-    expect(text).toContain("false");
-  });
-
-  it("formats an unavailable result with the reason", () => {
-    const text = formatInstanceSoftware({
-      domain: "missing.social",
-      detection: "unavailable",
-      software: null,
-      protocols: null,
-      openRegistrations: null,
-      reason: "HTTP 404 Not Found",
-    });
-    expect(text).toMatch(/could not detect/i);
-    expect(text).toContain("missing.social");
-    expect(text).toContain("HTTP 404");
-  });
-
-  it("capitalizes common software names", () => {
-    const text = formatInstanceSoftware({
-      domain: "x.social",
-      detection: "success",
-      software: { name: "pleroma", version: "2.7.0" },
-      protocols: ["activitypub"],
-      openRegistrations: null,
-    });
-    expect(text).toContain("Pleroma");
   });
 });

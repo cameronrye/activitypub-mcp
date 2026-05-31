@@ -3,7 +3,16 @@
  */
 
 import { HttpResponse, http } from "msw";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// The service fetches through resolveAndPin (src/validation/url.ts), which does a
+// real DNS lookup before the MSW-mocked fetch. Mock the resolver so the fetch never
+// depends on real network DNS — it pins a fixed public IP and MSW intercepts,
+// deterministically across platforms.
+vi.mock("node:dns/promises", () => ({
+  lookup: vi.fn(async () => [{ address: "93.184.216.34", family: 4 }]),
+}));
+
 import { DynamicInstanceDiscoveryService } from "../../src/discovery/dynamic-instance-discovery.js";
 import { server } from "../mocks/server.js";
 

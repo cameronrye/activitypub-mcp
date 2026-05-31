@@ -11,10 +11,10 @@ import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { auditLogger } from "../audit/logger.js";
 import { accountManager, authenticatedClient } from "../auth/index.js";
+import { ENABLE_WRITES } from "../config.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
-import { performanceMonitor } from "../telemetry/performance-monitor.js";
 import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
-import { stripHtmlTags } from "../utils/html.js";
+import { wrapUntrusted } from "../utils/untrusted.js";
 import { trackedMcpServer } from "./capabilities.js";
 
 const logger = getLogger("activitypub-mcp:tools-write");
@@ -25,48 +25,40 @@ const logger = getLogger("activitypub-mcp:tools-write");
 export function registerWriteTools(mcpServer: McpServer, rateLimiter: RateLimiter): void {
   trackedMcpServer(mcpServer);
 
-  // Account management tools
+  // Always on: account management + authenticated reads
   registerListAccountsTool(mcpServer);
   registerSwitchAccountTool(mcpServer);
   registerVerifyAccountTool(mcpServer, rateLimiter);
+  registerGetHomeTimelineTool(mcpServer, rateLimiter);
+  registerGetNotificationsTool(mcpServer, rateLimiter);
+  registerGetBookmarksTool(mcpServer, rateLimiter);
+  registerGetFavouritesTool(mcpServer, rateLimiter);
+  registerGetRelationshipTool(mcpServer, rateLimiter);
 
-  // Posting tools
+  if (!ENABLE_WRITES) {
+    logger.info("Write tools disabled (set ACTIVITYPUB_ENABLE_WRITES=true to enable)");
+    return;
+  }
+
+  logger.info("Write tools ENABLED");
+  // Mutations
   registerPostStatusTool(mcpServer, rateLimiter);
   registerReplyToPostTool(mcpServer, rateLimiter);
   registerDeletePostTool(mcpServer, rateLimiter);
-
-  // Interaction tools
   registerBoostPostTool(mcpServer, rateLimiter);
   registerUnboostPostTool(mcpServer, rateLimiter);
   registerFavouritePostTool(mcpServer, rateLimiter);
   registerUnfavouritePostTool(mcpServer, rateLimiter);
   registerBookmarkPostTool(mcpServer, rateLimiter);
   registerUnbookmarkPostTool(mcpServer, rateLimiter);
-
-  // Follow/relationship tools
   registerFollowAccountTool(mcpServer, rateLimiter);
   registerUnfollowAccountTool(mcpServer, rateLimiter);
   registerMuteAccountTool(mcpServer, rateLimiter);
   registerUnmuteAccountTool(mcpServer, rateLimiter);
   registerBlockAccountTool(mcpServer, rateLimiter);
   registerUnblockAccountTool(mcpServer, rateLimiter);
-
-  // Authenticated timeline tools
-  registerGetHomeTimelineTool(mcpServer, rateLimiter);
-  registerGetNotificationsTool(mcpServer, rateLimiter);
-  registerGetBookmarksTool(mcpServer, rateLimiter);
-  registerGetFavouritesTool(mcpServer, rateLimiter);
-
-  // Relationship tools
-  registerGetRelationshipTool(mcpServer, rateLimiter);
-
-  // Poll tools
   registerVoteOnPollTool(mcpServer, rateLimiter);
-
-  // Media tools
   registerUploadMediaTool(mcpServer, rateLimiter);
-
-  // Scheduled posts tools
   registerGetScheduledPostsTool(mcpServer, rateLimiter);
   registerCancelScheduledPostTool(mcpServer, rateLimiter);
   registerUpdateScheduledPostTool(mcpServer, rateLimiter);
@@ -120,6 +112,7 @@ function registerListAccountsTool(mcpServer: McpServer): void {
       title: "List Configured Accounts",
       description: "List all configured authenticated accounts for write operations",
       inputSchema: {},
+      annotations: { readOnlyHint: true },
     },
     async () => {
       const accounts = accountManager.listAccounts();
@@ -188,6 +181,7 @@ function registerSwitchAccountTool(mcpServer: McpServer): void {
           .string()
           .describe("The account ID to switch to (use list-accounts to see IDs)"),
       },
+      annotations: { readOnlyHint: false },
     },
     async ({ accountId }) => {
       const startTime = Date.now();
@@ -251,6 +245,7 @@ function registerVerifyAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
           .optional()
           .describe("The account ID to verify (defaults to active account)"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ accountId }) => {
       requireAuthEnabled();
@@ -290,11 +285,8 @@ function registerVerifyAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("verify-account", { accountId: targetId });
-
       try {
         const info = await accountManager.verifyAccount(targetId);
-        performanceMonitor.endRequest(requestId, true);
 
         if (!info) {
           auditLogger.logToolInvocation("verify-account", auditParams, {
@@ -342,7 +334,6 @@ Run \`activitypub-mcp login ${account.instance}\` to re-authorize.`,
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("verify-account", auditParams, {
           success: false,
@@ -401,6 +392,7 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
           .optional()
           .describe("ISO 8601 datetime to schedule the post (e.g., one hour from now in ISO 8601)"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({
       content,
@@ -443,11 +435,6 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("post-status", {
-        instance: account.instance,
-        visibility,
-      });
-
       try {
         logger.info("Creating post", { instance: account.instance, visibility });
 
@@ -464,7 +451,6 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
           accountId,
         );
 
-        performanceMonitor.endRequest(requestId, true);
         auditLogger.logToolInvocation("post-status", auditParams, {
           success: true,
           duration: Date.now() - startTime,
@@ -476,19 +462,18 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
               type: "text",
               text: `✅ **Post Created!**
 
-📝 ${stripHtmlTags(status.content).slice(0, 200)}${status.content.length > 200 ? "..." : ""}
+📝 ${wrapUntrusted(status.content, `post on ${account.instance}`)}
 
 🆔 ID: ${status.id}
 🔗 ${status.url || status.uri}
 👁️ Visibility: ${status.visibility}
-${status.spoiler_text ? `⚠️ CW: ${status.spoiler_text}` : ""}
+${status.spoiler_text ? `⚠️ CW: ${wrapUntrusted(status.spoiler_text, `content warning on ${account.instance}`)}` : ""}
 
 Posted as @${status.account.username}`,
             },
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = getErrorMessage(error);
         auditLogger.logToolInvocation("post-status", auditParams, {
           success: false,
@@ -532,6 +517,7 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
         spoilerText: z.string().max(500).optional().describe("Content warning"),
         accountId: z.string().optional().describe("Account ID to reply from"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, content, visibility, spoilerText, accountId }) => {
       requireWriteEnabled();
@@ -556,11 +542,6 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("reply-to-post", {
-        instance: account.instance,
-        statusId,
-      });
-
       try {
         const status = await authenticatedClient.createPost(
           {
@@ -572,7 +553,6 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
           accountId,
         );
 
-        performanceMonitor.endRequest(requestId, true);
         auditLogger.logToolInvocation("reply-to-post", auditParams, {
           success: true,
           duration: Date.now() - startTime,
@@ -584,7 +564,7 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
               type: "text",
               text: `✅ **Reply Posted!**
 
-📝 ${stripHtmlTags(status.content).slice(0, 200)}
+📝 ${wrapUntrusted(status.content, `post on ${account.instance}`)}
 
 🆔 ID: ${status.id}
 🔗 ${status.url || status.uri}
@@ -593,7 +573,6 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("reply-to-post", auditParams, {
           success: false,
@@ -626,6 +605,7 @@ function registerDeletePostTool(mcpServer: McpServer, rateLimiter: RateLimiter):
         statusId: z.string().describe("The ID of your post to delete"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
@@ -650,14 +630,8 @@ function registerDeletePostTool(mcpServer: McpServer, rateLimiter: RateLimiter):
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("delete-post", {
-        instance: account.instance,
-        statusId,
-      });
-
       try {
         await authenticatedClient.deletePost(statusId, accountId);
-        performanceMonitor.endRequest(requestId, true);
         auditLogger.logToolInvocation("delete-post", auditParams, {
           success: true,
           duration: Date.now() - startTime,
@@ -674,7 +648,6 @@ Post ${statusId} has been deleted.`,
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("delete-post", auditParams, {
           success: false,
@@ -709,6 +682,7 @@ function registerBoostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter): 
         statusId: z.string().describe("The ID of the post to boost"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
@@ -733,14 +707,8 @@ function registerBoostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter): 
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("boost-post", {
-        instance: account.instance,
-        statusId,
-      });
-
       try {
         const status = await authenticatedClient.boostPost(statusId, accountId);
-        performanceMonitor.endRequest(requestId, true);
         auditLogger.logToolInvocation("boost-post", auditParams, {
           success: true,
           duration: Date.now() - startTime,
@@ -759,7 +727,6 @@ You boosted a post by @${status.account.username}
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("boost-post", auditParams, {
           success: false,
@@ -790,6 +757,7 @@ function registerUnboostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
         statusId: z.string().describe("The ID of the post to unboost"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
@@ -862,6 +830,7 @@ function registerFavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimite
         statusId: z.string().describe("The ID of the post to favourite"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
@@ -936,6 +905,7 @@ function registerUnfavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimi
         statusId: z.string().describe("The ID of the post to unfavourite"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
@@ -1008,6 +978,7 @@ function registerBookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimiter
         statusId: z.string().describe("The ID of the post to bookmark"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
@@ -1082,6 +1053,7 @@ function registerUnbookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimit
         statusId: z.string().describe("The ID of the post to unbookmark"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ statusId, accountId }) => {
       requireWriteEnabled();
@@ -1168,6 +1140,7 @@ function registerFollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
           .describe("Get notifications when this account posts (default: false)"),
         accountId: z.string().optional().describe("Your account ID to follow from"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ acct, showBoosts = true, notify = false, accountId }) => {
       requireWriteEnabled();
@@ -1192,11 +1165,6 @@ function registerFollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("follow-account", {
-        instance: account.instance,
-        acct,
-      });
-
       try {
         // First, lookup the account to get its ID
         const targetAccount = await authenticatedClient.lookupAccount(acct, accountId);
@@ -1206,8 +1174,6 @@ function registerFollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
           { reblogs: showBoosts, notify },
           accountId,
         );
-
-        performanceMonitor.endRequest(requestId, true);
 
         const statusText = relationship.requested
           ? "Follow request sent (awaiting approval)"
@@ -1232,7 +1198,6 @@ function registerFollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("follow-account", auditParams, {
           success: false,
@@ -1263,6 +1228,7 @@ function registerUnfollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimi
         acct: z.string().describe("Account to unfollow (username@instance)"),
         accountId: z.string().optional().describe("Your account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ acct, accountId }) => {
       requireWriteEnabled();
@@ -1345,6 +1311,7 @@ function registerMuteAccountTool(mcpServer: McpServer, rateLimiter: RateLimiter)
           .describe("Mute duration in seconds (0 = indefinite, default: indefinite)"),
         accountId: z.string().optional().describe("Your account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ acct, muteNotifications = true, duration = 0, accountId }) => {
       requireWriteEnabled();
@@ -1425,6 +1392,7 @@ function registerUnmuteAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
         acct: z.string().describe("Account to unmute"),
         accountId: z.string().optional().describe("Your account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ acct, accountId }) => {
       requireWriteEnabled();
@@ -1499,6 +1467,7 @@ function registerBlockAccountTool(mcpServer: McpServer, rateLimiter: RateLimiter
         acct: z.string().describe("Account to block"),
         accountId: z.string().optional().describe("Your account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ acct, accountId }) => {
       requireWriteEnabled();
@@ -1573,6 +1542,7 @@ function registerUnblockAccountTool(mcpServer: McpServer, rateLimiter: RateLimit
         acct: z.string().describe("Account to unblock"),
         accountId: z.string().optional().describe("Your account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ acct, accountId }) => {
       requireWriteEnabled();
@@ -1653,6 +1623,7 @@ function registerGetHomeTimelineTool(mcpServer: McpServer, rateLimiter: RateLimi
         sinceId: z.string().optional().describe("Return posts newer than this ID"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ limit = 20, maxId, sinceId, accountId }) => {
       requireAuthEnabled();
@@ -1686,11 +1657,12 @@ function registerGetHomeTimelineTool(mcpServer: McpServer, rateLimiter: RateLimi
         const postsList = posts
           .slice(0, 15)
           .map((post, i) => {
-            const content = stripHtmlTags(post.content);
-            const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
-            const cw = post.spoiler_text ? `⚠️ CW: ${post.spoiler_text}\n` : "";
+            const content = wrapUntrusted(post.content, `post on ${account.instance}`);
+            const cw = post.spoiler_text
+              ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, `content warning on ${account.instance}`)}\n`
+              : "";
             return `${i + 1}. **@${post.account.acct}**
-   ${cw}${truncated}
+   ${cw}${content}
    ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
           })
           .join("\n\n");
@@ -1763,6 +1735,7 @@ function registerGetNotificationsTool(mcpServer: McpServer, rateLimiter: RateLim
           .describe("Filter by notification types"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ limit = 20, types, accountId }) => {
       requireAuthEnabled();
@@ -1809,7 +1782,7 @@ function registerGetNotificationsTool(mcpServer: McpServer, rateLimiter: RateLim
           .map((n) => {
             const emoji = typeEmoji[n.type] || "🔔";
             const statusPreview = n.status
-              ? `\n   "${stripHtmlTags(n.status.content).slice(0, 100)}..."`
+              ? `\n   ${wrapUntrusted(n.status.content, `notification on ${account.instance}`)}`
               : "";
             return `${emoji} **${n.type}** from @${n.account.acct}${statusPreview}`;
           })
@@ -1861,6 +1834,7 @@ function registerGetBookmarksTool(mcpServer: McpServer, rateLimiter: RateLimiter
         limit: z.number().min(1).max(40).optional().describe("Number of posts (default: 20)"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ limit = 20, accountId }) => {
       requireAuthEnabled();
@@ -1891,10 +1865,9 @@ function registerGetBookmarksTool(mcpServer: McpServer, rateLimiter: RateLimiter
         const bookmarkList = bookmarks
           .slice(0, 15)
           .map((post, i) => {
-            const content = stripHtmlTags(post.content);
-            const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
+            const content = wrapUntrusted(post.content, `post on ${account.instance}`);
             return `${i + 1}. **@${post.account.acct}**
-   ${truncated}`;
+   ${content}`;
           })
           .join("\n\n");
 
@@ -1944,6 +1917,7 @@ function registerGetFavouritesTool(mcpServer: McpServer, rateLimiter: RateLimite
         limit: z.number().min(1).max(40).optional().describe("Number of posts (default: 20)"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ limit = 20, accountId }) => {
       requireAuthEnabled();
@@ -1974,10 +1948,9 @@ function registerGetFavouritesTool(mcpServer: McpServer, rateLimiter: RateLimite
         const favouriteList = favourites
           .slice(0, 15)
           .map((post, i) => {
-            const content = stripHtmlTags(post.content);
-            const truncated = content.length > 200 ? `${content.slice(0, 200)}...` : content;
+            const content = wrapUntrusted(post.content, `post on ${account.instance}`);
             return `${i + 1}. **@${post.account.acct}**
-   ${truncated}`;
+   ${content}`;
           })
           .join("\n\n");
 
@@ -2043,6 +2016,7 @@ function registerGetRelationshipTool(mcpServer: McpServer, rateLimiter: RateLimi
           })
           .optional(),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ acct, accountId }) => {
       requireAuthEnabled();
@@ -2067,17 +2041,10 @@ function registerGetRelationshipTool(mcpServer: McpServer, rateLimiter: RateLimi
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("get-relationship", {
-        instance: account.instance,
-        acct,
-      });
-
       try {
         // First, lookup the account to get its ID
         const targetAccount = await authenticatedClient.lookupAccount(acct, accountId);
         const relationship = await authenticatedClient.getRelationship(targetAccount.id, accountId);
-
-        performanceMonitor.endRequest(requestId, true);
 
         const statusItems = [];
         if (relationship.following) statusItems.push("✅ You follow them");
@@ -2115,7 +2082,6 @@ ${relationship.note ? `\n📝 **Note**: ${relationship.note}` : ""}
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("get-relationship", auditParams, {
           success: false,
@@ -2156,6 +2122,7 @@ function registerVoteOnPollTool(mcpServer: McpServer, rateLimiter: RateLimiter):
           ),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ pollId, choices, accountId }) => {
       requireWriteEnabled();
@@ -2180,15 +2147,8 @@ function registerVoteOnPollTool(mcpServer: McpServer, rateLimiter: RateLimiter):
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("vote-on-poll", {
-        instance: account.instance,
-        pollId,
-        choices,
-      });
-
       try {
         const poll = await authenticatedClient.voteOnPoll(pollId, choices, accountId);
-        performanceMonitor.endRequest(requestId, true);
 
         const optionsList = poll.options
           .map((opt, i) => {
@@ -2230,7 +2190,6 @@ ${expiryText}`,
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("vote-on-poll", auditParams, {
           success: false,
@@ -2290,6 +2249,7 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
           .describe("Focal point Y coordinate (-1 to 1, 0 is center)"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ filePath, description, focusX, focusY, accountId }) => {
       requireWriteEnabled();
@@ -2314,12 +2274,6 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("upload-media", {
-        instance: account.instance,
-        filePath,
-        hasDescription: !!description,
-      });
-
       try {
         // Read the file
         const fs = await import("node:fs/promises");
@@ -2337,7 +2291,6 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
           accountId,
         );
 
-        performanceMonitor.endRequest(requestId, true);
         auditLogger.logToolInvocation("upload-media", auditParams, {
           success: true,
           duration: Date.now() - startTime,
@@ -2365,7 +2318,6 @@ post-status content="Your post" mediaIds=["${media.id}"]
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("upload-media", auditParams, {
           success: false,
@@ -2400,6 +2352,7 @@ function registerGetScheduledPostsTool(mcpServer: McpServer, rateLimiter: RateLi
         limit: z.number().min(1).max(40).optional().describe("Number of posts (default: 20)"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ limit = 20, accountId }) => {
       requireAuthEnabled();
@@ -2424,14 +2377,8 @@ function registerGetScheduledPostsTool(mcpServer: McpServer, rateLimiter: RateLi
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("get-scheduled-posts", {
-        instance: account.instance,
-        limit,
-      });
-
       try {
         const scheduled = await authenticatedClient.getScheduledPosts({ limit }, accountId);
-        performanceMonitor.endRequest(requestId, true);
 
         auditLogger.logToolInvocation("get-scheduled-posts", auditParams, {
           success: true,
@@ -2486,7 +2433,6 @@ ${postsList}
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("get-scheduled-posts", auditParams, {
           success: false,
@@ -2523,6 +2469,7 @@ function registerCancelScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
           })
           .optional(),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ scheduledPostId, accountId }) => {
       requireWriteEnabled();
@@ -2547,14 +2494,8 @@ function registerCancelScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("cancel-scheduled-post", {
-        instance: account.instance,
-        scheduledPostId,
-      });
-
       try {
         await authenticatedClient.cancelScheduledPost(scheduledPostId, accountId);
-        performanceMonitor.endRequest(requestId, true);
         auditLogger.logToolInvocation("cancel-scheduled-post", auditParams, {
           success: true,
           duration: Date.now() - startTime,
@@ -2571,7 +2512,6 @@ The scheduled post \`${scheduledPostId}\` has been canceled and will not be publ
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("cancel-scheduled-post", auditParams, {
           success: false,
@@ -2615,6 +2555,7 @@ function registerUpdateScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
           })
           .optional(),
       },
+      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
     async ({ scheduledPostId, scheduledAt, accountId }) => {
       requireWriteEnabled();
@@ -2639,19 +2580,12 @@ function registerUpdateScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("update-scheduled-post", {
-        instance: account.instance,
-        scheduledPostId,
-        scheduledAt,
-      });
-
       try {
         const updated = await authenticatedClient.updateScheduledPost(
           scheduledPostId,
           scheduledAt,
           accountId,
         );
-        performanceMonitor.endRequest(requestId, true);
         auditLogger.logToolInvocation("update-scheduled-post", auditParams, {
           success: true,
           duration: Date.now() - startTime,
@@ -2670,7 +2604,6 @@ Post \`${scheduledPostId}\` is now scheduled for: **${newDate}**`,
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("update-scheduled-post", auditParams, {
           success: false,

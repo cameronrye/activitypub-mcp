@@ -7,8 +7,7 @@
 import { z } from "zod";
 import { MAX_RESPONSE_SIZE, USER_AGENT } from "../../config.js";
 import { instanceBlocklist } from "../../policy/instance-blocklist.js";
-import { fetchWithRedirectGuard, readJsonWithLimit } from "../../utils/fetch-helpers.js";
-import { validateExternalUrl } from "../../validation/url.js";
+import { pinnedFetch, readJsonWithLimit } from "../../utils/fetch-helpers.js";
 import type { AccountCredentials } from "../account-manager.js";
 import {
   type AccountInfo,
@@ -254,10 +253,10 @@ export class MastodonWriteAdapter implements WriteAdapter {
     if (options?.focus) formData.append("focus", `${options.focus.x},${options.focus.y}`);
 
     const url = `https://${account.instance}/api/v2/media`;
-    await validateExternalUrl(url);
-    instanceBlocklist.validateNotBlocked(account.instance);
-
-    const response = await fetchWithRedirectGuard(
+    // pinnedFetch resolves + validates + pins the connection's IP and re-pins
+    // every redirect hop (closes the DNS-rebinding TOCTOU). The onHop callback
+    // applies the operator blocklist on the initial URL and each redirect hop.
+    const response = await pinnedFetch(
       url,
       {
         method: "POST",
@@ -268,10 +267,7 @@ export class MastodonWriteAdapter implements WriteAdapter {
         },
         body: formData,
       },
-      async (target) => {
-        await validateExternalUrl(target);
-        instanceBlocklist.validateNotBlocked(new URL(target).hostname);
-      },
+      (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname),
     );
     if (!response.ok) {
       const errorText = await response.text();

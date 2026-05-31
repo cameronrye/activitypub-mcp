@@ -40,7 +40,7 @@ function parseBoolEnv(value: string | undefined, defaultValue: boolean): boolean
 export const SERVER_NAME = process.env.MCP_SERVER_NAME || "activitypub-mcp";
 
 /** MCP Server version */
-export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "2.2.0";
+export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "3.0.0";
 
 /**
  * Directory for the persisted credential store (accounts.json).
@@ -121,44 +121,6 @@ export const MIN_FETCH_LIMIT = 1;
 export const MAX_INSTANCE_RESULTS = 20;
 
 // =============================================================================
-// Health Check Configuration
-// =============================================================================
-
-/** Health check network timeout in milliseconds */
-export const HEALTH_CHECK_TIMEOUT = parseIntEnv(process.env.HEALTH_CHECK_TIMEOUT, 5000);
-
-/** URL to use for network connectivity health checks */
-export const HEALTH_CHECK_URL =
-  process.env.HEALTH_CHECK_URL || "https://mastodon.social/.well-known/nodeinfo";
-
-/** Memory usage threshold for health warning (in MB) */
-export const MEMORY_WARN_THRESHOLD_MB = parseIntEnv(process.env.MEMORY_WARN_THRESHOLD_MB, 500);
-
-/** Memory usage percentage threshold for health warning */
-export const MEMORY_WARN_THRESHOLD_PERCENT = parseIntEnv(
-  process.env.MEMORY_WARN_THRESHOLD_PERCENT,
-  80,
-);
-
-/**
- * Whether to perform the outbound network connectivity probe in health checks.
- * Default: true. Set to false to skip the external probe (useful when the
- * server runs in an air-gapped environment or under strict outbound network
- * policies).
- */
-export const HEALTH_CHECK_EXTERNAL_PROBE = parseBoolEnv(
-  process.env.HEALTH_CHECK_EXTERNAL_PROBE,
-  true,
-);
-
-// =============================================================================
-// Performance Monitoring Configuration
-// =============================================================================
-
-/** Maximum request history entries to keep */
-export const MAX_REQUEST_HISTORY = parseIntEnv(process.env.MAX_REQUEST_HISTORY, 1000);
-
-// =============================================================================
 // Thread Traversal Configuration (M3)
 // =============================================================================
 
@@ -208,6 +170,38 @@ export const HTTP_CORS_ORIGINS = process.env.MCP_HTTP_CORS_ORIGINS ?? "";
  * stdio transport ignores this value.
  */
 export const HTTP_SECRET = process.env.MCP_HTTP_SECRET || "";
+
+/**
+ * Optional explicit Host allowlist for HTTP DNS-rebinding protection
+ * (comma-separated). Empty → auto-derive from host:port.
+ * Set MCP_HTTP_ALLOWED_HOSTS to the Host value(s) clients send when binding
+ * to a public interface (e.g. 0.0.0.0 or a hostname other than 127.0.0.1).
+ */
+export const HTTP_ALLOWED_HOSTS = (process.env.MCP_HTTP_ALLOWED_HOSTS ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+/**
+ * Optional explicit Origin allowlist for HTTP DNS-rebinding protection
+ * (comma-separated). Empty → derive from CORS origins.
+ */
+export const HTTP_ALLOWED_ORIGINS = (process.env.MCP_HTTP_ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+// =============================================================================
+// Write Authorization
+// =============================================================================
+
+/**
+ * Master switch for mutation tools (post, reply, delete, boost, follow, block,
+ * etc.). Default: false. When false, mutation tools are NOT registered at all,
+ * so prompt-injected content cannot name a tool that does not exist. Read tools
+ * (public and authenticated) are unaffected.
+ */
+export const ENABLE_WRITES = parseBoolEnv(process.env.ACTIVITYPUB_ENABLE_WRITES, false);
 
 // =============================================================================
 // Dynamic Instance Discovery Configuration

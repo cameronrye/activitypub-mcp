@@ -51,7 +51,7 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
             </svg>
           </div>
           <h3>HTTP Secret Required</h3>
-          <p>HTTP transport now refuses to start without <code>MCP_HTTP_SECRET</code>. Bearer-token auth gates <code>/mcp</code> and <code>/metrics</code>; CORS defaults to empty.</p>
+          <p>HTTP transport requires <code>MCP_HTTP_SECRET</code>. Bearer-token auth gates <code>/mcp</code>; <code>/health</code> stays open for liveness probes. The <code>/metrics</code> endpoint was removed in v3.</p>
         </div>
 
         <div class="new-feature-card highlight">

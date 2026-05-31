@@ -16,9 +16,8 @@ import {
   REQUEST_TIMEOUT,
   USER_AGENT,
 } from "../config.js";
-import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { pinnedFetch, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
-import { validateExternalUrl } from "../validation/url.js";
 
 const logger = getLogger("activitypub-mcp:discovery");
 
@@ -259,9 +258,6 @@ export class DynamicInstanceDiscoveryService {
       url.searchParams.set("offset", options.offset.toString());
     }
 
-    // Validate URL for SSRF protection
-    await validateExternalUrl(url.toString());
-
     logger.info("Fetching instances from instances.social", { url: url.toString() });
 
     const controller = new AbortController();
@@ -278,14 +274,12 @@ export class DynamicInstanceDiscoveryService {
         headers.Authorization = `Bearer ${this.apiToken}`;
       }
 
-      const response = await fetchWithRedirectGuard(
-        url.toString(),
-        {
-          headers,
-          signal: controller.signal,
-        },
-        (target) => validateExternalUrl(target),
-      );
+      // pinnedFetch resolves + validates + pins the connection's IP and re-pins
+      // every redirect hop (closes the DNS-rebinding TOCTOU).
+      const response = await pinnedFetch(url.toString(), {
+        headers,
+        signal: controller.signal,
+      });
 
       clearTimeout(timeoutId);
 
@@ -345,29 +339,24 @@ export class DynamicInstanceDiscoveryService {
       }
     }`;
 
-    // Validate URL for SSRF protection
-    await validateExternalUrl(DynamicInstanceDiscoveryService.FEDIVERSE_OBSERVER_API);
-
     logger.info("Fetching instances from Fediverse Observer", { software: options.software });
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
     try {
-      const response = await fetchWithRedirectGuard(
-        DynamicInstanceDiscoveryService.FEDIVERSE_OBSERVER_API,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            "User-Agent": USER_AGENT,
-          },
-          body: JSON.stringify({ query }),
-          signal: controller.signal,
+      // pinnedFetch resolves + validates + pins the connection's IP and re-pins
+      // every redirect hop (closes the DNS-rebinding TOCTOU).
+      const response = await pinnedFetch(DynamicInstanceDiscoveryService.FEDIVERSE_OBSERVER_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "User-Agent": USER_AGENT,
         },
-        (target) => validateExternalUrl(target),
-      );
+        body: JSON.stringify({ query }),
+        signal: controller.signal,
+      });
 
       clearTimeout(timeoutId);
 

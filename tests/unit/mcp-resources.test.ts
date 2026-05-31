@@ -41,6 +41,18 @@ vi.mock("../../src/discovery/nodeinfo.js", () => ({
 import { remoteClient } from "../../src/activitypub/remote-client.js";
 import { getInstanceSoftware } from "../../src/discovery/nodeinfo.js";
 
+/**
+ * Strip the <untrusted-content> envelope and parse the inner JSON.
+ * Remote resource bodies are now wrapped; server-info is not.
+ */
+function parseWrapped(text: string): unknown {
+  const match = text.match(/^<untrusted-content[^>]*>\n([\s\S]*)\n<\/untrusted-content>$/);
+  if (match) {
+    return JSON.parse(match[1]);
+  }
+  return JSON.parse(text);
+}
+
 describe("MCP Resources", () => {
   let mcpServer: McpServer;
   let rateLimiter: RateLimiter;
@@ -149,8 +161,9 @@ describe("MCP Resources", () => {
 
       const contents = (result as { contents: { text: string }[] }).contents;
       expect(contents).toHaveLength(1);
+      expect(contents[0].text).toContain("<untrusted-content");
 
-      const actor = JSON.parse(contents[0].text);
+      const actor = parseWrapped(contents[0].text) as Record<string, unknown>;
       expect(actor.preferredUsername).toBe("testuser");
       expect(remoteClient.fetchRemoteActor).toHaveBeenCalledWith("testuser@example.social");
     });
@@ -192,9 +205,9 @@ describe("MCP Resources", () => {
       const result = await resource?.handler(uri, { identifier: "testuser@example.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
-      const timeline = JSON.parse(contents[0].text);
+      const timeline = parseWrapped(contents[0].text) as Record<string, unknown>;
       expect(timeline.type).toBe("OrderedCollection");
-      expect(timeline.orderedItems).toHaveLength(1);
+      expect((timeline.orderedItems as unknown[]).length).toBe(1);
     });
 
     it("should throw error when timeline is null", async () => {
@@ -218,8 +231,8 @@ describe("MCP Resources", () => {
       const result = await resource?.handler(uri, { identifier: "testuser@example.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
-      const timeline = JSON.parse(contents[0].text);
-      expect(timeline.orderedItems).toHaveLength(1);
+      const timeline = parseWrapped(contents[0].text) as Record<string, unknown>;
+      expect((timeline.orderedItems as unknown[]).length).toBe(1);
     });
   });
 
@@ -235,7 +248,7 @@ describe("MCP Resources", () => {
       const result = await resource?.handler(uri, { identifier: "testuser@example.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
-      const followers = JSON.parse(contents[0].text);
+      const followers = parseWrapped(contents[0].text) as Record<string, unknown>;
       expect(followers.totalItems).toBe(100);
       expect(remoteClient.fetchActorFollowers).toHaveBeenCalledWith("testuser@example.social", 20);
     });
@@ -253,7 +266,7 @@ describe("MCP Resources", () => {
       const result = await resource?.handler(uri, { identifier: "testuser@example.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
-      const following = JSON.parse(contents[0].text);
+      const following = parseWrapped(contents[0].text) as Record<string, unknown>;
       expect(following.totalItems).toBe(50);
       expect(remoteClient.fetchActorFollowing).toHaveBeenCalledWith("testuser@example.social", 20);
     });
@@ -273,7 +286,7 @@ describe("MCP Resources", () => {
       const result = await resource?.handler(uri, { domain: "mastodon.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
-      const instanceInfo = JSON.parse(contents[0].text);
+      const instanceInfo = parseWrapped(contents[0].text) as Record<string, unknown>;
       expect(instanceInfo.domain).toBe("mastodon.social");
       expect(instanceInfo.uri).toBe("https://mastodon.social");
     });
@@ -304,11 +317,14 @@ describe("MCP Resources", () => {
       const uri = new URL("activitypub://instance-info/enriched.social");
       const result = await resource?.handler(uri, { domain: "enriched.social" });
 
-      const body = JSON.parse((result as { contents: { text: string }[] }).contents[0].text);
+      const body = parseWrapped(
+        (result as { contents: { text: string }[] }).contents[0].text,
+      ) as Record<string, unknown>;
       expect(body.software).toBeDefined();
-      expect(body.software.detection).toBe("success");
-      expect(body.software.software.name).toBe("mastodon");
-      expect(body.software.software.version).toBe("4.3.2");
+      const sw = body.software as Record<string, unknown>;
+      expect(sw.detection).toBe("success");
+      expect((sw.software as Record<string, unknown>).name).toBe("mastodon");
+      expect((sw.software as Record<string, unknown>).version).toBe("4.3.2");
     });
 
     it("returns successfully with software=unavailable when detection fails", async () => {
@@ -329,10 +345,13 @@ describe("MCP Resources", () => {
       const uri = new URL("activitypub://instance-info/noinfo.social");
       const result = await resource?.handler(uri, { domain: "noinfo.social" });
 
-      const body = JSON.parse((result as { contents: { text: string }[] }).contents[0].text);
+      const body = parseWrapped(
+        (result as { contents: { text: string }[] }).contents[0].text,
+      ) as Record<string, unknown>;
       expect(body.software).toBeDefined();
-      expect(body.software.detection).toBe("unavailable");
-      expect(body.software.reason).toMatch(/404/);
+      const sw = body.software as Record<string, unknown>;
+      expect(sw.detection).toBe("unavailable");
+      expect(sw.reason as string).toMatch(/404/);
     });
   });
 
@@ -350,9 +369,9 @@ describe("MCP Resources", () => {
       const result = await resource?.handler(uri, { domain: "mastodon.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
-      const trending = JSON.parse(contents[0].text);
-      expect(trending.hashtags).toHaveLength(1);
-      expect(trending.posts).toHaveLength(1);
+      const trending = parseWrapped(contents[0].text) as Record<string, unknown>;
+      expect((trending.hashtags as unknown[]).length).toBe(1);
+      expect((trending.posts as unknown[]).length).toBe(1);
       expect(trending.domain).toBe("mastodon.social");
     });
 
@@ -367,10 +386,10 @@ describe("MCP Resources", () => {
       const result = await resource?.handler(uri, { domain: "mastodon.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
-      const trending = JSON.parse(contents[0].text);
+      const trending = parseWrapped(contents[0].text) as Record<string, unknown>;
       expect(trending.hashtags).toEqual([]);
-      expect(trending.posts).toHaveLength(1);
-      expect(trending.errors.hashtags).toContain("Hashtags failed");
+      expect((trending.posts as unknown[]).length).toBe(1);
+      expect((trending.errors as Record<string, string>).hashtags).toContain("Hashtags failed");
     });
   });
 
@@ -387,9 +406,9 @@ describe("MCP Resources", () => {
       const result = await resource?.handler(uri, { domain: "mastodon.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
-      const timeline = JSON.parse(contents[0].text);
+      const timeline = parseWrapped(contents[0].text) as Record<string, unknown>;
       expect(timeline.type).toBe("local");
-      expect(timeline.posts).toHaveLength(1);
+      expect((timeline.posts as unknown[]).length).toBe(1);
       expect(timeline.hasMore).toBe(true);
     });
   });
@@ -406,9 +425,9 @@ describe("MCP Resources", () => {
       const result = await resource?.handler(uri, { domain: "mastodon.social" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
-      const timeline = JSON.parse(contents[0].text);
+      const timeline = parseWrapped(contents[0].text) as Record<string, unknown>;
       expect(timeline.type).toBe("federated");
-      expect(timeline.posts).toHaveLength(1);
+      expect((timeline.posts as unknown[]).length).toBe(1);
     });
   });
 
@@ -426,9 +445,9 @@ describe("MCP Resources", () => {
       const result = await resource?.handler(uri, { domain: "mastodon.social", statusId: "123" });
 
       const contents = (result as { contents: { text: string }[] }).contents;
-      const thread = JSON.parse(contents[0].text);
-      expect(thread.post.content).toBe("Original post");
-      expect(thread.replies).toHaveLength(1);
+      const thread = parseWrapped(contents[0].text) as Record<string, unknown>;
+      expect((thread.post as Record<string, unknown>).content).toBe("Original post");
+      expect((thread.replies as unknown[]).length).toBe(1);
     });
 
     it("should construct the correct Mastodon URL from {domain}/{statusId}", async () => {
@@ -477,7 +496,7 @@ describe("MCP Resources", () => {
 
       expect(result).toBeDefined();
       const contents = (result as { contents: { text: string }[] }).contents;
-      const thread = JSON.parse(contents[0].text);
+      const thread = parseWrapped(contents[0].text) as Record<string, unknown>;
       expect(thread.postUrl).toBe("https://mastodon.social/web/statuses/123456");
     });
 

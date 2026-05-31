@@ -4,7 +4,6 @@ import { CACHE_MAX_SIZE, INSTANCE_SOFTWARE_TTL } from "../config.js";
 import { instanceBlocklist } from "../policy/instance-blocklist.js";
 import { guardedFetch } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
-import { validateExternalUrl } from "../validation/url.js";
 
 /**
  * NodeInfo discovery document (RFC-style `/.well-known/nodeinfo` index).
@@ -131,7 +130,9 @@ async function performDetection(domain: string): Promise<InstanceSoftwareInfo> {
   instanceBlocklist.validateNotBlocked(domain);
 
   const discoveryUrl = `https://${domain}/.well-known/nodeinfo`;
-  await validateExternalUrl(discoveryUrl);
+  // The fetch goes through guardedFetch, which resolves + validates + pins the
+  // IP onto the connection and re-pins each redirect hop (closes the
+  // DNS-rebinding TOCTOU). No separate pre-validation needed here.
   const discoveryDoc = await fetchJson(discoveryUrl);
   const discovery = NodeInfoDiscoverySchema.parse(discoveryDoc);
 
@@ -140,8 +141,8 @@ async function performDetection(domain: string): Promise<InstanceSoftwareInfo> {
     throw new Error("no NodeInfo 2.0/2.1 link in discovery document");
   }
 
-  // SSRF guard + same-host + blocklist on the linked NodeInfo URL.
-  await validateExternalUrl(link.href);
+  // Same-host + blocklist gate on the linked NodeInfo URL before fetching it.
+  // guardedFetch then resolves + validates + pins the IP on the real fetch.
   const linkedHost = new URL(link.href).hostname.toLowerCase();
   if (!isSameOrSubdomain(domain, linkedHost)) {
     throw new Error(
@@ -178,33 +179,6 @@ function pickHighestNodeInfo2Link(
     if (match) return match;
   }
   return undefined;
-}
-
-function titleCase(name: string): string {
-  if (!name) return name;
-  return name.charAt(0).toUpperCase() + name.slice(1);
-}
-
-export function formatInstanceSoftware(info: InstanceSoftwareInfo): string {
-  if (info.detection === "unavailable") {
-    return `Could not detect software for \`${info.domain}\`: ${info.reason ?? "unknown reason"}.`;
-  }
-  const software = info.software;
-  const protocols = info.protocols ?? [];
-  const openReg = info.openRegistrations;
-  const parts: string[] = [];
-  if (software) {
-    parts.push(`\`${info.domain}\` runs **${titleCase(software.name)} ${software.version}**.`);
-  } else {
-    parts.push(`\`${info.domain}\` software metadata unavailable.`);
-  }
-  if (protocols.length > 0) {
-    parts.push(`Protocols: ${protocols.join(", ")}.`);
-  }
-  if (openReg !== null) {
-    parts.push(`Open registrations: ${openReg}.`);
-  }
-  return parts.join(" ");
 }
 
 async function fetchJson(url: string): Promise<unknown> {

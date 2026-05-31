@@ -85,7 +85,7 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
                 
                 <div class="example">
                   <h4>Compare Instances</h4>
-                  <p>Use the compare-instances prompt: "Compare mastodon.social and fosstodon.org"</p>
+                  <p>Ask Claude: "Compare mastodon.social and fosstodon.org — size, focus, moderation policies"</p>
                   <div class="example-result">
                     <strong>What you'll learn:</strong> Differences in size, focus, policies, and community culture
                   </div>
@@ -220,33 +220,6 @@ Instance Type: "any"</code></pre>
               </div>
             </div>
 
-            <div class="prompt-guide">
-              <h3>compare-instances</h3>
-              <p>Get detailed comparisons between fediverse instances:</p>
-              <div class="prompt-details">
-                <h4>Parameters:</h4>
-                <ul>
-                  <li><code>instances</code>: Comma-separated list of domains (required)</li>
-                  <li><code>criteria</code>: Specific comparison criteria (optional)</li>
-                </ul>
-                <h4>Example Usage:</h4>
-                <pre><code>Ask Claude: "Use the compare-instances prompt to compare 'mastodon.social, fosstodon.org, hachyderm.io' with criteria 'community size, moderation policies, technical focus'"</code></pre>
-              </div>
-            </div>
-
-            <div class="prompt-guide">
-              <h3>discover-content</h3>
-              <p>Find interesting content and people based on topics:</p>
-              <div class="prompt-details">
-                <h4>Parameters:</h4>
-                <ul>
-                  <li><code>topics</code>: Comma-separated topics to explore (required)</li>
-                  <li><code>contentType</code>: Type of content to discover (optional)</li>
-                </ul>
-                <h4>Example Usage:</h4>
-                <pre><code>Ask Claude: "Use the discover-content prompt with topics 'machine learning, AI ethics' and content type 'people'"</code></pre>
-              </div>
-            </div>
           </div>
         </section>
 

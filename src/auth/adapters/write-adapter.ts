@@ -11,8 +11,7 @@ import { z } from "zod";
 import { REQUEST_TIMEOUT, USER_AGENT } from "../../config.js";
 import { instanceBlocklist } from "../../policy/instance-blocklist.js";
 import { TokenRejectedError } from "../../utils/errors.js";
-import { fetchWithRedirectGuard } from "../../utils/fetch-helpers.js";
-import { validateExternalUrl } from "../../validation/url.js";
+import { pinnedFetch } from "../../utils/fetch-helpers.js";
 import type { AccountCredentials } from "../account-manager.js";
 
 export type PostVisibility = "public" | "unlisted" | "private" | "direct";
@@ -200,14 +199,15 @@ export async function authenticatedFetch(
   options: RequestInit = {},
 ): Promise<Response> {
   const url = `https://${account.instance}${endpoint}`;
-  await validateExternalUrl(url);
-  instanceBlocklist.validateNotBlocked(account.instance);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
   try {
-    const response = await fetchWithRedirectGuard(
+    // pinnedFetch resolves + validates + pins the connection's IP and re-pins
+    // every redirect hop (closes the DNS-rebinding TOCTOU). The onHop callback
+    // applies the operator blocklist on the initial URL and each redirect hop.
+    const response = await pinnedFetch(
       url,
       {
         ...options,
@@ -220,10 +220,7 @@ export async function authenticatedFetch(
           ...options.headers,
         },
       },
-      async (target) => {
-        await validateExternalUrl(target);
-        instanceBlocklist.validateNotBlocked(new URL(target).hostname);
-      },
+      (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname),
     );
     clearTimeout(timeoutId);
     if (response.status === 401) {
