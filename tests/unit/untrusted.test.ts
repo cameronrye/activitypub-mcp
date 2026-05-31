@@ -34,8 +34,10 @@ describe("wrapUntrusted", () => {
     expect(wrapUntrusted("", "bio")).toBe("(empty)");
     expect(wrapUntrusted("   ", "bio")).toBe("(empty)");
   });
+});
 
-  it("wrapUntrustedBlock fences a serialized body without HTML stripping", () => {
+describe("wrapUntrustedBlock", () => {
+  it("fences a serialized body without HTML stripping", () => {
     const json = '{"content":"<b>keep tags</b>"}';
     const out = wrapUntrustedBlock(json, "remote-actor/alice@x.test");
     expect(out).toContain('<untrusted-content source="remote-actor/alice@x.test">');

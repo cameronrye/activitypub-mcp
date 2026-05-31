@@ -14,17 +14,15 @@ import { stripHtmlTags } from "./html.js";
 
 const OPEN_PREFIX = "<untrusted-content";
 const CLOSE_TAG = "</untrusted-content>";
-// Zero-width space (U+200B) — kept as a named constant for documentation
-// purposes; the defang function uses &lt; to break forged delimiters so the
-// result is not parsed as an HTML tag by the HTML stripper downstream.
-const ZWSP = "​";
 
+// defang() replaces the literal delimiter strings with an &lt;-prefixed form
+// BEFORE HTML stripping. A zero-width space after "<" is insufficient: the
+// /<[^>]*>/g stripper still matches "<​untrusted-content>" and would erase a
+// forged tag entirely, collapsing the payload to "(empty)".
 /** Break any literal envelope delimiters inside attacker-supplied text. */
 function defang(text: string): string {
-  // Replace < with &lt; so the tag pattern is broken and survives stripHtmlTags.
-  // The ZWSP is preserved in the constant for reference but &lt; is used here
-  // because <ZWSP...> is still matched by the /<[^>]*>/g stripper.
-  void ZWSP;
+  // We only neutralize the canonical lowercase delimiters; a differently-cased
+  // forgery like <UNTRUSTED-CONTENT> cannot close our lowercase </untrusted-content>.
   return text
     .replaceAll(OPEN_PREFIX, "&lt;untrusted-content")
     .replaceAll(CLOSE_TAG, "&lt;/untrusted-content>");
@@ -36,7 +34,7 @@ function safeLabel(source: string): string {
     .replaceAll('"', "'")
     .replace(/\s+/g, " ")
     .trim()
-    .slice(0, 120);
+    .slice(0, 120); // keep the attribute value bounded
 }
 
 /**
