@@ -85,11 +85,16 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
         </section>
 
         <section class="config-section">
-          <h2>HTTP Transport (v2)</h2>
+          <h2>HTTP Transport</h2>
           <p>
             Used only when <code>MCP_TRANSPORT_MODE=http</code> is set. The default stdio transport
-            (used by Claude Desktop and Cursor) ignores all of these. In v2, the HTTP transport
+            (used by Claude Desktop and Cursor) ignores all of these. The HTTP transport
             <strong>refuses to start</strong> without <code>MCP_HTTP_SECRET</code>.
+          </p>
+          <p>
+            In v3, the HTTP server exposes two endpoints: <code>/mcp</code> (Bearer-auth required) and <code>/health</code>
+            (unauthenticated liveness probe returning <code>{"{"}"status":"ok"{"}"}</code>). The <code>/metrics</code> endpoint
+            was removed in v3.
           </p>
           <div class="config-table">
             <table>
@@ -120,23 +125,23 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
                   <td><code>MCP_HTTP_SECRET</code></td>
                   <td><em>none — required</em></td>
                   <td>
-                    Bearer-token secret for <code>/mcp</code> and <code>/metrics</code>. 32+ random chars recommended.
+                    Bearer-token secret for the <code>/mcp</code> endpoint. 32+ random chars recommended.
                     Generate with <code>node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"</code>.
                     Requests must include <code>Authorization: Bearer &lt;secret&gt;</code>. The <code>/health</code> endpoint stays unauthenticated.
                   </td>
                 </tr>
                 <tr>
-                  <td><code>MCP_HTTP_CORS_ORIGINS</code></td>
+                  <td><code>MCP_HTTP_ALLOWED_HOSTS</code></td>
                   <td><em>empty</em></td>
-                  <td>Comma-separated CORS origins. v2 default is empty (no origins allowed); set explicitly for browser clients.</td>
+                  <td>Comma-separated allowed <code>Host</code> header values. Used to prevent DNS-rebinding attacks. Leave empty to allow all hosts (not recommended for public deployments).</td>
+                </tr>
+                <tr>
+                  <td><code>MCP_HTTP_ALLOWED_ORIGINS</code></td>
+                  <td><em>empty</em></td>
+                  <td>Comma-separated CORS origins. Default is empty (no origins allowed); set explicitly for browser clients.</td>
                 </tr>
               </tbody>
             </table>
-          </div>
-          <div class="callout callout-warn">
-            <strong>Migrating from v1?</strong> Set <code>MCP_HTTP_SECRET</code> before upgrading, and set
-            <code>MCP_HTTP_CORS_ORIGINS</code> explicitly if you relied on the v1 <code>"*"</code> default.
-            See <a href="https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v2.md">MIGRATION-v2.md</a>.
           </div>
         </section>
 
@@ -183,10 +188,37 @@ ACTIVITYPUB_ACCOUNTS=work|fosstodon.org|TOKEN1|me|Work,home|mastodon.social|TOKE
         </section>
 
         <section class="config-section">
-          <h2>Health Check (v2)</h2>
+          <h2>Write Tool Access</h2>
           <p>
-            The legacy <code>HEALTH_CHECK_ENABLED</code> env var was removed in v2 (it was dead code in v1).
-            Use <code>HEALTH_CHECK_EXTERNAL_PROBE</code> to gate only the outbound mastodon.social connectivity probe — useful for air-gapped environments.
+            By default, the server registers only read-only tools. Write tools (posting, following, boosting, etc.) are
+            gated behind <code>ACTIVITYPUB_ENABLE_WRITES</code>. This is the primary safety switch for deployments
+            where the MCP client should not be able to mutate fediverse state.
+          </p>
+          <div class="config-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Default</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>ACTIVITYPUB_ENABLE_WRITES</code></td>
+                  <td><code>false</code></td>
+                  <td>Set to <code>true</code> to register write tools (post-status, reply-to-post, follow-account, boost-post, etc.). Also requires <code>ACTIVITYPUB_ACCOUNTS</code> to be configured.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="config-section">
+          <h2>Health &amp; Connectivity</h2>
+          <p>
+            The <code>/health</code> HTTP endpoint returns a trivial liveness response (<code>{"{"}"status":"ok"{"}"}</code>) and does not require authentication.
+            Use <code>HEALTH_CHECK_EXTERNAL_PROBE</code> to gate the optional outbound connectivity probe.
           </p>
           <div class="config-table">
             <table>
@@ -201,7 +233,7 @@ ACTIVITYPUB_ACCOUNTS=work|fosstodon.org|TOKEN1|me|Work,home|mastodon.social|TOKE
                 <tr>
                   <td><code>HEALTH_CHECK_EXTERNAL_PROBE</code></td>
                   <td><code>true</code></td>
-                  <td>Set to <code>false</code> to skip the outbound mastodon.social connectivity check.</td>
+                  <td>Set to <code>false</code> to skip the outbound mastodon.social connectivity check. Useful for air-gapped environments.</td>
                 </tr>
               </tbody>
             </table>
@@ -385,10 +417,10 @@ npx @modelcontextprotocol/inspector
                 </div>
 
                 <div class="validation-command">
-                  <h4>Test Health Check</h4>
-                  <p>Use the health-check tool to verify functionality:</p>
+                  <h4>Test Connectivity</h4>
+                  <p>Try discovering an actor to verify outbound connectivity:</p>
                   <pre><code># In Claude Desktop or MCP Inspector
-health-check --includeMetrics true</code></pre>
+discover-actor @mastodon@mastodon.social</code></pre>
                 </div>
 
                 <div class="validation-command">

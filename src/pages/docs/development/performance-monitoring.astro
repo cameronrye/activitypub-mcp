@@ -55,11 +55,11 @@ const description =
         <div class="monitoring-setup">
           <div class="setup-card">
             <h3>Built-in Monitoring</h3>
-            <p>The server includes built-in performance monitoring accessible via the health-check tool:</p>
-            <pre><code># Check server performance
-health-check
+            <p>The server exposes a liveness endpoint and an MCP resource for server metadata:</p>
+            <pre><code># HTTP liveness probe (no auth required)
+curl http://localhost:3000/health
 
-# Access performance data via resource
+# Access server metadata via MCP resource
 activitypub://server-info</code></pre>
             
             <h4>Available Metrics:</h4>
