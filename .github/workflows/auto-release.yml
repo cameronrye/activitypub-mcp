@@ -2,7 +2,7 @@ name: Auto Release
 
 on:
   push:
-    branches: [ master, v2 ]
+    branches: [ main, v2 ]
     paths: [ 'package.json' ]
 
 # Add permissions for GitHub token
@@ -152,7 +152,7 @@ jobs:
         
         - [Documentation](https://cameronrye.github.io/activitypub-mcp/docs/)
         - [Usage Guide](https://cameronrye.github.io/activitypub-mcp/docs/guides/basic-usage/)
-        - [Migration Guide (v2)](https://github.com/cameronrye/activitypub-mcp/blob/master/MIGRATION-v2.md)
+        - [Migration Guide (v2)](https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v2.md)
         
         **Full Changelog**: https://github.com/cameronrye/activitypub-mcp/compare/v${{ steps.previous_version.outputs.version }}...$TAG_NAME
         EOF
