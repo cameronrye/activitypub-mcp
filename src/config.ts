@@ -171,6 +171,26 @@ export const HTTP_CORS_ORIGINS = process.env.MCP_HTTP_CORS_ORIGINS ?? "";
  */
 export const HTTP_SECRET = process.env.MCP_HTTP_SECRET || "";
 
+/**
+ * Optional explicit Host allowlist for HTTP DNS-rebinding protection
+ * (comma-separated). Empty → auto-derive from host:port.
+ * Set MCP_HTTP_ALLOWED_HOSTS to the Host value(s) clients send when binding
+ * to a public interface (e.g. 0.0.0.0 or a hostname other than 127.0.0.1).
+ */
+export const HTTP_ALLOWED_HOSTS = (process.env.MCP_HTTP_ALLOWED_HOSTS ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+/**
+ * Optional explicit Origin allowlist for HTTP DNS-rebinding protection
+ * (comma-separated). Empty → derive from CORS origins.
+ */
+export const HTTP_ALLOWED_ORIGINS = (process.env.MCP_HTTP_ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 // =============================================================================
 // Write Authorization
 // =============================================================================

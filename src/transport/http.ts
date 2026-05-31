@@ -12,6 +12,8 @@ import { getLogger } from "@logtape/logtape";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import {
+  HTTP_ALLOWED_HOSTS,
+  HTTP_ALLOWED_ORIGINS,
   HTTP_CORS_ENABLED,
   HTTP_CORS_ORIGINS,
   HTTP_HOST,
@@ -190,16 +192,28 @@ export class HttpTransportServer {
           typeof boundAddress === "object" && boundAddress !== null ? boundAddress.port : this.port;
 
         // Build the allowed-hosts list using the actual bound port.
-        // Both "host" and "host:port" forms are included because HTTP clients
-        // may omit the port when it is the scheme's default (80/443).
-        const allowedHosts = [this.host, `${this.host}:${actualPort}`];
+        // Operators binding to a public interface (e.g. 0.0.0.0 or a hostname
+        // other than 127.0.0.1) should set MCP_HTTP_ALLOWED_HOSTS to the
+        // Host value(s) that clients will send (comma-separated).
+        // Both "host" and "host:port" forms are included in the default so
+        // HTTP clients that omit the default-scheme port are still accepted.
+        const allowedHosts = HTTP_ALLOWED_HOSTS.length
+          ? HTTP_ALLOWED_HOSTS
+          : [this.host, `${this.host}:${actualPort}`];
 
         // Pass corsOrigins to the SDK's allowedOrigins only when they are
         // concrete origins. A wildcard ("*") is not a valid Origin value and
         // would cause the SDK to reject every cross-origin request, so we omit
         // it in that case and let bearer-auth remain the gate.
+        // MCP_HTTP_ALLOWED_ORIGINS takes precedence when set.
         const hasWildcard = this.corsOrigins.includes("*");
-        const allowedOrigins = hasWildcard ? undefined : this.corsOrigins.filter(Boolean);
+        const allowedOrigins = HTTP_ALLOWED_ORIGINS.length
+          ? HTTP_ALLOWED_ORIGINS
+          : hasWildcard
+            ? undefined
+            : this.corsOrigins.filter(Boolean).length
+              ? this.corsOrigins.filter(Boolean)
+              : undefined;
 
         // Create the streamable HTTP transport with DNS-rebinding protection.
         // The SDK options are marked @deprecated in favour of external middleware,
@@ -209,7 +223,7 @@ export class HttpTransportServer {
           sessionIdGenerator: () => crypto.randomUUID(),
           enableDnsRebindingProtection: true,
           allowedHosts,
-          allowedOrigins: allowedOrigins && allowedOrigins.length > 0 ? allowedOrigins : undefined,
+          allowedOrigins,
         });
 
         logger.info("HTTP transport server started", {
