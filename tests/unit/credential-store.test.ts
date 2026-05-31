@@ -16,6 +16,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Windows can't represent POSIX file modes — chmod() only toggles the read-only
+// bit, so a 0600 file reads back as 0666. The 0600 guarantee is POSIX-only.
+const isWindows = process.platform === "win32";
+
 let dir: string;
 
 function freshStore() {
@@ -65,8 +69,10 @@ describe("CredentialStore", () => {
     expect(loaded[0]).toEqual(sample);
 
     const filePath = join(process.env.ACTIVITYPUB_CONFIG_DIR as string, "accounts.json");
-    const mode = statSync(filePath).mode & 0o777;
-    expect(mode).toBe(0o600);
+    if (!isWindows) {
+      const mode = statSync(filePath).mode & 0o777;
+      expect(mode).toBe(0o600);
+    }
     // File must be parseable JSON.
     expect(() => JSON.parse(readFileSync(filePath, "utf-8"))).not.toThrow();
   });
@@ -109,7 +115,7 @@ describe("CredentialStore hardening", () => {
     process.env = originalEnv;
   });
 
-  it("relaxes an over-permissive file back to 0600 on load", async () => {
+  it.skipIf(isWindows)("relaxes an over-permissive file back to 0600 on load", async () => {
     const { CredentialStore } = await freshStore();
     const store = new CredentialStore();
     await store.upsert(sample);
