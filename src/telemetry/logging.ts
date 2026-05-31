@@ -17,7 +17,6 @@ await configure({
       lowestLevel: logLevel,
       sinks: ["console"],
     },
-    { category: "fedify", lowestLevel: "info", sinks: ["console"] },
     {
       category: ["logtape", "meta"],
       lowestLevel: "warning",
