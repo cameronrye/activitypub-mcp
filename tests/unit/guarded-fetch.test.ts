@@ -5,6 +5,7 @@ import { guardedFetch } from "../../src/utils/fetch-helpers.js";
 
 vi.mock("../../src/validation/url.js", () => ({
   validateExternalUrl: vi.fn().mockResolvedValue(undefined),
+  resolveAndPin: vi.fn().mockResolvedValue({}),
 }));
 
 const server = setupServer();

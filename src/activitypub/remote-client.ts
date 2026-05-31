@@ -20,7 +20,7 @@ import { getErrorMessage } from "../utils/errors.js";
 import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
 import { DomainSchema } from "../validation/schemas.js";
-import { validateExternalUrl } from "../validation/url.js";
+import { resolveAndPin } from "../validation/url.js";
 
 const logger = getLogger("activitypub-mcp");
 
@@ -720,8 +720,10 @@ export class RemoteActivityPubClient {
    * @returns The fetch Response
    */
   private async fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
-    // SSRF protection: validate URL before making request (async for DNS rebinding detection)
-    await validateExternalUrl(url);
+    // SSRF protection: resolve once and pin the validated IP onto the connection
+    // (async DNS, closes the rebinding TOCTOU). The dispatcher is attached to the
+    // initial fetch below.
+    const { dispatcher } = await resolveAndPin(url);
 
     // Instance blocklist check
     if (INSTANCE_BLOCKING_ENABLED) {
@@ -735,14 +737,18 @@ export class RemoteActivityPubClient {
     try {
       const response = await fetchWithRedirectGuard(
         url,
-        { ...options, signal: controller.signal },
+        { ...options, signal: controller.signal, dispatcher } as RequestInit & {
+          dispatcher?: import("undici").Agent;
+        },
         async (target) => {
-          // Re-validate every redirect hop so a host that passed the initial
-          // SSRF check cannot 302 us to a private IP after the fact.
-          await validateExternalUrl(target);
+          // Re-resolve + re-pin every redirect hop so a host that passed the
+          // initial SSRF check cannot 302 us to a private IP after the fact, and
+          // so the next connection lands on the exact IP we just validated.
+          const pinned = await resolveAndPin(target);
           if (INSTANCE_BLOCKING_ENABLED) {
             instanceBlocklist.validateNotBlocked(new URL(target).hostname);
           }
+          return pinned.dispatcher;
         },
       );
       clearTimeout(timeoutId);

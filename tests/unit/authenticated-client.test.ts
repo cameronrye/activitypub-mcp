@@ -33,6 +33,7 @@ vi.mock("../../src/auth/account-manager.js", () => ({
 
 vi.mock("../../src/validation/url.js", () => ({
   validateExternalUrl: vi.fn().mockResolvedValue(undefined),
+  resolveAndPin: vi.fn().mockResolvedValue({}),
 }));
 
 // Force the Mastodon path offline: without this the router would fetch

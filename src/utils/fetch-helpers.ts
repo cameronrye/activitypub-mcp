@@ -7,9 +7,13 @@
  * whether the server sent an accurate Content-Length header.
  */
 
+import type { Agent } from "undici";
 import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
 import { instanceBlocklist } from "../policy/instance-blocklist.js";
-import { validateExternalUrl } from "../validation/url.js";
+import { resolveAndPin } from "../validation/url.js";
+
+/** RequestInit augmented with the undici `dispatcher` (not in the DOM types). */
+type DispatchInit = RequestInit & { dispatcher?: Agent };
 
 /**
  * Fetch wrapper that follows up to `maxHops` redirects, but re-runs the
@@ -24,14 +28,23 @@ import { validateExternalUrl } from "../validation/url.js";
  */
 export async function fetchWithRedirectGuard(
   url: string,
-  init: RequestInit,
-  validate: (target: string) => Promise<void> | void,
+  init: DispatchInit,
+  // biome-ignore lint/suspicious/noConfusingVoidType: validators may return nothing (no re-pin) or an Agent pinned to the next hop
+  validate: (target: string) => Promise<Agent | void> | Agent | void,
   maxHops = 3,
 ): Promise<Response> {
   let currentUrl = url;
+  // The dispatcher pinned for the current hop. Starts from the caller-supplied
+  // init (pinned to the initial URL's validated IP) and is replaced per hop with
+  // the dispatcher the validator returns for the next target.
+  let currentDispatcher = init.dispatcher;
 
   for (let hop = 0; hop <= maxHops; hop++) {
-    const response = await fetch(currentUrl, { ...init, redirect: "manual" });
+    const response = await fetch(currentUrl, {
+      ...init,
+      dispatcher: currentDispatcher,
+      redirect: "manual",
+    } as DispatchInit);
 
     // Not a redirect — return the response as-is.
     if (response.status < 300 || response.status >= 400 || response.status === 304) {
@@ -55,7 +68,14 @@ export async function fetchWithRedirectGuard(
       throw new Error(`Redirect from ${currentUrl} has malformed Location: ${location}`);
     }
 
-    await validate(nextUrl);
+    // Re-validate the next hop. The validator may return a dispatcher pinned to
+    // the next target's validated IP; use it for the next fetch. When it returns
+    // nothing we deliberately drop the previous hop's pinned dispatcher rather
+    // than carrying it over — reusing it would force this hop's connection onto
+    // the prior hop's IP (wrong host). An unpinned fetch re-resolves the new
+    // hostname itself, which is the correct behaviour (e.g. ENOTFOUND fails as
+    // it should) and matches the non-pinning callers' expectations.
+    currentDispatcher = (await validate(nextUrl)) ?? undefined;
     currentUrl = nextUrl;
   }
 
@@ -156,7 +176,9 @@ export async function guardedFetch<T = unknown>(
   url: string,
   options: GuardedFetchOptions = {},
 ): Promise<GuardedResponse<T>> {
-  await validateExternalUrl(url);
+  // Resolve once and pin the validated IP onto the connection (closes the DNS
+  // rebinding TOCTOU). The dispatcher is attached to the initial fetch.
+  const { dispatcher } = await resolveAndPin(url);
   instanceBlocklist.validateNotBlocked(new URL(url).hostname);
 
   const controller = new AbortController();
@@ -173,10 +195,14 @@ export async function guardedFetch<T = unknown>(
         },
         body: options.body,
         signal: controller.signal,
-      },
+        dispatcher,
+      } as DispatchInit,
       async (target) => {
-        await validateExternalUrl(target);
+        // Re-resolve + re-pin every redirect hop, then return the dispatcher so
+        // the next fetch connects to the exact IP we just validated.
+        const pinned = await resolveAndPin(target);
         instanceBlocklist.validateNotBlocked(new URL(target).hostname);
+        return pinned.dispatcher;
       },
     );
 

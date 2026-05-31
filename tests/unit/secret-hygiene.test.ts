@@ -7,6 +7,7 @@ import { server } from "../mocks/server.js";
 
 vi.mock("../../src/validation/url.js", () => ({
   validateExternalUrl: vi.fn().mockResolvedValue(undefined),
+  resolveAndPin: vi.fn().mockResolvedValue({}),
 }));
 vi.mock("../../src/discovery/nodeinfo.js", () => ({
   getInstanceSoftware: vi.fn().mockResolvedValue({

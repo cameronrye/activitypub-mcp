@@ -4,6 +4,7 @@
  */
 
 import { lookup } from "node:dns/promises";
+import { Agent } from "undici";
 
 /**
  * Private IPv4 address ranges that should be blocked for SSRF protection.
@@ -183,23 +184,34 @@ function isIpAddress(hostname: string): boolean {
 
 /**
  * Handles DNS lookup errors and determines if they should be re-thrown.
+ *
+ * Fails CLOSED: an unexpected resolver error (anything other than the host
+ * genuinely not existing) must reject so an attacker cannot turn a flaky/forced
+ * resolver error into an SSRF bypass. Only ENOTFOUND (the host simply does not
+ * exist — nothing to fetch) is treated as benign and allowed through.
  */
 function handleDnsLookupError(error: unknown): void {
   if (!(error instanceof Error)) {
-    return;
+    throw new Error("DNS validation failed (non-Error thrown)");
   }
 
-  // Re-throw our security-related errors
-  if (error.message.includes("not allowed") || error.message.includes("DNS rebinding")) {
+  // Re-throw our own security-related errors verbatim.
+  if (
+    error.message.includes("not allowed") ||
+    error.message.includes("rebinding") ||
+    error.message.includes("blocked") ||
+    error.message.includes("no addresses")
+  ) {
     throw error;
   }
 
-  // If DNS lookup fails with ENOTFOUND, that's fine (domain doesn't exist)
+  // If DNS lookup fails with ENOTFOUND, that's benign (domain doesn't exist).
   if ("code" in error && (error as NodeJS.ErrnoException).code === "ENOTFOUND") {
     return;
   }
 
-  // Other DNS errors - allow (might be transient)
+  // Any other resolver error → fail closed.
+  throw new Error(`DNS validation failed: ${error.message}`);
 }
 
 /**
@@ -241,6 +253,119 @@ export async function validateExternalUrl(url: string): Promise<void> {
     }
   } catch (error) {
     handleDnsLookupError(error);
+  }
+}
+
+/**
+ * A target whose IP has been validated and pinned for the actual connection.
+ */
+export interface PinnedTarget {
+  /**
+   * undici dispatcher pinned to {@link address}, to pass as the fetch
+   * `dispatcher`. May be undefined when the host could not be resolved
+   * (ENOTFOUND) — there is no IP to pin, so the caller fetches unpinned and the
+   * real fetch will itself fail to resolve (no SSRF window exists in that case).
+   */
+  dispatcher?: Agent;
+  /** The validated IP pinned for the connection, or undefined when unresolved. */
+  address?: string;
+}
+
+/**
+ * Strip surrounding brackets from an IPv6 literal (e.g. "[::1]" → "::1").
+ */
+function stripBrackets(host: string): string {
+  return host.replaceAll(/(?:^\[)|(?:\]$)/g, "");
+}
+
+/**
+ * Build an undici dispatcher whose connection lookup is pinned to a single,
+ * already-validated IP. This closes the DNS-rebinding TOCTOU: the IP we
+ * validated is the exact IP the socket connects to, with no re-resolution.
+ */
+function pinDispatcher(ip: string): Agent {
+  const family = ip.includes(":") ? 6 : 4;
+  return new Agent({
+    connect: {
+      // undici calls this with Node's dns.lookup signature:
+      //   (hostname, options, callback)
+      // and passes `options.all === true`, expecting an array of
+      // { address, family }. We ignore the requested hostname entirely and
+      // always return the pinned IP. The single-result form is handled too for
+      // safety across undici versions.
+      lookup: (
+        _hostname: string,
+        options: { all?: boolean } | undefined,
+        callback: (
+          err: NodeJS.ErrnoException | null,
+          address: string | { address: string; family: number }[],
+          family?: number,
+        ) => void,
+      ) => {
+        if (options?.all) {
+          callback(null, [{ address: ip, family }]);
+        } else {
+          callback(null, ip, family);
+        }
+      },
+    },
+  });
+}
+
+/**
+ * Resolve `url`'s hostname once, validate EVERY returned address, then return an
+ * undici dispatcher pinned to one validated address. Closes the TOCTOU gap where
+ * `fetch` would otherwise re-resolve to a different (possibly private) IP after
+ * validation succeeded.
+ *
+ * Fails CLOSED on unexpected resolver errors (see {@link handleDnsLookupError}).
+ * For an IP literal, validates and pins directly with no DNS. For a host that
+ * genuinely does not exist (ENOTFOUND), returns an empty target so the caller
+ * fetches unpinned — the real fetch then fails to resolve too, so no SSRF
+ * window is opened.
+ *
+ * @param url - The URL whose host to resolve and pin.
+ * @throws Error if the URL scheme is disallowed, the host is blocked, or any
+ *   resolved address is private/internal.
+ */
+export async function resolveAndPin(url: string): Promise<PinnedTarget> {
+  const parsed = new URL(url);
+  const hostname = parsed.hostname.toLowerCase();
+
+  if (!ALLOWED_URL_SCHEMES.has(parsed.protocol)) {
+    throw new Error(`URL scheme "${parsed.protocol}" is not allowed (only https: is permitted)`);
+  }
+
+  if (isBlockedHostname(hostname)) {
+    throw new Error(`Access to internal hostname "${hostname}" is not allowed`);
+  }
+
+  // IP literal: validate (throws on private) and pin directly — no DNS needed.
+  if (isIpAddress(hostname)) {
+    validateIpHostname(hostname);
+    const ip = stripBrackets(hostname);
+    return { dispatcher: pinDispatcher(ip), address: ip };
+  }
+
+  try {
+    const addresses = await lookup(hostname, { all: true });
+    if (addresses.length === 0) {
+      throw new Error(`DNS resolution for "${hostname}" returned no addresses`);
+    }
+    for (const addr of addresses) {
+      if (isPrivateIP(addr.address)) {
+        throw new Error(
+          `DNS resolution for "${hostname}" returned private IP "${addr.address}" - blocked (possible DNS rebinding)`,
+        );
+      }
+    }
+    const pinned = addresses[0].address;
+    return { dispatcher: pinDispatcher(pinned), address: pinned };
+  } catch (error) {
+    // Fails closed on unexpected errors; ENOTFOUND falls through to an unpinned
+    // target (nothing to pin, and the real fetch will also fail to resolve).
+    handleDnsLookupError(error);
+    return {};
   }
 }
 
