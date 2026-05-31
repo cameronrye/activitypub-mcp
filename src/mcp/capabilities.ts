@@ -44,7 +44,7 @@ export const capabilitiesRegistry = new CapabilitiesRegistry();
 /**
  * Wrap an McpServer so that every registerTool / registerResource /
  * registerPrompt call also records the name into the capabilities registry.
- * Used by the orchestrators in tools.ts, tools-write.ts, tools-export.ts,
+ * Used by the orchestrators in tools.ts, tools-write.ts,
  * resources.ts, prompts.ts to keep the server-info advertised capabilities honest.
  *
  * The wrapper mutates the methods in-place so callers don't need to switch to

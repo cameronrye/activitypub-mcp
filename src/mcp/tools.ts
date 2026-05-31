@@ -27,7 +27,6 @@ import {
   validateQuery,
 } from "../validation/validators.js";
 import { trackedMcpServer } from "./capabilities.js";
-import { registerExportTools } from "./tools-export.js";
 import { registerWriteTools } from "./tools-write.js";
 
 const logger = getLogger("activitypub-mcp:tools");
@@ -77,9 +76,6 @@ export function registerTools(mcpServer: McpServer, rateLimiter: RateLimiter): v
 
   // Write operation tools (authenticated)
   registerWriteTools(mcpServer, rateLimiter);
-
-  // Export tools
-  registerExportTools(mcpServer, rateLimiter);
 }
 
 /**
