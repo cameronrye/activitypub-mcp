@@ -14,7 +14,7 @@ import { accountManager, authenticatedClient } from "../auth/index.js";
 import { ENABLE_WRITES } from "../config.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
 import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
-import { wrapUntrusted } from "../utils/untrusted.js";
+import { sanitizeInline, wrapUntrusted } from "../utils/untrusted.js";
 import { trackedMcpServer } from "./capabilities.js";
 
 const logger = getLogger("activitypub-mcp:tools-write");
@@ -347,7 +347,7 @@ Run \`activitypub-mcp login ${account.instance}\` to re-authorize.`,
               type: "text",
               text: `✅ **Account Verified**
 
-👤 **${info.display_name || info.username}** (@${info.acct})
+👤 **${sanitizeInline(info.display_name || info.username || "")}** (@${sanitizeInline(info.acct || "")})
 🆔 ID: ${info.id}
 🔗 ${info.url}
 
@@ -496,7 +496,7 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
 👁️ Visibility: ${status.visibility}
 ${status.spoiler_text ? `⚠️ CW: ${wrapUntrusted(status.spoiler_text, `content warning on ${account.instance}`)}` : ""}
 
-Posted as @${status.account.username}`,
+Posted as @${sanitizeInline(status.account.username || "")}`,
             },
           ],
         };
@@ -747,7 +747,7 @@ function registerBoostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter): 
               type: "text",
               text: `🔁 **Post Boosted!**
 
-You boosted a post by @${status.account.username}
+You boosted a post by @${sanitizeInline(status.account.username || "")}
 
 🔗 ${status.url || status.uri}`,
             },
@@ -895,7 +895,7 @@ function registerFavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimite
               type: "text",
               text: `⭐ **Post Favourited!**
 
-You favourited a post by @${status.account.username}
+You favourited a post by @${sanitizeInline(status.account.username || "")}
 
 🔗 ${status.url || status.uri}`,
             },
@@ -1043,7 +1043,7 @@ function registerBookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimiter
               type: "text",
               text: `🔖 **Post Bookmarked!**
 
-Saved post by @${status.account.username}
+Saved post by @${sanitizeInline(status.account.username || "")}
 
 🔗 ${status.url || status.uri}`,
             },
@@ -1688,7 +1688,7 @@ function registerGetHomeTimelineTool(mcpServer: McpServer, rateLimiter: RateLimi
             const cw = post.spoiler_text
               ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, `content warning on ${account.instance}`)}\n`
               : "";
-            return `${i + 1}. **@${post.account.acct}**
+            return `${i + 1}. **@${sanitizeInline(post.account.acct || "")}**
    ${cw}${content}
    ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
           })
@@ -1811,7 +1811,7 @@ function registerGetNotificationsTool(mcpServer: McpServer, rateLimiter: RateLim
             const statusPreview = n.status
               ? `\n   ${wrapUntrusted(n.status.content, `notification on ${account.instance}`)}`
               : "";
-            return `${emoji} **${n.type}** from @${n.account.acct}${statusPreview}`;
+            return `${emoji} **${sanitizeInline(n.type)}** from @${sanitizeInline(n.account.acct || "")}${statusPreview}`;
           })
           .join("\n\n");
 
@@ -1893,7 +1893,7 @@ function registerGetBookmarksTool(mcpServer: McpServer, rateLimiter: RateLimiter
           .slice(0, 15)
           .map((post, i) => {
             const content = wrapUntrusted(post.content, `post on ${account.instance}`);
-            return `${i + 1}. **@${post.account.acct}**
+            return `${i + 1}. **@${sanitizeInline(post.account.acct || "")}**
    ${content}`;
           })
           .join("\n\n");
@@ -1976,7 +1976,7 @@ function registerGetFavouritesTool(mcpServer: McpServer, rateLimiter: RateLimite
           .slice(0, 15)
           .map((post, i) => {
             const content = wrapUntrusted(post.content, `post on ${account.instance}`);
-            return `${i + 1}. **@${post.account.acct}**
+            return `${i + 1}. **@${sanitizeInline(post.account.acct || "")}**
    ${content}`;
           })
           .join("\n\n");
@@ -2100,7 +2100,7 @@ function registerGetRelationshipTool(mcpServer: McpServer, rateLimiter: RateLimi
               text: `👥 **Relationship with @${acct}**
 
 ${statusItems.join("\n")}
-${relationship.note ? `\n📝 **Note**: ${relationship.note}` : ""}
+${relationship.note ? `\n📝 **Note**: ${wrapUntrusted(relationship.note, `relationship note`)}` : ""}
 
 💡 **Actions:**
 - Use \`follow-account\` or \`unfollow-account\` to change follow status
@@ -2187,7 +2187,7 @@ function registerVoteOnPollTool(mcpServer: McpServer, rateLimiter: RateLimiter):
             const bar =
               "█".repeat(Math.floor(percentage / 10)) +
               "░".repeat(10 - Math.floor(percentage / 10));
-            return `${voted} ${opt.title}\n   ${bar} ${percentage}% (${opt.votes_count || 0} votes)`;
+            return `${voted} ${sanitizeInline(opt.title || "")}\n   ${bar} ${percentage}% (${opt.votes_count || 0} votes)`;
           })
           .join("\n\n");
 

@@ -422,8 +422,8 @@ function registerDiscoverInstancesLiveTool(mcpServer: McpServer, rateLimiter: Ra
         const instanceList = instances
           .map((instance, index) => {
             const parts = [
-              `${index + 1}. **${instance.domain}**`,
-              instance.software ? `(${instance.software})` : "",
+              `${index + 1}. **${sanitizeInline(instance.domain || "")}**`,
+              instance.software ? `(${sanitizeInline(instance.software)})` : "",
             ];
 
             const details = [];
@@ -431,7 +431,7 @@ function registerDiscoverInstancesLiveTool(mcpServer: McpServer, rateLimiter: Ra
               details.push(`👥 ${instance.users.toLocaleString()} users`);
             }
             if (instance.language) {
-              details.push(`🌐 ${instance.language}`);
+              details.push(`🌐 ${sanitizeInline(instance.language)}`);
             }
             if (instance.registrations !== undefined) {
               details.push(instance.registrations ? "✅ Open" : "🔒 Closed");

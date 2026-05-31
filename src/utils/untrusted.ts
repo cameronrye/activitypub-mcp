@@ -26,7 +26,11 @@ const CLOSE_TAG = "</untrusted-content>";
 // model as a real closing delimiter. We neutralize any such variant by escaping
 // its leading "<".
 const OPEN_DELIM_RE = /<(\s*untrusted-content)/gi;
-const CLOSE_DELIM_RE = /<(\s*\/\s*untrusted-content\s*>)/gi;
+// `\b[^>]*>` tolerates any trailing junk before '>' (e.g. </untrusted-content/>,
+// </untrusted-content x>) which a lenient HTML/model parser still treats as a
+// closing tag — while `\b` leaves a genuinely different tag (</untrusted-contentXYZ>)
+// untouched.
+const CLOSE_DELIM_RE = /<(\s*\/\s*untrusted-content\b[^>]*>)/gi;
 
 /** Break any envelope-delimiter forgery inside attacker-supplied text. */
 function defang(text: string): string {
@@ -78,8 +82,10 @@ export function wrapUntrustedBlock(body: string, source: string): string {
  * callers supply their own fallback (e.g. the raw id).
  */
 export function sanitizeInline(text: string): string {
-  return stripHtmlTags(defang(text ?? ""))
+  const cleaned = stripHtmlTags(defang(text ?? ""))
     .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 200);
+    .trim();
+  // Truncate by code point (not UTF-16 code unit) so the cap can't split a
+  // surrogate pair into a lone surrogate that serializes to U+FFFD.
+  return [...cleaned].slice(0, 200).join("");
 }
