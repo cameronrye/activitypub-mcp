@@ -215,10 +215,12 @@ The following are intentionally **unchanged** in v3:
 - **CORS config.** `MCP_HTTP_CORS_ORIGINS` and `MCP_HTTP_CORS_ENABLED` are
   unchanged.
 - **Stdio transport.** Default transport, unchanged.
-- **Read-only tool names** not mentioned in the removal table above (e.g.,
-  `discover-actor`, `fetch-timeline`, `get-post-thread`,
-  `get-instance-info`, `get-public-timeline`, `get-trending-hashtags`, `get-trending-posts`,
-  `search`, `discover-instances`) are unchanged.
+- **Read-only tool names** not mentioned in the removal/renamed/consolidated tables above
+  (`discover-actor`, `fetch-timeline`, `get-post-thread`,
+  `get-instance-info`, `get-trending-hashtags`, `get-trending-posts`,
+  `get-home-timeline`, `get-notifications`, `get-bookmarks`, `get-favourites`,
+  `get-relationship`, `list-accounts`, `switch-account`, `verify-account`) are unchanged.
+  Mutation tools keep the same interface but are gated behind `ACTIVITYPUB_ENABLE_WRITES`.
 - **MCP resource scheme.** Resources are still served under `activitypub://`.
 - **`ACTIVITYPUB_ACCOUNTS` pipe delimiter.** Still `id|instance|token|username|label`.
 - **Node version requirement.** Still `>=20.0.0`.
