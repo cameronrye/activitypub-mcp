@@ -25,7 +25,6 @@ import {
 } from "./config.js";
 import { registerPrompts, registerResources, registerTools } from "./mcp/index.js";
 import { RateLimiter } from "./resilience/rate-limiter.js";
-import { performanceMonitor } from "./telemetry/performance-monitor.js";
 import { HttpTransportServer } from "./transport/http.js";
 
 const logger = getLogger("activitypub-mcp");
@@ -160,7 +159,6 @@ class ActivityPubMCPServer {
     }
 
     this.rateLimiter.stop();
-    performanceMonitor.stop();
     logger.info("ActivityPub MCP Server stopped");
   }
 
@@ -215,7 +213,6 @@ class ActivityPubMCPServer {
       endpoints: {
         mcp: `http://${address?.host}:${address?.port}/mcp`,
         health: `http://${address?.host}:${address?.port}/health`,
-        metrics: `http://${address?.host}:${address?.port}/metrics`,
       },
     });
   }

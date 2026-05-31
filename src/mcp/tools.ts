@@ -15,8 +15,6 @@ import { dynamicInstanceDiscovery } from "../discovery/dynamic-instance-discover
 import { instanceDiscovery } from "../discovery/instance-discovery.js";
 import { formatInstanceSoftware, getInstanceSoftware } from "../discovery/nodeinfo.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
-import { healthChecker } from "../telemetry/health-check.js";
-import { performanceMonitor } from "../telemetry/performance-monitor.js";
 import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
 import { stripHtmlTags } from "../utils/html.js";
 import { wrapUntrusted } from "../utils/untrusted.js";
@@ -70,10 +68,6 @@ export function registerTools(mcpServer: McpServer, rateLimiter: RateLimiter): v
   registerBatchFetchActorsTool(mcpServer, rateLimiter);
   registerBatchFetchPostsTool(mcpServer, rateLimiter);
 
-  // System tools
-  registerHealthCheckTool(mcpServer);
-  registerPerformanceMetricsTool(mcpServer);
-
   // Write operation tools (authenticated)
   registerWriteTools(mcpServer, rateLimiter);
 }
@@ -109,17 +103,12 @@ function registerDiscoverActorTool(mcpServer: McpServer, rateLimiter: RateLimite
     async ({ identifier }) => {
       const validIdentifier = validateActorIdentifier(identifier);
 
-      const requestId = performanceMonitor.startRequest("discover-actor", {
-        identifier: validIdentifier,
-      });
-
       try {
         checkRateLimit(rateLimiter, validIdentifier);
 
         logger.info("Discovering actor", { identifier: validIdentifier });
 
         const actor = await remoteClient.fetchRemoteActor(validIdentifier);
-        performanceMonitor.endRequest(requestId, true);
 
         return {
           content: [
@@ -140,7 +129,6 @@ function registerDiscoverActorTool(mcpServer: McpServer, rateLimiter: RateLimite
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed to discover actor", {
           identifier,
@@ -195,15 +183,6 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
     async ({ identifier, limit = 20, cursor, minId, maxId, sinceId }) => {
       const validIdentifier = validateActorIdentifier(identifier);
 
-      const requestId = performanceMonitor.startRequest("fetch-timeline", {
-        identifier: validIdentifier,
-        limit,
-        cursor,
-        minId,
-        maxId,
-        sinceId,
-      });
-
       try {
         checkRateLimit(rateLimiter, validIdentifier);
 
@@ -223,7 +202,6 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
           maxId,
           sinceId,
         });
-        performanceMonitor.endRequest(requestId, true);
 
         const posts = timeline.items;
         const postCount = posts.length;
@@ -273,7 +251,6 @@ ${postsSection}`,
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed to fetch timeline", {
           identifier,
@@ -321,12 +298,6 @@ function registerSearchInstanceTool(mcpServer: McpServer, rateLimiter: RateLimit
       const validDomain = validateDomain(domain);
       const validQuery = validateQuery(query);
 
-      const requestId = performanceMonitor.startRequest("search-instance", {
-        domain: validDomain,
-        query: validQuery,
-        type,
-      });
-
       try {
         checkRateLimit(rateLimiter, validDomain);
 
@@ -358,7 +329,6 @@ function registerSearchInstanceTool(mcpServer: McpServer, rateLimiter: RateLimit
             history?: Array<{ day: string; uses: string; accounts: string }>;
           }>;
         };
-        performanceMonitor.endRequest(requestId, true);
 
         let formatted: string;
         let header: string;
@@ -418,7 +388,6 @@ function registerSearchInstanceTool(mcpServer: McpServer, rateLimiter: RateLimit
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed to search instance", {
           domain,
@@ -461,17 +430,12 @@ function registerGetInstanceInfoTool(mcpServer: McpServer, rateLimiter: RateLimi
     async ({ domain }) => {
       const validDomain = validateDomain(domain);
 
-      const requestId = performanceMonitor.startRequest("get-instance-info", {
-        domain: validDomain,
-      });
-
       try {
         checkRateLimit(rateLimiter, validDomain);
 
         logger.info("Getting instance info", { domain: validDomain });
 
         const instanceInfo = await remoteClient.getInstanceInfo(validDomain);
-        performanceMonitor.endRequest(requestId, true);
 
         return {
           content: [
@@ -502,7 +466,6 @@ ${instanceInfo.contact_account ? `📞 Contact: @${instanceInfo.contact_account.
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed to get instance info", {
           domain,
@@ -666,16 +629,6 @@ function registerDiscoverInstancesLiveTool(mcpServer: McpServer, rateLimiter: Ra
       sortOrder,
       limit = 20,
     }) => {
-      const requestId = performanceMonitor.startRequest("discover-instances-live", {
-        software,
-        language,
-        minUsers,
-        maxUsers,
-        openRegistrations,
-        sortBy,
-        limit,
-      });
-
       try {
         checkRateLimit(rateLimiter, "discover-instances-live");
 
@@ -699,8 +652,6 @@ function registerDiscoverInstancesLiveTool(mcpServer: McpServer, rateLimiter: Ra
           sortOrder,
           limit,
         });
-
-        performanceMonitor.endRequest(requestId, true);
 
         const instances = result.instances;
 
@@ -774,7 +725,6 @@ ${instanceList}${hasMoreText}
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed to discover instances live", { error: errorMessage });
 
@@ -862,170 +812,6 @@ ${recommendations
 }
 
 /**
- * Health check tool.
- */
-function registerHealthCheckTool(mcpServer: McpServer): void {
-  mcpServer.registerTool(
-    "health-check",
-    {
-      title: "Server Health Check",
-      description: "Check the health status of the ActivityPub MCP server",
-      inputSchema: {
-        includeMetrics: z
-          .boolean()
-          .optional()
-          .describe("Include detailed performance metrics in the response"),
-      },
-      annotations: { readOnlyHint: true },
-    },
-    async ({ includeMetrics = false }) => {
-      const requestId = performanceMonitor.startRequest("health-check", { includeMetrics });
-
-      try {
-        const healthStatus = await healthChecker.performHealthCheck(includeMetrics);
-        performanceMonitor.endRequest(requestId, true);
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `🏥 **Server Health Check**
-
-**Overall Status**: ${healthStatus.status.toUpperCase()} ${healthStatus.status === "healthy" ? "✅" : healthStatus.status === "degraded" ? "⚠️" : "❌"}
-**Uptime**: ${Math.round(healthStatus.uptime / 1000 / 60)} minutes
-**Version**: ${healthStatus.version}
-**Timestamp**: ${healthStatus.timestamp}
-
-**Health Checks**:
-${Object.entries(healthStatus.checks)
-  .map(
-    ([name, check]) =>
-      `• **${name}**: ${check.status === "pass" ? "✅" : check.status === "warn" ? "⚠️" : "❌"} ${check.message} (${check.duration}ms)`,
-  )
-  .join("\n")}
-
-${
-  healthStatus.metrics
-    ? `
-**Performance Metrics**:
-• **Requests**: ${healthStatus.metrics.requests.total} total, ${healthStatus.metrics.requests.errors} errors (${healthStatus.metrics.requests.errorRate.toFixed(2)}% error rate)
-• **Response Times**: ${healthStatus.metrics.performance.averageResponseTime.toFixed(2)}ms avg, ${healthStatus.metrics.performance.p95ResponseTime.toFixed(2)}ms p95, ${healthStatus.metrics.performance.p99ResponseTime.toFixed(2)}ms p99
-• **System**: ${healthStatus.metrics.system.memoryUsageMB}MB memory, ${Math.round(healthStatus.metrics.system.uptime / 1000 / 60)} min uptime
-`
-    : ""
-}`,
-            },
-          ],
-        };
-      } catch (error) {
-        const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ Health check failed: ${errorMessage}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
-  );
-}
-
-/**
- * Performance metrics tool.
- */
-function registerPerformanceMetricsTool(mcpServer: McpServer): void {
-  mcpServer.registerTool(
-    "performance-metrics",
-    {
-      title: "Performance Metrics",
-      description: "Get detailed performance metrics for the ActivityPub MCP server",
-      inputSchema: {
-        operation: z
-          .string()
-          .optional()
-          .describe("Specific operation to get metrics for (e.g., 'discover-actor')"),
-      },
-      annotations: { readOnlyHint: true },
-    },
-    async ({ operation }) => {
-      const requestId = performanceMonitor.startRequest("performance-metrics", { operation });
-
-      try {
-        if (operation) {
-          const operationMetrics = performanceMonitor.getOperationMetrics(operation);
-          performanceMonitor.endRequest(requestId, true);
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: `📊 **Performance Metrics for "${operation}"**
-
-• **Total Requests**: ${operationMetrics.count}
-• **Successful**: ${operationMetrics.successCount} (${(operationMetrics.successRate * 100).toFixed(2)}%)
-• **Failed**: ${operationMetrics.errorCount}
-• **Average Response Time**: ${operationMetrics.averageResponseTime.toFixed(2)}ms`,
-              },
-            ],
-          };
-        }
-
-        const metrics = performanceMonitor.getMetrics();
-        const requestHistory = performanceMonitor.getRequestHistory(10);
-        performanceMonitor.endRequest(requestId, true);
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `📊 **Overall Performance Metrics**
-
-**Request Statistics**:
-• **Total Requests**: ${metrics.requestCount}
-• **Errors**: ${metrics.errorCount} (${metrics.requestCount > 0 ? ((metrics.errorCount / metrics.requestCount) * 100).toFixed(2) : 0}% error rate)
-
-**Response Times**:
-• **Average**: ${metrics.averageResponseTime.toFixed(2)}ms
-• **Min**: ${metrics.minResponseTime}ms
-• **Max**: ${metrics.maxResponseTime}ms
-• **95th Percentile**: ${metrics.p95ResponseTime.toFixed(2)}ms
-• **99th Percentile**: ${metrics.p99ResponseTime.toFixed(2)}ms
-
-**System Resources**:
-• **Memory Usage**: ${Math.round(metrics.memoryUsage.heapUsed / 1024 / 1024)}MB heap used
-• **Uptime**: ${Math.round(metrics.uptime / 1000 / 60)} minutes
-
-**Recent Requests** (last 10):
-${requestHistory
-  .map((req) => `• ${req.operation}: ${req.duration}ms ${req.success ? "✅" : "❌"}`)
-  .join("\n")}`,
-            },
-          ],
-        };
-      } catch (error) {
-        const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ Failed to get performance metrics: ${errorMessage}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
-  );
-}
-
-/**
  * Get post thread tool - fetch a post and its replies/ancestors.
  */
 function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimiter): void {
@@ -1053,12 +839,6 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
       annotations: { readOnlyHint: true },
     },
     async ({ postUrl, depth = 2, maxReplies = 50 }) => {
-      const requestId = performanceMonitor.startRequest("get-post-thread", {
-        postUrl,
-        depth,
-        maxReplies,
-      });
-
       try {
         const domain = new URL(postUrl).hostname;
         checkRateLimit(rateLimiter, domain);
@@ -1066,7 +846,6 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
         logger.info("Fetching post thread", { postUrl, depth, maxReplies });
 
         const thread = await remoteClient.fetchPostThread(postUrl, { depth, maxReplies });
-        performanceMonitor.endRequest(requestId, true);
 
         // Format ancestors
         const ancestorsSection =
@@ -1133,7 +912,6 @@ ${repliesSection}
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed to fetch post thread", { postUrl, error: errorMessage });
 
@@ -1174,18 +952,12 @@ function registerGetTrendingHashtagsTool(mcpServer: McpServer, rateLimiter: Rate
     async ({ domain, limit = 20 }) => {
       const validDomain = validateDomain(domain);
 
-      const requestId = performanceMonitor.startRequest("get-trending-hashtags", {
-        domain: validDomain,
-        limit,
-      });
-
       try {
         checkRateLimit(rateLimiter, validDomain);
 
         logger.info("Fetching trending hashtags", { domain: validDomain, limit });
 
         const result = await remoteClient.fetchTrendingHashtags(validDomain, { limit });
-        performanceMonitor.endRequest(requestId, true);
 
         const hashtagsList = result.hashtags
           .map((tag, i) => {
@@ -1212,7 +984,6 @@ ${hashtagsList || "No trending hashtags found"}
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed to fetch trending hashtags", {
           domain: validDomain,
@@ -1256,18 +1027,12 @@ function registerGetTrendingPostsTool(mcpServer: McpServer, rateLimiter: RateLim
     async ({ domain, limit = 20 }) => {
       const validDomain = validateDomain(domain);
 
-      const requestId = performanceMonitor.startRequest("get-trending-posts", {
-        domain: validDomain,
-        limit,
-      });
-
       try {
         checkRateLimit(rateLimiter, validDomain);
 
         logger.info("Fetching trending posts", { domain: validDomain, limit });
 
         const result = await remoteClient.fetchTrendingPosts(validDomain, { limit });
-        performanceMonitor.endRequest(requestId, true);
 
         const postsList = result.posts
           .slice(0, 10)
@@ -1303,7 +1068,6 @@ ${postsList || "No trending posts found"}${moreText}
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed to fetch trending posts", {
           domain: validDomain,
@@ -1349,19 +1113,12 @@ function registerGetLocalTimelineTool(mcpServer: McpServer, rateLimiter: RateLim
     async ({ domain, limit = 20, maxId }) => {
       const validDomain = validateDomain(domain);
 
-      const requestId = performanceMonitor.startRequest("get-local-timeline", {
-        domain: validDomain,
-        limit,
-        maxId,
-      });
-
       try {
         checkRateLimit(rateLimiter, validDomain);
 
         logger.info("Fetching local timeline", { domain: validDomain, limit, maxId });
 
         const result = await remoteClient.fetchLocalTimeline(validDomain, { limit, maxId });
-        performanceMonitor.endRequest(requestId, true);
 
         const postsList = result.posts
           .slice(0, 15)
@@ -1398,7 +1155,6 @@ ${postsList || "No posts found"}${paginationInfo}
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed to fetch local timeline", {
           domain: validDomain,
@@ -1444,19 +1200,12 @@ function registerGetFederatedTimelineTool(mcpServer: McpServer, rateLimiter: Rat
     async ({ domain, limit = 20, maxId }) => {
       const validDomain = validateDomain(domain);
 
-      const requestId = performanceMonitor.startRequest("get-federated-timeline", {
-        domain: validDomain,
-        limit,
-        maxId,
-      });
-
       try {
         checkRateLimit(rateLimiter, validDomain);
 
         logger.info("Fetching federated timeline", { domain: validDomain, limit, maxId });
 
         const result = await remoteClient.fetchFederatedTimeline(validDomain, { limit, maxId });
-        performanceMonitor.endRequest(requestId, true);
 
         const postsList = result.posts
           .slice(0, 15)
@@ -1493,7 +1242,6 @@ ${postsList || "No posts found"}${paginationInfo}
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed to fetch federated timeline", {
           domain: validDomain,
@@ -1539,12 +1287,6 @@ function registerSearchAccountsTool(mcpServer: McpServer, rateLimiter: RateLimit
       const validDomain = validateDomain(domain);
       const validQuery = validateQuery(query);
 
-      const requestId = performanceMonitor.startRequest("search-accounts", {
-        domain: validDomain,
-        query: validQuery,
-        limit,
-      });
-
       try {
         checkRateLimit(rateLimiter, validDomain);
 
@@ -1566,7 +1308,6 @@ function registerSearchAccountsTool(mcpServer: McpServer, rateLimiter: RateLimit
             statuses_count?: number;
           }>;
         };
-        performanceMonitor.endRequest(requestId, true);
 
         const accounts = results.accounts || [];
         const accountsList = accounts
@@ -1597,7 +1338,6 @@ ${accountsList || "No accounts found"}
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed to search accounts", {
           domain: validDomain,
@@ -1644,12 +1384,6 @@ function registerSearchHashtagsTool(mcpServer: McpServer, rateLimiter: RateLimit
       const validDomain = validateDomain(domain);
       const validQuery = validateQuery(query.replace(/^#/, "")); // Remove leading # if present
 
-      const requestId = performanceMonitor.startRequest("search-hashtags", {
-        domain: validDomain,
-        query: validQuery,
-        limit,
-      });
-
       try {
         checkRateLimit(rateLimiter, validDomain);
 
@@ -1666,7 +1400,6 @@ function registerSearchHashtagsTool(mcpServer: McpServer, rateLimiter: RateLimit
             history?: Array<{ day: string; uses: string; accounts: string }>;
           }>;
         };
-        performanceMonitor.endRequest(requestId, true);
 
         const hashtags = results.hashtags || [];
         const hashtagsList = hashtags
@@ -1697,7 +1430,6 @@ ${hashtagsList || "No hashtags found"}
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed to search hashtags", {
           domain: validDomain,
@@ -1744,12 +1476,6 @@ function registerSearchPostsTool(mcpServer: McpServer, rateLimiter: RateLimiter)
       const validDomain = validateDomain(domain);
       const validQuery = validateQuery(query);
 
-      const requestId = performanceMonitor.startRequest("search-posts", {
-        domain: validDomain,
-        query: validQuery,
-        limit,
-      });
-
       try {
         checkRateLimit(rateLimiter, validDomain);
 
@@ -1772,7 +1498,6 @@ function registerSearchPostsTool(mcpServer: McpServer, rateLimiter: RateLimiter)
             spoiler_text?: string;
           }>;
         };
-        performanceMonitor.endRequest(requestId, true);
 
         const statuses = results.statuses || [];
         const postsList = statuses
@@ -1806,7 +1531,6 @@ ${postsList || "No posts found"}
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed to search posts", {
           domain: validDomain,
@@ -1859,13 +1583,6 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
     async ({ query, domain = "mastodon.social", type = "all", limit = 10 }) => {
       const validDomain = validateDomain(domain);
       const validQuery = validateQuery(query);
-
-      const requestId = performanceMonitor.startRequest("search", {
-        domain: validDomain,
-        query: validQuery,
-        type,
-        limit,
-      });
 
       try {
         checkRateLimit(rateLimiter, validDomain);
@@ -1972,8 +1689,6 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
           }
         }
 
-        performanceMonitor.endRequest(requestId, true);
-
         const resultsText =
           sections.length > 0 ? sections.join("\n\n---\n\n") : "No results found for your search.";
 
@@ -1995,7 +1710,6 @@ ${resultsText}
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Unified search failed", {
           domain: validDomain,
@@ -2037,8 +1751,6 @@ function registerConvertUrlTool(mcpServer: McpServer, rateLimiter: RateLimiter):
       annotations: { readOnlyHint: true },
     },
     async ({ url, direction = "auto" }) => {
-      const requestId = performanceMonitor.startRequest("convert-url", { url, direction });
-
       try {
         const domain = new URL(url).hostname;
         checkRateLimit(rateLimiter, domain);
@@ -2075,8 +1787,6 @@ function registerConvertUrlTool(mcpServer: McpServer, rateLimiter: RateLimiter):
           }
         }
 
-        performanceMonitor.endRequest(requestId, true);
-
         const typeEmoji = result.type === "actor" ? "👤" : result.type === "post" ? "📝" : "❓";
 
         return {
@@ -2098,7 +1808,6 @@ function registerConvertUrlTool(mcpServer: McpServer, rateLimiter: RateLimiter):
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed to convert URL", { url, error: errorMessage });
 
@@ -2137,10 +1846,6 @@ function registerBatchFetchActorsTool(mcpServer: McpServer, rateLimiter: RateLim
       annotations: { readOnlyHint: true },
     },
     async ({ identifiers }) => {
-      const requestId = performanceMonitor.startRequest("batch-fetch-actors", {
-        count: identifiers.length,
-      });
-
       try {
         // Check rate limit for each unique domain
         const domains = new Set(identifiers.map((id) => id.split("@").pop()?.toLowerCase()));
@@ -2153,7 +1858,6 @@ function registerBatchFetchActorsTool(mcpServer: McpServer, rateLimiter: RateLim
         logger.info("Batch fetching actors", { count: identifiers.length });
 
         const result = await remoteClient.batchFetchActors(identifiers);
-        performanceMonitor.endRequest(requestId, true);
 
         const successList = result.results
           .filter(
@@ -2196,7 +1900,6 @@ ${failedList ? `**Failed Fetches:**\n${failedList}` : ""}
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed batch fetch actors", { error: errorMessage });
 
@@ -2229,10 +1932,6 @@ function registerBatchFetchPostsTool(mcpServer: McpServer, rateLimiter: RateLimi
       annotations: { readOnlyHint: true },
     },
     async ({ postUrls }) => {
-      const requestId = performanceMonitor.startRequest("batch-fetch-posts", {
-        count: postUrls.length,
-      });
-
       try {
         // Check rate limit for each unique domain
         const domains = new Set(postUrls.map((url) => new URL(url).hostname));
@@ -2243,7 +1942,6 @@ function registerBatchFetchPostsTool(mcpServer: McpServer, rateLimiter: RateLimi
         logger.info("Batch fetching posts", { count: postUrls.length });
 
         const result = await remoteClient.batchFetchPosts(postUrls);
-        performanceMonitor.endRequest(requestId, true);
 
         const successList = result.results
           .filter(
@@ -2292,7 +1990,6 @@ ${failedList ? `**Failed Fetches:**\n${failedList}` : ""}
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed batch fetch posts", { error: errorMessage });
 
@@ -2334,17 +2031,12 @@ function registerGetInstanceSoftwareTool(mcpServer: McpServer, rateLimiter: Rate
       const start = Date.now();
       const validDomain = validateDomain(domain);
 
-      const requestId = performanceMonitor.startRequest("get-instance-software", {
-        domain: validDomain,
-      });
-
       try {
         checkRateLimit(rateLimiter, validDomain);
 
         logger.info("Detecting instance software", { domain: validDomain });
 
         const info = await getInstanceSoftware(validDomain);
-        performanceMonitor.endRequest(requestId, true);
 
         auditLogger.logToolInvocation(
           "get-instance-software",
@@ -2355,7 +2047,6 @@ function registerGetInstanceSoftwareTool(mcpServer: McpServer, rateLimiter: Rate
         return { content: [{ type: "text", text: formatInstanceSoftware(info) }] };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
-        performanceMonitor.endRequest(requestId, false, errorMessage);
 
         logger.error("Failed to detect instance software", {
           domain: validDomain,

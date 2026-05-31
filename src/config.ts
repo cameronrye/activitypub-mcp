@@ -121,44 +121,6 @@ export const MIN_FETCH_LIMIT = 1;
 export const MAX_INSTANCE_RESULTS = 20;
 
 // =============================================================================
-// Health Check Configuration
-// =============================================================================
-
-/** Health check network timeout in milliseconds */
-export const HEALTH_CHECK_TIMEOUT = parseIntEnv(process.env.HEALTH_CHECK_TIMEOUT, 5000);
-
-/** URL to use for network connectivity health checks */
-export const HEALTH_CHECK_URL =
-  process.env.HEALTH_CHECK_URL || "https://mastodon.social/.well-known/nodeinfo";
-
-/** Memory usage threshold for health warning (in MB) */
-export const MEMORY_WARN_THRESHOLD_MB = parseIntEnv(process.env.MEMORY_WARN_THRESHOLD_MB, 500);
-
-/** Memory usage percentage threshold for health warning */
-export const MEMORY_WARN_THRESHOLD_PERCENT = parseIntEnv(
-  process.env.MEMORY_WARN_THRESHOLD_PERCENT,
-  80,
-);
-
-/**
- * Whether to perform the outbound network connectivity probe in health checks.
- * Default: true. Set to false to skip the external probe (useful when the
- * server runs in an air-gapped environment or under strict outbound network
- * policies).
- */
-export const HEALTH_CHECK_EXTERNAL_PROBE = parseBoolEnv(
-  process.env.HEALTH_CHECK_EXTERNAL_PROBE,
-  true,
-);
-
-// =============================================================================
-// Performance Monitoring Configuration
-// =============================================================================
-
-/** Maximum request history entries to keep */
-export const MAX_REQUEST_HISTORY = parseIntEnv(process.env.MAX_REQUEST_HISTORY, 1000);
-
-// =============================================================================
 // Thread Traversal Configuration (M3)
 // =============================================================================
 

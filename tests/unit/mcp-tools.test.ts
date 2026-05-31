@@ -55,48 +55,6 @@ vi.mock("../../src/discovery/dynamic-instance-discovery.js", () => ({
   },
 }));
 
-vi.mock("../../src/telemetry/health-check.js", () => ({
-  healthChecker: {
-    performHealthCheck: vi.fn().mockResolvedValue({
-      status: "healthy",
-      uptime: 60000,
-      version: "1.0.0",
-      timestamp: new Date().toISOString(),
-      checks: {
-        memory: { status: "pass", message: "OK", duration: 1 },
-      },
-    }),
-  },
-}));
-
-vi.mock("../../src/telemetry/performance-monitor.js", () => ({
-  performanceMonitor: {
-    startRequest: vi.fn().mockReturnValue("req-123"),
-    endRequest: vi.fn(),
-    getMetrics: vi.fn().mockReturnValue({
-      requestCount: 100,
-      errorCount: 5,
-      averageResponseTime: 50,
-      minResponseTime: 10,
-      maxResponseTime: 200,
-      p95ResponseTime: 150,
-      p99ResponseTime: 180,
-      memoryUsage: { heapUsed: 50000000 },
-      uptime: 60000,
-    }),
-    getOperationMetrics: vi.fn().mockReturnValue({
-      count: 10,
-      successCount: 9,
-      errorCount: 1,
-      successRate: 0.9,
-      averageResponseTime: 45,
-    }),
-    getRequestHistory: vi
-      .fn()
-      .mockReturnValue([{ operation: "discover-actor", duration: 50, success: true }]),
-  },
-}));
-
 vi.mock("@logtape/logtape", () => ({
   getLogger: vi.fn().mockReturnValue({
     info: vi.fn(),
@@ -121,8 +79,6 @@ import { auditLogger } from "../../src/audit/logger.js";
 import { dynamicInstanceDiscovery } from "../../src/discovery/dynamic-instance-discovery.js";
 import { instanceDiscovery } from "../../src/discovery/instance-discovery.js";
 import { getInstanceSoftware } from "../../src/discovery/nodeinfo.js";
-import { healthChecker } from "../../src/telemetry/health-check.js";
-import { performanceMonitor } from "../../src/telemetry/performance-monitor.js";
 
 describe("MCP Tools", () => {
   let mcpServer: McpServer;
@@ -178,8 +134,6 @@ describe("MCP Tools", () => {
         "convert-url",
         "batch-fetch-actors",
         "batch-fetch-posts",
-        "health-check",
-        "performance-metrics",
       ];
 
       for (const toolName of expectedTools) {
@@ -391,64 +345,6 @@ describe("MCP Tools", () => {
         "opensource",
         "linux",
       ]);
-    });
-  });
-
-  describe("health-check tool", () => {
-    it("should return health status", async () => {
-      const tool = registeredTools.get("health-check");
-      const result = await tool?.handler({ includeMetrics: false });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Server Health Check",
-      );
-      expect((result as { content: { text: string }[] }).content[0].text).toContain("HEALTHY");
-      expect(healthChecker.performHealthCheck).toHaveBeenCalledWith(false);
-    });
-
-    it("should include metrics when requested", async () => {
-      (healthChecker.performHealthCheck as Mock).mockResolvedValue({
-        status: "healthy",
-        uptime: 60000,
-        version: "1.0.0",
-        timestamp: new Date().toISOString(),
-        checks: { memory: { status: "pass", message: "OK", duration: 1 } },
-        metrics: {
-          requests: { total: 100, errors: 5, errorRate: 5 },
-          performance: { averageResponseTime: 50, p95ResponseTime: 100, p99ResponseTime: 150 },
-          system: { memoryUsageMB: 50, uptime: 60000 },
-        },
-      });
-
-      const tool = registeredTools.get("health-check");
-      const result = await tool?.handler({ includeMetrics: true });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Performance Metrics",
-      );
-      expect(healthChecker.performHealthCheck).toHaveBeenCalledWith(true);
-    });
-  });
-
-  describe("performance-metrics tool", () => {
-    it("should return overall metrics", async () => {
-      const tool = registeredTools.get("performance-metrics");
-      const result = await tool?.handler({});
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        "Overall Performance Metrics",
-      );
-      expect(performanceMonitor.getMetrics).toHaveBeenCalled();
-    });
-
-    it("should return metrics for specific operation", async () => {
-      const tool = registeredTools.get("performance-metrics");
-      const result = await tool?.handler({ operation: "discover-actor" });
-
-      expect((result as { content: { text: string }[] }).content[0].text).toContain(
-        'Performance Metrics for "discover-actor"',
-      );
-      expect(performanceMonitor.getOperationMetrics).toHaveBeenCalledWith("discover-actor");
     });
   });
 

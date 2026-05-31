@@ -13,7 +13,6 @@ import { auditLogger } from "../audit/logger.js";
 import { accountManager, authenticatedClient } from "../auth/index.js";
 import { ENABLE_WRITES } from "../config.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
-import { performanceMonitor } from "../telemetry/performance-monitor.js";
 import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
 import { wrapUntrusted } from "../utils/untrusted.js";
 import { trackedMcpServer } from "./capabilities.js";
@@ -286,11 +285,8 @@ function registerVerifyAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("verify-account", { accountId: targetId });
-
       try {
         const info = await accountManager.verifyAccount(targetId);
-        performanceMonitor.endRequest(requestId, true);
 
         if (!info) {
           auditLogger.logToolInvocation("verify-account", auditParams, {
@@ -338,7 +334,6 @@ Run \`activitypub-mcp login ${account.instance}\` to re-authorize.`,
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("verify-account", auditParams, {
           success: false,
@@ -440,11 +435,6 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("post-status", {
-        instance: account.instance,
-        visibility,
-      });
-
       try {
         logger.info("Creating post", { instance: account.instance, visibility });
 
@@ -461,7 +451,6 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
           accountId,
         );
 
-        performanceMonitor.endRequest(requestId, true);
         auditLogger.logToolInvocation("post-status", auditParams, {
           success: true,
           duration: Date.now() - startTime,
@@ -485,7 +474,6 @@ Posted as @${status.account.username}`,
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = getErrorMessage(error);
         auditLogger.logToolInvocation("post-status", auditParams, {
           success: false,
@@ -554,11 +542,6 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("reply-to-post", {
-        instance: account.instance,
-        statusId,
-      });
-
       try {
         const status = await authenticatedClient.createPost(
           {
@@ -570,7 +553,6 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
           accountId,
         );
 
-        performanceMonitor.endRequest(requestId, true);
         auditLogger.logToolInvocation("reply-to-post", auditParams, {
           success: true,
           duration: Date.now() - startTime,
@@ -591,7 +573,6 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("reply-to-post", auditParams, {
           success: false,
@@ -649,14 +630,8 @@ function registerDeletePostTool(mcpServer: McpServer, rateLimiter: RateLimiter):
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("delete-post", {
-        instance: account.instance,
-        statusId,
-      });
-
       try {
         await authenticatedClient.deletePost(statusId, accountId);
-        performanceMonitor.endRequest(requestId, true);
         auditLogger.logToolInvocation("delete-post", auditParams, {
           success: true,
           duration: Date.now() - startTime,
@@ -673,7 +648,6 @@ Post ${statusId} has been deleted.`,
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("delete-post", auditParams, {
           success: false,
@@ -733,14 +707,8 @@ function registerBoostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter): 
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("boost-post", {
-        instance: account.instance,
-        statusId,
-      });
-
       try {
         const status = await authenticatedClient.boostPost(statusId, accountId);
-        performanceMonitor.endRequest(requestId, true);
         auditLogger.logToolInvocation("boost-post", auditParams, {
           success: true,
           duration: Date.now() - startTime,
@@ -759,7 +727,6 @@ You boosted a post by @${status.account.username}
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("boost-post", auditParams, {
           success: false,
@@ -1198,11 +1165,6 @@ function registerFollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("follow-account", {
-        instance: account.instance,
-        acct,
-      });
-
       try {
         // First, lookup the account to get its ID
         const targetAccount = await authenticatedClient.lookupAccount(acct, accountId);
@@ -1212,8 +1174,6 @@ function registerFollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
           { reblogs: showBoosts, notify },
           accountId,
         );
-
-        performanceMonitor.endRequest(requestId, true);
 
         const statusText = relationship.requested
           ? "Follow request sent (awaiting approval)"
@@ -1238,7 +1198,6 @@ function registerFollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("follow-account", auditParams, {
           success: false,
@@ -2082,17 +2041,10 @@ function registerGetRelationshipTool(mcpServer: McpServer, rateLimiter: RateLimi
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("get-relationship", {
-        instance: account.instance,
-        acct,
-      });
-
       try {
         // First, lookup the account to get its ID
         const targetAccount = await authenticatedClient.lookupAccount(acct, accountId);
         const relationship = await authenticatedClient.getRelationship(targetAccount.id, accountId);
-
-        performanceMonitor.endRequest(requestId, true);
 
         const statusItems = [];
         if (relationship.following) statusItems.push("✅ You follow them");
@@ -2130,7 +2082,6 @@ ${relationship.note ? `\n📝 **Note**: ${relationship.note}` : ""}
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("get-relationship", auditParams, {
           success: false,
@@ -2196,15 +2147,8 @@ function registerVoteOnPollTool(mcpServer: McpServer, rateLimiter: RateLimiter):
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("vote-on-poll", {
-        instance: account.instance,
-        pollId,
-        choices,
-      });
-
       try {
         const poll = await authenticatedClient.voteOnPoll(pollId, choices, accountId);
-        performanceMonitor.endRequest(requestId, true);
 
         const optionsList = poll.options
           .map((opt, i) => {
@@ -2246,7 +2190,6 @@ ${expiryText}`,
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("vote-on-poll", auditParams, {
           success: false,
@@ -2331,12 +2274,6 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("upload-media", {
-        instance: account.instance,
-        filePath,
-        hasDescription: !!description,
-      });
-
       try {
         // Read the file
         const fs = await import("node:fs/promises");
@@ -2354,7 +2291,6 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
           accountId,
         );
 
-        performanceMonitor.endRequest(requestId, true);
         auditLogger.logToolInvocation("upload-media", auditParams, {
           success: true,
           duration: Date.now() - startTime,
@@ -2382,7 +2318,6 @@ post-status content="Your post" mediaIds=["${media.id}"]
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("upload-media", auditParams, {
           success: false,
@@ -2442,14 +2377,8 @@ function registerGetScheduledPostsTool(mcpServer: McpServer, rateLimiter: RateLi
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("get-scheduled-posts", {
-        instance: account.instance,
-        limit,
-      });
-
       try {
         const scheduled = await authenticatedClient.getScheduledPosts({ limit }, accountId);
-        performanceMonitor.endRequest(requestId, true);
 
         auditLogger.logToolInvocation("get-scheduled-posts", auditParams, {
           success: true,
@@ -2504,7 +2433,6 @@ ${postsList}
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("get-scheduled-posts", auditParams, {
           success: false,
@@ -2566,14 +2494,8 @@ function registerCancelScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("cancel-scheduled-post", {
-        instance: account.instance,
-        scheduledPostId,
-      });
-
       try {
         await authenticatedClient.cancelScheduledPost(scheduledPostId, accountId);
-        performanceMonitor.endRequest(requestId, true);
         auditLogger.logToolInvocation("cancel-scheduled-post", auditParams, {
           success: true,
           duration: Date.now() - startTime,
@@ -2590,7 +2512,6 @@ The scheduled post \`${scheduledPostId}\` has been canceled and will not be publ
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("cancel-scheduled-post", auditParams, {
           success: false,
@@ -2659,19 +2580,12 @@ function registerUpdateScheduledPostTool(mcpServer: McpServer, rateLimiter: Rate
 
       checkRateLimit(rateLimiter, account.instance);
 
-      const requestId = performanceMonitor.startRequest("update-scheduled-post", {
-        instance: account.instance,
-        scheduledPostId,
-        scheduledAt,
-      });
-
       try {
         const updated = await authenticatedClient.updateScheduledPost(
           scheduledPostId,
           scheduledAt,
           accountId,
         );
-        performanceMonitor.endRequest(requestId, true);
         auditLogger.logToolInvocation("update-scheduled-post", auditParams, {
           success: true,
           duration: Date.now() - startTime,
@@ -2690,7 +2604,6 @@ Post \`${scheduledPostId}\` is now scheduled for: **${newDate}**`,
           ],
         };
       } catch (error) {
-        performanceMonitor.endRequest(requestId, false, getErrorMessage(error));
         const message = error instanceof Error ? error.message : String(error);
         auditLogger.logToolInvocation("update-scheduled-post", auditParams, {
           success: false,

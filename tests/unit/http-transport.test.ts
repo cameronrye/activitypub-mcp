@@ -79,7 +79,7 @@ describe("HttpTransportServer", () => {
   });
 
   describe("HTTP endpoints", () => {
-    it("should respond to health endpoint", async () => {
+    it("should respond to health endpoint with {status: ok}", async () => {
       server = new HttpTransportServer({ port: 0 });
       await server.start();
 
@@ -88,10 +88,10 @@ describe("HttpTransportServer", () => {
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      expect(data.status).toBeDefined();
+      expect(data.status).toBe("ok");
     });
 
-    it("should respond to metrics endpoint", async () => {
+    it("should return 404 for /metrics (removed)", async () => {
       server = new HttpTransportServer({ port: 0 });
       await server.start();
 
@@ -100,9 +100,7 @@ describe("HttpTransportServer", () => {
         headers: { Authorization: `Bearer ${TEST_SECRET}` },
       });
 
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      expect(data).toBeDefined();
+      expect(response.status).toBe(404);
     });
 
     it("should respond to root endpoint with server info", async () => {
@@ -213,11 +211,11 @@ describe("HttpTransportServer", () => {
       const healthResponse = await fetch(`http://${address?.host}:${address?.port}/health/`);
       expect(healthResponse.status).toBe(200);
 
-      // Metrics endpoint with trailing slash
+      // Metrics endpoint is removed — trailing slash returns 404
       const metricsResponse = await fetch(`http://${address?.host}:${address?.port}/metrics/`, {
         headers: { Authorization: `Bearer ${TEST_SECRET}` },
       });
-      expect(metricsResponse.status).toBe(200);
+      expect(metricsResponse.status).toBe(404);
     });
 
     it("should include correct endpoints in server info", async () => {
@@ -231,7 +229,6 @@ describe("HttpTransportServer", () => {
       expect(data.endpoints).toBeDefined();
       expect(data.endpoints.mcp).toBe("/mcp");
       expect(data.endpoints.health).toBe("/health");
-      expect(data.endpoints.metrics).toBe("/metrics");
       expect(data.endpoints.info).toBe("/");
     });
 
@@ -320,7 +317,7 @@ describe("HttpTransportServer", () => {
       const address = t.getAddress();
       if (!address) throw new Error("no address");
       const res = await fetch(`http://127.0.0.1:${address.port}/health`);
-      expect([200, 503]).toContain(res.status); // health-check may legitimately fail
+      expect(res.status).toBe(200);
       await t.stop();
     });
   });
@@ -376,33 +373,5 @@ describe("HttpTransportServer", () => {
       });
       expect(response3.headers.get("Access-Control-Allow-Origin")).toBe("http://c.com");
     });
-  });
-});
-
-describe("HEALTH_CHECK_EXTERNAL_PROBE behavioral (M7)", () => {
-  const originalEnv = process.env;
-
-  beforeEach(() => {
-    vi.resetModules();
-    process.env = { ...originalEnv };
-  });
-
-  afterEach(() => {
-    process.env = originalEnv;
-    vi.restoreAllMocks();
-  });
-
-  it("skips the external probe when HEALTH_CHECK_EXTERNAL_PROBE=false", async () => {
-    process.env.HEALTH_CHECK_EXTERNAL_PROBE = "false";
-    vi.resetModules();
-    const fetchSpy = vi.spyOn(globalThis, "fetch");
-    const { healthChecker } = await import("../../src/telemetry/health-check.js");
-    await healthChecker.performHealthCheck(true);
-    // The connectivity probe to HEALTH_CHECK_URL must NOT have fired.
-    const probeCalls = fetchSpy.mock.calls.filter(([url]) =>
-      String(url).includes("mastodon.social"),
-    );
-    expect(probeCalls).toHaveLength(0);
-    fetchSpy.mockRestore();
   });
 });

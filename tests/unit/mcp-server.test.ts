@@ -66,7 +66,6 @@ vi.mock("../../src/config.js", () => ({
   TRANSPORT_MODE: "stdio",
   HTTP_PORT: 3000,
   HTTP_HOST: "localhost",
-  MAX_REQUEST_HISTORY: 1000,
 }));
 
 describe("ActivityPubMCPServer", () => {

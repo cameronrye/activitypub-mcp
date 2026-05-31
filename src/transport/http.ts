@@ -20,8 +20,6 @@ import {
   SERVER_NAME,
   SERVER_VERSION,
 } from "../config.js";
-import { healthChecker } from "../telemetry/health-check.js";
-import { performanceMonitor } from "../telemetry/performance-monitor.js";
 import { checkBearerAuth } from "./auth-middleware.js";
 
 const logger = getLogger("activitypub-mcp:http");
@@ -75,36 +73,9 @@ export class HttpTransportServer {
   /**
    * Handle health check endpoint
    */
-  private async handleHealthCheck(res: ServerResponse): Promise<void> {
-    try {
-      const health = await healthChecker.performHealthCheck(true);
-      let statusCode: number;
-      if (health.status === "healthy" || health.status === "degraded") {
-        statusCode = 200;
-      } else {
-        statusCode = 503;
-      }
-
-      res.writeHead(statusCode, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(health, null, 2));
-    } catch {
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ status: "error", error: "Internal server error" }));
-    }
-  }
-
-  /**
-   * Handle metrics endpoint
-   */
-  private handleMetrics(res: ServerResponse): void {
-    try {
-      const metrics = performanceMonitor.getMetrics();
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(metrics, null, 2));
-    } catch {
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Internal server error" }));
-    }
+  private handleHealthCheck(res: ServerResponse): void {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "ok" }));
   }
 
   /**
@@ -121,7 +92,6 @@ export class HttpTransportServer {
           endpoints: {
             mcp: "/mcp",
             health: "/health",
-            metrics: "/metrics",
             info: "/",
           },
         },
@@ -178,13 +148,7 @@ export class HttpTransportServer {
 
         // Route requests
         if (pathname === "/health" || pathname === "/health/") {
-          await this.handleHealthCheck(res);
-          return;
-        }
-
-        if (pathname === "/metrics" || pathname === "/metrics/") {
-          if (!checkBearerAuth(req, res, secret)) return;
-          this.handleMetrics(res);
+          this.handleHealthCheck(res);
           return;
         }
 
@@ -230,7 +194,6 @@ export class HttpTransportServer {
           endpoints: {
             mcp: `http://${this.host}:${this.port}/mcp`,
             health: `http://${this.host}:${this.port}/health`,
-            metrics: `http://${this.host}:${this.port}/metrics`,
           },
         });
         if (this.transport) {
