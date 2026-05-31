@@ -317,6 +317,81 @@ describe("verifyAccount SSRF protection (M8)", () => {
   });
 });
 
+describe("AccountManager.loadPersisted", () => {
+  const originalEnv = process.env;
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+    delete process.env.ACTIVITYPUB_DEFAULT_INSTANCE;
+    delete process.env.ACTIVITYPUB_DEFAULT_TOKEN;
+    delete process.env.ACTIVITYPUB_ACCOUNTS;
+  });
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  async function withStore() {
+    const { mkdtempSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const dir = mkdtempSync(join(tmpdir(), "apmcp-lp-"));
+    process.env.ACTIVITYPUB_CONFIG_DIR = join(dir, "cfg");
+    const { CredentialStore } = await import(
+      /* @vite-ignore */ `../../src/auth/credential-store.js?ts=${Date.now()}-${Math.random().toString(36).slice(2)}`
+    );
+    return new CredentialStore();
+  }
+
+  it("loads persisted accounts into the manager", async () => {
+    const store = await withStore();
+    await store.upsert({
+      id: "bob@misskey.test",
+      instance: "misskey.test",
+      username: "bob",
+      accessToken: "tok",
+      tokenType: "Bearer",
+      scopes: ["read:account"],
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+    const { AccountManager } = await import("../../src/auth/account-manager.js");
+    const manager = new AccountManager();
+    await manager.loadPersisted(store);
+    const acct = manager.getAccount("bob@misskey.test");
+    expect(acct?.username).toBe("bob");
+    expect(acct?.instance).toBe("misskey.test");
+    expect(acct?.accessToken).toBe("tok");
+    expect(acct?.scopes).toEqual(["read:account"]);
+  });
+
+  it("env-var account wins on id collision (persisted skipped)", async () => {
+    process.env.ACTIVITYPUB_DEFAULT_INSTANCE = "env.test";
+    process.env.ACTIVITYPUB_DEFAULT_TOKEN = "env-token";
+    const store = await withStore();
+    await store.upsert({
+      id: "default",
+      instance: "persisted.test",
+      username: "persisted",
+      accessToken: "persisted-token",
+      tokenType: "Bearer",
+      scopes: ["read"],
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+    const { AccountManager } = await import("../../src/auth/account-manager.js");
+    const manager = new AccountManager();
+    await manager.loadPersisted(store);
+    expect(manager.getAccount("default")?.instance).toBe("env.test");
+  });
+
+  it("never throws if the store read fails", async () => {
+    const { AccountManager } = await import("../../src/auth/account-manager.js");
+    const manager = new AccountManager();
+    const brokenStore = {
+      loadAccounts: () => Promise.reject(new Error("disk gone")),
+    } as unknown as { loadAccounts: () => Promise<never> };
+    await expect(manager.loadPersisted(brokenStore as never)).resolves.toBeUndefined();
+  });
+});
+
 describe("verifyAccount delegates to the platform adapter", () => {
   const originalEnv = process.env;
   beforeEach(() => {

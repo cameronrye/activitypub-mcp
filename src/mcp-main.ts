@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { getLogger } from "@logtape/logtape";
+import { dispatchCli } from "./cli/index.js";
 import { SERVER_NAME, SERVER_VERSION, validateConfiguration } from "./config.js";
 import ActivityPubMCPServer from "./mcp-server.js";
 import "./telemetry/logging.js";
@@ -90,7 +91,17 @@ function parseArgs(): void {
  * through the Model Context Protocol.
  */
 async function main() {
-  // Parse CLI arguments first
+  // Subcommands (login/logout/accounts) run instead of the server.
+  try {
+    if (await dispatchCli(process.argv.slice(2))) {
+      return;
+    }
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+
+  // Parse remaining CLI flags (-h/-v) for the server path.
   parseArgs();
 
   try {

@@ -1270,6 +1270,37 @@ site under `src/pages/docs/` in v2.0.0.
 - `npm run test` - Run tests
 - `npm run build` - Build TypeScript
 
+### Signing in (OAuth / MiAuth)
+
+Acquire and persist an access token without hand-copying it:
+
+```bash
+# Mastodon-family (Mastodon, Pleroma, Akkoma, GotoSocial, Sharkey, Firefish)
+activitypub-mcp login mastodon.social
+
+# Misskey / Foundkey (uses MiAuth)
+activitypub-mcp login misskey.io
+```
+
+This opens your browser to authorize, captures the response on a temporary
+`127.0.0.1` callback, and saves the token to
+`${XDG_CONFIG_HOME:-~/.config}/activitypub-mcp/accounts.json` (file mode `0600`).
+The MCP server loads persisted accounts at startup alongside any env-var accounts.
+
+- `activitypub-mcp accounts` — list signed-in accounts (no secrets shown).
+- `activitypub-mcp logout <id>` — revoke (Mastodon) and remove the account.
+
+#### Notes & limitations
+
+- Tokens are stored in plaintext, protected by file permissions (like `gh`/`npm`).
+  For stronger at-rest protection, use the env-var path with a secret manager.
+- Interactive login needs a local browser + reachable loopback. Headless/CI
+  deployments keep using `ACTIVITYPUB_DEFAULT_INSTANCE` / `ACTIVITYPUB_DEFAULT_TOKEN`.
+- IDs are platform-scoped — a token works only against the instance it was issued for.
+- Misskey has no app-revoke endpoint; `logout` removes the local record (revoke the
+  token in your instance's Settings → API to fully invalidate it).
+- Foundkey is migrating off MiAuth; login may fail on builds that have removed it.
+
 ### Environment Variables
 
 Create a `.env` file:

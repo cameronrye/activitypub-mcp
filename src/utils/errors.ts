@@ -145,3 +145,23 @@ export class UnsupportedOnPlatformError extends Error {
     this.name = "UnsupportedOnPlatformError";
   }
 }
+
+/**
+ * Thrown when an authenticated request is rejected with HTTP 401 — the token was
+ * revoked or expired. (403 is NOT treated as token rejection: it is also used for
+ * per-operation permission/scope errors that adapters must surface verbatim, e.g.
+ * Misskey's `{error:{message}}` body.) Carries the account identity so the message
+ * can point the user at the exact re-login command.
+ */
+export class TokenRejectedError extends Error {
+  constructor(
+    public readonly instance: string,
+    public readonly username: string,
+  ) {
+    super(
+      `The token for @${username}@${instance} was rejected (revoked or expired). ` +
+        `Run \`activitypub-mcp login ${instance}\` to re-authorize.`,
+    );
+    this.name = "TokenRejectedError";
+  }
+}

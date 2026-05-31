@@ -9,6 +9,7 @@ import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import { resolveWriteAdapter } from "./adapters/resolve.js";
 import type { AccountInfo } from "./adapters/write-adapter.js";
+import type { CredentialStore } from "./credential-store.js";
 
 const logger = getLogger("activitypub-mcp:account-manager");
 
@@ -277,6 +278,39 @@ export class AccountManager {
         error: error instanceof Error ? error.message : String(error),
       });
       return null;
+    }
+  }
+
+  /**
+   * Merge on-disk persisted accounts into the manager. Env-var accounts (loaded
+   * in the constructor) WIN on id collision — deploy-time config is authoritative.
+   * Never throws: a store failure logs and leaves env accounts intact.
+   *
+   * @param store - injected for testability; defaults to the shared singleton.
+   */
+  async loadPersisted(store?: CredentialStore): Promise<void> {
+    try {
+      const resolved = store ?? (await import("./credential-store.js")).credentialStore;
+      const records = await resolved.loadAccounts();
+      for (const rec of records) {
+        if (this.accounts.has(rec.id)) {
+          logger.warn("Persisted account shadowed by env account; skipping", { id: rec.id });
+          continue;
+        }
+        this.addAccount({
+          id: rec.id,
+          instance: rec.instance,
+          username: rec.username,
+          accessToken: rec.accessToken,
+          tokenType: rec.tokenType,
+          scopes: rec.scopes,
+          label: rec.label,
+        });
+      }
+    } catch (error) {
+      logger.error("Failed to load persisted accounts (env accounts unaffected)", {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 

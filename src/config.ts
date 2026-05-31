@@ -5,6 +5,9 @@
  * Values can be overridden via environment variables.
  */
 
+import { homedir } from "node:os";
+import { join } from "node:path";
+
 // =============================================================================
 // Helper Functions
 // =============================================================================
@@ -38,6 +41,14 @@ export const SERVER_NAME = process.env.MCP_SERVER_NAME || "activitypub-mcp";
 
 /** MCP Server version */
 export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "2.2.0";
+
+/**
+ * Directory for the persisted credential store (accounts.json).
+ * Precedence: ACTIVITYPUB_CONFIG_DIR → $XDG_CONFIG_HOME/activitypub-mcp → ~/.config/activitypub-mcp.
+ */
+export const CONFIG_DIR =
+  process.env.ACTIVITYPUB_CONFIG_DIR ||
+  join(process.env.XDG_CONFIG_HOME || join(homedir(), ".config"), "activitypub-mcp");
 
 /** Log level for the application */
 export const LOG_LEVEL = process.env.LOG_LEVEL || "info";

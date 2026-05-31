@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Browser-based login.** New `activitypub-mcp login <instance>` acquires an
+  access token via Mastodon OAuth2 (PKCE) or Misskey/Foundkey MiAuth — routed by
+  NodeInfo software detection — using an ephemeral `127.0.0.1` loopback callback,
+  and persists it to `${XDG_CONFIG_HOME:-~/.config}/activitypub-mcp/accounts.json`
+  (mode `0600`). The server loads persisted accounts at startup alongside env-var
+  accounts. Adds `activitypub-mcp logout <id>` and `activitypub-mcp accounts`.
+- **`ACTIVITYPUB_CONFIG_DIR`** to override the credential-store location.
+- **Clearer auth errors.** A rejected token (401/403) now returns a
+  `TokenRejectedError` telling you to run `activitypub-mcp login <instance>`.
+
 ## [2.2.0] - 2026-05-29
 
 ### Added

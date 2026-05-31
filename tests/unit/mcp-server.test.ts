@@ -49,6 +49,12 @@ vi.mock("@logtape/logtape", () => ({
   }),
 }));
 
+vi.mock("../../src/auth/account-manager.js", () => ({
+  accountManager: {
+    loadPersisted: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 vi.mock("../../src/config.js", () => ({
   SERVER_NAME: "test-server",
   SERVER_VERSION: "1.0.0",

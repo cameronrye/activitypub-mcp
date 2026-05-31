@@ -10,6 +10,7 @@
 import { z } from "zod";
 import { REQUEST_TIMEOUT, USER_AGENT } from "../../config.js";
 import { instanceBlocklist } from "../../policy/instance-blocklist.js";
+import { TokenRejectedError } from "../../utils/errors.js";
 import { fetchWithRedirectGuard } from "../../utils/fetch-helpers.js";
 import { validateExternalUrl } from "../../validation/url.js";
 import type { AccountCredentials } from "../account-manager.js";
@@ -225,6 +226,9 @@ export async function authenticatedFetch(
       },
     );
     clearTimeout(timeoutId);
+    if (response.status === 401) {
+      throw new TokenRejectedError(account.instance, account.username);
+    }
     return response;
   } catch (error) {
     clearTimeout(timeoutId);

@@ -7,6 +7,10 @@
  * whether the server sent an accurate Content-Length header.
  */
 
+import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
+import { instanceBlocklist } from "../policy/instance-blocklist.js";
+import { validateExternalUrl } from "../validation/url.js";
+
 /**
  * Fetch wrapper that follows up to `maxHops` redirects, but re-runs the
  * caller-supplied `validate` function on every redirect target before
@@ -124,4 +128,71 @@ export async function readJsonWithLimit<T = unknown>(
   }
   const text = new TextDecoder("utf-8").decode(merged);
   return JSON.parse(text) as T;
+}
+
+export interface GuardedFetchOptions {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string;
+  timeoutMs?: number;
+}
+
+export interface GuardedResponse<T> {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  /** Parsed JSON body, or undefined if the body was empty / not JSON. */
+  data: T | undefined;
+}
+
+/**
+ * Guarded UNauthenticated fetch: SSRF allow-list + operator blocklist on the
+ * initial URL and every redirect hop, abort/timeout, streaming size cap, and
+ * best-effort JSON parsing. Used by NodeInfo discovery and the login flows'
+ * pre-token calls (which have no Bearer token, so they can't use
+ * authenticatedFetch).
+ */
+export async function guardedFetch<T = unknown>(
+  url: string,
+  options: GuardedFetchOptions = {},
+): Promise<GuardedResponse<T>> {
+  await validateExternalUrl(url);
+  instanceBlocklist.validateNotBlocked(new URL(url).hostname);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? REQUEST_TIMEOUT);
+  try {
+    const response = await fetchWithRedirectGuard(
+      url,
+      {
+        method: options.method ?? "GET",
+        headers: {
+          Accept: "application/json",
+          "User-Agent": USER_AGENT,
+          ...options.headers,
+        },
+        body: options.body,
+        signal: controller.signal,
+      },
+      async (target) => {
+        await validateExternalUrl(target);
+        instanceBlocklist.validateNotBlocked(new URL(target).hostname);
+      },
+    );
+
+    let data: T | undefined;
+    if (response.status !== 204) {
+      try {
+        data = await readJsonWithLimit<T>(response, MAX_RESPONSE_SIZE);
+      } catch (error) {
+        // A too-large body is a real failure callers must see — don't mask it as
+        // a successful empty response. Only an empty / non-JSON body → undefined.
+        if (error instanceof ResponseTooLargeError) throw error;
+        data = undefined;
+      }
+    }
+    return { ok: response.ok, status: response.status, statusText: response.statusText, data };
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }

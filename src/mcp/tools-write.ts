@@ -88,7 +88,8 @@ function requireWriteEnabled(): void {
   if (!authenticatedClient.isWriteEnabled()) {
     throw new McpError(
       ErrorCode.InternalError,
-      "This write operation requires authentication. Configure ACTIVITYPUB_DEFAULT_INSTANCE and ACTIVITYPUB_DEFAULT_TOKEN environment variables.",
+      "This write operation requires authentication. Run `activitypub-mcp login <instance>` to sign in, " +
+        "or set ACTIVITYPUB_DEFAULT_INSTANCE and ACTIVITYPUB_DEFAULT_TOKEN environment variables.",
     );
   }
 }
@@ -102,7 +103,8 @@ function requireAuthEnabled(): void {
   if (!authenticatedClient.isWriteEnabled()) {
     throw new McpError(
       ErrorCode.InternalError,
-      "This tool requires an authenticated account. Configure ACTIVITYPUB_DEFAULT_INSTANCE and ACTIVITYPUB_DEFAULT_TOKEN environment variables.",
+      "This tool requires an authenticated account. Run `activitypub-mcp login <instance>` to sign in, " +
+        "or set ACTIVITYPUB_DEFAULT_INSTANCE and ACTIVITYPUB_DEFAULT_TOKEN environment variables.",
     );
   }
 }
@@ -308,7 +310,7 @@ function registerVerifyAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
 
 Account credentials for \`${targetId}\` (@${account.username}@${account.instance}) are invalid or expired.
 
-Please update your access token.`,
+Run \`activitypub-mcp login ${account.instance}\` to re-authorize.`,
               },
             ],
             isError: true,

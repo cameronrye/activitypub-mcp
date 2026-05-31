@@ -3,7 +3,11 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { getErrorMessage, UnsupportedOnPlatformError } from "../../src/utils/errors.js";
+import {
+  getErrorMessage,
+  TokenRejectedError,
+  UnsupportedOnPlatformError,
+} from "../../src/utils/errors.js";
 import { stripHtmlTags } from "../../src/utils/html.js";
 import {
   isBlockedHostname,
@@ -253,5 +257,16 @@ describe("UnsupportedOnPlatformError", () => {
     expect(err.op).toBe("vote-on-poll");
     expect(err.platform).toBe("Misskey");
     expect(err.message).toBe("vote-on-poll is not supported on Misskey");
+  });
+});
+
+describe("TokenRejectedError", () => {
+  it("formats a re-auth message with instance + username", () => {
+    const err = new TokenRejectedError("mastodon.social", "alice");
+    expect(err).toBeInstanceOf(Error);
+    expect(err.name).toBe("TokenRejectedError");
+    expect(err.instance).toBe("mastodon.social");
+    expect(err.message).toContain("@alice@mastodon.social");
+    expect(err.message).toContain("activitypub-mcp login mastodon.social");
   });
 });

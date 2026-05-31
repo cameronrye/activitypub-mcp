@@ -1,14 +1,8 @@
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
-import {
-  CACHE_MAX_SIZE,
-  INSTANCE_SOFTWARE_TTL,
-  MAX_RESPONSE_SIZE,
-  REQUEST_TIMEOUT,
-  USER_AGENT,
-} from "../config.js";
+import { CACHE_MAX_SIZE, INSTANCE_SOFTWARE_TTL } from "../config.js";
 import { instanceBlocklist } from "../policy/instance-blocklist.js";
-import { fetchWithRedirectGuard, readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { guardedFetch } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
 import { validateExternalUrl } from "../validation/url.js";
 
@@ -214,28 +208,9 @@ export function formatInstanceSoftware(info: InstanceSoftwareInfo): string {
 }
 
 async function fetchJson(url: string): Promise<unknown> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-
-  try {
-    const response = await fetchWithRedirectGuard(
-      url,
-      {
-        method: "GET",
-        headers: { Accept: "application/json", "User-Agent": USER_AGENT },
-        signal: controller.signal,
-      },
-      async (target) => {
-        await validateExternalUrl(target);
-        const targetHost = new URL(target).hostname;
-        instanceBlocklist.validateNotBlocked(targetHost);
-      },
-    );
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} ${response.statusText}`);
-    }
-    return await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
-  } finally {
-    clearTimeout(timeoutId);
+  const res = await guardedFetch(url);
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} ${res.statusText}`);
   }
+  return res.data;
 }
