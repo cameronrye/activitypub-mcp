@@ -35,25 +35,39 @@ describe("MCP Prompts", () => {
   });
 
   describe("registerPrompts", () => {
-    it("should register all expected prompts", () => {
+    it("should register exactly the five kept prompts", () => {
       const expectedPrompts = [
         "explore-fediverse",
-        "discover-content",
-        "compare-instances",
         "compare-accounts",
         "analyze-user-activity",
         "find-experts",
         "summarize-trending",
-        "content-strategy",
-        "community-health",
-        "migration-helper",
-        "thread-composer",
       ];
+
+      expect(registeredPrompts.size).toBe(expectedPrompts.length);
 
       for (const promptName of expectedPrompts) {
         expect(registeredPrompts.has(promptName), `Prompt ${promptName} should be registered`).toBe(
           true,
         );
+      }
+    });
+
+    it("should not register the removed prompts", () => {
+      const removedPrompts = [
+        "community-health",
+        "compare-instances",
+        "content-strategy",
+        "discover-content",
+        "migration-helper",
+        "thread-composer",
+      ];
+
+      for (const promptName of removedPrompts) {
+        expect(
+          registeredPrompts.has(promptName),
+          `Prompt ${promptName} should NOT be registered`,
+        ).toBe(false);
       }
     });
   });
@@ -88,73 +102,6 @@ describe("MCP Prompts", () => {
       expect((result.messages[0] as { content: { text: string } }).content.text).toContain("music");
       expect((result.messages[0] as { content: { text: string } }).content.text).not.toContain(
         "I prefer",
-      );
-    });
-  });
-
-  describe("compare-instances prompt", () => {
-    it("should generate comparison message with instances", () => {
-      const prompt = registeredPrompts.get("compare-instances");
-      const result = prompt?.handler({ instances: "mastodon.social, fosstodon.org" });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "mastodon.social, fosstodon.org",
-      );
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "compare",
-      );
-    });
-
-    it("should include criteria when specified", () => {
-      const prompt = registeredPrompts.get("compare-instances");
-      const result = prompt?.handler({
-        instances: "mastodon.social",
-        criteria: "moderation, privacy",
-      });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "moderation, privacy",
-      );
-    });
-  });
-
-  describe("discover-content prompt", () => {
-    it("should generate content discovery message", () => {
-      const prompt = registeredPrompts.get("discover-content");
-      const result = prompt?.handler({ topics: "rust, webdev" });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "rust, webdev",
-      );
-    });
-
-    it("should customize message for people content type", () => {
-      const prompt = registeredPrompts.get("discover-content");
-      const result = prompt?.handler({ topics: "science", contentType: "people" });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "people",
-      );
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "accounts to follow",
-      );
-    });
-
-    it("should customize message for hashtags content type", () => {
-      const prompt = registeredPrompts.get("discover-content");
-      const result = prompt?.handler({ topics: "art", contentType: "hashtags" });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "hashtags",
-      );
-    });
-
-    it("should customize message for instances content type", () => {
-      const prompt = registeredPrompts.get("discover-content");
-      const result = prompt?.handler({ topics: "gaming", contentType: "instances" });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "instances to explore",
       );
     });
   });
@@ -241,6 +188,15 @@ describe("MCP Prompts", () => {
         "mastodon.social, scholar.social",
       );
     });
+
+    it("should reference the search tool, not the removed search-accounts tool", () => {
+      const prompt = registeredPrompts.get("find-experts");
+      const result = prompt?.handler({ topic: "rust programming" });
+      const text = (result.messages[0] as { content: { text: string } }).content.text;
+
+      expect(text).toContain("search tool");
+      expect(text).not.toContain("search-accounts");
+    });
   });
 
   describe("summarize-trending prompt", () => {
@@ -271,187 +227,15 @@ describe("MCP Prompts", () => {
 
       expect((result.messages[0] as { content: { text: string } }).content.text).toContain("tech");
     });
-  });
 
-  describe("content-strategy prompt", () => {
-    it("should generate content strategy message", () => {
-      const prompt = registeredPrompts.get("content-strategy");
-      const result = prompt?.handler({ topics: "javascript, webdev" });
+    it("should reference get-public-timeline, not removed timeline tools", () => {
+      const prompt = registeredPrompts.get("summarize-trending");
+      const result = prompt?.handler({});
+      const text = (result.messages[0] as { content: { text: string } }).content.text;
 
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "javascript, webdev",
-      );
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "content strategy",
-      );
-    });
-
-    it("should include target audience", () => {
-      const prompt = registeredPrompts.get("content-strategy");
-      const result = prompt?.handler({ topics: "coding", targetAudience: "beginners" });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "beginners",
-      );
-    });
-
-    it("should include posting frequency", () => {
-      const prompt = registeredPrompts.get("content-strategy");
-      const result = prompt?.handler({ topics: "design", postingFrequency: "daily" });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain("daily");
-    });
-  });
-
-  describe("community-health prompt", () => {
-    it("should generate community health analysis message", () => {
-      const prompt = registeredPrompts.get("community-health");
-      const result = prompt?.handler({ instance: "mastodon.social" });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "mastodon.social",
-      );
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "community health",
-      );
-    });
-
-    it("should include specific concerns", () => {
-      const prompt = registeredPrompts.get("community-health");
-      const result = prompt?.handler({ instance: "example.social", concerns: "spam, moderation" });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "spam, moderation",
-      );
-    });
-  });
-
-  describe("migration-helper prompt", () => {
-    it("should generate migration helper message", () => {
-      const prompt = registeredPrompts.get("migration-helper");
-      const result = prompt?.handler({ priorities: "privacy, moderation" });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "migration",
-      );
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "privacy, moderation",
-      );
-    });
-
-    it("should include current and target instances", () => {
-      const prompt = registeredPrompts.get("migration-helper");
-      const result = prompt?.handler({
-        currentInstance: "mastodon.social",
-        targetInstance: "fosstodon.org",
-        priorities: "community",
-      });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "mastodon.social",
-      );
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "fosstodon.org",
-      );
-    });
-
-    it("should handle new user without current instance", () => {
-      const prompt = registeredPrompts.get("migration-helper");
-      const result = prompt?.handler({ priorities: "topic focus" });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "New to Fediverse",
-      );
-    });
-  });
-
-  describe("thread-composer prompt", () => {
-    it("should generate thread composer message", () => {
-      const prompt = registeredPrompts.get("thread-composer");
-      const result = prompt?.handler({
-        topic: "Introduction to TypeScript",
-        keyPoints: "type safety, interfaces, generics",
-      });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "Introduction to TypeScript",
-      );
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "type safety, interfaces, generics",
-      );
-    });
-
-    it("should customize for different tones", () => {
-      const prompt = registeredPrompts.get("thread-composer");
-      const result = prompt?.handler({
-        topic: "Funny story",
-        keyPoints: "beginning, middle, end",
-        tone: "storytelling",
-      });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "storytelling",
-      );
-    });
-
-    it("should handle content warning", () => {
-      const prompt = registeredPrompts.get("thread-composer");
-      const result = prompt?.handler({
-        topic: "Sensitive topic",
-        keyPoints: "point 1, point 2",
-        contentWarning: "contains discussion of difficult topics",
-      });
-
-      expect((result.messages[0] as { content: { text: string } }).content.text).toContain(
-        "contains discussion of difficult topics",
-      );
-    });
-
-    it("should respect includeHashtags flag", () => {
-      const prompt = registeredPrompts.get("thread-composer");
-
-      const withHashtags = prompt?.handler({
-        topic: "Tech news",
-        keyPoints: "point 1",
-        includeHashtags: true,
-      });
-      expect((withHashtags.messages[0] as { content: { text: string } }).content.text).toContain(
-        "Hashtag Research",
-      );
-
-      const withoutHashtags = prompt?.handler({
-        topic: "Tech news",
-        keyPoints: "point 1",
-        includeHashtags: false,
-      });
-      expect(
-        (withoutHashtags.messages[0] as { content: { text: string } }).content.text,
-      ).not.toContain("Hashtag Research");
-    });
-
-    it("should handle different target lengths", () => {
-      const prompt = registeredPrompts.get("thread-composer");
-
-      const short = prompt?.handler({
-        topic: "Quick tip",
-        keyPoints: "tip",
-        targetLength: "short",
-      });
-      expect((short.messages[0] as { content: { text: string } }).content.text).toContain("3-5");
-
-      const medium = prompt?.handler({
-        topic: "Tutorial",
-        keyPoints: "steps",
-        targetLength: "medium",
-      });
-      expect((medium.messages[0] as { content: { text: string } }).content.text).toContain("6-10");
-
-      const long = prompt?.handler({
-        topic: "Deep dive",
-        keyPoints: "many points",
-        targetLength: "long",
-      });
-      expect((long.messages[0] as { content: { text: string } }).content.text).toContain("11+");
+      expect(text).toContain("get-public-timeline");
+      expect(text).not.toContain("get-local-timeline");
+      expect(text).not.toContain("get-federated-timeline");
     });
   });
 });
