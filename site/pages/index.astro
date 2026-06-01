@@ -48,9 +48,9 @@ const chatgptConfig = `{
           Connect LLMs to the <span class="hero-accent">Fediverse</span>
         </h1>
         <p class="hero-subhead">
-          <strong>ActivityPub MCP</strong> is an MCP server connecting LLMs like Claude and
-          ChatGPT to the Fediverse through <strong>ActivityPub</strong> and
-          <strong>WebFinger</strong> &mdash; no instance of your own required.
+          <strong>ActivityPub MCP</strong> connects LLMs like Claude and ChatGPT to the
+          Fediverse over <strong>ActivityPub</strong> and <strong>WebFinger</strong>.
+          No instance of your own required.
         </p>
         <div class="hero-cta">
           <a class="btn btn-primary btn-lg" href={`${baseURL}docs/getting-started/installation/`}>Get Started</a>
@@ -81,7 +81,8 @@ const chatgptConfig = `{
           <line x1="230" y1="120" x2="370" y2="120" stroke="var(--accent)" stroke-width="3" marker-end="url(#arrow-vermilion)" />
           <text x="300" y="104" text-anchor="middle" class="how-edge-label">MCP protocol</text>
           <line x1="550" y1="120" x2="690" y2="120" stroke="var(--accent-2)" stroke-width="3" marker-end="url(#arrow-teal)" />
-          <text x="620" y="104" text-anchor="middle" class="how-edge-label">ActivityPub / WebFinger</text>
+          <text x="620" y="94" text-anchor="middle" class="how-edge-label">ActivityPub /</text>
+          <text x="620" y="108" text-anchor="middle" class="how-edge-label">WebFinger</text>
           <g>
             <rect x="40" y="76" width="190" height="88" rx="14" class="how-node" />
             <text x="135" y="112" text-anchor="middle" class="how-node-title">LLM</text>
@@ -150,11 +151,11 @@ const chatgptConfig = `{
       <ol class="feature-list">
         <li class="feature-item">
           <h3 class="feature-title">Native ActivityPub &amp; WebFinger</h3>
-          <p class="feature-body">Resolve any <code>@user@instance</code> handle and traverse real ActivityPub data &mdash; actors, outboxes, threads &mdash; without running a server of your own.</p>
+          <p class="feature-body">Resolve any <code>@user@instance</code> handle and traverse real ActivityPub data (actors, outboxes, threads) without running a server of your own.</p>
         </li>
         <li class="feature-item">
           <h3 class="feature-title">Multi-account, timeline &amp; write tooling</h3>
-          <p class="feature-body">Switch between configured accounts, read home and public timelines, and post, reply, boost, favourite, and follow &mdash; all as first-class MCP tools.</p>
+          <p class="feature-body">Switch between configured accounts, read home and public timelines, and post, reply, boost, favourite, and follow, all as first-class MCP tools.</p>
         </li>
         <li class="feature-item">
           <h3 class="feature-title">LLM-optimized resources &amp; prompts</h3>
