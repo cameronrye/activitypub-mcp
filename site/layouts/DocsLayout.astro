@@ -1,98 +1,58 @@
 ---
+import { getCollection } from "astro:content";
 import BaseLayout from "./BaseLayout.astro";
 
-const { title, description, frontmatter } = Astro.props;
-const _pageTitle = title || frontmatter?.title || "Documentation";
-const _pageDescription =
-  description || frontmatter?.description || "ActivityPub MCP Server Documentation";
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
 
-// Get the base URL for proper path resolution
+const { entry, headings = [] } = Astro.props as {
+  entry: { id: string; data: { title: string; description: string; group: string; order: number } };
+  headings?: Heading[];
+};
+
+const _pageTitle = entry?.data?.title || "Documentation";
+const _pageDescription =
+  entry?.data?.description || "ActivityPub MCP Server Documentation";
+
 const baseURL = import.meta.env.BASE_URL.endsWith("/")
   ? import.meta.env.BASE_URL
   : `${import.meta.env.BASE_URL}/`;
 
-// Navigation structure for docs
-const _docsNav = [
-  {
-    title: "Getting Started",
-    items: [
-      { title: "Overview", href: `${baseURL}docs/` },
-      { title: "Configuration Guide", href: `${baseURL}docs/setup/config-guide/` },
-      { title: "Cross-Platform Setup", href: `${baseURL}docs/setup/cross-platform/` },
-    ],
-  },
-  {
-    title: "User Guides",
-    items: [
-      { title: "Usage Guide", href: `${baseURL}docs/guides/usage-guide/` },
-      { title: "Examples", href: `${baseURL}docs/guides/examples/` },
-      {
-        title: "Real-World Scenarios",
-        href: `${baseURL}docs/guides/real-world-test-scenario/`,
-      },
-    ],
-  },
-  {
-    title: "API Reference",
-    items: [
-      { title: "MCP Tools", href: `${baseURL}docs/api/tools/` },
-      { title: "MCP Resources", href: `${baseURL}docs/api/resources/` },
-      { title: "MCP Prompts", href: `${baseURL}docs/api/prompts/` },
-    ],
-  },
-  {
-    title: "Development",
-    items: [
-      {
-        title: "Dependency Management",
-        href: `${baseURL}docs/development/dependency-management/`,
-      },
-      {
-        title: "Performance Monitoring",
-        href: `${baseURL}docs/development/performance-monitoring/`,
-      },
-      {
-        title: "Security Audit",
-        href: `${baseURL}docs/development/security-audit-checklist/`,
-      },
-    ],
-  },
-  {
-    title: "Specifications",
-    items: [
-      {
-        title: "ActivityPub Guide",
-        href: `${baseURL}docs/specifications/activitypub-llm-specification-guide/`,
-      },
-      {
-        title: "ActivityStreams Vocabulary",
-        href: `${baseURL}docs/specifications/activitystreams-vocabulary-llm-specification-guide/`,
-      },
-      {
-        title: "Fedify CLI",
-        href: `${baseURL}docs/specifications/fedify-cli-llm-specification-guide/`,
-      },
-      {
-        title: "WebFinger Guide",
-        href: `${baseURL}docs/specifications/webfinger-llm-specification-guide/`,
-      },
-    ],
-  },
-  {
-    title: "Project Info",
-    items: [{ title: "Changelog", href: `${baseURL}docs/changelog/` }],
-  },
+const GROUP_ORDER = [
+  "Getting Started",
+  "Guides",
+  "API Reference",
+  "Reference",
+  "Development",
+  "Specifications",
 ];
 
-// Get current path for active navigation
-const _currentPath = Astro.url.pathname;
+const allDocs = await getCollection("docs");
+const navSections = GROUP_ORDER.map((group) => ({
+  title: group,
+  items: allDocs
+    .filter((doc) => doc.data.group === group)
+    .sort((a, b) => a.data.order - b.data.order)
+    .map((doc) => ({
+      title: doc.data.title,
+      href: `${baseURL}docs/${doc.id}/`,
+    })),
+})).filter((section) => section.items.length > 0);
+
+// Trailing-slash-normalized active comparison (robust to trailingSlash config)
+const stripSlash = (p: string) => (p.length > 1 ? p.replace(/\/$/, "") : p);
+const _currentPath = stripSlash(Astro.url.pathname);
+
+const tocHeadings = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
 ---
 
 <BaseLayout title={_pageTitle} description={_pageDescription}>
   <div class="docs-layout">
     <div class="container">
       <div class="docs-grid">
-        <!-- Sidebar Navigation -->
         <aside class="docs-sidebar">
           <div class="sidebar-content">
             <div class="sidebar-header">
@@ -100,7 +60,7 @@ const _currentPath = Astro.url.pathname;
             </div>
 
             <nav class="docs-nav">
-              {_docsNav.map(section => (
+              {navSections.map(section => (
                 <div class="nav-section">
                   <h3 class="nav-section-title">{section.title}</h3>
                   <ul class="nav-section-items">
@@ -108,7 +68,8 @@ const _currentPath = Astro.url.pathname;
                       <li>
                         <a
                           href={item.href}
-                          class={`nav-item ${_currentPath === item.href ? 'active' : ''}`}
+                          class={`nav-item ${stripSlash(item.href) === _currentPath ? 'active' : ''}`}
+                          aria-current={stripSlash(item.href) === _currentPath ? 'page' : undefined}
                         >
                           {item.title}
                         </a>
@@ -121,23 +82,71 @@ const _currentPath = Astro.url.pathname;
           </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="docs-main">
+          {tocHeadings.length > 0 && (
+            <nav class="docs-toc" aria-label="Table of contents">
+              <h2 class="toc-title">On this page</h2>
+              <ul class="toc-list">
+                {tocHeadings.map(heading => (
+                  <li class={`toc-item toc-depth-${heading.depth}`}>
+                    <a href={`#${heading.slug}`} class="toc-link" data-toc-slug={heading.slug}>{heading.text}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
+
           <div class="docs-content" data-pagefind-body>
             <slot />
           </div>
-
-
         </main>
       </div>
     </div>
   </div>
 </BaseLayout>
 
-<style>
-  .docs-layout {
-    min-height: calc(100vh - 200px);
+<script>
+  // Scroll-spy: highlight the TOC link for the heading currently in view (spec §6).
+  function initTocScrollSpy() {
+    const tocLinks = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>(".toc-link[data-toc-slug]")
+    );
+    if (tocLinks.length === 0) return;
+
+    const linkBySlug = new Map(tocLinks.map((a) => [a.dataset.tocSlug!, a]));
+    const headings = tocLinks
+      .map((a) => document.getElementById(a.dataset.tocSlug!))
+      .filter((el): el is HTMLElement => el !== null);
+    if (headings.length === 0) return;
+
+    const setActive = (slug: string) => {
+      for (const a of tocLinks) a.classList.toggle("active", a.dataset.tocSlug === slug);
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length > 0 && visible[0].target.id) {
+          setActive(visible[0].target.id);
+        }
+      },
+      { rootMargin: "0px 0px -70% 0px", threshold: 0 }
+    );
+
+    for (const h of headings) observer.observe(h);
   }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initTocScrollSpy);
+  } else {
+    initTocScrollSpy();
+  }
+</script>
+
+<style>
+  .docs-layout { min-height: calc(100vh - 200px); }
 
   .docs-grid {
     display: grid;
@@ -147,20 +156,11 @@ const _currentPath = Astro.url.pathname;
   }
 
   @media (max-width: 1024px) {
-    .docs-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .docs-sidebar {
-      order: 2;
-    }
-
-    .docs-main {
-      order: 1;
-    }
+    .docs-grid { grid-template-columns: 1fr; }
+    .docs-sidebar { order: 2; }
+    .docs-main { order: 1; }
   }
 
-  /* Sidebar */
   .docs-sidebar {
     position: sticky;
     top: calc(var(--space-20) + var(--space-4));
@@ -169,28 +169,25 @@ const _currentPath = Astro.url.pathname;
   }
 
   .sidebar-content {
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-primary);
+    background-color: var(--bg-raised);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     padding: var(--space-6);
   }
 
   .sidebar-header h2 {
+    font-family: var(--font-display);
     font-size: var(--text-lg);
     font-weight: var(--font-semibold);
     margin-bottom: var(--space-6);
     color: var(--text-primary);
   }
 
-  .nav-section {
-    margin-bottom: var(--space-6);
-  }
-
-  .nav-section:last-child {
-    margin-bottom: 0;
-  }
+  .nav-section { margin-bottom: var(--space-6); }
+  .nav-section:last-child { margin-bottom: 0; }
 
   .nav-section-title {
+    font-family: var(--font-display);
     font-size: var(--text-sm);
     font-weight: var(--font-semibold);
     color: var(--text-primary);
@@ -199,18 +196,13 @@ const _currentPath = Astro.url.pathname;
     letter-spacing: 0.05em;
   }
 
-  .nav-section-items {
-    list-style: none;
-  }
-
-  .nav-section-items li {
-    margin-bottom: var(--space-1);
-  }
+  .nav-section-items { list-style: none; }
+  .nav-section-items li { margin-bottom: var(--space-1); }
 
   .nav-item {
     display: block;
     padding: var(--space-2) var(--space-3);
-    color: var(--text-secondary);
+    color: var(--text-muted);
     text-decoration: none;
     border-radius: var(--radius-sm);
     font-size: var(--text-sm);
@@ -218,30 +210,57 @@ const _currentPath = Astro.url.pathname;
   }
 
   .nav-item:hover {
-    background-color: var(--bg-tertiary);
+    background-color: var(--bg-primary);
     color: var(--text-primary);
   }
 
   .nav-item.active {
-    background-color: var(--color-primary);
-    color: var(--color-white);
+    background-color: var(--accent);
+    color: var(--color-paper);
   }
 
-  /* Main content */
-  .docs-main {
-    display: block;
+  .docs-main { display: block; }
+  .docs-content { max-width: none; }
+
+  .docs-toc {
+    background-color: var(--bg-raised);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4) var(--space-6);
+    margin-bottom: var(--space-8);
   }
 
-
-
-  .docs-content {
-    max-width: none;
+  .toc-title {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
   }
 
-  /* Table of Contents */
+  .toc-list { list-style: none; }
+  .toc-item { margin-bottom: var(--space-1); }
+  .toc-depth-3 { padding-left: var(--space-4); }
 
+  .toc-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: var(--text-sm);
+    transition: color var(--transition-fast);
+    border-left: 2px solid transparent;
+    padding-left: var(--space-2);
+    margin-left: calc(-1 * var(--space-2));
+  }
 
-  /* Mobile sidebar toggle */
+  .toc-link:hover { color: var(--accent); }
+  .toc-link.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: var(--font-semibold);
+  }
+
   @media (max-width: 1024px) {
     .docs-sidebar {
       position: relative;
@@ -251,4 +270,3 @@ const _currentPath = Astro.url.pathname;
     }
   }
 </style>
-
