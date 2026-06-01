@@ -1,0 +1,121 @@
+---
+interface Props {
+  /** Exact text copied to the clipboard. */
+  text: string;
+  /** Accessible label / tooltip. */
+  label?: string;
+  /** Extra classes for positioning in the consuming layout. */
+  class?: string;
+}
+const { text, label = "Copy", class: className = "" } = Astro.props;
+---
+
+<button
+  type="button"
+  class={`copy-button ${className}`}
+  data-copy={text}
+  aria-label={label}
+  title={label}
+>
+  <svg class="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+  </svg>
+  <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display: none;">
+    <polyline points="20 6 9 17 4 12"></polyline>
+  </svg>
+  <span class="copy-text">{label}</span>
+</button>
+
+<style>
+  .copy-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-raised);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: 1;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+  .copy-button:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background-color: color-mix(in srgb, var(--accent) 8%, var(--bg-raised));
+  }
+  .copy-button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .copy-button.copied {
+    color: var(--accent-2);
+    border-color: var(--accent-2);
+    background-color: color-mix(in srgb, var(--accent-2) 10%, var(--bg-raised));
+  }
+  .copy-button svg { flex-shrink: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    .copy-button { transition: none; }
+  }
+</style>
+
+<script>
+  function initCopyButtons() {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(".copy-button[data-copy]");
+    buttons.forEach((button) => {
+      if (button.dataset.copyBound === "true") return;
+      button.dataset.copyBound = "true";
+
+      button.addEventListener("click", async () => {
+        const text = button.dataset.copy ?? "";
+        const copyIcon = button.querySelector<SVGElement>(".copy-icon");
+        const checkIcon = button.querySelector<SVGElement>(".check-icon");
+        const textEl = button.querySelector<HTMLElement>(".copy-text");
+        const originalLabel = textEl?.textContent ?? "Copy";
+
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+          }
+
+          button.classList.add("copied");
+          if (copyIcon) copyIcon.style.display = "none";
+          if (checkIcon) checkIcon.style.display = "inline";
+          if (textEl) textEl.textContent = "Copied!";
+
+          window.setTimeout(() => {
+            button.classList.remove("copied");
+            if (copyIcon) copyIcon.style.display = "inline";
+            if (checkIcon) checkIcon.style.display = "none";
+            if (textEl) textEl.textContent = originalLabel;
+          }, 2000);
+        } catch {
+          if (textEl) textEl.textContent = "Press Ctrl+C";
+          window.setTimeout(() => {
+            if (textEl) textEl.textContent = originalLabel;
+          }, 2000);
+        }
+      });
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initCopyButtons);
+  } else {
+    initCopyButtons();
+  }
+</script>
