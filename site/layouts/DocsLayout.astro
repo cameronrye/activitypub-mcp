@@ -59,7 +59,7 @@ const tocHeadings = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
               <h2>Documentation</h2>
             </div>
 
-            <nav class="docs-nav">
+            <nav class="docs-nav" aria-label="Documentation">
               {navSections.map(section => (
                 <div class="nav-section">
                   <h3 class="nav-section-title">{section.title}</h3>
@@ -113,7 +113,6 @@ const tocHeadings = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
     );
     if (tocLinks.length === 0) return;
 
-    const linkBySlug = new Map(tocLinks.map((a) => [a.dataset.tocSlug!, a]));
     const headings = tocLinks
       .map((a) => document.getElementById(a.dataset.tocSlug!))
       .filter((el): el is HTMLElement => el !== null);
