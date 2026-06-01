@@ -69,6 +69,53 @@ describe("AuditLogger", () => {
       expect(param.length).toBeLessThan(600);
       expect(param).toContain("[truncated]");
     });
+
+    it("redacts a bearer token reflected into the error field", () => {
+      auditLogger.logToolInvocation(
+        "post-status",
+        { acct: "user" },
+        {
+          success: false,
+          error: "Failed: HTTP 500 - upstream echoed Authorization: Bearer SECRET-TOKEN-abc123",
+        },
+      );
+      const entries = auditLogger.getRecentEntries();
+      expect(entries[0].error).not.toContain("SECRET-TOKEN-abc123");
+      expect(entries[0].error).toContain("[REDACTED]");
+    });
+
+    it("caps an unbounded attacker-controlled error body in the audit entry", () => {
+      auditLogger.logToolInvocation(
+        "post-status",
+        { acct: "user" },
+        { success: false, error: `HTTP 500 - ${"x".repeat(5000)}` },
+      );
+      const entries = auditLogger.getRecentEntries();
+      expect((entries[0].error as string).length).toBeLessThan(600);
+    });
+
+    it("redacts session ids and OAuth codes in the error field", () => {
+      auditLogger.logToolInvocation(
+        "verify-account",
+        { acct: "user" },
+        {
+          success: false,
+          error: "redirect https://app/cb?code=AUTH-xyz&x=1 failed; session_id=SESS-abc",
+        },
+      );
+      const { error } = auditLogger.getRecentEntries()[0];
+      expect(error).not.toContain("SESS-abc"); // keyword pattern
+      expect(error).not.toContain("AUTH-xyz"); // URL-query pattern
+    });
+
+    it("does not over-redact a plain 'error code: 500' in prose", () => {
+      auditLogger.logToolInvocation(
+        "discover-actor",
+        { acct: "user" },
+        { success: false, error: "upstream failed with error code: 500" },
+      );
+      expect(auditLogger.getRecentEntries()[0].error).toContain("500");
+    });
   });
 
   describe("logResourceAccess", () => {
@@ -126,6 +173,18 @@ describe("AuditLogger", () => {
       const entries = auditLogger.getRecentEntries();
       expect(entries).toHaveLength(1);
       expect(entries[0].domain).toBeUndefined();
+    });
+
+    it("scrubs credential query params stored in the entry's params.url", () => {
+      // The recorded url is a param VALUE, redacted only by key name historically.
+      // The central chokepoint must also redact credentials embedded in the value.
+      auditLogger.logSsrfBlocked(
+        "https://attacker.example/cb?code=AUTH-xyz&access_token=TOK-123",
+        "blocked",
+      );
+      const recorded = JSON.stringify(auditLogger.getRecentEntries()[0].params);
+      expect(recorded).not.toContain("AUTH-xyz");
+      expect(recorded).not.toContain("TOK-123");
     });
   });
 

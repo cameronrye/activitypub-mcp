@@ -15,17 +15,26 @@ import { stripHtmlTags } from "./html.js";
 const OPEN_PREFIX = "<untrusted-content";
 const CLOSE_TAG = "</untrusted-content>";
 
-// defang() replaces the literal delimiter strings with an &lt;-prefixed form
-// BEFORE HTML stripping. A zero-width space after "<" is insufficient: the
-// /<[^>]*>/g stripper still matches "<​untrusted-content>" and would erase a
-// forged tag entirely, collapsing the payload to "(empty)".
-/** Break any literal envelope delimiters inside attacker-supplied text. */
+// defang() replaces the delimiter tags with an &lt;-prefixed form BEFORE HTML
+// stripping. A zero-width space after "<" is insufficient: the /<[^>]*>/g
+// stripper still matches "<​untrusted-content>" and would erase a forged tag
+// entirely, collapsing the payload to "(empty)".
+//
+// Matching is whitespace- and case-INSENSITIVE. wrapUntrustedBlock does not
+// strip HTML, so a near-miss like "</untrusted-content >" or an upper-case
+// "</UNTRUSTED-CONTENT>" would otherwise survive verbatim and read to a tolerant
+// model as a real closing delimiter. We neutralize any such variant by escaping
+// its leading "<".
+const OPEN_DELIM_RE = /<(\s*untrusted-content)/gi;
+// `\b[^>]*>` tolerates any trailing junk before '>' (e.g. </untrusted-content/>,
+// </untrusted-content x>) which a lenient HTML/model parser still treats as a
+// closing tag — while `\b` leaves a genuinely different tag (</untrusted-contentXYZ>)
+// untouched.
+const CLOSE_DELIM_RE = /<(\s*\/\s*untrusted-content\b[^>]*>)/gi;
+
+/** Break any envelope-delimiter forgery inside attacker-supplied text. */
 function defang(text: string): string {
-  // We only neutralize the canonical lowercase delimiters; a differently-cased
-  // forgery like <UNTRUSTED-CONTENT> cannot close our lowercase </untrusted-content>.
-  return text
-    .replaceAll(OPEN_PREFIX, "&lt;untrusted-content")
-    .replaceAll(CLOSE_TAG, "&lt;/untrusted-content>");
+  return text.replace(CLOSE_DELIM_RE, "&lt;$1").replace(OPEN_DELIM_RE, "&lt;$1");
 }
 
 /** Make a one-line, quote-free source label. */
@@ -60,4 +69,23 @@ export function wrapUntrusted(text: string, source: string): string {
  */
 export function wrapUntrustedBlock(body: string, source: string): string {
   return `${OPEN_PREFIX} source="${safeLabel(source)}">\n${defang(body ?? "")}\n${CLOSE_TAG}`;
+}
+
+/**
+ * Neutralize a SHORT remote string used as an INLINE label — a display name,
+ * handle/acct, hashtag, or software name — rather than block content. These are
+ * interpolated mid-line (e.g. `**@bob** (Bob)`) where a full envelope would be
+ * noise, so instead we: strip HTML, defang forged envelope delimiters, and
+ * collapse ALL whitespace (including newlines) to single spaces. The whitespace
+ * collapse is the key control: it stops the value from breaking out of its line
+ * into a new markdown heading / instruction block. Returns "" for empty input —
+ * callers supply their own fallback (e.g. the raw id).
+ */
+export function sanitizeInline(text: string): string {
+  const cleaned = stripHtmlTags(defang(text ?? ""))
+    .replace(/\s+/g, " ")
+    .trim();
+  // Truncate by code point (not UTF-16 code unit) so the cap can't split a
+  // surrogate pair into a lone surrogate that serializes to U+FFFD.
+  return [...cleaned].slice(0, 200).join("");
 }

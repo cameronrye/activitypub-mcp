@@ -138,6 +138,20 @@ export class CredentialStore {
   /** Atomic write: temp file (0600, O_EXCL) in the same dir, then rename. */
   private async write(accounts: StoredAccount[]): Promise<void> {
     mkdirSync(this.dir, { recursive: true, mode: 0o700 });
+    // mkdir's `mode` only applies when CREATING the dir; a pre-existing
+    // (possibly group/other-accessible) dir would otherwise keep its loose
+    // perms and leave the 0600 token file reachable via a writable parent.
+    // Tighten it to 0700 every write. Best-effort: ignore EPERM on dirs we
+    // don't own (e.g. an operator-managed shared path).
+    try {
+      chmodSync(this.dir, 0o700);
+    } catch (e) {
+      // Only ignore the documented "not ours to chmod" cases. Any other failure
+      // (e.g. the dir was swapped for something unexpected) should surface rather
+      // than silently leave the token file inside a directory we couldn't tighten.
+      const code = (e as NodeJS.ErrnoException).code;
+      if (code !== "EPERM" && code !== "ENOENT") throw e;
+    }
     const body = `${JSON.stringify({ version: 1, accounts }, null, 2)}\n`;
     const tmp = join(this.dir, `accounts.json.${randomBytes(6).toString("hex")}.tmp`);
     const handle = await open(tmp, "wx", 0o600);
@@ -154,14 +168,6 @@ export class CredentialStore {
       throw error;
     }
     chmodSync(this.file, 0o600);
-  }
-
-  /** Exposed for the loader's permission hardening (Task 2). */
-  get filePath(): string {
-    return this.file;
-  }
-  get dirPath(): string {
-    return this.dir;
   }
 }
 

@@ -1,6 +1,28 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { writeBlockReason } from "../../src/mcp/tools-write.js";
 import { RateLimiter } from "../../src/resilience/rate-limiter.js";
+
+describe("writeBlockReason (runtime write guard, belt-and-suspenders)", () => {
+  it("blocks with 'writes-disabled' when ENABLE_WRITES is off — even with accounts", () => {
+    // Defense-in-depth: registration already hides mutation tools when writes
+    // are off, but the runtime guard must independently refuse rather than rely
+    // solely on a tool not being registered.
+    expect(writeBlockReason(false, true)).toBe("writes-disabled");
+  });
+
+  it("prefers 'writes-disabled' over 'no-auth' when both apply", () => {
+    expect(writeBlockReason(false, false)).toBe("writes-disabled");
+  });
+
+  it("blocks with 'no-auth' when writes are enabled but no account exists", () => {
+    expect(writeBlockReason(true, false)).toBe("no-auth");
+  });
+
+  it("allows (null) when writes are enabled and an account exists", () => {
+    expect(writeBlockReason(true, true)).toBeNull();
+  });
+});
 
 async function registeredToolNames(enableWrites: boolean): Promise<Set<string>> {
   vi.resetModules();

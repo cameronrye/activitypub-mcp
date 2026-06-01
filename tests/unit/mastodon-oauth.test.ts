@@ -113,6 +113,35 @@ describe("MastodonOAuthStrategy.authorize", () => {
       ),
     ).rejects.toThrow(/issuer mismatch|mix-up/i);
   });
+
+  it("accepts a matching issuer whose iss carries a non-default port", async () => {
+    // Regression guard for the host→hostname fix: instance on :8443 with an iss
+    // that includes the port must NOT be rejected as a mix-up.
+    server.use(
+      http.post("https://mastodon.test:8443/api/v1/apps", () =>
+        HttpResponse.json({ client_id: "cid", client_secret: "csecret" }),
+      ),
+      http.post("https://mastodon.test:8443/oauth/token", () =>
+        HttpResponse.json({ access_token: "tok", token_type: "Bearer", scope: "read" }),
+      ),
+      http.get("https://mastodon.test:8443/api/v1/accounts/verify_credentials", () =>
+        HttpResponse.json({ id: "1", username: "alice", acct: "alice" }),
+      ),
+    );
+    const result = await strategy.authorize(
+      ctx({
+        instance: "mastodon.test:8443",
+        waitForCallback: vi.fn(async (exp: { state?: string }) => {
+          const p = new URLSearchParams();
+          p.set("code", "auth-code");
+          if (exp.state) p.set("state", exp.state);
+          p.set("iss", "https://mastodon.test:8443");
+          return p;
+        }),
+      }),
+    );
+    expect(result).toMatchObject({ instance: "mastodon.test:8443", accessToken: "tok" });
+  });
 });
 
 describe("MastodonOAuthStrategy.revoke", () => {

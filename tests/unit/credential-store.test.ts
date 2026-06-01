@@ -5,6 +5,7 @@
 import {
   chmodSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
@@ -75,6 +76,22 @@ describe("CredentialStore", () => {
     }
     // File must be parseable JSON.
     expect(() => JSON.parse(readFileSync(filePath, "utf-8"))).not.toThrow();
+  });
+
+  it("tightens a pre-existing over-permissive config dir to 0700 on write", async () => {
+    if (isWindows) return; // POSIX modes only
+    const { CredentialStore } = await freshStore();
+    const cfg = process.env.ACTIVITYPUB_CONFIG_DIR as string;
+    // Simulate a dir created earlier with loose perms. mkdirSync's mode option is
+    // a no-op for an already-existing dir, so the store must chmod it explicitly.
+    mkdirSync(cfg, { recursive: true });
+    chmodSync(cfg, 0o755);
+    expect(statSync(cfg).mode & 0o777).toBe(0o755);
+
+    const store = new CredentialStore();
+    await store.upsert(sample);
+
+    expect(statSync(cfg).mode & 0o777).toBe(0o700);
   });
 
   it("upsert replaces an existing id", async () => {

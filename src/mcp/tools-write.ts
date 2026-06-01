@@ -14,7 +14,7 @@ import { accountManager, authenticatedClient } from "../auth/index.js";
 import { ENABLE_WRITES } from "../config.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
 import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
-import { wrapUntrusted } from "../utils/untrusted.js";
+import { sanitizeInline, wrapUntrusted } from "../utils/untrusted.js";
 import { trackedMcpServer } from "./capabilities.js";
 
 const logger = getLogger("activitypub-mcp:tools-write");
@@ -74,10 +74,36 @@ function checkRateLimit(rateLimiter: RateLimiter, identifier: string): void {
 }
 
 /**
- * Helper for write tools: requires that an authenticated account exists.
+ * Pure predicate for whether a mutation may proceed. Returns a reason code when
+ * blocked, or null when allowed. `writes-disabled` takes precedence so a
+ * read-only deployment never leaks that an account exists.
+ *
+ * Exported so the rule is unit-tested directly: it is the runtime
+ * belt-and-suspenders behind tool-registration gating — even if a mutation
+ * handler is ever reachable with writes off, it must independently refuse.
+ */
+export function writeBlockReason(
+  enableWrites: boolean,
+  hasAccounts: boolean,
+): "writes-disabled" | "no-auth" | null {
+  if (!enableWrites) return "writes-disabled";
+  if (!hasAccounts) return "no-auth";
+  return null;
+}
+
+/**
+ * Helper for write tools: requires both that writes are enabled and that an
+ * authenticated account exists.
  */
 function requireWriteEnabled(): void {
-  if (!authenticatedClient.isWriteEnabled()) {
+  const reason = writeBlockReason(ENABLE_WRITES, authenticatedClient.hasAuthenticatedAccount());
+  if (reason === "writes-disabled") {
+    throw new McpError(
+      ErrorCode.InternalError,
+      "Write operations are disabled. Set ACTIVITYPUB_ENABLE_WRITES=true to enable mutation tools.",
+    );
+  }
+  if (reason === "no-auth") {
     throw new McpError(
       ErrorCode.InternalError,
       "This write operation requires authentication. Run `activitypub-mcp login <instance>` to sign in, " +
@@ -92,7 +118,7 @@ function requireWriteEnabled(): void {
  * 'write' for a read.
  */
 function requireAuthEnabled(): void {
-  if (!authenticatedClient.isWriteEnabled()) {
+  if (!authenticatedClient.hasAuthenticatedAccount()) {
     throw new McpError(
       ErrorCode.InternalError,
       "This tool requires an authenticated account. Run `activitypub-mcp login <instance>` to sign in, " +
@@ -184,6 +210,7 @@ function registerSwitchAccountTool(mcpServer: McpServer): void {
       annotations: { readOnlyHint: false },
     },
     async ({ accountId }) => {
+      requireAuthEnabled();
       const startTime = Date.now();
       const auditParams = { accountId };
 
@@ -320,9 +347,9 @@ Run \`activitypub-mcp login ${account.instance}\` to re-authorize.`,
               type: "text",
               text: `✅ **Account Verified**
 
-👤 **${info.display_name || info.username}** (@${info.acct})
-🆔 ID: ${info.id}
-🔗 ${info.url}
+👤 **${sanitizeInline(info.display_name || info.username || "")}** (@${sanitizeInline(info.acct || "")})
+🆔 ID: ${sanitizeInline(info.id)}
+🔗 ${sanitizeInline(info.url)}
 
 📊 **Stats:**
 - Followers: ${info.followers_count.toLocaleString()}
@@ -464,12 +491,12 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
 
 📝 ${wrapUntrusted(status.content, `post on ${account.instance}`)}
 
-🆔 ID: ${status.id}
-🔗 ${status.url || status.uri}
+🆔 ID: ${sanitizeInline(status.id)}
+🔗 ${sanitizeInline(status.url || status.uri)}
 👁️ Visibility: ${status.visibility}
 ${status.spoiler_text ? `⚠️ CW: ${wrapUntrusted(status.spoiler_text, `content warning on ${account.instance}`)}` : ""}
 
-Posted as @${status.account.username}`,
+Posted as @${sanitizeInline(status.account.username || "")}`,
             },
           ],
         };
@@ -566,8 +593,8 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
 
 📝 ${wrapUntrusted(status.content, `post on ${account.instance}`)}
 
-🆔 ID: ${status.id}
-🔗 ${status.url || status.uri}
+🆔 ID: ${sanitizeInline(status.id)}
+🔗 ${sanitizeInline(status.url || status.uri)}
 ↩️ Replying to: ${statusId}`,
             },
           ],
@@ -720,9 +747,9 @@ function registerBoostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter): 
               type: "text",
               text: `🔁 **Post Boosted!**
 
-You boosted a post by @${status.account.username}
+You boosted a post by @${sanitizeInline(status.account.username || "")}
 
-🔗 ${status.url || status.uri}`,
+🔗 ${sanitizeInline(status.url || status.uri)}`,
             },
           ],
         };
@@ -868,9 +895,9 @@ function registerFavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimite
               type: "text",
               text: `⭐ **Post Favourited!**
 
-You favourited a post by @${status.account.username}
+You favourited a post by @${sanitizeInline(status.account.username || "")}
 
-🔗 ${status.url || status.uri}`,
+🔗 ${sanitizeInline(status.url || status.uri)}`,
             },
           ],
         };
@@ -1016,9 +1043,9 @@ function registerBookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimiter
               type: "text",
               text: `🔖 **Post Bookmarked!**
 
-Saved post by @${status.account.username}
+Saved post by @${sanitizeInline(status.account.username || "")}
 
-🔗 ${status.url || status.uri}`,
+🔗 ${sanitizeInline(status.url || status.uri)}`,
             },
           ],
         };
@@ -1661,7 +1688,7 @@ function registerGetHomeTimelineTool(mcpServer: McpServer, rateLimiter: RateLimi
             const cw = post.spoiler_text
               ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, `content warning on ${account.instance}`)}\n`
               : "";
-            return `${i + 1}. **@${post.account.acct}**
+            return `${i + 1}. **@${sanitizeInline(post.account.acct || "")}**
    ${cw}${content}
    ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
           })
@@ -1784,7 +1811,7 @@ function registerGetNotificationsTool(mcpServer: McpServer, rateLimiter: RateLim
             const statusPreview = n.status
               ? `\n   ${wrapUntrusted(n.status.content, `notification on ${account.instance}`)}`
               : "";
-            return `${emoji} **${n.type}** from @${n.account.acct}${statusPreview}`;
+            return `${emoji} **${sanitizeInline(n.type)}** from @${sanitizeInline(n.account.acct || "")}${statusPreview}`;
           })
           .join("\n\n");
 
@@ -1866,7 +1893,7 @@ function registerGetBookmarksTool(mcpServer: McpServer, rateLimiter: RateLimiter
           .slice(0, 15)
           .map((post, i) => {
             const content = wrapUntrusted(post.content, `post on ${account.instance}`);
-            return `${i + 1}. **@${post.account.acct}**
+            return `${i + 1}. **@${sanitizeInline(post.account.acct || "")}**
    ${content}`;
           })
           .join("\n\n");
@@ -1949,7 +1976,7 @@ function registerGetFavouritesTool(mcpServer: McpServer, rateLimiter: RateLimite
           .slice(0, 15)
           .map((post, i) => {
             const content = wrapUntrusted(post.content, `post on ${account.instance}`);
-            return `${i + 1}. **@${post.account.acct}**
+            return `${i + 1}. **@${sanitizeInline(post.account.acct || "")}**
    ${content}`;
           })
           .join("\n\n");
@@ -2073,7 +2100,7 @@ function registerGetRelationshipTool(mcpServer: McpServer, rateLimiter: RateLimi
               text: `👥 **Relationship with @${acct}**
 
 ${statusItems.join("\n")}
-${relationship.note ? `\n📝 **Note**: ${relationship.note}` : ""}
+${relationship.note ? `\n📝 **Note**: ${wrapUntrusted(relationship.note, `relationship note`)}` : ""}
 
 💡 **Actions:**
 - Use \`follow-account\` or \`unfollow-account\` to change follow status
@@ -2160,7 +2187,7 @@ function registerVoteOnPollTool(mcpServer: McpServer, rateLimiter: RateLimiter):
             const bar =
               "█".repeat(Math.floor(percentage / 10)) +
               "░".repeat(10 - Math.floor(percentage / 10));
-            return `${voted} ${opt.title}\n   ${bar} ${percentage}% (${opt.votes_count || 0} votes)`;
+            return `${voted} ${sanitizeInline(opt.title || "")}\n   ${bar} ${percentage}% (${opt.votes_count || 0} votes)`;
           })
           .join("\n\n");
 
@@ -2304,8 +2331,8 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
 
 🆔 **Media ID**: \`${media.id}\`
 📝 Type: ${media.type}
-${media.description ? `📖 Description: ${media.description}` : "⚠️ No alt text set"}
-${media.url ? `🔗 URL: ${media.url}` : ""}
+${media.description ? `📖 Description: ${sanitizeInline(media.description)}` : "⚠️ No alt text set"}
+${media.url ? `🔗 URL: ${sanitizeInline(media.url)}` : ""}
 
 💡 **Usage:**
 Use this media ID with the \`post-status\` tool by including it in the mediaIds parameter:
@@ -2402,11 +2429,13 @@ No scheduled posts found.
 
         const postsList = scheduled
           .map((post, i) => {
-            const content = post.params.text || "No content";
+            const content = sanitizeInline(post.params.text || "") || "No content";
             const truncated = content.length > 150 ? `${content.slice(0, 150)}...` : content;
             const scheduledDate = new Date(post.scheduled_at).toLocaleString();
             const visibility = post.params.visibility || "public";
-            const cw = post.params.spoiler_text ? `⚠️ CW: ${post.params.spoiler_text}\n` : "";
+            const cw = post.params.spoiler_text
+              ? `⚠️ CW: ${sanitizeInline(post.params.spoiler_text)}\n`
+              : "";
             const mediaCount = post.media_attachments?.length || 0;
             const pollInfo = post.params.poll ? "📊 Has poll" : "";
 

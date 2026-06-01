@@ -36,6 +36,14 @@ const ERROR_SUGGESTIONS: ErrorSuggestion[] = [
     suggestion: "Authentication required. This content may be private or require login.",
   },
   {
+    // More specific than the generic 403 below — must come first. Fires on a
+    // token that lacks the required scope (e.g. a read-only login token used
+    // after enabling writes); the now-included response body carries this text.
+    pattern: /outside the authorized scopes|insufficient[_ ]?scope/i,
+    suggestion:
+      "Your token lacks the required scope. If you logged in read-only, re-authenticate with write access: `activitypub-mcp login <instance> --write`.",
+  },
+  {
     pattern: /403|forbidden/i,
     suggestion: "Access denied. The server may be blocking automated requests.",
   },

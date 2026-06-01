@@ -13,8 +13,7 @@ import { remoteClient } from "../activitypub/remote-client.js";
 import { dynamicInstanceDiscovery } from "../discovery/dynamic-instance-discovery.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
 import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
-import { stripHtmlTags } from "../utils/html.js";
-import { wrapUntrusted } from "../utils/untrusted.js";
+import { sanitizeInline, wrapUntrusted } from "../utils/untrusted.js";
 import { ActorIdentifierSchema, DomainSchema, QuerySchema } from "../validation/schemas.js";
 import {
   validateActorIdentifier,
@@ -98,16 +97,16 @@ function registerDiscoverActorTool(mcpServer: McpServer, rateLimiter: RateLimite
           content: [
             {
               type: "text",
-              text: `Successfully discovered actor: ${stripHtmlTags(actor.preferredUsername || actor.name || validIdentifier)}
+              text: `Successfully discovered actor: ${sanitizeInline(actor.preferredUsername || actor.name || "") || validIdentifier}
 
-🆔 ID: ${actor.id}
-👤 Name: ${stripHtmlTags(actor.name || "") || "Not specified"}
+🆔 ID: ${sanitizeInline(actor.id)}
+👤 Name: ${sanitizeInline(actor.name || "") || "Not specified"}
 📝 Summary: ${actor.summary ? wrapUntrusted(actor.summary, `bio of ${validIdentifier}`) : "No bio provided"}
-🔗 URL: ${actor.url || actor.id}
-📥 Inbox: ${actor.inbox}
-📤 Outbox: ${actor.outbox}
-👥 Followers: ${actor.followers || "Not available"}
-👤 Following: ${actor.following || "Not available"}`,
+🔗 URL: ${sanitizeInline(actor.url || actor.id)}
+📥 Inbox: ${sanitizeInline(actor.inbox)}
+📤 Outbox: ${sanitizeInline(actor.outbox)}
+👥 Followers: ${sanitizeInline(actor.followers || "") || "Not available"}
+👤 Following: ${sanitizeInline(actor.following || "") || "Not available"}`,
             },
           ],
         };
@@ -193,10 +192,10 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
         // Build pagination info section
         const paginationInfo = [];
         if (timeline.hasMore && timeline.nextCursor) {
-          paginationInfo.push(`📄 Next page cursor: ${timeline.nextCursor}`);
+          paginationInfo.push(`📄 Next page cursor: ${sanitizeInline(timeline.nextCursor)}`);
         }
         if (timeline.prevCursor) {
-          paginationInfo.push(`📄 Previous page cursor: ${timeline.prevCursor}`);
+          paginationInfo.push(`📄 Previous page cursor: ${sanitizeInline(timeline.prevCursor)}`);
         }
 
         // Format pagination section
@@ -211,7 +210,7 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
               p.content || p.summary || "",
               `post by ${validIdentifier}`,
             );
-            const postType = p.type || "Post";
+            const postType = sanitizeInline(p.type || "") || "Post";
             return `${index + 1}. [${postType}] ${content}`;
           })
           .join("\n\n");
@@ -224,7 +223,7 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
 
 📊 Total items: ${timeline.totalItems || "Unknown"}
 📝 Posts retrieved: ${postCount}
-🔗 Collection ID: ${timeline.collectionId}
+🔗 Collection ID: ${sanitizeInline(timeline.collectionId)}
 ${timeline.hasMore ? "📄 More posts available (use cursor for next page)" : "📄 No more posts"}
 
 ${paginationSection}
@@ -290,8 +289,8 @@ function registerGetInstanceInfoTool(mcpServer: McpServer, rateLimiter: RateLimi
               text: `Instance Information for ${validDomain}:
 
 🌐 Domain: ${instanceInfo.domain}
-💻 Software: ${instanceInfo.software || "Unknown"}
-📦 Version: ${instanceInfo.version || "Unknown"}
+💻 Software: ${sanitizeInline(instanceInfo.software || "") || "Unknown"}
+📦 Version: ${sanitizeInline(instanceInfo.version || "") || "Unknown"}
 📝 Description: ${instanceInfo.description ? wrapUntrusted(instanceInfo.description, `instance description of ${validDomain}`) : "No description"}
 🌍 Languages: ${instanceInfo.languages?.join(", ") || "Not specified"}
 📝 Registrations: ${instanceInfo.registrations ? "Open" : "Closed"}
@@ -306,7 +305,7 @@ ${
     : ""
 }
 
-${instanceInfo.contact_account ? `📞 Contact: @${instanceInfo.contact_account.username} (${instanceInfo.contact_account.display_name || "No display name"})` : ""}`,
+${instanceInfo.contact_account ? `📞 Contact: @${sanitizeInline(instanceInfo.contact_account.username || "")} (${sanitizeInline(instanceInfo.contact_account.display_name || "") || "No display name"})` : ""}`,
             },
           ],
         };
@@ -423,8 +422,8 @@ function registerDiscoverInstancesLiveTool(mcpServer: McpServer, rateLimiter: Ra
         const instanceList = instances
           .map((instance, index) => {
             const parts = [
-              `${index + 1}. **${instance.domain}**`,
-              instance.software ? `(${instance.software})` : "",
+              `${index + 1}. **${sanitizeInline(instance.domain || "")}**`,
+              instance.software ? `(${sanitizeInline(instance.software)})` : "",
             ];
 
             const details = [];
@@ -432,7 +431,7 @@ function registerDiscoverInstancesLiveTool(mcpServer: McpServer, rateLimiter: Ra
               details.push(`👥 ${instance.users.toLocaleString()} users`);
             }
             if (instance.language) {
-              details.push(`🌐 ${instance.language}`);
+              details.push(`🌐 ${sanitizeInline(instance.language)}`);
             }
             if (instance.registrations !== undefined) {
               details.push(instance.registrations ? "✅ Open" : "🔒 Closed");
@@ -563,7 +562,7 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
                 .map((r, i) => {
                   const stub = r as unknown as { crossOrigin?: boolean; fetched?: boolean };
                   if (stub.crossOrigin === true && stub.fetched === false) {
-                    return `${i + 1}. _(cross-origin, not fetched)_ ${r.id}`;
+                    return `${i + 1}. _(cross-origin, not fetched)_ ${sanitizeInline(r.id)}`;
                   }
                   const content = wrapUntrusted(r.content || r.summary || "", `post on ${domain}`);
                   const cw =
@@ -586,8 +585,8 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
 ${ancestorsSection}**Main Post**:
 ${spoilerText}${postContent}
 
-🔗 URL: ${thread.post.url || thread.post.id}
-📅 Published: ${thread.post.published || "Unknown"}
+🔗 URL: ${sanitizeInline(thread.post.url || thread.post.id)}
+📅 Published: ${sanitizeInline(thread.post.published || "") || "Unknown"}
 
 ${repliesSection}
 
@@ -649,9 +648,11 @@ function registerGetTrendingHashtagsTool(mcpServer: McpServer, rateLimiter: Rate
         const hashtagsList = result.hashtags
           .map((tag, i) => {
             const history = tag.history?.[0];
-            const uses = history?.uses || "?";
-            const accounts = history?.accounts || "?";
-            return `${i + 1}. **#${tag.name}** - ${uses} uses by ${accounts} accounts`;
+            // uses/accounts are unvalidated remote strings — coerce to numbers so
+            // an injected payload can't ride along (matches the unified-search path).
+            const uses = Number.parseInt(history?.uses ?? "", 10);
+            const accounts = Number.parseInt(history?.accounts ?? "", 10);
+            return `${i + 1}. **#${sanitizeInline(tag.name || "")}** - ${Number.isFinite(uses) ? uses : "?"} uses by ${Number.isFinite(accounts) ? accounts : "?"} accounts`;
           })
           .join("\n");
 
@@ -728,7 +729,7 @@ function registerGetTrendingPostsTool(mcpServer: McpServer, rateLimiter: RateLim
             const cw = post.spoiler_text
               ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, `content warning on ${validDomain}`)}\n`
               : "";
-            return `${i + 1}. **@${post.account.username}** (${post.account.display_name || post.account.username})
+            return `${i + 1}. **@${sanitizeInline(post.account.username || "")}** (${sanitizeInline(post.account.display_name || post.account.username || "")})
    ${cw}${content}
    ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
           })
@@ -820,7 +821,7 @@ function registerGetPublicTimelineTool(mcpServer: McpServer, rateLimiter: RateLi
             const cw = post.spoiler_text
               ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, `content warning on ${validDomain}`)}\n`
               : "";
-            return `${i + 1}. **@${post.account.username}**
+            return `${i + 1}. **@${sanitizeInline(post.account.username || "")}**
    ${cw}${content}
    ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
           })
@@ -935,7 +936,7 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
             const accountsList = accounts
               .map((acc, i) => {
                 const note = wrapUntrusted(acc.note || "", `bio on ${validDomain}`);
-                return `${i + 1}. **@${acc.acct}** (${acc.display_name || acc.username})
+                return `${i + 1}. **@${sanitizeInline(acc.acct || "")}** (${sanitizeInline(acc.display_name || acc.username || "")})
    👥 ${acc.followers_count || 0} followers | ${note}`;
               })
               .join("\n\n");
@@ -970,7 +971,7 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
                 const cw = post.spoiler_text
                   ? `⚠️ CW: ${wrapUntrusted(post.spoiler_text, `content warning on ${validDomain}`)}\n`
                   : "";
-                return `${i + 1}. **@${post.account.acct}**
+                return `${i + 1}. **@${sanitizeInline(post.account.acct || "")}**
    ${cw}${content}
    ❤️ ${post.favourites_count} | 🔁 ${post.reblogs_count} | 💬 ${post.replies_count}`;
               })
@@ -1002,7 +1003,7 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
                   tag.history
                     ?.slice(0, 7)
                     .reduce((sum, h) => sum + Number.parseInt(h.uses, 10), 0) || 0;
-                return `${i + 1}. **#${tag.name}** - ${recentUses} uses (last 7 days)`;
+                return `${i + 1}. **#${sanitizeInline(tag.name || "")}** - ${recentUses} uses (last 7 days)`;
               })
               .join("\n");
             sections.push(`## #️⃣ Hashtags (${hashtags.length})\n\n${hashtagsList}`);

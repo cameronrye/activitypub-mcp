@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   fetchWithRedirectGuard,
   ResponseTooLargeError,
+  readErrorText,
   readJsonWithLimit,
 } from "../../src/utils/fetch-helpers.js";
 import { server } from "../mocks/server.js";
@@ -13,6 +14,48 @@ function makeResponse(body: string, headers: Record<string, string> = {}): Respo
     headers: { "Content-Type": "application/json", ...headers },
   });
 }
+
+describe("readErrorText", () => {
+  it("returns a short error body verbatim", async () => {
+    const res = new Response("nope", { status: 500 });
+    expect(await readErrorText(res, 2048)).toBe("nope");
+  });
+
+  it("caps a hostile/large error body and marks it truncated", async () => {
+    const huge = "x".repeat(100_000);
+    const res = new Response(huge, { status: 500 });
+    const out = await readErrorText(res, 256);
+    expect(out.length).toBeLessThan(huge.length);
+    expect(out.length).toBeLessThanOrEqual(256 + 20);
+    expect(out).toContain("truncated");
+  });
+
+  it("never throws — returns empty string on a body that errors", async () => {
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.error(new Error("boom"));
+      },
+    });
+    const res = new Response(stream, { status: 500 });
+    expect(await readErrorText(res)).toBe("");
+  });
+
+  it("caps a multibyte body by BYTES (not UTF-16 units) and never emits a lone surrogate", async () => {
+    const body = "😀".repeat(100); // 4 bytes / 2 UTF-16 units each
+    const res = new Response(body, { status: 500 });
+    const out = await readErrorText(res, 10);
+    expect(out).toContain("truncated");
+    const content = out.replace("…[truncated]", "");
+    // Byte-bounded: a 10-byte cut keeps ~2 emoji; the old code-unit cut would
+    // have kept 10 units (5 emoji). Far fewer code units proves the byte bound.
+    expect(content.length).toBeLessThanOrEqual(8);
+    // The mid-emoji cut must not leave an UNPAIRED surrogate (a valid pair is
+    // fine; TextDecoder turns the partial tail into U+FFFD).
+    const unpairedSurrogate =
+      /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+    expect(unpairedSurrogate.test(content)).toBe(false);
+  });
+});
 
 describe("readJsonWithLimit (M2)", () => {
   it("returns parsed JSON when body is under the limit", async () => {

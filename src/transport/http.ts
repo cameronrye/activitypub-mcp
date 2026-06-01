@@ -22,9 +22,56 @@ import {
   SERVER_NAME,
   SERVER_VERSION,
 } from "../config.js";
+import { isLoopbackIPv4 } from "../validation/url.js";
 import { checkBearerAuth } from "./auth-middleware.js";
 
 const logger = getLogger("activitypub-mcp:http");
+
+const LOOPBACK_HOSTS = new Set(["::1", "[::1]", "localhost"]);
+
+/** True for any loopback bind: 127.0.0.0/8, ::1, [::1], or localhost. */
+function isLoopbackHost(host: string): boolean {
+  const h = host.toLowerCase();
+  return LOOPBACK_HOSTS.has(h) || isLoopbackIPv4(h);
+}
+
+/**
+ * Compute startup security warnings for the HTTP transport. Pure function so the
+ * (host, allowlist) → warning logic is unit-testable.
+ *
+ * The DNS-rebinding protection (Host/Origin allowlists) is defense-in-depth on
+ * top of the mandatory bearer secret. When the server binds to a non-loopback
+ * interface it becomes network-reachable; if the operator did not supply an
+ * explicit Host allowlist, the auto-derived one (host:port) never matches real
+ * client Host headers, so the rebinding control is effectively inert and access
+ * control rests solely on MCP_HTTP_SECRET. A missing Origin allowlist likewise
+ * leaves browser Origin checks fail-open. Surface both loudly.
+ */
+export function httpRebindingWarnings(opts: {
+  host: string;
+  hasExplicitAllowedHosts: boolean;
+  hasAllowedOrigins: boolean;
+}): string[] {
+  if (isLoopbackHost(opts.host)) return [];
+  const warnings: string[] = [];
+  if (!opts.hasExplicitAllowedHosts) {
+    warnings.push(
+      `HTTP transport bound to non-loopback host "${opts.host}" without ` +
+        "MCP_HTTP_ALLOWED_HOSTS: the DNS-rebinding Host allowlist cannot match real " +
+        "client requests and provides no protection. Set MCP_HTTP_ALLOWED_HOSTS to " +
+        "the Host header(s) clients send — access control then rests solely on " +
+        "MCP_HTTP_SECRET.",
+    );
+  }
+  if (!opts.hasAllowedOrigins) {
+    warnings.push(
+      `HTTP transport bound to non-loopback host "${opts.host}" without ` +
+        "MCP_HTTP_ALLOWED_ORIGINS: browser Origin validation is disabled (fail open). " +
+        "Set MCP_HTTP_ALLOWED_ORIGINS to restrict cross-origin browser access.",
+    );
+  }
+  return warnings;
+}
 
 /**
  * HTTP Transport configuration options
@@ -214,6 +261,16 @@ export class HttpTransportServer {
             : this.corsOrigins.filter(Boolean).length
               ? this.corsOrigins.filter(Boolean)
               : undefined;
+
+        // Loudly warn when a non-loopback bind leaves the rebinding controls
+        // inert/fail-open, so the operator knows security rests on the secret.
+        for (const warning of httpRebindingWarnings({
+          host: this.host,
+          hasExplicitAllowedHosts: HTTP_ALLOWED_HOSTS.length > 0,
+          hasAllowedOrigins: allowedOrigins !== undefined && allowedOrigins.length > 0,
+        })) {
+          logger.warn(warning);
+        }
 
         // Create the streamable HTTP transport with DNS-rebinding protection.
         // The SDK options are marked @deprecated in favour of external middleware,

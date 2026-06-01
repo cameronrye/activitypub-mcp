@@ -55,6 +55,31 @@ describe("runLogin", () => {
     const stored = await credentialStore.getAccount("alice@mastodon.test");
     expect(stored?.accessToken).toBe("tok");
     expect(stored?.instance).toBe("mastodon.test");
+    // Default (no --write, ENABLE_WRITES unset) requests least-privilege read scope.
+    expect(authorize).toHaveBeenCalledWith(expect.objectContaining({ scopes: ["read"] }));
+  });
+
+  it("requests write scopes only when --write is passed", async () => {
+    vi.mocked(createLoopbackServer).mockResolvedValue({
+      redirectUri: "http://127.0.0.1:7777/callback",
+      waitForCallback: vi.fn(),
+      close: vi.fn(),
+    });
+    const authorize = vi.fn().mockResolvedValue({
+      instance: "mastodon.test",
+      username: "alice",
+      accessToken: "tok",
+      tokenType: "Bearer",
+      scopes: ["read", "write", "follow"],
+    });
+    vi.mocked(resolveLoginStrategy).mockResolvedValue({ kind: "mastodon", authorize } as never);
+
+    const { runLogin } = await import(/* @vite-ignore */ "../../src/cli/login.js");
+    await runLogin(["mastodon.test", "--write"]);
+
+    expect(authorize).toHaveBeenCalledWith(
+      expect.objectContaining({ scopes: ["read", "write", "follow"] }),
+    );
   });
 
   it("rejects an invalid instance domain before opening a browser", async () => {

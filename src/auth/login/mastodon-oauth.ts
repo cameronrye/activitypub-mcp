@@ -68,9 +68,18 @@ export class MastodonOAuthStrategy implements LoginStrategy {
 
     // 4. Capture the code (loopback verifies state).
     const params = await ctx.waitForCallback({ state });
-    // Mix-up defense (RFC 9700 §4.4): if the AS returned an `iss`, it must be our instance.
+    // Surface an explicit authorization error (e.g. the user clicked Deny)
+    // before treating a missing code as a generic failure.
+    const authError = params.get("error");
+    if (authError) {
+      const desc = params.get("error_description");
+      throw new Error(`Authorization failed: ${authError}${desc ? ` (${desc})` : ""}`);
+    }
+    // Mix-up defense (RFC 9700 §4.4): if the AS returned an `iss`, its hostname
+    // must be our instance. Compare hostnames (not URL.host) so a non-443
+    // instance whose iss carries a port isn't falsely rejected.
     const iss = params.get("iss");
-    if (iss && new URL(iss).host !== ctx.instance) {
+    if (iss && new URL(iss).hostname !== new URL(`https://${ctx.instance}`).hostname) {
       throw new Error("Authorization issuer mismatch (possible mix-up attack)");
     }
     const code = params.get("code");

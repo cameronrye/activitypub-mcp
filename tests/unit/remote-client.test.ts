@@ -7,6 +7,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RemoteActivityPubClient } from "../../src/activitypub/remote-client.js";
 import { server } from "../mocks/server.js";
 
+// resolveAndPin (the SSRF pin) resolves fixture hosts via node:dns before
+// fetching, and now fails closed when a host doesn't resolve. The fixture
+// domains (example.social etc.) don't exist on the real resolver, so pin DNS to
+// a public IP: the pinned fetch is then intercepted by MSW, which patches global
+// fetch above undici's dispatcher. IP-literal/no-TLD SSRF tests (10.0.0.1,
+// localhost) skip DNS, so they are unaffected by this mock.
+vi.mock("node:dns/promises", () => ({
+  lookup: async () => [{ address: "93.184.216.34", family: 4 }],
+}));
+
 describe("RemoteActivityPubClient", () => {
   let client: RemoteActivityPubClient;
 

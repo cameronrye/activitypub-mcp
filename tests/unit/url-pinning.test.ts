@@ -15,7 +15,9 @@ vi.mock("node:dns/promises", () => ({
 }));
 
 // Import after the mock is registered so the module under test binds to it.
-const { resolveAndPin, validateExternalUrl } = await import("../../src/validation/url.js");
+const { resolveAndPin, validateExternalUrl, SsrfBlockedError } = await import(
+  "../../src/validation/url.js"
+);
 
 afterEach(() => {
   lookupMock.mockReset();
@@ -57,6 +59,20 @@ describe("resolveAndPin", () => {
     expect(lookupMock).not.toHaveBeenCalled();
   });
 
+  it("canonicalizes trailing FQDN dots so a dotted IP literal can't skip the IP check", async () => {
+    // The WHATWG parser preserves a double trailing dot ("127.0.0.1.."), which
+    // doesn't match IPV4_REGEX — without canonicalization it would skip the fast
+    // private-IP check and fall through to DNS. It must still be blocked directly.
+    await expect(resolveAndPin("https://127.0.0.1../")).rejects.toThrow(
+      /private|blocked|not allowed/i,
+    );
+    expect(lookupMock).not.toHaveBeenCalled();
+  });
+
+  it("throws a typed SsrfBlockedError for a private IP literal", async () => {
+    await expect(resolveAndPin("https://10.0.0.1/")).rejects.toBeInstanceOf(SsrfBlockedError);
+  });
+
   it("pins a public IP-literal host directly without DNS resolution", async () => {
     const pinned = await resolveAndPin("https://93.184.216.34/");
     expect(pinned.address).toBe("93.184.216.34");
@@ -87,6 +103,23 @@ describe("resolveAndPin", () => {
 
     await expect(resolveAndPin("https://flaky.example/")).rejects.toThrow(/DNS validation failed/i);
   });
+
+  it("fails closed on ENOTFOUND instead of returning an unpinned target", async () => {
+    // resolveAndPin pins an actual outbound fetch. If it returned an empty
+    // (dispatcher-less) target on ENOTFOUND, the caller would fetch UNPINNED and
+    // undici would re-resolve the hostname itself — reopening the exact
+    // DNS-rebinding TOCTOU the pin exists to close (attacker answers NXDOMAIN to
+    // this lookup, then a private IP to undici's resolution). There is no IP to
+    // pin, so it must reject rather than hand back {}.
+    const err = Object.assign(new Error("getaddrinfo ENOTFOUND nope.example"), {
+      code: "ENOTFOUND",
+    });
+    lookupMock.mockRejectedValue(err);
+
+    await expect(resolveAndPin("https://nope.example/")).rejects.toThrow(
+      /no address|does not exist/i,
+    );
+  });
 });
 
 describe("validateExternalUrl fails closed on unexpected resolver errors", () => {
@@ -113,6 +146,16 @@ describe("validateExternalUrl fails closed on unexpected resolver errors", () =>
     lookupMock.mockResolvedValue([{ address: "192.168.1.1", family: 4 }]);
     await expect(validateExternalUrl("https://rebind.example/")).rejects.toThrow(
       /private|rebinding|blocked/i,
+    );
+  });
+
+  it("re-throws the rebinding rejection as a typed SsrfBlockedError (not message-matched)", async () => {
+    // The rejection is raised INSIDE the lookup try and passes through the DNS
+    // error handler. It must be re-thrown by TYPE, so a reworded message can
+    // never silently downgrade this fail-closed path to fail-open.
+    lookupMock.mockResolvedValue([{ address: "192.168.1.1", family: 4 }]);
+    await expect(validateExternalUrl("https://rebind.example/")).rejects.toBeInstanceOf(
+      SsrfBlockedError,
     );
   });
 });

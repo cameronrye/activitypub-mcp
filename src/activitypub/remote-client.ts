@@ -15,9 +15,8 @@ import {
   USER_AGENT,
 } from "../config.js";
 import { type ActivityPubActor, webfingerClient } from "../discovery/webfinger.js";
-import { instanceBlocklist } from "../policy/instance-blocklist.js";
 import { getErrorMessage } from "../utils/errors.js";
-import { pinnedFetch, readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { blocklistHop, pinnedFetch, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
 import { DomainSchema } from "../validation/schemas.js";
 
@@ -729,9 +728,7 @@ export class RemoteActivityPubClient {
       const response = await pinnedFetch(
         url,
         { ...options, signal: controller.signal },
-        INSTANCE_BLOCKING_ENABLED
-          ? (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname)
-          : undefined,
+        INSTANCE_BLOCKING_ENABLED ? blocklistHop : undefined,
       );
       clearTimeout(timeoutId);
 

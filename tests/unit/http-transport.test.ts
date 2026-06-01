@@ -4,9 +4,59 @@
 
 import { request as httpRequest } from "node:http";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { HttpTransportServer } from "../../src/transport/http.js";
+import { HttpTransportServer, httpRebindingWarnings } from "../../src/transport/http.js";
 
 const TEST_SECRET = "x".repeat(32);
+
+describe("httpRebindingWarnings", () => {
+  it("is silent for a loopback bind", () => {
+    expect(
+      httpRebindingWarnings({
+        host: "127.0.0.1",
+        hasExplicitAllowedHosts: false,
+        hasAllowedOrigins: false,
+      }),
+    ).toEqual([]);
+  });
+
+  it("is silent for any 127.0.0.0/8 loopback alias", () => {
+    expect(
+      httpRebindingWarnings({
+        host: "127.0.0.2",
+        hasExplicitAllowedHosts: false,
+        hasAllowedOrigins: false,
+      }),
+    ).toEqual([]);
+  });
+
+  it("warns about the inert Host allowlist when bound to 0.0.0.0 without MCP_HTTP_ALLOWED_HOSTS", () => {
+    const warnings = httpRebindingWarnings({
+      host: "0.0.0.0",
+      hasExplicitAllowedHosts: false,
+      hasAllowedOrigins: true,
+    });
+    expect(warnings.some((w) => w.includes("MCP_HTTP_ALLOWED_HOSTS"))).toBe(true);
+  });
+
+  it("warns about disabled Origin checks when bound non-loopback without an Origin allowlist", () => {
+    const warnings = httpRebindingWarnings({
+      host: "0.0.0.0",
+      hasExplicitAllowedHosts: true,
+      hasAllowedOrigins: false,
+    });
+    expect(warnings.some((w) => w.includes("MCP_HTTP_ALLOWED_ORIGINS"))).toBe(true);
+  });
+
+  it("is silent for a non-loopback bind that sets both allowlists", () => {
+    expect(
+      httpRebindingWarnings({
+        host: "0.0.0.0",
+        hasExplicitAllowedHosts: true,
+        hasAllowedOrigins: true,
+      }),
+    ).toEqual([]);
+  });
+});
 
 describe("HttpTransportServer", () => {
   let server: HttpTransportServer | null = null;

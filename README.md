@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  A lightweight **Model Context Protocol (MCP)** server that lets an LLM explore and interact with the existing Fediverse — Mastodon, Misskey, Foundkey, Pleroma, and compatible servers. Read-only by default; write tools are opt-in.
+  A lightweight <strong>Model Context Protocol (MCP)</strong> server that lets an LLM explore and interact with the existing Fediverse — Mastodon, Misskey, Foundkey, Pleroma, and compatible servers. Read-only by default; write tools are opt-in.
 </p>
 
 <p align="center">

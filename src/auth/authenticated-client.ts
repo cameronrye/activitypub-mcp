@@ -11,7 +11,7 @@ import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import { MAX_RESPONSE_SIZE } from "../config.js";
 import { UnsupportedOnPlatformError } from "../utils/errors.js";
-import { readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { readErrorText, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { type AccountCredentials, accountManager } from "./account-manager.js";
 import { resolveSoftwareKind, resolveWriteAdapter } from "./adapters/resolve.js";
 import {
@@ -229,7 +229,13 @@ export class AuthenticatedClient {
 
   // --- Status helpers (unchanged) ---
 
-  isWriteEnabled(): boolean {
+  /**
+   * Whether at least one authenticated account is configured. Named for what it
+   * actually checks — it does NOT consult ENABLE_WRITES (that gate lives in
+   * tools-write via {@link writeBlockReason}); the two are deliberately separate
+   * so authenticated READS work without writes being enabled.
+   */
+  hasAuthenticatedAccount(): boolean {
     return accountManager.hasAccounts();
   }
 
@@ -263,7 +269,7 @@ export class AuthenticatedClient {
       method: "GET",
     });
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to get bookmarks: HTTP ${response.status} - ${errorText}`);
     }
     return z.array(StatusSchema).parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
@@ -282,7 +288,7 @@ export class AuthenticatedClient {
       method: "GET",
     });
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to get favourites: HTTP ${response.status} - ${errorText}`);
     }
     return z.array(StatusSchema).parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
@@ -294,7 +300,7 @@ export class AuthenticatedClient {
       method: "POST",
     });
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to bookmark post: HTTP ${response.status} - ${errorText}`);
     }
     return StatusSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
@@ -306,7 +312,7 @@ export class AuthenticatedClient {
       method: "POST",
     });
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to unbookmark post: HTTP ${response.status} - ${errorText}`);
     }
     return StatusSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
@@ -319,7 +325,7 @@ export class AuthenticatedClient {
       body: JSON.stringify({ choices }),
     });
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to vote on poll: HTTP ${response.status} - ${errorText}`);
     }
     return PollSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
@@ -331,7 +337,7 @@ export class AuthenticatedClient {
       method: "GET",
     });
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to get poll: HTTP ${response.status} - ${errorText}`);
     }
     return PollSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
@@ -351,7 +357,7 @@ export class AuthenticatedClient {
       body: JSON.stringify(body),
     });
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to update media: HTTP ${response.status} - ${errorText}`);
     }
     return MediaAttachmentSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
@@ -371,7 +377,7 @@ export class AuthenticatedClient {
       method: "GET",
     });
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to get scheduled posts: HTTP ${response.status} - ${errorText}`);
     }
     return z
@@ -387,7 +393,7 @@ export class AuthenticatedClient {
       { method: "GET" },
     );
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to get scheduled post: HTTP ${response.status} - ${errorText}`);
     }
     return ScheduledStatusSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
@@ -405,7 +411,7 @@ export class AuthenticatedClient {
       { method: "PUT", body: JSON.stringify({ scheduled_at: scheduledAt }) },
     );
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to update scheduled post: HTTP ${response.status} - ${errorText}`);
     }
     return ScheduledStatusSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
@@ -419,7 +425,7 @@ export class AuthenticatedClient {
       { method: "DELETE" },
     );
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await readErrorText(response);
       throw new Error(`Failed to cancel scheduled post: HTTP ${response.status} - ${errorText}`);
     }
   }

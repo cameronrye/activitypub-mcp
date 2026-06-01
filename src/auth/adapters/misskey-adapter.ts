@@ -8,8 +8,12 @@
  */
 
 import { MAX_RESPONSE_SIZE, USER_AGENT } from "../../config.js";
-import { instanceBlocklist } from "../../policy/instance-blocklist.js";
-import { pinnedFetch, readJsonWithLimit } from "../../utils/fetch-helpers.js";
+import {
+  blocklistHop,
+  pinnedFetch,
+  readErrorText,
+  readJsonWithLimit,
+} from "../../utils/fetch-helpers.js";
 import type { AccountCredentials } from "../account-manager.js";
 import {
   type AccountInfo,
@@ -170,15 +174,16 @@ async function misskeyFetch(
     body: JSON.stringify(body),
   });
   if (!response.ok) {
+    // Bound the attacker-influenceable error body (2KB) before it reaches the
+    // thrown message / logs / tool output — same cap the Mastodon adapter uses.
+    const errorText = await readErrorText(response);
     let message = `HTTP ${response.status}`;
     try {
-      const data = await readJsonWithLimit<{ error?: { message?: string } }>(
-        response,
-        MAX_RESPONSE_SIZE,
-      );
+      const data = JSON.parse(errorText) as { error?: { message?: string } };
       if (data?.error?.message) message = data.error.message;
     } catch {
-      // body not JSON — keep the HTTP status message
+      // body not JSON — fall back to the bounded raw text if present
+      if (errorText) message = errorText;
     }
     throw new Error(`Failed to ${failVerb}: ${message}`);
   }
@@ -403,10 +408,10 @@ export class MisskeyWriteAdapter implements WriteAdapter {
         },
         body: formData,
       },
-      (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname),
+      blocklistHop,
     );
     if (!response.ok) {
-      const text = await response.text();
+      const text = await readErrorText(response);
       throw new Error(`Failed to upload media: HTTP ${response.status} - ${text}`);
     }
     const f = await readJsonWithLimit<MisskeyDriveFile>(response, MAX_RESPONSE_SIZE);
