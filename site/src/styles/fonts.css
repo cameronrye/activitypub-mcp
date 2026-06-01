@@ -1,0 +1,15 @@
+/* Self-hosted brand fonts (spec §2.2). Imported by BaseLayout before the
+   no-FOUC theme script so they are present at first paint — no Google Fonts,
+   no external font origin contacted at runtime. */
+
+/* Display — Bricolage Grotesque (--font-display): h1–h6, hero, headings, wordmark */
+@import "@fontsource/bricolage-grotesque/400.css";
+@import "@fontsource/bricolage-grotesque/700.css";
+
+/* Body — Hanken Grotesk (--font-body): body, paragraphs, nav, UI */
+@import "@fontsource/hanken-grotesk/400.css";
+@import "@fontsource/hanken-grotesk/600.css";
+
+/* Code — JetBrains Mono (--font-mono): code, pre, install snippets, inline tokens */
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/600.css";
