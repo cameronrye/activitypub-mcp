@@ -1,0 +1,227 @@
+---
+title: "Performance Monitoring"
+description: "Comprehensive guide to monitoring and optimizing performance of the ActivityPub MCP Server."
+group: "Development"
+order: 3
+---
+
+## Key Performance Metrics
+
+### Response Time
+
+- **Tool Execution Time:** Time to complete MCP tool calls
+- **HTTP Request Time:** ActivityPub/WebFinger request latency
+- **Cache Hit/Miss Time:** Cache lookup performance
+- **End-to-End Latency:** Total user request to response time
+
+### Resource Usage
+
+- **Memory Usage:** Heap size and garbage collection
+- **CPU Usage:** Processing load and utilization
+- **Network I/O:** Bandwidth and connection usage
+- **Cache Size:** Memory used by caching layers
+
+### Throughput
+
+- **Requests per Second:** Tool call frequency
+- **Concurrent Connections:** Simultaneous operations
+- **Cache Hit Rate:** Percentage of cache hits
+- **Error Rate:** Failed requests percentage
+
+## Monitoring Setup
+
+### Built-in Monitoring
+
+The server exposes a liveness endpoint and an MCP resource for server metadata:
+
+```bash
+# HTTP liveness probe (no auth required)
+curl http://localhost:3000/health
+
+# Access server metadata via MCP resource
+activitypub://server-info
+```
+
+#### Available Metrics:
+- Request count and timing statistics
+- Memory usage and garbage collection stats
+- Cache performance metrics
+- Error counts and types
+
+### External Monitoring Tools
+
+#### Node.js Profiling
+
+```bash
+# CPU profiling
+node --prof server.js
+
+# Memory profiling
+node --inspect server.js
+
+# Heap snapshots
+node --inspect --inspect-brk server.js
+```
+
+#### Process Monitoring
+
+```bash
+# System resource usage
+top -p $(pgrep -f activitypub-mcp)
+
+# Detailed process info
+ps aux | grep activitypub-mcp
+
+# Memory details
+cat /proc/$(pgrep -f activitypub-mcp)/status
+```
+
+## Performance Analysis
+
+### Response Time Analysis
+
+#### 1. Baseline Measurement
+
+```bash
+# Measure tool execution time
+time discover-actor @mastodon@mastodon.social
+
+# Benchmark multiple operations
+for i in {1..10}; do
+  time get-instance-info mastodon.social
+done
+```
+
+#### 2. Bottleneck Identification
+
+- **Network Latency:** Test with different instances
+- **Cache Performance:** Compare cached vs uncached requests
+- **Processing Time:** Profile JSON parsing and data transformation
+- **Concurrency Issues:** Test with multiple simultaneous requests
+
+### Memory Analysis
+
+#### Memory Profiling
+
+```bash
+# Generate heap snapshot
+kill -USR2 $(pgrep -f activitypub-mcp)
+
+# Analyze with Chrome DevTools
+node --inspect server.js
+# Open chrome://inspect in Chrome
+```
+
+#### Memory Leak Detection
+
+- **Monitor Growth:** Track memory usage over time
+- **Cache Limits:** Verify cache size limits are enforced
+- **Event Listeners:** Check for unremoved listeners
+- **Circular References:** Look for objects preventing GC
+
+### Cache Performance
+
+#### Cache Metrics
+
+```bash
+# Check cache statistics
+curl activitypub://server-info | jq '.statistics'
+
+# Monitor cache hit rate
+watch -n 5 'curl -s activitypub://server-info | jq ".statistics.cacheHits, .statistics.cacheMisses"'
+```
+
+#### Optimization Strategies
+
+- **TTL Tuning:** Adjust cache expiration times
+- **Size Limits:** Optimize cache size vs hit rate
+- **Eviction Policy:** Use LRU for better performance
+- **Preloading:** Cache frequently accessed data
+
+## Optimization Strategies
+
+### Network Optimization
+
+- **Connection Pooling:** Reuse HTTP connections
+- **Request Batching:** Combine multiple requests
+- **Compression:** Enable gzip/brotli compression
+- **Timeout Tuning:** Optimize request timeouts
+- **Retry Logic:** Implement exponential backoff
+
+### Caching Optimization
+
+- **Multi-level Caching:** Memory + disk caching
+- **Smart Invalidation:** Selective cache clearing
+- **Predictive Caching:** Pre-fetch likely requests
+- **Cache Warming:** Populate cache on startup
+- **Compression:** Compress cached data
+
+### Processing Optimization
+
+- **Async Operations:** Non-blocking I/O
+- **Stream Processing:** Process data in chunks
+- **Worker Threads:** Offload CPU-intensive tasks
+- **JSON Streaming:** Parse large responses incrementally
+- **Memory Pooling:** Reuse objects and buffers
+
+## Performance Alerts
+
+### Threshold Configuration
+
+| Metric | Warning | Critical | Action |
+|--------|---------|----------|--------|
+| Response Time | > 5s | > 15s | Check network/cache |
+| Memory Usage | > 80% | > 95% | Clear cache/restart |
+| Error Rate | > 5% | > 15% | Check logs/connectivity |
+| Cache Hit Rate | &lt; 60% | &lt; 40% | Tune cache settings |
+
+### Monitoring Scripts
+
+```bash
+# Simple performance monitor
+#!/bin/bash
+while true; do
+  MEMORY=$(ps -o pid,vsz,rss,comm -p $(pgrep -f activitypub-mcp))
+  RESPONSE_TIME=$(curl -w "%{time_total}" -s -o /dev/null activitypub://server-info)
+
+  echo "$(date): Memory: $MEMORY, Response: ${RESPONSE_TIME}s"
+
+  if (( $(echo "$RESPONSE_TIME > 10" | bc -l) )); then
+    echo "WARNING: High response time detected"
+  fi
+
+  sleep 60
+done
+```
+
+## Performance Checklist
+
+### Daily Monitoring
+
+- Check server response times
+- Monitor memory usage trends
+- Review error logs
+- Verify cache hit rates
+- Check for memory leaks
+
+### Weekly Analysis
+
+- Analyze performance trends
+- Review slow queries
+- Check cache effectiveness
+- Monitor resource usage patterns
+- Update performance baselines
+
+### Monthly Optimization
+
+- Profile application performance
+- Optimize cache configurations
+- Review and tune timeouts
+- Analyze dependency performance
+- Plan capacity upgrades
+
+## Related Resources
+
+- [Dependency Management](/activitypub-mcp/docs/development/dependencies/) — Optimize dependencies for better performance
+- [Troubleshooting Guide](/activitypub-mcp/docs/reference/troubleshooting/) — Solutions for performance-related issues
+- [MCP Tools Reference](/activitypub-mcp/docs/api/tools/) — Understanding tool performance characteristics

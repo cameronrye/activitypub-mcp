@@ -1,0 +1,280 @@
+---
+title: "Dependency Management"
+description: "Comprehensive guide to managing dependencies for the ActivityPub MCP Server."
+group: "Development"
+order: 2
+---
+
+## Package Overview
+
+### Core Dependencies
+
+- **@modelcontextprotocol/sdk:** MCP protocol implementation
+- **node-fetch:** HTTP client for ActivityPub requests
+- **@types/node:** TypeScript definitions for Node.js
+- **typescript:** TypeScript compiler and tooling
+
+### Development Dependencies
+
+- **@biomejs/biome:** Linting and formatting
+- **vitest:** Testing framework
+- **@types/jest:** TypeScript definitions for testing
+- **tsx:** TypeScript execution environment
+
+## Package Management
+
+### Installation Commands
+
+#### Production Dependencies
+
+```bash
+# Install all dependencies
+npm install
+
+# Add new production dependency
+npm install package-name
+
+# Install specific version
+npm install package-name@1.2.3
+```
+
+#### Development Dependencies
+
+```bash
+# Add development dependency
+npm install --save-dev package-name
+
+# Install only production dependencies
+npm install --production
+
+# Install from lock file
+npm ci
+```
+
+### Version Management
+
+#### Semantic Versioning
+
+Follow semantic versioning (semver) for dependency updates:
+
+- `^1.2.3` - Compatible within major version
+- `~1.2.3` - Compatible within minor version
+- `1.2.3` - Exact version lock
+
+#### Update Strategy
+
+Recommended approach for updates:
+
+1. Check for outdated packages: `npm outdated`
+1. Update patch versions: `npm update`
+1. Review major/minor updates manually
+1. Test thoroughly after updates
+
+## Security Management
+
+### Vulnerability Scanning
+
+```bash
+# Check for vulnerabilities
+npm audit
+
+# Fix automatically fixable issues
+npm audit fix
+
+# Force fix (use with caution)
+npm audit fix --force
+
+# Generate detailed report
+npm audit --json > audit-report.json
+```
+
+### Security Best Practices
+
+- **Regular Audits:** Run `npm audit` weekly
+- **Automated Scanning:** Use GitHub Dependabot or similar tools
+- **Minimal Dependencies:** Only install necessary packages
+- **Trusted Sources:** Verify package authenticity and maintainership
+- **Lock Files:** Commit package-lock.json for reproducible builds
+
+### Dependency Review Process
+
+1. **Research:** Review package documentation and GitHub repository
+1. **Maintenance:** Check last update date and issue response time
+1. **Dependencies:** Review the package's own dependencies
+1. **Alternatives:** Consider alternative packages with better security records
+1. **Testing:** Thoroughly test new dependencies in development
+
+## Performance Optimization
+
+### Bundle Size Analysis
+
+```bash
+# Analyze bundle size
+npm run build:analyze
+
+# Check package sizes
+npm ls --depth=0
+npx bundlephobia package-name
+
+# Identify large dependencies
+du -sh node_modules/*
+```
+
+### Dependency Optimization
+
+- **Tree Shaking:** Use ES modules for better tree shaking
+- **Selective Imports:** Import only needed functions
+- **Alternative Packages:** Choose lighter alternatives when possible
+- **Peer Dependencies:** Use peer dependencies to avoid duplication
+
+### Runtime Performance
+
+- **Lazy Loading:** Load dependencies only when needed
+- **Caching:** Cache expensive dependency operations
+- **Profiling:** Profile dependency usage in production
+- **Monitoring:** Monitor memory usage and startup time
+
+## Update Workflow
+
+### 1. Preparation
+
+```bash
+# Create update branch
+git checkout -b dependency-updates
+
+# Backup current state
+npm list --json > dependencies-before.json
+
+# Check current status
+npm outdated
+```
+
+### 2. Update Process
+
+```bash
+# Update patch versions
+npm update
+
+# Update specific package
+npm install package-name@latest
+
+# Update dev dependencies
+npm update --dev
+
+# Check for major version updates
+npx npm-check-updates
+```
+
+### 3. Testing & Validation
+
+```bash
+# Run full test suite
+npm test
+
+# Check for security issues
+npm audit
+
+# Verify build process
+npm run build
+
+# Test in development environment
+npm run dev
+```
+
+### 4. Documentation
+
+```bash
+# Document changes
+npm list --json > dependencies-after.json
+
+# Generate changelog entry
+git log --oneline --since="1 week ago"
+
+# Update documentation if needed
+# Commit changes with descriptive message
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Dependency Conflicts
+
+**Symptoms:** Installation errors, version conflicts
+
+**Solutions:**
+
+```bash
+# Clear cache and reinstall
+npm cache clean --force
+rm -rf node_modules package-lock.json
+npm install
+
+# Use npm overrides for conflicts
+# Add to package.json:
+{
+  "overrides": {
+    "package-name": "version"
+  }
+}
+```
+
+#### Outdated Lock File
+
+**Symptoms:** Different versions installed than expected
+
+**Solutions:**
+
+```bash
+# Update lock file
+npm install --package-lock-only
+
+# Regenerate lock file
+rm package-lock.json
+npm install
+```
+
+#### Security Vulnerabilities
+
+**Symptoms:** npm audit warnings
+
+**Solutions:**
+
+```bash
+# Try automatic fix
+npm audit fix
+
+# Manual update of vulnerable package
+npm install vulnerable-package@latest
+
+# Use alternative package if no fix available
+```
+
+## Monitoring & Maintenance
+
+### Automated Monitoring
+
+- **GitHub Dependabot:** Automatic security updates
+- **Renovate:** Comprehensive dependency updates
+- **Snyk:** Continuous security monitoring
+- **npm audit:** Regular vulnerability scanning
+
+### Maintenance Schedule
+
+- **Weekly:** Check for security updates
+- **Monthly:** Review and update patch versions
+- **Quarterly:** Evaluate major version updates
+- **Annually:** Comprehensive dependency audit
+
+### Health Metrics
+
+- **Vulnerability Count:** Track security issues
+- **Outdated Packages:** Monitor update lag
+- **Bundle Size:** Track size growth
+- **Build Time:** Monitor performance impact
+
+## Related Resources
+
+- [Performance Monitoring](/activitypub-mcp/docs/development/performance/) — Monitor the impact of dependencies on performance
+- [Security Audit](/activitypub-mcp/docs/development/security/) — Comprehensive security review including dependencies
+- [Troubleshooting Guide](/activitypub-mcp/docs/reference/troubleshooting/) — Solutions for dependency-related issues
