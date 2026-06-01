@@ -149,6 +149,33 @@
   --z-toast: 1080;
 }
 
+/* Legacy semantic-alias bridge — maps pre-overhaul variable names onto the
+   new brand tokens (§2.4) so any not-yet-migrated selectors still resolve.
+   New code must use the §2.4 names directly; this block is removable once
+   no legacy alias remains referenced. */
+:root {
+  --bg-secondary:   var(--bg-raised);
+  --bg-tertiary:    var(--bg-raised);
+  --text-secondary: var(--text-muted);
+  --text-inverse:   var(--color-paper);
+  --border-primary: var(--border-color);
+  --color-white:    var(--color-paper);
+
+  --color-primary:          var(--accent);
+  --color-primary-dark:     var(--color-clay);
+  --color-primary-light:    var(--color-vermilion);
+  --color-primary-gradient: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+
+  --color-secondary:          var(--accent-2);
+  --color-secondary-dark:     #25624F;
+  --color-secondary-light:    var(--color-pine-teal);
+  --color-secondary-gradient: linear-gradient(135deg, var(--accent-2) 0%, var(--accent) 100%);
+
+  --color-accent:       var(--accent-3);
+  --color-accent-dark:  var(--color-gold);
+  --color-accent-light: var(--color-gold);
+}
+
 /* Theme system — Light theme (default; mirrors :root) */
 :root,
 :root[data-theme="light"],
@@ -351,8 +378,8 @@ body {
 .navbar-brand .brand-text {
   background: linear-gradient(
     135deg,
-    var(--color-primary) 0%,
-    var(--color-secondary) 100%
+    var(--accent) 0%,
+    var(--accent-2) 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
