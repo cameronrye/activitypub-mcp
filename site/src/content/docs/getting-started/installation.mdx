@@ -1,0 +1,158 @@
+---
+title: "Installation & Setup"
+description: "Get the ActivityPub MCP Server up and running in your environment. This guide covers installation, configuration, and initial setup."
+group: "Getting Started"
+order: 1
+---
+
+## Prerequisites
+
+### Node.js 20+
+
+v2 requires Node.js 20 LTS or later (Node 18 reached end-of-life April 30, 2025).
+
+[Download Node.js](https://nodejs.org/)
+
+### Claude Desktop (Optional)
+
+For the best experience, install Claude Desktop for seamless AI integration.
+
+[Download Claude](https://www.anthropic.com/claude)
+
+### MCP Inspector (Optional)
+
+Useful for testing and debugging MCP connections.
+
+`npm install -g @modelcontextprotocol/inspector`
+
+## Quick Installation
+
+The fastest way to get started is using npx:
+
+### Install and Configure
+
+```bash
+npx activitypub-mcp install
+```
+
+This command will:
+
+- Install the latest version of the server
+- Detect your MCP client (Claude Desktop, Cursor, etc.)
+- Automatically configure the client
+- Verify the installation
+
+### Manual Configuration
+
+If you prefer manual setup, add this to your Claude Desktop configuration:
+
+```json
+{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}
+```
+
+## Configuration Options
+
+Customize the server behavior with environment variables:
+
+| Variable | Default | Description |
+|---|---|---|
+| `LOG_LEVEL` | `info` | Logging level: debug, info, warning, error, fatal |
+| `USER_AGENT` | `ActivityPub-MCP-Client/2.0.0` | Custom User-Agent for HTTP requests |
+| `REQUEST_TIMEOUT` | `15000` | HTTP request timeout in milliseconds (production default: 10000) |
+| `CACHE_TTL` | `300` | Cache time-to-live in seconds |
+| `MCP_HTTP_SECRET` | *none* | **Required** when `MCP_TRANSPORT_MODE=http`. 32+ random chars; gates `/mcp` via Bearer auth. `/health` stays unauthenticated. |
+| `MCP_HTTP_ALLOWED_ORIGINS` | *empty* | Comma-separated CORS origins. Default is empty (no origins allowed); set explicitly for browser clients. |
+| `MCP_HTTP_ALLOWED_HOSTS` | *empty* | Comma-separated allowed `Host` header values for DNS-rebinding protection. |
+| `ACTIVITYPUB_ENABLE_WRITES` | `false` | Set to `true` to register write tools. Read-only by default. |
+| `MCP_THREAD_MAX_DEPTH` | `5` | Max recursion depth for `get-post-thread`. |
+| `MCP_THREAD_MAX_REPLIES` | `50` | Max total replies fetched per thread. |
+| `MCP_THREAD_CROSS_ORIGIN_FETCH` | `false` | Set `true` to fetch replies whose origin differs from the root post. |
+| `HEALTH_CHECK_EXTERNAL_PROBE` | `true` | Gates the outbound mastodon.social connectivity probe (replaces removed `HEALTH_CHECK_ENABLED`). |
+| `ACTIVITYPUB_ACCOUNTS` | *none* | Multi-account config. v2 uses pipe `\|` delimiter: `id\|instance\|token\|username\|label`. v2 refuses to start on legacy colon form. |
+
+> **HTTP transport notes for v3:**
+>
+> - `MCP_HTTP_SECRET` is required. Requests to `/mcp` must include `Authorization: Bearer <secret>`. `/health` stays unauthenticated for load balancers.
+> - The `/metrics` endpoint was removed in v3. Only `/mcp` and `/health` are available.
+> - `MCP_HTTP_ALLOWED_ORIGINS` (renamed from `MCP_HTTP_CORS_ORIGINS`) defaults to empty. Set it explicitly when browser clients need cross-origin access.
+
+## Verification
+
+Verify your installation is working correctly:
+
+### Step 1: Test MCP Connection
+
+Use the MCP Inspector to test the connection:
+
+```bash
+npx @modelcontextprotocol/inspector
+```
+
+Connect to: `npx activitypub-mcp`
+
+### Step 2: Test Basic Functionality
+
+Try discovering a fediverse actor:
+
+```bash
+# In MCP Inspector or Claude Desktop
+discover-actor @mastodon@mastodon.social
+```
+
+### Step 3: Check Server Info
+
+Verify the server is providing information:
+
+```bash
+# Request the server-info resource
+activitypub://server-info
+```
+
+## Advanced Setup
+
+### Development Setup
+
+For development or local testing:
+
+```bash
+git clone https://github.com/cameronrye/activitypub-mcp.git
+cd activitypub-mcp
+npm install
+npm run build
+npm run mcp
+```
+
+### Docker Setup
+
+Run the server in a container:
+
+```bash
+docker run -p 8080:8080 \
+  -e LOG_LEVEL=debug \
+  activitypub-mcp
+```
+
+### Custom Installation Path
+
+Install to a specific location:
+
+```bash
+npm install -g activitypub-mcp
+activitypub-mcp
+```
+
+## Next Steps
+
+- [Claude Desktop Integration](/activitypub-mcp/docs/getting-started/claude-desktop/) — Set up seamless integration with Claude Desktop for the best AI experience.
+- [Basic Usage Guide](/activitypub-mcp/docs/guides/basic-usage/) — Learn the essential commands and workflows for everyday use.
+- [Practical Examples](/activitypub-mcp/docs/guides/examples/) — See real-world examples and use cases to get you started.

@@ -1,0 +1,433 @@
+---
+title: "MCP Resources Reference"
+description: "Complete reference for all Model Context Protocol resources provided by the ActivityPub MCP Server."
+group: "API Reference"
+order: 2
+---
+
+## Resource Overview
+
+MCP Resources provide read-only access to remote ActivityPub data from any fediverse server. Resources use URI templates to access specific actors, timelines, and instances.
+
+<div class="resource-types">
+  <div class="type-card">
+    <h3>Server Resources</h3>
+    <p>Information about the MCP server itself</p>
+  </div>
+  <div class="type-card">
+    <h3>Actor Resources</h3>
+    <p>Access to remote actor profiles, timelines, and social graphs</p>
+  </div>
+  <div class="type-card">
+    <h3>Instance Resources</h3>
+    <p>Information about fediverse instances</p>
+  </div>
+</div>
+
+## Server Resources
+
+<div class="resource-reference">
+
+### `activitypub://server-info`
+
+Provides comprehensive information about the MCP server instance. In v2 the
+tools/resources/prompts arrays are populated dynamically from the live capability
+registry, so the list never drifts from what the server actually serves.
+
+#### Content Structure
+
+Returns comprehensive server information including:
+
+- Server name, version, and uptime
+- Available tools, resources, and prompts (live from the registry — v2)
+- Configuration settings and feature flags
+- Performance statistics
+
+#### Usage Examples
+
+**Check Server Status**
+
+> "What's the current status of the ActivityPub MCP server?"
+
+Claude will access the server-info resource to provide uptime, performance metrics, and configuration details.
+
+**Troubleshooting**
+
+> "Are there any errors or performance issues with the server?"
+
+Claude will examine error counts, cache performance, and system health indicators.
+
+</div>
+
+## Actor Resources
+
+<div class="resource-reference">
+
+### `activitypub://remote-actor/\{identifier\}`
+
+Retrieve actor information from any fediverse server.
+
+#### URI Template
+
+`activitypub://remote-actor/{identifier}`
+
+Replace `{identifier}` with the actor identifier (e.g., user@example.social)
+
+#### Content Structure
+
+Returns ActivityPub Actor object including:
+
+- Actor ID and type
+- Display name and username
+- Profile information (bio, avatar, header)
+- Public key for verification
+- Endpoints (inbox, outbox, followers, following)
+
+#### Usage Examples
+
+**Get Actor Profile**
+
+URI: `activitypub://remote-actor/mastodon@mastodon.social`
+
+> "Show me the profile information for mastodon@mastodon.social"
+
+</div>
+
+<div class="resource-reference">
+
+### `activitypub://remote-timeline/\{identifier\}`
+
+Retrieve actor's timeline/outbox from any fediverse server.
+
+#### URI Template
+
+`activitypub://remote-timeline/{identifier}`
+
+Replace `{identifier}` with the actor identifier
+
+#### Content Structure
+
+Returns ActivityPub OrderedCollection with:
+
+- Collection metadata (total items, first/last pages)
+- Array of recent activities/posts
+- Post content and metadata
+- Engagement metrics
+
+#### Usage Examples
+
+**Get Recent Posts**
+
+URI: `activitypub://remote-timeline/user@fosstodon.org`
+
+> "What are the recent posts from user@fosstodon.org?"
+
+</div>
+
+<div class="resource-reference">
+
+### `activitypub://remote-followers/\{identifier\}`
+
+Retrieve followers of an actor from any fediverse server.
+
+#### URI Template
+
+`activitypub://remote-followers/{identifier}`
+
+Replace `{identifier}` with the actor identifier
+
+#### Content Structure
+
+Returns ActivityPub OrderedCollection with:
+
+- Total follower count
+- Collection pagination info
+- Follower actor URIs
+
+#### Usage Examples
+
+**Get Followers**
+
+URI: `activitypub://remote-followers/admin@mastodon.social`
+
+> "How many followers does admin@mastodon.social have?"
+
+</div>
+
+<div class="resource-reference">
+
+### `activitypub://remote-following/\{identifier\}`
+
+Retrieve who an actor is following from any fediverse server.
+
+#### URI Template
+
+`activitypub://remote-following/{identifier}`
+
+Replace `{identifier}` with the actor identifier
+
+#### Content Structure
+
+Returns ActivityPub OrderedCollection with:
+
+- Total following count
+- Collection pagination info
+- Following actor URIs
+
+#### Usage Examples
+
+**Get Following**
+
+URI: `activitypub://remote-following/user@pixelfed.social`
+
+> "Who is user@pixelfed.social following?"
+
+</div>
+
+## Instance Resources
+
+<div class="resource-reference">
+
+### `activitypub://instance-info/\{domain\}`
+
+Get information about any fediverse instance.
+
+#### URI Template
+
+`activitypub://instance-info/{domain}`
+
+Replace `{domain}` with the instance domain (e.g., mastodon.social)
+
+#### Content Structure
+
+Returns instance metadata including:
+
+- Instance name and description
+- Software version and type
+- User and post statistics
+- Instance rules and policies
+- Contact information
+- Supported features
+
+#### Usage Examples
+
+**Get Instance Info**
+
+URI: `activitypub://instance-info/fosstodon.org`
+
+> "Tell me about the fosstodon.org instance"
+
+</div>
+
+## Timeline Resources
+
+New resources for accessing public timelines and trending content.
+
+<div class="resource-reference">
+
+### `activitypub://trending/\{domain\}`
+
+Get trending hashtags and posts from a fediverse instance.
+
+#### URI Template
+
+`activitypub://trending/{domain}`
+
+Replace `{domain}` with the instance domain (e.g., mastodon.social)
+
+#### Content Structure
+
+Returns trending content including:
+
+- Array of trending hashtags with usage counts
+- Array of trending posts with engagement metrics
+- Timestamp of when data was fetched
+
+#### Usage Examples
+
+**Get Trending Content**
+
+URI: `activitypub://trending/mastodon.social`
+
+> "What's trending on mastodon.social right now?"
+
+</div>
+
+<div class="resource-reference">
+
+### `activitypub://local-timeline/\{domain\}`
+
+Get the local public timeline from a fediverse instance (posts from local users only).
+
+#### URI Template
+
+`activitypub://local-timeline/{domain}`
+
+Replace `{domain}` with the instance domain
+
+#### Content Structure
+
+Returns local timeline data including:
+
+- Array of recent posts from local users
+- Post content, author, and engagement metrics
+- Pagination information (hasMore, nextMaxId)
+
+#### Usage Examples
+
+**Browse Local Timeline**
+
+URI: `activitypub://local-timeline/fosstodon.org`
+
+> "Show me what people on fosstodon.org are posting"
+
+</div>
+
+<div class="resource-reference">
+
+### `activitypub://federated-timeline/\{domain\}`
+
+Get the federated public timeline from a fediverse instance (posts from all connected instances).
+
+#### URI Template
+
+`activitypub://federated-timeline/{domain}`
+
+Replace `{domain}` with the instance domain
+
+#### Content Structure
+
+Returns federated timeline data including:
+
+- Array of posts from all connected instances
+- Post content, author, and engagement metrics
+- Pagination information (hasMore, nextMaxId)
+
+#### Usage Examples
+
+**Explore Federated Content**
+
+URI: `activitypub://federated-timeline/mastodon.social`
+
+> "Show me the federated timeline from mastodon.social"
+
+</div>
+
+## Content Resources
+
+Resources for accessing specific content and threads.
+
+<div class="resource-reference">
+
+### `activitypub://post-thread/\{domain\}/\{statusId\}`
+
+Get a post and its full conversation thread including replies and parent posts.
+
+#### URI Template (v2 — recommended)
+
+`activitypub://post-thread/{domain}/{statusId}`
+
+Replace `{domain}` with the instance domain and `{statusId}`
+with the Mastodon status ID. Constructs
+`https://{domain}/web/statuses/{statusId}` internally — the Mastodon-compatible URL.
+
+#### Legacy URI Template (deprecated, removed in 2.1.0)
+
+`activitypub://post-thread/{postUrl}`
+
+The original URL-encoded form is still accepted with a deprecation warning. It remains
+useful for non-Mastodon ActivityPub implementations (Pleroma, Akkoma, Misskey, etc.)
+whose status URLs do not match the Mastodon shape. Will be removed in v2.1.0 once
+instance-software detection lands.
+
+#### Content Structure
+
+Returns thread data including:
+
+- The main post content and metadata
+- Array of ancestor posts (conversation context)
+- Array of reply posts (cross-origin replies returned as stubs by default — set `MCP_THREAD_CROSS_ORIGIN_FETCH=true` to fetch them fully)
+- Total reply count
+
+Capped at `MCP_THREAD_MAX_DEPTH` (default 5) and
+`MCP_THREAD_MAX_REPLIES` (default 50).
+
+#### Usage Examples
+
+**View Conversation Thread (Mastodon)**
+
+URI: `activitypub://post-thread/mastodon.social/123456`
+
+> "Show me the full conversation for this post"
+
+**Legacy form (Pleroma/Misskey/etc.)**
+
+URI: `activitypub://post-thread/https%3A%2F%2Fpleroma.example%2Fnotice%2FAaBbCc`
+
+</div>
+
+## Resource Access Patterns
+
+### Direct Access
+
+Access resources directly by URI:
+
+```
+# Request server information
+GET activitypub://server-info
+
+# Access actor profile
+GET activitypub://remote-actor/user@mastodon.social
+
+# Get trending content (new)
+GET activitypub://trending/mastodon.social
+```
+
+### URI Templates
+
+Use URI templates with parameters:
+
+```
+# Get actor timeline
+GET activitypub://remote-timeline/admin@fosstodon.org
+
+# Get instance information
+GET activitypub://instance-info/pixelfed.social
+```
+
+### Natural Language Access
+
+Claude can access resources through natural language:
+
+> "Show me the profile and recent posts from user@mastodon.social"
+
+Claude will automatically access the appropriate resources.
+
+## Performance Considerations
+
+### Remote Data Fetching
+
+- Resources fetch data from remote fediverse servers
+- Response times depend on remote server performance
+- Rate limiting applies to protect remote servers
+- Network errors may occur with unreachable instances
+
+### Resource Size
+
+- Timeline and follower collections may be large
+- ActivityPub collections use pagination
+- First page of data is typically returned
+- Use tools for more control over data retrieval
+
+### Data Freshness
+
+- Server info: Real-time server status
+- Remote resources: Fetched on-demand from remote servers
+- Data reflects current state of remote instances
+- No local caching of remote data in resources
+
+## Related Documentation
+
+- [MCP Tools](/activitypub-mcp/docs/api/tools/) — Learn about the tools that populate these resources
+- [Advanced Workflows](/activitypub-mcp/docs/guides/advanced-workflows/) — Advanced workflows using tools and resources together
+- [Troubleshooting](/activitypub-mcp/docs/reference/troubleshooting/) — Solutions for resource access and performance issues

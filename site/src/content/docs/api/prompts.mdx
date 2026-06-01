@@ -1,0 +1,342 @@
+---
+title: "MCP Prompts Reference"
+description: "Pre-built prompts and templates for common ActivityPub operations."
+group: "API Reference"
+order: 3
+---
+
+## Registered MCP Prompts
+
+The ActivityPub MCP Server provides 5 registered prompts that can be invoked directly through the MCP protocol:
+
+<div class="prompt-card">
+
+### `explore-fediverse`
+
+#### Description
+
+Get guidance on exploring and discovering content in the fediverse.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `interests` | string | Yes | Your interests or topics you want to explore |
+| `instanceType` | enum | No | Preferred type of fediverse instance: "mastodon", "pleroma", "misskey", "pixelfed", "peertube", or "any" |
+
+#### Example Usage
+
+> "I'm interested in exploring the fediverse, particularly content related to: open source software and privacy. I prefer mastodon instances. Can you help me discover interesting actors, instances, and communities to follow?"
+
+</div>
+
+<div class="prompt-card">
+
+### `compare-accounts`
+
+#### Description
+
+Compare different fediverse accounts side by side.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `accounts` | string | Yes | Comma-separated list of account identifiers to compare (e.g., user1@mastodon.social, user2@fosstodon.org) |
+| `aspects` | string | No | Specific aspects to compare (e.g., posting frequency, topics, engagement) |
+
+#### Example Usage
+
+> "Please compare these accounts: @gargron@mastodon.social and @Mastodon@mastodon.social. I'm interested in their posting frequency and engagement styles."
+
+</div>
+
+<div class="prompt-card">
+
+### `analyze-user-activity`
+
+#### Description
+
+Get a detailed analysis of a fediverse user's activity and posting patterns.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `identifier` | string | Yes | Actor identifier (e.g., user@mastodon.social) |
+| `depth` | enum | No | Analysis depth: "quick" (10 posts), "standard" (20 posts), or "comprehensive" (50 posts) |
+
+#### Example Usage
+
+> "Analyze the activity of @gargron@mastodon.social. Do a comprehensive analysis of their posting patterns, topics, and engagement style."
+
+</div>
+
+<div class="prompt-card">
+
+### `find-experts`
+
+#### Description
+
+Find fediverse accounts that are experts or active contributors in a specific topic.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `topic` | string | Yes | The topic or field to find experts in (e.g., "machine learning", "rust programming", "climate science") |
+| `instances` | string | No | Comma-separated list of instances to search (default: searches popular instances) |
+
+#### Example Usage
+
+> "Find experts and active contributors discussing machine learning in the fediverse. Search fosstodon.org and hachyderm.io."
+
+</div>
+
+<div class="prompt-card">
+
+### `summarize-trending`
+
+#### Description
+
+Get a summary of what's currently trending and being discussed in the fediverse.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `instances` | string | No | Comma-separated list of instances to check (default: mastodon.social) |
+| `focus` | enum | No | Focus area: "general", "tech", "news", "art", "science", or "all" |
+
+#### Example Usage
+
+> "Summarize what's trending on mastodon.social and fosstodon.org right now. Focus on tech topics."
+
+</div>
+
+## Prompt Pattern Examples
+
+Below are example prompt patterns you can use with Claude when the ActivityPub MCP Server is connected. These demonstrate effective ways to interact with the fediverse through natural language.
+
+<div class="prompt-card">
+
+### Community Discovery
+
+#### Prompt Template:
+
+> "Help me discover active communities in the fediverse focused on [TOPIC]. Find relevant instances, identify key actors, and show me what they're discussing. Provide a summary of each community's focus and activity level."
+
+#### Example Usage:
+
+**Technology Communities**
+
+> "Help me discover active communities in the fediverse focused on open source software. Find relevant instances, identify key actors, and show me what they're discussing. Provide a summary of each community's focus and activity level."
+
+**Art Communities**
+
+> "Help me discover active communities in the fediverse focused on digital art and creative work. Find relevant instances, identify key actors, and show me what they're discussing. Provide a summary of each community's focus and activity level."
+
+#### Expected Workflow:
+
+1. Use `discover-instances` to find topic-relevant instances
+2. Use `get-instance-info` to analyze each instance
+3. Use `discover-actor` to find key community members
+4. Use `fetch-timeline` to sample recent content
+5. Synthesize findings into a comprehensive community overview
+
+</div>
+
+<div class="prompt-card">
+
+### Actor Research
+
+#### Prompt Template:
+
+> "Research the fediverse actor [ACTOR_IDENTIFIER]. Provide their profile information, recent activity summary, engagement patterns, and identify their main topics of interest. Also show their connections to other notable actors."
+
+#### Example Usage:
+
+**Specific Actor Research**
+
+> "Research the fediverse actor @gargron@mastodon.social. Provide their profile information, recent activity summary, engagement patterns, and identify their main topics of interest. Also show their connections to other notable actors."
+
+</div>
+
+<div class="prompt-card">
+
+### Instance Comparison
+
+#### Prompt Template:
+
+> "Compare the fediverse instances [INSTANCE1] and [INSTANCE2]. Analyze their size, community focus, rules, activity levels, and notable members. Help me understand which might be a better fit for someone interested in [INTEREST_AREA]."
+
+#### Example Usage:
+
+**Tech Instance Comparison**
+
+> "Compare the fediverse instances fosstodon.org and hachyderm.io. Analyze their size, community focus, rules, activity levels, and notable members. Help me understand which might be a better fit for someone interested in open source development."
+
+</div>
+
+## Analysis Prompts
+
+<div class="prompt-card">
+
+### Trend Analysis
+
+#### Prompt Template:
+
+> "Analyze current trends and discussions about [TOPIC] across the fediverse. Find instances and actors discussing this topic, summarize the main points of conversation, and identify any emerging themes or controversies."
+
+#### Example Usage:
+
+**AI Discussion Analysis**
+
+> "Analyze current trends and discussions about artificial intelligence across the fediverse. Find instances and actors discussing this topic, summarize the main points of conversation, and identify any emerging themes or controversies."
+
+</div>
+
+<div class="prompt-card">
+
+### Engagement Analysis
+
+#### Prompt Template:
+
+> "Analyze the engagement patterns of [ACTOR_IDENTIFIER]. Look at their recent posts, reply rates, boost frequency, and interaction with other users. Identify their most engaging content types and optimal posting patterns."
+
+</div>
+
+<div class="prompt-card">
+
+### Content Categorization
+
+#### Prompt Template:
+
+> "Analyze and categorize the recent content from [INSTANCE/ACTOR]. Group posts by topic, identify the most common themes, and provide statistics on content types (original posts, replies, boosts, media posts)."
+
+</div>
+
+## Research Prompts
+
+<div class="prompt-card">
+
+### Academic Research
+
+#### Prompt Template:
+
+> "Conduct a systematic analysis of [RESEARCH_TOPIC] discussions in the fediverse for academic research. Find relevant communities, identify key voices and experts, analyze discourse patterns, and provide data suitable for scholarly analysis. Include methodology notes and data quality assessments."
+
+#### Example Usage:
+
+**Climate Change Research**
+
+> "Conduct a systematic analysis of climate change discussions in the fediverse for academic research. Find relevant communities, identify key voices and experts, analyze discourse patterns, and provide data suitable for scholarly analysis. Include methodology notes and data quality assessments."
+
+</div>
+
+<div class="prompt-card">
+
+### Market Research
+
+#### Prompt Template:
+
+> "Research market sentiment and discussions about [PRODUCT/INDUSTRY] in the fediverse. Identify target demographics, analyze user needs and pain points, find potential early adopters, and assess competitive landscape discussions."
+
+</div>
+
+<div class="prompt-card">
+
+### Network Analysis
+
+#### Prompt Template:
+
+> "Map the network structure of [COMMUNITY/TOPIC] in the fediverse. Identify key nodes (influential actors), connection patterns between instances, information flow pathways, and community clusters. Provide insights into network dynamics and influence patterns."
+
+</div>
+
+## Monitoring Prompts
+
+<div class="prompt-card">
+
+### Brand Monitoring
+
+#### Prompt Template:
+
+> "Monitor mentions and discussions of [BRAND/ORGANIZATION] across the fediverse. Track sentiment, identify key conversations, find influential voices discussing the brand, and alert me to any significant changes in discussion volume or tone."
+
+</div>
+
+<div class="prompt-card">
+
+### Community Health Monitoring
+
+#### Prompt Template:
+
+> "Monitor the health and activity of [INSTANCE/COMMUNITY]. Track user engagement, content quality, growth patterns, and community dynamics. Identify any concerning trends or positive developments that warrant attention."
+
+</div>
+
+<div class="prompt-card">
+
+### Topic Tracking
+
+#### Prompt Template:
+
+> "Track discussions and developments related to [TOPIC] across the fediverse. Monitor for new information, changing sentiment, emerging sub-topics, and key contributors to the conversation. Provide regular updates on significant changes."
+
+</div>
+
+## Custom Prompt Building
+
+### Prompt Structure
+
+Use these four elements to build effective prompts:
+
+**1. Objective Statement** — Clearly state what you want to accomplish
+
+`"Help me [ACTION] [TARGET] in the fediverse"`
+
+**2. Scope Definition** — Specify the scope and boundaries
+
+`"Focus on [INSTANCES/ACTORS/TOPICS]"`
+
+**3. Output Requirements** — Define what kind of output you need
+
+`"Provide [ANALYSIS/SUMMARY/DATA/RECOMMENDATIONS]"`
+
+**4. Context Information** — Add relevant context or constraints
+
+`"Consider [TIMEFRAME/AUDIENCE/PURPOSE]"`
+
+### Best Practices
+
+- **Be Specific:** Use exact actor identifiers and instance names
+- **Set Expectations:** Clearly state what kind of analysis you want
+- **Provide Context:** Explain the purpose or use case
+- **Request Methodology:** Ask for explanation of the approach used
+- **Specify Format:** Request specific output formats if needed
+
+### Common Variables
+
+- `[TOPIC]` — Subject area or theme of interest
+- `[ACTOR_IDENTIFIER]` — @username@instance.com or actor URL
+- `[INSTANCE]` — Domain name of fediverse instance
+- `[TIMEFRAME]` — Time period for analysis (e.g., "past week")
+- `[COMMUNITY]` — Specific community or group focus
+
+## Quick Start Prompts
+
+<div class="quick-prompts">
+<div class="quick-prompt"><strong>Explore a New Topic</strong><blockquote>"Show me what the fediverse is saying about [TOPIC]"</blockquote></div>
+<div class="quick-prompt"><strong>Find Communities</strong><blockquote>"Find active [TOPIC] communities in the fediverse"</blockquote></div>
+<div class="quick-prompt"><strong>Research an Actor</strong><blockquote>"Tell me about @username@instance.com"</blockquote></div>
+<div class="quick-prompt"><strong>Compare Instances</strong><blockquote>"Compare instance1.com and instance2.com"</blockquote></div>
+<div class="quick-prompt"><strong>Monitor Activity</strong><blockquote>"What's new with @username@instance.com?"</blockquote></div>
+<div class="quick-prompt"><strong>Analyze Trends</strong><blockquote>"What are the trending topics in [COMMUNITY]?"</blockquote></div>
+</div>
+
+## Related Documentation
+
+- [MCP Tools](/activitypub-mcp/docs/api/tools/) — Learn about the tools these prompts will use
+- [Practical Examples](/activitypub-mcp/docs/guides/examples/) — See these prompts in action with real examples
+- [Advanced Workflows](/activitypub-mcp/docs/guides/advanced-workflows/) — Advanced techniques for effective fediverse exploration

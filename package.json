@@ -47,13 +47,17 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.9",
     "@astrojs/mdx": "^4.3.10",
     "@astrojs/sitemap": "^3.6.0",
     "@biomejs/biome": "^2.2.4",
     "@dotenvx/dotenvx": "^1.51.1",
+    "@fontsource/bricolage-grotesque": "^5.2.10",
+    "@fontsource/hanken-grotesk": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
     "@types/node": "^24.5.2",
     "@vitest/coverage-v8": "^4.0.18",
-    "astro": "^5.15.8",
+    "astro": "^5.18.2",
     "cross-env": "^10.0.0",
     "jsdom": "^27.0.0",
     "msw": "^2.7.0",
@@ -61,7 +65,7 @@
     "pagefind": "^1.4.0",
     "rimraf": "^6.0.1",
     "tsx": "^4.20.5",
-    "typescript": "^5.9.2",
+    "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
   "scripts": {
@@ -93,10 +97,11 @@
     "install:shell:windows": "powershell -ExecutionPolicy Bypass -File scripts/install.ps1",
     "uninstall": "node scripts/install.js uninstall",
     "build": "tsc",
-    "build:site": "astro build && npx pagefind --site dist-site && node scripts/generate-search-data.js",
+    "build:site": "node scripts/generate-registry-manifest.js && astro build && npx pagefind --site dist-site && node scripts/generate-search-data.js",
     "dev:site": "astro dev",
     "preview:site": "astro preview",
     "generate:og-image": "node scripts/generate-og-image.js",
+    "check": "astro check",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist",
     "prepublishOnly": "run-s clean validate:version typecheck lint build"

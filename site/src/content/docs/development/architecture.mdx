@@ -1,0 +1,249 @@
+---
+title: "Architecture Overview"
+description: "Technical architecture and design decisions of the ActivityPub MCP Server."
+group: "Development"
+order: 1
+---
+
+## System Architecture
+
+**LLM Layer** — Claude Desktop, MCP Inspector, Other MCP Clients
+
+↕ MCP Protocol
+
+**MCP Server Layer** — Tools, Resources, Prompts
+
+↕ HTTP/HTTPS
+
+**Fediverse Layer** — Mastodon, Pixelfed, PeerTube, Other ActivityPub Servers
+
+## Core Components
+
+### MCP Server Core
+
+Central server implementation handling MCP protocol communication
+
+#### Key Features:
+- Protocol compliance with MCP specification
+- Tool, resource, and prompt registration
+- Error handling and validation
+- Request/response lifecycle management
+
+### Remote Client
+
+HTTP client for communicating with fediverse servers
+
+#### Key Features:
+- WebFinger resolution
+- ActivityPub data fetching
+- HTTP request optimization
+- Error handling and retries
+
+### Performance Monitor
+
+System performance tracking and metrics collection
+
+#### Key Features:
+- Request timing and latency tracking
+- Memory usage monitoring
+- Error rate tracking
+- Performance analytics
+
+### Health Checker
+
+System health monitoring and diagnostics
+
+#### Key Features:
+- Server status verification
+- Dependency health checks
+- Resource availability monitoring
+- Diagnostic reporting
+
+### Instance Discovery
+
+Fediverse instance discovery and recommendation engine
+
+#### Key Features:
+- Instance categorization
+- Interest-based recommendations
+- Community analysis
+- Instance metadata management
+
+### Logging System
+
+Comprehensive logging and debugging infrastructure
+
+#### Key Features:
+- Structured logging with LogTape
+- Configurable log levels
+- Request tracing
+- Error context preservation
+
+## Data Flow
+
+### 1. LLM Request
+
+Claude or another MCP client sends a request to the server
+
+**Examples:** Tool calls, resource access, prompt requests
+
+### 2. Request Processing
+
+MCP server validates and routes the request to appropriate handlers
+
+**Components:** Input validation, rate limiting, authentication
+
+### 3. Fediverse Interaction
+
+Server communicates with fediverse instances via HTTP/ActivityPub
+
+**Protocols:** WebFinger, ActivityPub, HTTP APIs
+
+### 4. Data Processing
+
+Raw fediverse data is processed and formatted for LLM consumption
+
+**Operations:** Data transformation, filtering, aggregation
+
+### 5. Response Delivery
+
+Processed data is returned to the LLM in MCP-compliant format
+
+**Formats:** JSON responses, structured text, error messages
+
+## Security & Privacy
+
+### Rate Limiting
+
+Protects both the MCP server and target fediverse instances from abuse
+
+- Per-domain request limits
+- Configurable time windows
+- Graceful degradation
+- Respect for server resources
+
+### Input Validation
+
+Comprehensive validation of all inputs to prevent injection attacks
+
+- Schema-based validation with Zod
+- Sanitization of user inputs
+- URL validation and normalization
+- Parameter type checking
+
+### Privacy Protection
+
+Respects user privacy and follows fediverse best practices
+
+- No data storage or persistence
+- Minimal data collection
+- Respect for instance privacy settings
+- Transparent operation
+
+### Error Handling
+
+Secure error handling that doesn't leak sensitive information
+
+- Sanitized error messages
+- Proper exception handling
+- Logging without sensitive data
+- Graceful failure modes
+
+## Performance Optimizations
+
+### Caching Strategy
+
+Intelligent caching reduces redundant requests and improves response times
+
+#### Cache Layers:
+- **WebFinger Cache:** 5-minute TTL for actor resolution
+- **Actor Profile Cache:** 5-minute TTL for profile data
+- **Instance Info Cache:** 15-minute TTL for instance metadata
+- **Error Cache:** 1-minute TTL for failed requests
+
+### Request Optimization
+
+Efficient HTTP client configuration for optimal network performance
+
+#### Optimizations:
+- Connection pooling and reuse
+- Configurable timeouts
+- Compression support
+- Parallel request handling
+
+### Memory Management
+
+Efficient memory usage for handling large datasets and concurrent requests
+
+#### Strategies:
+- Streaming data processing
+- Garbage collection optimization
+- Memory usage monitoring
+- Resource cleanup
+
+## Integration Points
+
+### MCP Protocol
+
+Standard Model Context Protocol for LLM integration
+
+- JSON-RPC 2.0 based communication
+- Bidirectional message passing
+- Tool, resource, and prompt capabilities
+- Error handling and status reporting
+
+### ActivityPub Protocol
+
+W3C standard for decentralized social networking
+
+- Actor discovery and profile fetching
+- Activity stream processing
+- Federation and cross-instance communication
+- Content type negotiation
+
+### WebFinger Protocol
+
+RFC 7033 standard for resource discovery
+
+- Actor identifier resolution
+- Service discovery
+- Cross-domain resource linking
+- Metadata exchange
+
+## Monitoring & Observability
+
+### Performance Metrics
+
+Comprehensive performance tracking and analysis
+
+#### Tracked Metrics:
+- Request latency and throughput
+- Error rates and types
+- Cache hit/miss ratios
+- Memory and CPU usage
+
+### Health Monitoring
+
+Continuous health checks and system diagnostics
+
+#### Health Checks:
+- Server responsiveness
+- External dependency status
+- Resource availability
+- Configuration validation
+
+### Logging & Debugging
+
+Structured logging for troubleshooting and analysis
+
+#### Log Categories:
+- Request/response tracing
+- Error and exception logging
+- Performance bottleneck identification
+- Security event tracking
+
+## Next Steps
+
+- [Performance Monitoring](/activitypub-mcp/docs/development/performance/) — Deep dive into performance monitoring and optimization techniques.
+- [Security Audit](/activitypub-mcp/docs/development/security/) — Security considerations and audit checklist for the server.
+- [API Reference](/activitypub-mcp/docs/api/tools/) — Detailed documentation of tools, resources, and prompts.

@@ -1,0 +1,256 @@
+---
+title: "Claude Desktop Integration"
+description: "Set up seamless integration between the ActivityPub MCP Server and Claude Desktop for AI-powered fediverse exploration."
+group: "Getting Started"
+order: 2
+---
+
+## Overview
+
+Claude Desktop integration allows you to:
+
+- **Natural Language Queries:** Ask Claude to explore the fediverse using plain English
+- **Automated Workflows:** Let Claude chain multiple MCP tools together
+- **Intelligent Analysis:** Get AI-powered insights about fediverse content and communities
+- **Seamless Experience:** No need to remember specific tool names or parameters
+
+## Prerequisites
+
+### Claude Desktop Installed
+
+Download and install Claude Desktop from the official Anthropic website.
+
+[Download Claude Desktop](https://www.anthropic.com/claude)
+
+### ActivityPub MCP Server
+
+Ensure the ActivityPub MCP Server is installed and working.
+
+```bash
+npx activitypub-mcp install
+```
+
+### Node.js 20+
+
+Required for running the MCP server (Node 18 reached EOL April 2025).
+
+[Download Node.js](https://nodejs.org)
+
+## Configuration Setup
+
+### Step 1: Locate Claude Desktop Configuration
+
+Find your Claude Desktop configuration file:
+
+**macOS**
+
+```
+~/Library/Application Support/Claude/claude_desktop_config.json
+```
+
+**Windows**
+
+```
+%APPDATA%\Claude\claude_desktop_config.json
+```
+
+**Linux**
+
+```
+~/.config/Claude/claude_desktop_config.json
+```
+
+### Step 2: Add MCP Server Configuration
+
+If the file doesn't exist, create it. Add the ActivityPub MCP Server configuration:
+
+#### Basic Configuration
+
+```json
+{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}
+```
+
+#### Advanced Configuration
+
+```json
+{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "debug",
+        "USER_AGENT": "Claude-ActivityPub-Explorer/2.0.0",
+        "REQUEST_TIMEOUT": "60000",
+        "CACHE_TTL": "600",
+        "RATE_LIMIT_MAX": "100"
+      }
+    }
+  }
+}
+```
+
+### Step 3: Restart Claude Desktop
+
+Close Claude Desktop completely and restart it to load the new configuration.
+
+**macOS**
+
+```bash
+# Force quit and restart
+killall Claude
+open -a Claude
+```
+
+**Windows**
+
+Use Task Manager to end Claude processes, then restart from Start Menu.
+
+**Linux**
+
+```bash
+# Kill and restart
+pkill claude
+claude &
+```
+
+Restart tips:
+
+- Completely quit Claude Desktop (check system tray/menu bar)
+- Wait a few seconds before restarting
+- Check the Claude Desktop logs if the server doesn't appear
+
+## Verification & Testing
+
+### 1. Check Server Connection
+
+In Claude Desktop, ask:
+
+> "Can you check if the ActivityPub MCP server is working?"
+
+Claude should respond with server status information. You should also see:
+
+- Server appears in Claude's tool list
+- No error messages in Claude's interface
+
+### 2. Test Basic Functionality
+
+Try a simple discovery command:
+
+> "Can you discover information about @mastodon@mastodon.social?"
+
+Claude should use the discover-actor tool and return actor information.
+
+### 3. Test Complex Queries
+
+Try a more complex request:
+
+> "Help me find interesting technology communities in the fediverse and show me what people are discussing there."
+
+Claude should chain multiple tools together to fulfill this request.
+
+## Example Usage
+
+### Discovery Queries
+
+- **Find Communities:** "Find me some active art communities in the fediverse"
+- **Explore Instances:** "What can you tell me about fosstodon.org?"
+- **Actor Information:** "Get information about @gargron@mastodon.social"
+
+### Content Exploration
+
+- **Timeline Analysis:** "Show me recent posts from @mozilla@mozilla.social and summarize the main topics"
+- **Trend Discovery:** "What are people talking about on technology-focused Mastodon instances?"
+- **Community Comparison:** "Compare the communities on mastodon.social and fosstodon.org"
+
+### Research Queries
+
+- **Topic Research:** "Help me research what the fediverse community thinks about AI and machine learning"
+- **Instance Analysis:** "Analyze the rules and policies of different Mastodon instances"
+- **Network Mapping:** "Map out the connections between different fediverse instances"
+
+## Troubleshooting
+
+### Server Not Found
+
+**Symptoms:**
+
+- Claude says "I don't have access to ActivityPub tools"
+- No MCP tools appear in Claude
+
+**Solutions:**
+
+1. Verify configuration file location and syntax
+2. Restart Claude Desktop completely
+3. Check that Node.js and npm are installed
+4. Test server manually: `npx activitypub-mcp`
+
+### Connection Errors
+
+**Symptoms:**
+
+- Tools timeout or fail to respond
+- Error messages about server connection
+
+**Solutions:**
+
+1. Check internet connectivity
+2. Increase timeout in configuration
+3. Check firewall settings
+4. Try with debug logging enabled
+
+### Performance Issues
+
+**Symptoms:**
+
+- Slow responses from tools
+- Claude takes a long time to process requests
+
+**Solutions:**
+
+1. Reduce cache TTL for faster updates
+2. Limit concurrent requests
+3. Use more specific queries
+4. Clear server cache periodically
+
+## Advanced Features
+
+### Custom Prompts
+
+Create custom prompts for common workflows:
+
+```
+"Create a weekly report of trending topics in the tech fediverse"
+```
+
+### Automated Monitoring
+
+Set up regular checks for specific actors or instances:
+
+```
+"Monitor @mozilla@mozilla.social for new announcements"
+```
+
+### Data Analysis
+
+Use Claude's analysis capabilities with fediverse data:
+
+```
+"Analyze the sentiment of recent posts about climate change"
+```
+
+## Next Steps
+
+- [Basic Usage Guide](/activitypub-mcp/docs/guides/basic-usage/) — Learn essential commands and workflows for everyday use.
+- [Practical Examples](/activitypub-mcp/docs/guides/examples/) — See real-world examples and use cases with Claude Desktop.
+- [API Reference](/activitypub-mcp/docs/api/tools/) — Detailed documentation for all available MCP tools.

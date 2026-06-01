@@ -1,0 +1,155 @@
+---
+title: "ActivityStreams Vocabulary Guide"
+description: "Complete reference to the ActivityStreams Vocabulary W3C Recommendation as used by the ActivityPub MCP Server."
+group: "Specifications"
+order: 3
+---
+
+## Executive Summary
+
+### Purpose and Overview
+
+The ActivityStreams Vocabulary is a W3C Recommendation (published May 23, 2017) that defines a comprehensive vocabulary for describing social activities, objects, and relationships in a machine-readable format. It serves as the foundational vocabulary for ActivityPub and other social web protocols.
+
+#### Core Concepts:
+
+- **Core Types:** Essential base types (Object, Link, Activity, Collection)
+- **Extended Types:** Specialized types (Create, Follow, Like, Person, Note)
+- **Properties:** Attributes describing relationships and characteristics
+
+### Key Components
+
+#### Objects
+
+Content items, actors, and abstract entities
+
+#### Activities
+
+Actions performed by actors on objects
+
+#### Links
+
+References to external resources with metadata
+
+#### Collections
+
+Ordered or unordered groups of objects
+
+## Core Types Architecture
+
+### Object
+
+The base type for all ActivityStreams objects. Provides fundamental properties like id, type, name, and content.
+
+**Key Properties:** id, type, name, content, url, published, updated
+
+### Link
+
+Represents references to external resources with associated metadata and relationship information.
+
+**Key Properties:** href, rel, mediaType, name, hreflang, height, width
+
+### Activity
+
+Describes actions performed by actors. Extends Object with actor, object, and target properties.
+
+**Key Properties:** actor, object, target, result, origin, instrument
+
+### Collection
+
+Represents groups of objects or links, supporting both ordered and unordered collections.
+
+**Key Properties:** items, totalItems, first, last, current
+
+## Extended Activity Types
+
+### Content Activities
+
+- **Create:** Creating new content
+- **Update:** Modifying existing content
+- **Delete:** Removing content
+- **Announce:** Sharing/boosting content
+
+### Social Activities
+
+- **Follow:** Following an actor
+- **Like:** Expressing approval
+- **Block:** Blocking an actor
+- **Flag:** Reporting content
+
+### Collection Activities
+
+- **Add:** Adding to collections
+- **Remove:** Removing from collections
+- **Move:** Moving between collections
+
+## Extended Actor Types
+
+### Person
+
+Individual human users in the social network
+
+### Organization
+
+Formal organizations, companies, or institutions
+
+### Service
+
+Automated services, bots, or applications
+
+### Group
+
+Collections of actors working together
+
+### Application
+
+Software applications that can perform activities
+
+## Extended Object Types
+
+### Content Objects
+
+- **Note:** Short text content (like tweets)
+- **Article:** Long-form content with rich formatting
+- **Document:** File attachments and documents
+- **Page:** Web pages and standalone content
+
+### Media Objects
+
+- **Image:** Pictures and visual content
+- **Video:** Video content and streams
+- **Audio:** Audio files and podcasts
+
+### Social Objects
+
+- **Event:** Calendar events and gatherings
+- **Place:** Geographic locations
+- **Profile:** Actor profile information
+- **Relationship:** Connections between actors
+
+## Implementation in ActivityPub MCP Server
+
+### Vocabulary Usage
+
+Our MCP server implements the complete ActivityStreams vocabulary to ensure full compatibility with the fediverse ecosystem.
+
+- Full support for all core and extended types
+- Proper JSON-LD context handling
+- Extensibility for custom properties
+- Validation against vocabulary specifications
+
+### LLM Integration
+
+The vocabulary is exposed to LLMs through structured MCP tools and resources.
+
+- Type-aware object creation and manipulation
+- Vocabulary-guided content generation
+- Semantic understanding of social activities
+- Automated compliance checking
+
+## Additional Resources
+
+- [Official W3C Specification](https://www.w3.org/TR/activitystreams-vocabulary/) — The complete ActivityStreams Vocabulary W3C Recommendation
+- [ActivityStreams 2.0 Core](https://www.w3.org/TR/activitystreams-core/) — Core syntax and serialization specification
+- [ActivityPub Implementation](/activitypub-mcp/docs/specifications/activitypub/) — How our server implements ActivityPub using this vocabulary
+- [MCP Tools Reference](/activitypub-mcp/docs/api/tools/) — Tools for working with ActivityStreams objects

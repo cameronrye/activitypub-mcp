@@ -1,0 +1,58 @@
+/* Brand design tokens (spec §2.4). Brand tokens are constant across themes;
+   only the semantic aliases (--bg-*, --text-*, --border-color, --logo-dot-flip)
+   flip between light and dark. This is the single mechanism driving both
+   theming and the logo ink-dot flip. */
+
+:root {
+  /* Brand tokens — constant across themes */
+  --color-paper:      #FBF7F0;
+  --color-vermilion:  #E8552D;
+  --color-pine-teal:  #2F7D6B;
+  --color-gold:       #F4B740;
+  --color-ink:        #1A1714;
+  --color-clay:       #C2643A;
+
+  /* Type roles */
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body:    'Hanken Grotesk', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, monospace;
+
+  /* Semantic aliases — light defaults */
+  --bg-primary:    var(--color-paper);
+  --bg-raised:     #F3EDE3;
+  --text-primary:  var(--color-ink);
+  --text-muted:    #5A534C;
+  --border-color:  #E0DDD8;
+  --accent:        var(--color-vermilion);
+  --accent-2:      var(--color-pine-teal);
+  --accent-3:      var(--color-gold);
+
+  /* Logo flipping dot */
+  --logo-dot-flip: var(--color-ink);
+
+  /* Semantic state colors */
+  --color-success: #2F7D6B;
+  --color-warning: #F4B740;
+  --color-error:   #C0392B;
+}
+
+/* Dark aliases — applied for explicit dark, and for system via the media query below */
+[data-theme='dark'] {
+  --bg-primary:    var(--color-ink);
+  --bg-raised:     #231F1B;
+  --text-primary:  var(--color-paper);
+  --text-muted:    #C9C2B8;
+  --border-color:  #332E29;
+  --logo-dot-flip: var(--color-paper);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme='system'] {
+    --bg-primary:    var(--color-ink);
+    --bg-raised:     #231F1B;
+    --text-primary:  var(--color-paper);
+    --text-muted:    #C9C2B8;
+    --border-color:  #332E29;
+    --logo-dot-flip: var(--color-paper);
+  }
+}

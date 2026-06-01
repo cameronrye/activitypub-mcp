@@ -1,0 +1,61 @@
+---
+import CopyButton from "./CopyButton.astro";
+interface Props {
+  /** The exact code/command to display and copy. */
+  code: string;
+  /** Optional language label shown in the header chip. */
+  lang?: string;
+  /** Accessible label for the copy control. */
+  label?: string;
+}
+const { code, lang, label = "Copy" } = Astro.props;
+---
+
+<figure class="code-block">
+  <div class="code-block-bar">
+    {lang && <span class="code-block-lang">{lang}</span>}
+    <CopyButton text={code} label={label} class="code-block-copy" />
+  </div>
+  <pre class="code-block-pre"><code>{code}</code></pre>
+</figure>
+
+<style>
+  .code-block {
+    position: relative;
+    margin: 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background-color: var(--bg-raised);
+    overflow: hidden;
+  }
+  .code-block-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--border-color);
+    background-color: color-mix(in srgb, var(--text-primary) 4%, var(--bg-raised));
+  }
+  .code-block-lang {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .code-block-bar :global(.code-block-copy) { margin-left: auto; }
+  .code-block-pre {
+    margin: 0;
+    padding: var(--space-4);
+    overflow-x: auto;
+  }
+  .code-block-pre code {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    color: var(--text-primary);
+    white-space: pre;
+  }
+</style>

@@ -1,77 +1,85 @@
 /* CSS Variables */
 :root {
-  /* Primary colors - Modern blue gradient */
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
-  --color-primary-light: #3b82f6;
-  --color-primary-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  /* Primary colors — vermilion brand (was blue). Legacy names repointed to brand tokens. */
+  --color-primary: var(--color-vermilion);
+  --color-primary-dark: var(--color-clay);
+  --color-primary-light: #F0795A;
+  --color-primary-gradient: linear-gradient(135deg, var(--color-vermilion) 0%, var(--color-clay) 100%);
 
-  /* Secondary colors - Purple accent */
-  --color-secondary: #7c3aed;
-  --color-secondary-dark: #6d28d9;
-  --color-secondary-light: #8b5cf6;
-  --color-secondary-gradient: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+  /* Secondary colors — pine-teal brand (was purple) */
+  --color-secondary: var(--color-pine-teal);
+  --color-secondary-dark: #25604F;
+  --color-secondary-light: #4A9A86;
+  --color-secondary-gradient: linear-gradient(135deg, var(--color-pine-teal) 0%, #25604F 100%);
 
-  /* Accent colors */
-  --color-accent: #06b6d4;
-  --color-accent-dark: #0891b2;
-  --color-accent-light: #22d3ee;
+  /* Accent colors — gold brand (was cyan) */
+  --color-accent: var(--color-gold);
+  --color-accent-dark: #D89E22;
+  --color-accent-light: #F8CB6B;
 
-  /* Neutral colors */
-  --color-white: #ffffff;
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f3f4f6;
-  --color-gray-200: #e5e7eb;
-  --color-gray-300: #d1d5db;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6b7280;
-  --color-gray-600: #4b5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1f2937;
-  --color-gray-900: #111827;
+  /* Neutral colors — warm paper→ink scale (was cool grays) */
+  --color-white: var(--color-paper);
+  --color-gray-50: #F6F1E8;
+  --color-gray-100: #F3EDE3;
+  --color-gray-200: #E0DDD8;
+  --color-gray-300: #CFC9C0;
+  --color-gray-400: #A8A097;
+  --color-gray-500: #5A534C;
+  --color-gray-600: #4A443E;
+  --color-gray-700: #332E29;
+  --color-gray-800: #231F1B;
+  --color-gray-900: var(--color-ink);
 
-  /* Semantic colors */
-  --color-success: #10b981;
-  --color-success-light: #34d399;
-  --color-warning: #f59e0b;
-  --color-warning-light: #fbbf24;
-  --color-error: #ef4444;
-  --color-error-light: #f87171;
-  --color-info: #3b82f6;
-  --color-info-light: #60a5fa;
+  /* Semantic colors — re-toned to read on paper/ink (spec §2.1) */
+  --color-success: #2F7D6B;
+  --color-success-light: #4A9A86;
+  --color-warning: #F4B740;
+  --color-warning-light: #F8CB6B;
+  --color-error: #C0392B;
+  --color-error-light: #D85A4C;
+  --color-info: #2F7D6B;
+  --color-info-light: #4A9A86;
 
   /* Background colors */
-  --bg-primary: var(--color-white);
+  --bg-primary: var(--color-paper);
   --bg-secondary: var(--color-gray-50);
   --bg-tertiary: var(--color-gray-100);
-  --bg-gradient-primary: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  --bg-gradient-secondary: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  --bg-raised: #F3EDE3;
+  --bg-gradient-primary: linear-gradient(135deg, #FBF7F0 0%, #F3EDE3 100%);
+  --bg-gradient-secondary: linear-gradient(135deg, #F3EDE3 0%, #E0DDD8 100%);
 
   /* Text colors */
-  --text-primary: var(--color-gray-900);
-  --text-secondary: var(--color-gray-600);
-  --text-tertiary: var(--color-gray-500);
-  --text-inverse: var(--color-white);
+  --text-primary: var(--color-ink);
+  --text-secondary: var(--color-gray-500);
+  --text-tertiary: #6F675E;
+  --text-muted: #5A534C;
+  --text-inverse: var(--color-paper);
+
+  /* Accent aliases (spec §2.4) */
+  --accent: var(--color-vermilion);
+  --accent-2: var(--color-pine-teal);
+  --accent-3: var(--color-gold);
 
   /* Border colors */
   --border-primary: var(--color-gray-200);
   --border-secondary: var(--color-gray-300);
+  --border-color: #E0DDD8;
 
-  /* Shadow colors */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  /* Logo flipping dot (spec §2.3/§2.4) */
+  --logo-dot-flip: var(--color-ink);
+
+  /* Shadow colors — warm ink-tinted shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(26 23 20 / 0.06);
+  --shadow-md: 0 4px 6px -1px rgb(26 23 20 / 0.10), 0 2px 4px -2px rgb(26 23 20 / 0.10);
   --shadow-lg:
-    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    0 10px 15px -3px rgb(26 23 20 / 0.10), 0 4px 6px -4px rgb(26 23 20 / 0.10);
   --shadow-xl:
-    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    0 20px 25px -5px rgb(26 23 20 / 0.10), 0 8px 10px -6px rgb(26 23 20 / 0.10);
 
-  /* Typography */
-  --font-family-sans:
-    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --font-family-mono:
-    "SF Mono", Monaco, Inconsolata, "Roboto Mono", Consolas, "Courier New",
-    monospace;
+  /* Typography — brand type roles (spec §2.2). Legacy names repointed. */
+  --font-family-sans: var(--font-body);
+  --font-family-display: var(--font-display);
+  --font-family-mono: var(--font-mono);
 
   /* Font sizes */
   --text-xs: 0.75rem;
@@ -141,77 +149,124 @@
   --z-toast: 1080;
 }
 
-/* Theme system - Light theme (default) */
+/* Legacy semantic-alias bridge — maps pre-overhaul variable names onto the
+   new brand tokens (§2.4) so any not-yet-migrated selectors still resolve.
+   New code must use the §2.4 names directly; this block is removable once
+   no legacy alias remains referenced. */
+:root {
+  --bg-secondary:   var(--bg-raised);
+  --bg-tertiary:    var(--bg-raised);
+  --text-secondary: var(--text-muted);
+  --text-inverse:   var(--color-paper);
+  --border-primary: var(--border-color);
+  --color-white:    var(--color-paper);
+
+  --color-primary:          var(--accent);
+  --color-primary-dark:     var(--color-clay);
+  --color-primary-light:    var(--color-vermilion);
+  --color-primary-gradient: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+
+  --color-secondary:          var(--accent-2);
+  --color-secondary-dark:     #25604F;
+  --color-secondary-light:    var(--color-pine-teal);
+  --color-secondary-gradient: linear-gradient(135deg, var(--accent-2) 0%, var(--accent) 100%);
+
+  --color-accent:       var(--accent-3);
+  --color-accent-dark:  var(--color-gold);
+  --color-accent-light: var(--color-gold);
+}
+
+/* Theme system — Light theme (default; mirrors :root) */
 :root,
 :root[data-theme="light"],
 :root.theme-light {
-  --bg-primary: var(--color-white);
+  --bg-primary: var(--color-paper);
   --bg-secondary: var(--color-gray-50);
   --bg-tertiary: var(--color-gray-100);
-  --bg-gradient-primary: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  --bg-gradient-secondary: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  --bg-raised: #F3EDE3;
+  --bg-gradient-primary: linear-gradient(135deg, #FBF7F0 0%, #F3EDE3 100%);
+  --bg-gradient-secondary: linear-gradient(135deg, #F3EDE3 0%, #E0DDD8 100%);
 
-  --text-primary: var(--color-gray-900);
-  --text-secondary: var(--color-gray-600);
-  --text-tertiary: var(--color-gray-500);
-  --text-inverse: var(--color-white);
+  --text-primary: var(--color-ink);
+  --text-secondary: var(--color-gray-500);
+  --text-tertiary: #6F675E;
+  --text-muted: #5A534C;
+  --text-inverse: var(--color-paper);
 
   --border-primary: var(--color-gray-200);
   --border-secondary: var(--color-gray-300);
+  --border-color: #E0DDD8;
+
+  --logo-dot-flip: var(--color-ink);
 }
 
-/* Dark theme */
+/* Dark theme — ink surfaces, paper text (spec §2.1/§2.4) */
 :root[data-theme="dark"],
 :root.theme-dark {
-  --bg-primary: var(--color-gray-900);
-  --bg-secondary: var(--color-gray-800);
-  --bg-tertiary: var(--color-gray-700);
-  --bg-gradient-primary: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-  --bg-gradient-secondary: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+  --bg-primary: var(--color-ink);
+  --bg-secondary: #231F1B;
+  --bg-tertiary: #332E29;
+  --bg-raised: #231F1B;
+  --bg-gradient-primary: linear-gradient(135deg, #231F1B 0%, #1A1714 100%);
+  --bg-gradient-secondary: linear-gradient(135deg, #332E29 0%, #231F1B 100%);
 
-  --text-primary: var(--color-white);
-  --text-secondary: var(--color-gray-300);
-  --text-tertiary: var(--color-gray-400);
-  --text-inverse: var(--color-gray-900);
+  --text-primary: var(--color-paper);
+  --text-secondary: #C9C2B8;
+  --text-tertiary: #A29A8F;
+  --text-muted: #C9C2B8;
+  --text-inverse: var(--color-ink);
 
-  --border-primary: var(--color-gray-700);
-  --border-secondary: var(--color-gray-600);
+  --border-primary: #332E29;
+  --border-secondary: #4A443E;
+  --border-color: #332E29;
+
+  --logo-dot-flip: var(--color-paper);
 }
 
-/* System theme - follows OS preference */
+/* System theme — light defaults; flips to ink under prefers-color-scheme: dark */
 :root[data-theme="system"],
 :root.theme-system {
-  --bg-primary: var(--color-white);
+  --bg-primary: var(--color-paper);
   --bg-secondary: var(--color-gray-50);
   --bg-tertiary: var(--color-gray-100);
-  --bg-gradient-primary: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  --bg-gradient-secondary: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  --bg-raised: #F3EDE3;
+  --bg-gradient-primary: linear-gradient(135deg, #FBF7F0 0%, #F3EDE3 100%);
+  --bg-gradient-secondary: linear-gradient(135deg, #F3EDE3 0%, #E0DDD8 100%);
 
-  --text-primary: var(--color-gray-900);
-  --text-secondary: var(--color-gray-600);
-  --text-tertiary: var(--color-gray-500);
-  --text-inverse: var(--color-white);
+  --text-primary: var(--color-ink);
+  --text-secondary: var(--color-gray-500);
+  --text-tertiary: #6F675E;
+  --text-muted: #5A534C;
+  --text-inverse: var(--color-paper);
 
   --border-primary: var(--color-gray-200);
   --border-secondary: var(--color-gray-300);
+  --border-color: #E0DDD8;
+
+  --logo-dot-flip: var(--color-ink);
 }
 
 @media (prefers-color-scheme: dark) {
   :root[data-theme="system"],
   :root.theme-system {
-    --bg-primary: var(--color-gray-900);
-    --bg-secondary: var(--color-gray-800);
-    --bg-tertiary: var(--color-gray-700);
-    --bg-gradient-primary: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-    --bg-gradient-secondary: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+    --bg-primary: var(--color-ink);
+    --bg-secondary: #231F1B;
+    --bg-tertiary: #332E29;
+    --bg-raised: #231F1B;
+    --bg-gradient-primary: linear-gradient(135deg, #231F1B 0%, #1A1714 100%);
+    --bg-gradient-secondary: linear-gradient(135deg, #332E29 0%, #231F1B 100%);
 
-    --text-primary: var(--color-white);
-    --text-secondary: var(--color-gray-300);
-    --text-tertiary: var(--color-gray-400);
-    --text-inverse: var(--color-gray-900);
+    --text-primary: var(--color-paper);
+    --text-secondary: #C9C2B8;
+    --text-tertiary: #A29A8F;
+    --text-muted: #C9C2B8;
+    --text-inverse: var(--color-ink);
 
-    --border-primary: var(--color-gray-700);
-    --border-secondary: var(--color-gray-600);
+    --border-primary: #332E29;
+    --border-secondary: #4A443E;
+    --border-color: #332E29;
+
+    --logo-dot-flip: var(--color-paper);
   }
 }
 
@@ -323,8 +378,8 @@ body {
 .navbar-brand .brand-text {
   background: linear-gradient(
     135deg,
-    var(--color-primary) 0%,
-    var(--color-secondary) 100%
+    var(--accent) 0%,
+    var(--accent-2) 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1137,55 +1192,6 @@ p {
   border-radius: 0;
 }
 
-.copy-button {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-md);
-  color: #e2e8f0;
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-xs);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  backdrop-filter: blur(4px);
-  z-index: 10;
-  min-width: 60px;
-  white-space: nowrap;
-}
-
-.copy-button:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
-}
-
-.copy-button.copied {
-  background-color: rgba(34, 197, 94, 0.2);
-  border-color: rgba(34, 197, 94, 0.3);
-  color: #22c55e;
-}
-
-.copy-button .check-icon {
-  display: none;
-}
-
-.copy-button.copied .copy-icon {
-  display: none;
-}
-
-.copy-button.copied .check-icon {
-  display: block;
-}
-
-.copy-button.copied .copy-text::after {
-  content: "ied";
-}
-
 /* Next Steps */
 .next-steps {
   margin-top: var(--space-16);
@@ -1226,14 +1232,6 @@ p {
   .code-block pre {
     padding: var(--space-3);
     font-size: var(--text-xs);
-  }
-
-  .copy-button {
-    top: var(--space-2);
-    right: var(--space-2);
-    padding: var(--space-1) var(--space-2);
-    font-size: 10px;
-    min-width: 50px;
   }
 }
 
@@ -1559,4 +1557,58 @@ pre code {
 }
 .mb-8 {
   margin-bottom: var(--space-8);
+}
+
+/* Dual-theme Shiki code blocks (spec §3.6) */
+.astro-code,
+.astro-code span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+
+[data-theme="dark"] .astro-code,
+[data-theme="dark"] .astro-code span {
+  color: var(--shiki-dark);
+  background-color: var(--shiki-dark-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] .astro-code,
+  [data-theme="system"] .astro-code span {
+    color: var(--shiki-dark);
+    background-color: var(--shiki-dark-bg);
+  }
+}
+
+/* Prose link color — theme-aware, AA-compliant on paper (4.61) and ink (5.32).
+   Light: pine-teal; dark: a lighter teal. Vermilion fails AA as small text on
+   paper, so links use teal; vermilion stays for fills/accents/large headings. */
+:root {
+  --link: #2F7D6B;
+  --link-hover: #25604F;
+}
+:root[data-theme="dark"],
+:root.theme-dark {
+  --link: #4A9A86;
+  --link-hover: #5FB89F;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"],
+  :root.theme-system {
+    --link: #4A9A86;
+    --link-hover: #5FB89F;
+  }
+}
+
+/* Style rendered docs prose links (the MDX content area only — sidebar/TOC
+   live outside .docs-content and keep their own styles). */
+.docs-content a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  transition: color var(--transition-fast);
+}
+.docs-content a:hover {
+  color: var(--link-hover);
 }

@@ -1,0 +1,107 @@
+---
+title: "Changelog"
+description: "Track all releases, new features, improvements, bug fixes, and breaking changes for the ActivityPub MCP Server."
+group: "Reference"
+order: 2
+---
+
+## Release Notes
+
+All notable changes to the ActivityPub MCP Server are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+### v2.0.0 - 2026-05-27
+
+**Security &amp; correctness focused release.** See the [v2 Migration Guide](https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v2.md) for full breaking-change details, and [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.
+
+#### Breaking
+
+- `MCP_HTTP_SECRET` is required when `MCP_TRANSPORT_MODE=http` (no default; ≥16 chars)
+- `MCP_HTTP_CORS_ORIGINS` defaults to empty (was permissive); set explicitly for browser clients
+- `ACTIVITYPUB_ACCOUNTS` uses `|` as the field delimiter (colon form rejected at startup)
+- `HEALTH_CHECK_ENABLED` removed; replaced with `HEALTH_CHECK_EXTERNAL_PROBE`
+- MCP tool arg renamed: `scheduledId` → `scheduledPostId` on cancel-scheduled-post / update-scheduled-post
+- Node 20+ required (was 18+)
+
+#### Added
+
+- SSRF guards + streaming response-size caps on every outbound fetch
+- Thread traversal caps: `MCP_THREAD_MAX_DEPTH`, `MCP_THREAD_MAX_REPLIES`, `MCP_THREAD_CROSS_ORIGIN_FETCH`
+- Bearer-token auth middleware on `/mcp` and `/metrics`
+- Full-surface audit logging (success + failure) across every write tool
+- `post-status` accepts `mediaIds` and `scheduledAt` directly
+- Dynamic server-info capabilities from a live tool/resource/prompt registry
+
+#### Fixed
+
+- Pagination cursor preserves `limit` / `min_id` / `max_id` / `since_id`
+- 304 Not Modified no longer surfaces as a spurious error
+- `search-instance` renders prose instead of raw JSON; `fetch-timeline` renders all posts
+- Filter composition in tool list is cumulative (was last-write-wins)
+- PerformanceMonitor interval is unref'd so it never blocks shutdown
+
+#### Internal
+
+- Source reorganized into topic directories: `activitypub/`, `audit/`, `discovery/`, `policy/`, `resilience/`, `telemetry/`, `transport/`, `validation/`
+- CI: typecheck step, daily integration suite, tarball-contents check, bin smoke test
+- TypeScript `noUnusedLocals` / `noUnusedParameters` and Biome `noUnusedVariables` enforced
+
+### Earlier releases — v1.x
+
+For v1.0.0 and v1.1.0 release notes (initial public release and the authenticated-write-tools / multi-account additions), see the canonical [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) in the repository.
+
+## Migration Guides
+
+### Upgrading to v2.0.0
+
+v2 introduces several breaking changes — most around security defaults and config formats. See the full [v2 Migration Guide](https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v2.md) for before/after snippets covering:
+
+- Setting `MCP_HTTP_SECRET` + an explicit `MCP_HTTP_CORS_ORIGINS` for HTTP transport
+- Migrating `ACTIVITYPUB_ACCOUNTS` from colon (`:`) to pipe (`|`) delimiter
+- Replacing `HEALTH_CHECK_ENABLED` with `HEALTH_CHECK_EXTERNAL_PROBE`
+- Renaming MCP tool args: `scheduledId` → `scheduledPostId`
+- Bumping your runtime to Node 20+
+
+### Upgrading to v1.0.0
+
+No breaking changes from v0.9.0. Simply update your package:
+
+```bash
+npm update activitypub-mcp
+```
+
+## Contributing
+
+We welcome contributions to the ActivityPub MCP Server! Here's how you can help:
+
+### Bug Reports
+
+Found a bug? Please report it on our GitHub issues page with:
+
+- Detailed description of the issue
+- Steps to reproduce
+- Expected vs actual behavior
+- Environment information
+
+### Feature Requests
+
+Have an idea for a new feature? We'd love to hear it:
+
+- Describe the feature and its benefits
+- Provide use cases and examples
+- Consider implementation complexity
+- Check existing issues first
+
+### Code Contributions
+
+Ready to contribute code? Follow our guidelines:
+
+- Fork the repository and create a feature branch
+- Follow our coding standards and conventions
+- Add tests for new functionality
+- Update documentation as needed
+
+## Related Resources
+
+- [Installation & Setup](/activitypub-mcp/docs/getting-started/installation/)
+- [API Reference](/activitypub-mcp/docs/api/tools/)
+- [Troubleshooting](/activitypub-mcp/docs/reference/troubleshooting/)

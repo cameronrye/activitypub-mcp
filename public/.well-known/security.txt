@@ -35,7 +35,7 @@ Please include:
 ## Supported Versions
 
 We provide security updates for:
-- Latest major version (1.x)
+- Latest major version (3.x)
 - Previous major version (if applicable)
 
 ## Security Best Practices

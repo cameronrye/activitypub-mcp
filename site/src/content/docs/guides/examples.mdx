@@ -1,0 +1,440 @@
+---
+title: "Practical Examples"
+description: "Real-world scenarios and step-by-step tutorials demonstrating practical applications of the ActivityPub MCP Server, with expected outputs."
+group: "Guides"
+order: 2
+---
+
+## Quick Start Examples
+
+### Discover a Popular Actor
+
+Learn about a well-known fediverse personality:
+
+**Step 1 — Ask Claude:**
+
+> "Can you discover information about @gargron@mastodon.social?"
+
+**Step 2 — What you'll learn:**
+
+- Profile information and bio
+- Follower and following counts
+- Recent post activity
+- Instance details
+
+### Explore an Instance
+
+Get comprehensive information about a fediverse instance:
+
+**Step 1 — Ask Claude:**
+
+> "What can you tell me about the fosstodon.org instance?"
+
+**Step 2 — What you'll discover:**
+
+- Community focus and rules
+- Software version and features
+- User statistics
+- Federation status
+
+## Example 1: Discovering Technology Communities
+
+**Scenario:** You want to find active technology communities in the fediverse and see what topics are being discussed.
+
+### Step-by-Step Process
+
+#### Step 1: Find Technology-Focused Instances
+
+```bash
+discover-instances technology
+```
+
+**Expected Output:**
+
+```json
+{
+  "instances": [
+    {
+      "domain": "fosstodon.org",
+      "name": "Fosstodon",
+      "description": "A community for anyone interested in technology",
+      "users": 15420,
+      "posts": 892341
+    },
+    {
+      "domain": "hachyderm.io",
+      "name": "Hachyderm",
+      "description": "A safe space for tech workers and enthusiasts",
+      "users": 8932,
+      "posts": 445123
+    }
+  ]
+}
+```
+
+#### Step 2: Get Detailed Instance Information
+
+```bash
+get-instance-info fosstodon.org
+```
+
+**Expected Output:**
+
+```json
+{
+  "domain": "fosstodon.org",
+  "title": "Fosstodon",
+  "description": "Fosstodon is an English speaking Mastodon instance...",
+  "version": "4.2.1",
+  "languages": ["en"],
+  "rules": [
+    "Be respectful",
+    "No harassment or hate speech",
+    "Keep content appropriate"
+  ],
+  "stats": {
+    "user_count": 15420,
+    "status_count": 892341,
+    "domain_count": 8932
+  }
+}
+```
+
+#### Step 3: Find Popular Actors
+
+```bash
+discover-actor @kev@fosstodon.org
+```
+
+**Expected Output:**
+
+```json
+{
+  "id": "https://fosstodon.org/users/kev",
+  "type": "Person",
+  "preferredUsername": "kev",
+  "name": "Kev Quirk",
+  "summary": "Founder of Fosstodon. Privacy advocate...",
+  "url": "https://fosstodon.org/@kev",
+  "followers": 4521,
+  "following": 892,
+  "posts": 3421
+}
+```
+
+#### Step 4: Check Recent Activity
+
+```bash
+fetch-timeline https://fosstodon.org/users/kev
+```
+
+**Expected Output:**
+
+```json
+{
+  "posts": [
+    {
+      "id": "https://fosstodon.org/users/kev/statuses/111234567",
+      "content": "Just published a new blog post about privacy...",
+      "published": "2025-01-15T10:30:00Z",
+      "replies": 12,
+      "boosts": 45,
+      "likes": 89
+    }
+  ]
+}
+```
+
+## Example 2: Following a Conversation Thread
+
+**Scenario:** You found an interesting post and want to follow the entire conversation thread to understand the discussion.
+
+### Step-by-Step Process
+
+#### Step 1: Fetch the Post and Full Thread
+
+```bash
+get-post-thread --postUrl https://mastodon.social/@gargron/111234567890
+```
+
+A single call returns the root post plus ancestors and replies. Capped at depth 5 / 50 replies by default (configurable via `MCP_THREAD_MAX_DEPTH` / `MCP_THREAD_MAX_REPLIES`). Cross-origin replies come back as stubs unless `MCP_THREAD_CROSS_ORIGIN_FETCH=true`.
+
+#### Step 2: Or Fetch as a Resource
+
+```bash
+# Mastodon-style URL (recommended)
+GET activitypub://post-thread/mastodon.social/111234567890
+```
+
+The legacy `activitypub://post-thread/\{postUrl\}` URL-encoded form is still accepted with a deprecation warning and will be removed in v2.1.0.
+
+#### Step 3: Explore Participants
+
+```bash
+discover-actor @participant@instance.social
+```
+
+Learn more about active participants in the conversation.
+
+## Example 3: Cross-Instance Content Discovery
+
+**Scenario:** You want to discover content about a specific topic across multiple fediverse instances.
+
+### Step-by-Step Process
+
+#### Step 1: Find Relevant Instances
+
+```bash
+discover-instances "climate change"
+```
+
+#### Step 2: Search Each Instance
+
+```bash
+# Unified search across accounts, posts, and hashtags
+search --query "renewable energy" --domain climate.social --type all
+
+# Narrow to posts only
+search --query "renewable energy" --domain climate.social --type posts
+```
+
+#### Step 3: Follow Interesting Actors
+
+```bash
+discover-actor @scientist@climate.social
+```
+
+#### Step 4: Monitor Their Activity
+
+```bash
+fetch-timeline https://climate.social/users/scientist
+```
+
+## Example 4: Using with Claude Desktop
+
+### Natural Language Queries
+
+Examples of how to ask Claude to use the MCP tools naturally:
+
+**Query:**
+
+> "Help me find interesting open source projects being discussed on Mastodon. Show me what people are saying about them."
+
+**Claude's Approach:**
+
+1. Use `discover-instances` to find tech-focused instances
+2. Use `get-instance-info` to learn about each instance
+3. Use `discover-actor` to find developers and maintainers
+4. Use `fetch-timeline` to see recent discussions
+5. Summarize findings and highlight interesting projects
+
+**Query:**
+
+> "I'm interested in privacy and security topics. Can you find some experts in the fediverse and show me their recent thoughts?"
+
+**Claude's Approach:**
+
+1. Search for privacy/security focused instances
+2. Identify prominent actors in those communities
+3. Fetch their recent posts and analyze themes
+4. Provide a summary of current privacy/security discussions
+
+## Example 5: Instance Analysis and Comparison
+
+**Scenario:** You want to compare different instances to decide which community might be the best fit for your interests.
+
+### Comparison Workflow
+
+#### Step 1: Gather Instance Data
+
+```bash
+# Compare multiple instances
+get-instance-info mastodon.social
+get-instance-info fosstodon.org
+get-instance-info hachyderm.io
+```
+
+#### Step 2: Analyze Community Activity
+
+```bash
+# Check popular actors on each instance
+discover-actor @admin@mastodon.social
+discover-actor @kev@fosstodon.org
+discover-actor @admin@hachyderm.io
+```
+
+#### Step 3: Sample Content
+
+```bash
+# Get recent posts to understand community tone
+fetch-timeline https://mastodon.social/users/admin
+fetch-timeline https://fosstodon.org/users/kev
+fetch-timeline https://hachyderm.io/users/admin
+```
+
+## Research Scenarios
+
+### Scenario 1: Finding Climate Science Communities
+
+You want to find active climate science discussions and researchers on the fediverse.
+
+#### Step 1: Use the Exploration Prompt
+
+**Ask Claude:**
+
+> "Use the explore-fediverse prompt with interests 'climate science, environmental research, sustainability' and instance type 'mastodon'"
+
+**Expected Result:** Personalized recommendations for instances, actors, and hashtags related to climate science.
+
+#### Step 2: Investigate Recommended Instances
+
+**Follow up with:**
+
+> "Can you get detailed information about scholar.social and climatejustice.social?"
+
+**Expected Result:** Detailed comparison of academic vs. activist climate communities.
+
+#### Step 3: Find Key Researchers
+
+**Search for content:**
+
+> "Search for 'climate research' on scholar.social and show me the most active accounts"
+
+**Expected Result:** List of active climate researchers and their recent contributions.
+
+### Scenario 2: Comparing Tech Communities
+
+You want to understand the differences between various tech-focused fediverse instances.
+
+#### Step 1: Use the Comparison Prompt
+
+**Ask Claude:**
+
+> "Compare fosstodon.org, hachyderm.io, and mas.to — community size, technical focus, and moderation style"
+
+**Expected Result:** Detailed comparison highlighting the unique characteristics of each tech community.
+
+#### Step 2: Analyze Community Leaders
+
+**Discover influential members:**
+
+> "Who are some influential tech leaders on fosstodon.org? Can you discover a few popular accounts?"
+
+**Expected Result:** Profiles of key community members and their areas of expertise.
+
+#### Step 3: Content Analysis
+
+**Examine recent discussions:**
+
+> "What are the trending topics on hachyderm.io? Search for recent popular posts."
+
+**Expected Result:** Current trending topics and active discussions in the community.
+
+## Data Analysis Examples
+
+### Network Analysis: Following Patterns
+
+Analyze the network connections of a prominent fediverse actor:
+
+1. **Get Actor Information** — "Discover information about @dansup@pixelfed.social"
+2. **Analyze Following Network** — "Who does @dansup@pixelfed.social follow? Can you categorize them by type?"
+3. **Examine Followers** — "Show me some of @dansup@pixelfed.social's followers and their profiles"
+4. **Cross-Reference Networks** — "Are there common connections between @dansup@pixelfed.social and @gargron@mastodon.social?"
+
+**Insights You Can Gain:**
+
+- Understanding of fediverse developer networks
+- Identification of key influencers in different communities
+- Cross-platform relationship patterns
+- Community overlap and bridges
+
+### Instance Health Assessment
+
+Evaluate the health and activity of different instances:
+
+1. **Get Instance Statistics** — "Compare the instance information for mastodon.social, mas.to, and mstdn.social"
+2. **Check Activity Levels** — "Show me the public timeline from each of these instances to compare activity"
+3. **Analyze Content Diversity** — "Search for different topics on each instance to see content diversity"
+4. **Federation Assessment** — "Check if these instances are federating properly by looking at cross-instance interactions"
+
+**Health Indicators:**
+
+- User growth and retention patterns
+- Content posting frequency and diversity
+- Cross-instance interaction levels
+- Community engagement metrics
+
+## Specialized Use Cases
+
+### Academic Research
+
+Using the fediverse for academic research and collaboration:
+
+**Finding Research Collaborators:**
+
+1. Use `search` with topics like `"machine learning, computer vision, academic research"`
+2. Explore scholar.social and other academic instances
+3. Analyze researcher networks and collaboration patterns
+4. Identify active research discussions and conferences
+
+### Community Management
+
+Understanding and managing fediverse communities:
+
+**Community Health Monitoring:**
+
+1. Regular instance checks using `get-instance-info` to monitor statistics and activity
+2. Monitor community activity and engagement patterns
+3. Track cross-instance relationships and federation status
+4. Identify emerging trends and discussion topics
+
+### Content Discovery
+
+Finding interesting content and creators across platforms:
+
+**Multi-Platform Content Curation:**
+
+1. Search across Mastodon, Pixelfed, and PeerTube instances
+2. Identify cross-platform creators and their content
+3. Analyze content engagement and reach patterns
+4. Track trending topics and viral content propagation
+
+## Advanced Techniques
+
+### Batch Analysis with Performance Monitoring
+
+Efficiently analyze multiple instances while monitoring performance:
+
+```
+1. "Get instance info for: mastodon.social, fosstodon.org, hachyderm.io"
+2. "Compare their user counts and activity levels"
+3. "Check performance metrics again to see resource usage"
+```
+
+### Cross-Instance Content Tracking
+
+Track how content spreads across different instances:
+
+```
+1. "Search for a specific hashtag on multiple instances"
+2. "Identify the original post and its author"
+3. "Track reposts and mentions across instances"
+4. "Analyze the propagation pattern and timing"
+```
+
+## Tips for Success
+
+**Be Specific:** Use specific actor handles (`@user@domain.com`) and instance domains for best results.
+
+**Be Patient:** Some queries may take time, especially when fetching data from distant or slow instances.
+
+**Use Prompts:** Leverage the built-in prompts (`explore-fediverse`, `summarize-trending`, `find-experts`, `compare-accounts`, `analyze-user-activity`) for structured exploration.
+
+**Monitor Performance:** Use `get-instance-info` to inspect instance statistics, and watch request logs for rate limiting signals.
+
+## Next Steps
+
+- [Basic Usage Guide](/activitypub-mcp/docs/guides/basic-usage/) — Review the fundamental concepts and tools
+- [MCP Tools Reference](/activitypub-mcp/docs/api/tools/) — Complete reference for all available tools
+- [MCP Prompts](/activitypub-mcp/docs/api/prompts/) — Complete guide to using pre-built exploration prompts
+- [Troubleshooting](/activitypub-mcp/docs/reference/troubleshooting/) — Solutions for common issues and problems

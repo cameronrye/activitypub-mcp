@@ -1,0 +1,233 @@
+---
+title: "WebFinger Discovery Guide"
+description: "Complete guide to WebFinger protocol implementation in the ActivityPub MCP Server."
+group: "Specifications"
+order: 2
+---
+
+## What is WebFinger?
+
+### Protocol Purpose
+
+WebFinger is a protocol that allows discovery of information about people and other entities on the internet using simple identifiers like email addresses or @user@domain.com handles.
+
+### Fediverse Role
+
+In the fediverse, WebFinger is the primary mechanism for discovering ActivityPub actors. When you search for @user@domain.com, WebFinger resolves this to the actual ActivityPub profile URL.
+
+### MCP Integration
+
+The ActivityPub MCP Server uses WebFinger automatically when you use actor identifiers in @user@domain.com format, making actor discovery seamless for LLMs.
+
+## How WebFinger Works
+
+### Step 1: Identifier Input
+
+You provide an identifier like `@gargron@mastodon.social`
+
+**Example:** When you ask Claude to discover @gargron@mastodon.social
+
+### Step 2: WebFinger Query
+
+The server constructs a WebFinger query to the target domain:
+
+`GET https://mastodon.social/.well-known/webfinger?resource=acct:gargron@mastodon.social`
+
+### Step 3: WebFinger Response
+
+The server returns a JSON document with links to the actor's ActivityPub profile:
+
+```json
+{
+  "subject": "acct:gargron@mastodon.social",
+  "links": [
+    {
+      "rel": "self",
+      "type": "application/activity+json",
+      "href": "https://mastodon.social/users/gargron"
+    }
+  ]
+}
+```
+
+### Step 4: ActivityPub Fetch
+
+Using the discovered URL, the server fetches the full ActivityPub actor profile:
+
+`GET https://mastodon.social/users/gargron` with `Accept: application/activity+json`
+
+## WebFinger Response Format
+
+### Standard WebFinger Response
+
+A typical WebFinger response contains these key elements:
+
+#### `subject`
+
+The canonical identifier for the resource being described
+
+`"subject": "acct:user@domain.com"`
+
+#### `aliases` (optional)
+
+Alternative identifiers for the same resource
+
+`"aliases": ["https://domain.com/@user", "https://domain.com/users/user"]`
+
+#### `links`
+
+Array of links to related resources and services
+
+```json
+"links": [
+  {
+    "rel": "self",
+    "type": "application/activity+json",
+    "href": "https://domain.com/users/user"
+  },
+  {
+    "rel": "http://webfinger.net/rel/profile-page",
+    "type": "text/html",
+    "href": "https://domain.com/@user"
+  }
+]
+```
+
+## Link Relations
+
+### `self`
+
+Points to the ActivityPub actor object (JSON-LD format)
+
+**Usage:** Primary link for fetching actor data
+
+### `http://webfinger.net/rel/profile-page`
+
+Points to the human-readable profile page (HTML format)
+
+**Usage:** Web browser view of the profile
+
+### `http://ostatus.org/schema/1.0/subscribe`
+
+Template for remote follow/subscribe actions
+
+**Usage:** Enables remote following functionality
+
+### `http://webfinger.net/rel/avatar`
+
+Points to the user's avatar image
+
+**Usage:** Direct access to profile picture
+
+## MCP Server Implementation
+
+### Automatic Resolution
+
+The MCP server automatically performs WebFinger resolution when you use @user@domain.com identifiers in any tool or resource request.
+
+#### Example Usage:
+
+When you ask Claude: "Discover information about @mastodon@mastodon.social"
+
+1. Server extracts domain: mastodon.social
+2. Performs WebFinger query for acct:mastodon@mastodon.social
+3. Extracts ActivityPub URL from response
+4. Fetches full actor profile
+5. Returns formatted information to Claude
+
+### Error Handling
+
+The server handles various WebFinger error scenarios:
+
+#### Domain Not Found
+
+If the domain doesn't exist or doesn't support WebFinger — returns clear error message about domain availability.
+
+#### User Not Found
+
+If the user doesn't exist on the specified domain — returns user-not-found error with suggestions.
+
+#### Server Timeout
+
+If the WebFinger endpoint is slow or unresponsive — returns timeout error with retry suggestions.
+
+### Caching Strategy
+
+WebFinger responses are cached to improve performance and reduce load on target servers:
+
+- **Cache Duration:** 5 minutes for successful responses
+- **Error Caching:** 1 minute for failed requests
+- **Cache Key:** Based on full acct: identifier
+- **Invalidation:** Automatic expiration, no manual invalidation
+
+## Troubleshooting WebFinger
+
+### Common Issues
+
+#### Invalid Identifier Format
+
+**Problem:** Using incorrect @user@domain format
+
+**Solution:** Ensure format is exactly @username@domain.com
+
+- Correct: `@gargron@mastodon.social`
+- Incorrect: `gargron@mastodon.social` (missing leading @)
+- Incorrect: `@gargron` (missing domain)
+
+#### Instance Doesn't Support WebFinger
+
+**Problem:** Target instance doesn't implement WebFinger
+
+**Solution:** Use direct ActivityPub URLs instead
+
+Alternative: `https://domain.com/users/username`
+
+#### Network Connectivity Issues
+
+**Problem:** Cannot reach target domain
+
+**Solution:** Check domain accessibility and try again later
+
+### Debugging Tips
+
+#### Manual WebFinger Testing
+
+Test WebFinger endpoints directly in your browser:
+
+`https://domain.com/.well-known/webfinger?resource=acct:user@domain.com`
+
+#### Check Server Logs
+
+Enable debug logging to see WebFinger request details:
+
+`"LOG_LEVEL": "debug"`
+
+#### Verify Domain Configuration
+
+Ensure the target domain has proper DNS and SSL configuration.
+
+## Technical Specifications
+
+### RFC 7033
+
+WebFinger is defined by RFC 7033, which specifies the protocol for discovering information about people and other entities.
+
+[Read RFC 7033](https://tools.ietf.org/html/rfc7033)
+
+### ActivityPub Integration
+
+The ActivityPub specification defines how WebFinger should be used for actor discovery in federated social networks.
+
+[ActivityPub WebFinger Section](https://www.w3.org/TR/activitypub/#webfinger)
+
+### Mastodon Implementation
+
+Mastodon's WebFinger implementation serves as a reference for many fediverse platforms.
+
+[Mastodon WebFinger Docs](https://docs.joinmastodon.org/spec/webfinger/)
+
+## Next Steps
+
+- [ActivityPub Protocol](/activitypub-mcp/docs/specifications/activitypub/) — Learn about the ActivityPub protocol and how it works with WebFinger
+- [MCP Tools](/activitypub-mcp/docs/api/tools/) — Explore tools that use WebFinger for actor discovery
+- [Fediverse Exploration](/activitypub-mcp/docs/guides/fediverse-exploration/) — Advanced techniques for discovering actors across the fediverse

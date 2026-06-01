@@ -1,0 +1,160 @@
+---
+title: "Basic Usage Guide"
+description: "Learn the essential commands and workflows for using the ActivityPub MCP Server to explore and interact with the fediverse through LLMs."
+group: "Guides"
+order: 1
+---
+
+## Core Concepts
+
+### Fediverse Client
+
+This server acts as a **client** to existing fediverse servers. You don't need to run your own ActivityPub server - it connects to existing instances like Mastodon, Pleroma, and Misskey.
+
+### MCP Tools
+
+The server provides **tools** that LLMs can call to perform actions like discovering actors, fetching timelines, and exploring instances.
+
+### MCP Resources
+
+The server exposes **resources** that provide information about the server itself, discovered actors, and cached data.
+
+## Essential Tools
+
+Here are the most important tools you'll use regularly:
+
+### `discover-actor`
+
+Find and get information about fediverse actors (users).
+
+#### Example:
+
+```
+discover-actor @mastodon@mastodon.social
+```
+
+Returns detailed information about the @mastodon account on mastodon.social
+
+### `fetch-timeline`
+
+Get recent posts from an actor's timeline.
+
+#### Example:
+
+```
+fetch-timeline https://mastodon.social/users/mastodon
+```
+
+Retrieves the latest posts from the specified actor
+
+### `get-instance-info`
+
+Get information about a fediverse instance.
+
+#### Example:
+
+```
+get-instance-info mastodon.social
+```
+
+Returns instance metadata, rules, and statistics
+
+### `discover-instances`
+
+Find fediverse instances by category or search term.
+
+#### Example:
+
+```
+discover-instances technology
+```
+
+Finds instances focused on technology topics
+
+## Common Workflows
+
+### Exploring a New Instance
+
+1. Get instance information: `get-instance-info example.social`
+2. Discover popular actors: `discover-actor @admin@example.social`
+3. Check recent activity: `fetch-timeline https://example.social/users/admin`
+
+### Following an Actor's Activity
+
+1. Discover the actor: `discover-actor @username@instance.com`
+2. Get their recent posts: `fetch-timeline [actor-url-from-step-1]`
+3. Check their followers/following (if public)
+
+### Finding Communities
+
+1. Search for instances: `discover-instances [topic]`
+2. Check instance info for each result
+3. Explore popular actors on interesting instances
+
+## Tips & Best Practices
+
+### Actor Identifiers
+
+You can use different formats to identify actors:
+
+- `@username@instance.com` - WebFinger format
+- `https://instance.com/users/username` - Direct URL
+- `https://instance.com/@username` - Profile URL
+
+### Performance
+
+The server caches responses to improve performance:
+
+- Actor information is cached for 5 minutes
+- Instance info is cached for 1 hour
+- Timeline data is cached for 2 minutes
+
+### Privacy
+
+Respect privacy and instance rules:
+
+- Only access public information
+- Follow instance rate limits
+- Respect user privacy settings
+
+### Troubleshooting
+
+If something doesn't work:
+
+- Check the actor/instance URL format
+- Verify the instance is accessible
+- Try a different actor or instance
+
+## Advanced Usage
+
+### Combining Tools
+
+Use multiple tools together for comprehensive exploration:
+
+```bash
+# First discover instances in a topic
+discover-instances "open source"
+
+# Then explore each instance
+get-instance-info fosstodon.org
+
+# Find interesting actors
+discover-actor @admin@fosstodon.org
+
+# Check their activity
+fetch-timeline https://fosstodon.org/users/admin
+```
+
+### Using with Claude Desktop
+
+Ask Claude to help you explore:
+
+> "Help me find interesting technology-focused Mastodon instances and show me what kind of content is popular there."
+
+Claude will use the MCP tools to discover instances, check their info, and explore popular content.
+
+## Next Steps
+
+- [Practical Examples](/activitypub-mcp/docs/guides/examples/) — See detailed examples and real-world use cases.
+- [Complete Tool Reference](/activitypub-mcp/docs/api/tools/) — Detailed documentation for all available tools.
+- [Troubleshooting Guide](/activitypub-mcp/docs/reference/troubleshooting/) — Solutions for common issues and problems.

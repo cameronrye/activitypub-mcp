@@ -1,0 +1,416 @@
+---
+title: "Advanced Workflows & Best Practices"
+description: "Advanced workflows, best practices, and concrete real-world test scenarios for power-user exploration of the fediverse with the ActivityPub MCP Server."
+group: "Guides"
+order: 4
+---
+
+## Understanding the Fediverse
+
+### Decentralized Network
+
+The fediverse consists of thousands of independent servers (instances) that communicate using open protocols like ActivityPub.
+
+### Actors and Objects
+
+Users are "actors" who create and share "objects" (posts, images, etc.) across the network using standardized formats.
+
+### Federation
+
+Instances can federate (connect) with each other, allowing users to follow and interact across different servers.
+
+## Tool Categories
+
+### Discovery Tools
+
+- `discover-actor` — Find and analyze fediverse users
+- `discover-instances` — Live instance discovery via instances.social
+- `search` — Unified search across accounts, posts, and hashtags (`type: all|accounts|posts|hashtags`)
+
+**Use for:** Finding new communities, researching topics, identifying key actors
+
+### Information & Timeline Tools
+
+- `get-instance-info` — Instance metadata and statistics
+- `fetch-timeline` — Actor's recent posts (paginated)
+- `get-post-thread` — Post with full conversation thread
+- `get-public-timeline` — Public timeline with `scope: local|federated`
+- `get-trending-hashtags` / `get-trending-posts` — What's trending
+
+**Use for:** Understanding communities, analyzing content, tracking activity
+
+### Write Tools (opt-in)
+
+- Registered only when `ACTIVITYPUB_ENABLE_WRITES=true`
+- `post-status`, `reply-to-post`, `delete-post`
+- `boost-post`, `favourite-post`, `follow-account`, and more
+
+**Use for:** Posting, interacting, and managing your fediverse presence
+
+## Scenario Categories
+
+Overview of the workflow types covered in this guide:
+
+| Category | Focus |
+|---|---|
+| Research & Analysis | Academic research, market analysis, and trend identification |
+| Community Management | Understanding communities, monitoring engagement, and growth analysis |
+| Business Intelligence | Brand monitoring, competitor analysis, and market insights |
+| Journalism & Media | Source verification, story research, and trend tracking |
+
+## Research & Analysis Scenarios
+
+### Scenario 1: Academic Research on Open Source Communities
+
+**Objective:** Research the structure and dynamics of open source software communities in the fediverse for an academic paper.
+
+#### Step-by-Step Process
+
+**1. Initial Discovery**
+
+Query: "Find all fediverse instances focused on open source software development"
+
+Expected Tools: `discover-instances` with "open source" query
+
+Expected Results: List of instances like fosstodon.org, floss.social, etc.
+
+**2. Instance Analysis**
+
+Query: "Analyze the top 5 open source instances — their size, rules, and community focus"
+
+Expected Tools: `get-instance-info` for each instance
+
+Expected Results: Comparative data on user counts, posting activity, and community guidelines
+
+**3. Key Actor Identification**
+
+Query: "Identify the most influential open source developers and maintainers on these instances"
+
+Expected Tools: `discover-actor` for prominent users
+
+Expected Results: Profiles of key contributors with follower counts and project affiliations
+
+**4. Content Analysis**
+
+Query: "Analyze recent discussions about programming languages, tools, and project management"
+
+Expected Tools: `fetch-timeline` for key actors
+
+Expected Results: Trending topics, discussion themes, and community concerns
+
+**5. Network Mapping**
+
+Query: "Map the connections between different open source communities and identify collaboration patterns"
+
+Expected Tools: Cross-instance actor discovery and relationship analysis
+
+Expected Results: Network diagram showing inter-community connections
+
+**Expected Outcomes:**
+
+- Comprehensive dataset of open source fediverse communities
+- Analysis of community structures and governance models
+- Identification of key influencers and thought leaders
+- Understanding of collaboration patterns and knowledge sharing
+- Data suitable for academic publication
+
+### Scenario 2: Climate Change Discourse Analysis
+
+**Objective:** Analyze how climate change is discussed across different fediverse communities to understand public sentiment and information flow.
+
+**Research Questions:**
+
+- Which instances have the most active climate discussions?
+- How do different communities frame climate issues?
+- Who are the key voices in climate discourse?
+- What solutions and actions are being promoted?
+
+**Methodology:**
+
+**Data Collection:** Use `discover-instances` to find climate-focused instances, then `search` (with `type: "posts"`) for climate-related posts across multiple instances.
+
+**Actor Analysis:** Identify climate scientists, activists, and organizations using `discover-actor` and analyze their posting patterns.
+
+**Content Categorization:** Classify posts by topic (policy, science, activism, solutions) and sentiment (optimistic, pessimistic, neutral).
+
+**Network Analysis:** Map information flow between instances and identify key information brokers.
+
+## Community Management Scenarios
+
+### Scenario 3: New Instance Community Building
+
+**Objective:** You're launching a new Mastodon instance focused on sustainable technology and want to understand the landscape and build connections.
+
+**Strategic Approach:**
+
+**1. Competitive Analysis**
+
+Query: "Find existing instances focused on sustainability, green technology, and environmental topics"
+
+Analysis: Study their community guidelines, user engagement, and content themes
+
+**2. Influencer Identification**
+
+Query: "Identify key voices in sustainable technology who might be interested in a new community"
+
+Outreach: Understand their current instance affiliations and engagement patterns
+
+**3. Content Strategy Development**
+
+Query: "Analyze what types of sustainable technology content get the most engagement"
+
+Planning: Develop content themes and posting strategies based on successful patterns
+
+**4. Federation Strategy**
+
+Query: "Identify instances that would be good federation partners for a sustainable tech community"
+
+Networking: Plan outreach to compatible communities for cross-pollination
+
+### Scenario 4: Community Health Monitoring
+
+**Objective:** Monitor the health and engagement of your existing fediverse community to identify trends and potential issues.
+
+**Monitoring Framework:**
+
+**Engagement Metrics:**
+
+- Post frequency and timing patterns
+- Reply and boost ratios
+- New user onboarding success
+- Active user retention rates
+
+**Content Quality:**
+
+- Discussion depth and quality
+- Topic diversity and focus
+- Knowledge sharing patterns
+- Community-generated content
+
+**Community Dynamics:**
+
+- Inter-user interaction patterns
+- Conflict resolution effectiveness
+- Moderation workload and issues
+- Cross-instance relationship health
+
+## Business Intelligence Scenarios
+
+### Scenario 5: Brand Monitoring and Reputation Management
+
+**Objective:** Monitor mentions of your brand across the fediverse and understand public sentiment and engagement.
+
+**Monitoring Strategy:**
+
+**Direct Mentions:** Track explicit mentions of brand name, products, and key personnel across instances. Tools: `search` with `type: "posts"` and brand keywords.
+
+**Industry Discussions:** Monitor broader industry conversations that might impact brand perception. Tools: `discover-instances` for industry-specific communities.
+
+**Competitor Analysis:** Track competitor mentions and compare engagement levels. Tools: `fetch-timeline` for competitor-focused accounts.
+
+**Influencer Relations:** Identify and monitor key industry influencers and their brand interactions. Tools: `discover-actor` for industry thought leaders.
+
+### Scenario 6: Market Research for Product Launch
+
+**Objective:** Research market sentiment and identify potential early adopters for a new privacy-focused communication tool.
+
+**Research Methodology:**
+
+**1. Target Audience Identification**
+
+Query: "Find communities discussing privacy, security, and digital rights"
+
+Goal: Identify instances and actors most concerned with privacy issues
+
+**2. Pain Point Analysis**
+
+Query: "Analyze discussions about current communication tools and their limitations"
+
+Goal: Understand user frustrations and unmet needs
+
+**3. Feature Validation**
+
+Query: "Research what features privacy-conscious users value most in communication tools"
+
+Goal: Validate product features against real user preferences
+
+**4. Early Adopter Profiling**
+
+Query: "Identify users who frequently try new privacy tools and share their experiences"
+
+Goal: Build a list of potential beta testers and early advocates
+
+## Journalism & Media Scenarios
+
+### Scenario 7: Breaking News Source Verification
+
+**Objective:** Verify sources and gather additional context for a breaking news story spreading across the fediverse.
+
+**Verification Process:**
+
+1. **Source Identification** — Use `discover-actor` to verify the credibility and background of original sources
+2. **Cross-Reference Checking** — Search for corroborating accounts and additional sources across multiple instances
+3. **Timeline Reconstruction** — Use `fetch-timeline` to understand the chronology of events and information flow
+4. **Expert Opinion Gathering** — Identify and contact relevant experts who have commented on the story
+
+### Scenario 8: Investigative Journalism Research
+
+**Objective:** Research a complex story about corporate influence in environmental policy using fediverse sources.
+
+**Investigation Framework:**
+
+**Source Network Mapping:** Map connections between environmental activists, policy experts, and corporate representatives.
+
+**Information Trail Following:** Track how information and narratives spread through different communities.
+
+**Expert Testimony Collection:** Identify and interview subject matter experts active in relevant fediverse communities.
+
+**Public Sentiment Analysis:** Gauge public reaction and understanding of the issues across different demographics.
+
+## Advanced Workflows
+
+### Community Research Workflow
+
+1. **Topic Discovery:** Use `discover-instances` to find relevant communities
+2. **Instance Analysis:** Use `get-instance-info` to understand each community
+3. **Key Actor Identification:** Use `discover-actor` to find influential users
+4. **Content Analysis:** Use `fetch-timeline` to analyze recent discussions
+5. **Trend Identification:** Look for common themes and popular topics
+
+> "Research the open source software community in the fediverse. Find the most active instances, identify key contributors, and summarize current discussions."
+
+### Content Monitoring Workflow
+
+1. **Actor Selection:** Identify actors to monitor
+2. **Baseline Establishment:** Get current activity levels
+3. **Regular Monitoring:** Check timelines periodically
+4. **Change Detection:** Identify significant changes or trends
+5. **Analysis and Reporting:** Summarize findings
+
+> "Monitor @mozilla@mozilla.social for new product announcements and summarize any significant updates from the past week."
+
+### Network Analysis Workflow
+
+1. **Seed Selection:** Choose starting actors or instances
+2. **Connection Mapping:** Discover followers and following relationships
+3. **Influence Analysis:** Identify highly connected actors
+4. **Community Detection:** Find clusters and subgroups
+5. **Visualization:** Create network maps and diagrams
+
+> "Map the network of climate science researchers in the fediverse. Show how they're connected and identify the most influential voices."
+
+## Advanced Query Techniques
+
+### Chained Discovery
+
+Use results from one tool as input for another:
+
+```bash
+# 1. Find instances
+discover-instances "journalism"
+
+# 2. Get details for each
+get-instance-info journa.host
+
+# 3. Find key actors
+discover-actor @admin@journa.host
+
+# 4. Analyze their content
+fetch-timeline https://journa.host/users/admin
+```
+
+### Comparative Analysis
+
+Compare multiple instances or actors side by side:
+
+> "Compare the posting frequency, engagement levels, and topic focus between @user1@instance1.com and @user2@instance2.com"
+
+### Temporal Analysis
+
+Track changes over time:
+
+> "Track how the discussion about renewable energy has evolved on climate-focused instances over the past month"
+
+### Cross-Instance Research
+
+Research topics across multiple instances:
+
+> "Find all instances discussing artificial intelligence and compare their perspectives and community attitudes"
+
+## Testing Protocols
+
+### Scenario Validation Checklist
+
+- All required tools are accessible and functional
+- Data quality meets research standards
+- Privacy and ethical guidelines are followed
+- Results are reproducible and verifiable
+- Methodology is documented and transparent
+
+### Performance Benchmarks
+
+- Query response time under 30 seconds
+- Data accuracy above 95%
+- Cache hit ratio above 70%
+- Error rate below 5%
+- Successful completion rate above 90%
+
+### Quality Assurance
+
+- Cross-validate findings with multiple sources
+- Document all queries and methodologies
+- Test scenarios with different parameters
+- Peer review of analysis and conclusions
+- Statistical significance testing where applicable
+
+## Best Practices
+
+### Efficient Discovery
+
+- **Start Broad, Then Narrow:** Begin with general searches, then focus on specific actors or instances
+- **Use Multiple Formats:** Try different actor identifier formats (`@user@domain`, URLs)
+- **Cross-Reference:** Verify information across multiple sources
+- **Cache Awareness:** Understand that data may be cached for performance
+
+### Performance Optimization
+
+- **Batch Requests:** Group related queries together
+- **Limit Results:** Use appropriate limits for large datasets
+- **Monitor Rate Limits:** Respect instance rate limiting
+- **Clear Cache Strategically:** Only clear cache when fresh data is needed
+
+### Privacy and Ethics
+
+- **Respect Privacy:** Only access public information
+- **Follow Instance Rules:** Respect each instance's terms of service
+- **Be Mindful of Load:** Don't overwhelm small instances
+- **Attribute Sources:** Credit instances and actors when sharing findings
+
+### Data Quality
+
+- **Verify Timestamps:** Check when data was last updated
+- **Handle Errors Gracefully:** Account for unavailable instances or actors
+- **Cross-Validate:** Confirm important findings through multiple sources
+- **Document Methodology:** Keep track of your research process
+
+## Common Pitfalls
+
+**Over-Reliance on Single Sources:** Drawing conclusions from one instance or actor — always cross-reference with multiple sources.
+
+**Ignoring Instance Differences:** Treating all instances as equivalent — understand each instance's culture, rules, and focus.
+
+**Cache Confusion:** Not understanding when data is cached vs. fresh — check timestamps and clear cache when needed.
+
+**Rate Limit Violations:** Making too many requests too quickly — pace requests and respect instance limits.
+
+## Learning Resources
+
+- [ActivityPub Specification](https://www.w3.org/TR/activitypub/) — Official W3C specification for the ActivityPub protocol
+- [Fediverse Guide](https://fediverse.info/) — Comprehensive guide to understanding the fediverse
+- [Instance Directory](https://instances.social/) — Browse and discover fediverse instances
+
+## Next Steps
+
+- [MCP Tools Reference](/activitypub-mcp/docs/api/tools/) — Detailed documentation for all available MCP tools
+- [Practical Examples](/activitypub-mcp/docs/guides/examples/) — Step-by-step worked examples with expected outputs
+- [Troubleshooting](/activitypub-mcp/docs/reference/troubleshooting/) — Solutions for common issues in real-world scenarios

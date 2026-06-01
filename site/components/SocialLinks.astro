@@ -76,8 +76,8 @@ const { variant = "header", size = "md" } = Astro.props;
   }
   
   .social-link:hover {
-    color: var(--color-primary);
-    background-color: rgba(37, 99, 235, 0.05);
+    color: var(--accent);
+    background-color: color-mix(in srgb, var(--accent) 8%, transparent);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
@@ -138,26 +138,12 @@ const { variant = "header", size = "md" } = Astro.props;
     }
   }
   
-  /* Specific social platform colors on hover */
+  /* Brand-token hover accents (replaces hardcoded #333 / #cb3837) */
   .social-link[href*="github"]:hover {
-    color: #333;
+    color: var(--accent-2);
   }
-  
-  .social-link[href*="npmjs"]:hover {
-    color: #cb3837;
-  }
-  
 
-  
-  /* Dark mode adjustments */
-  @media (prefers-color-scheme: dark) {
-    .social-link[href*="github"]:hover {
-      color: #f0f6fc;
-    }
-  }
-  
-  /* Theme-specific overrides */
-  :root[data-theme="dark"] .social-link[href*="github"]:hover {
-    color: #f0f6fc;
+  .social-link[href*="npmjs"]:hover {
+    color: var(--accent);
   }
 </style>
