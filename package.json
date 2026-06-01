@@ -47,6 +47,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.9",
     "@astrojs/mdx": "^4.3.10",
     "@astrojs/sitemap": "^3.6.0",
     "@biomejs/biome": "^2.2.4",
@@ -61,7 +62,7 @@
     "pagefind": "^1.4.0",
     "rimraf": "^6.0.1",
     "tsx": "^4.20.5",
-    "typescript": "^5.9.2",
+    "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
   "scripts": {
@@ -97,6 +98,7 @@
     "dev:site": "astro dev",
     "preview:site": "astro preview",
     "generate:og-image": "node scripts/generate-og-image.js",
+    "check": "astro check",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist",
     "prepublishOnly": "run-s clean validate:version typecheck lint build"
