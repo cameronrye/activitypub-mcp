@@ -1559,24 +1559,26 @@ pre code {
   margin-bottom: var(--space-8);
 }
 
-/* Dual-theme Shiki code blocks (spec §3.6) */
-.astro-code,
-.astro-code span {
-  color: var(--shiki-light);
-  background-color: var(--shiki-light-bg);
-}
-
-[data-theme="dark"] .astro-code,
-[data-theme="dark"] .astro-code span {
-  color: var(--shiki-dark);
-  background-color: var(--shiki-dark-bg);
+/* Dual-theme Shiki code blocks (spec §3.6).
+   Astro emits the LIGHT theme as INLINE styles (background-color/color) on
+   .astro-code, and the DARK theme as --shiki-dark / --shiki-dark-bg CSS vars.
+   Light needs no rule (the inline styles read correctly on paper). To switch to
+   dark we must override those inline styles, which requires !important. */
+:root[data-theme="dark"] .astro-code,
+:root[data-theme="dark"] .astro-code span,
+:root.theme-dark .astro-code,
+:root.theme-dark .astro-code span {
+  background-color: var(--shiki-dark-bg) !important;
+  color: var(--shiki-dark) !important;
 }
 
 @media (prefers-color-scheme: dark) {
-  [data-theme="system"] .astro-code,
-  [data-theme="system"] .astro-code span {
-    color: var(--shiki-dark);
-    background-color: var(--shiki-dark-bg);
+  :root[data-theme="system"] .astro-code,
+  :root[data-theme="system"] .astro-code span,
+  :root.theme-system .astro-code,
+  :root.theme-system .astro-code span {
+    background-color: var(--shiki-dark-bg) !important;
+    color: var(--shiki-dark) !important;
   }
 }
 
