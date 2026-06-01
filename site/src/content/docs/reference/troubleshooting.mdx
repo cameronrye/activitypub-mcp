@@ -1,0 +1,263 @@
+---
+title: "Troubleshooting Guide"
+description: "Common issues and their solutions when using the ActivityPub MCP Server."
+group: "Reference"
+order: 1
+---
+
+## Connection Issues
+
+### Server Not Responding
+
+#### Symptoms:
+
+- Tools timeout or return no response
+- Error: "Failed to connect to MCP server"
+- Claude reports server is unavailable
+
+#### Solutions:
+
+1. **Check server status:**
+   ```bash
+   npm run status
+   ```
+1. **Restart the server:**
+   ```bash
+   npm run restart
+   ```
+1. **Verify configuration:**
+   ```bash
+   npm run config:check
+   ```
+1. **Check logs for errors:**
+   ```bash
+   npm run logs
+   ```
+
+### Network Connectivity Problems
+
+#### Symptoms:
+
+- Error: "Network request failed"
+- Timeouts when fetching from instances
+- Intermittent connection issues
+
+#### Solutions:
+
+1. **Check internet connection**
+1. **Test instance accessibility:**
+   ```bash
+   curl -I https://mastodon.social
+   ```
+1. **Configure proxy if needed:**
+   ```bash
+   export HTTP_PROXY=http://proxy:8080
+   export HTTPS_PROXY=http://proxy:8080
+   ```
+1. **Increase timeout settings in config**
+
+## Access and Permission Issues
+
+### Actor Not Found
+
+#### Symptoms:
+
+- Error: "Actor not found"
+- Error: "Failed to resolve actor"
+- Empty results when searching for known actors
+
+#### Solutions:
+
+1. **Verify actor format:**
+   ```bash
+   # Correct formats:
+   @username@instance.com
+   https://instance.com/users/username
+   https://instance.com/@username
+   ```
+1. **Check if actor exists:**
+   ```bash
+   curl https://instance.com/.well-known/webfinger?resource=acct:username@instance.com
+   ```
+1. **Try alternative discovery methods**
+1. **Restart the server** to flush the in-memory actor cache (cache TTL also expires naturally; configure via `ACTOR_CACHE_TTL`).
+
+### Rate Limiting
+
+#### Symptoms:
+
+- Error: "Rate limit exceeded"
+- HTTP 429 responses
+- Requests being throttled
+
+#### Solutions:
+
+1. **Wait before retrying (usually 15 minutes)**
+1. **Reduce request frequency**
+1. **Use different instances to distribute load**
+1. **Check rate limit headers:**
+   ```bash
+   curl -I https://instance.com/api/v1/accounts/lookup
+   ```
+
+### Private Content Access
+
+#### Symptoms:
+
+- Error: "Access denied"
+- Empty timelines for known active accounts
+- Missing posts or limited content
+
+#### Solutions:
+
+1. **Respect privacy settings - this is expected behavior**
+1. **Try public instances and accounts**
+1. **Use accounts with public timelines**
+1. **Check instance privacy policies**
+
+## Configuration Issues
+
+### Invalid Configuration
+
+#### Symptoms:
+
+- Server fails to start
+- Error: "Invalid configuration"
+- Missing required settings
+
+#### Solutions:
+
+1. **Validate configuration file:**
+   ```bash
+   npm run config:validate
+   ```
+1. **Reset to default configuration:**
+   ```bash
+   npm run config:reset
+   ```
+1. **Check required environment variables**
+1. **Review configuration documentation**
+
+### Claude Desktop Integration
+
+#### Symptoms:
+
+- Tools not appearing in Claude
+- Error: "MCP server not found"
+- Connection refused errors
+
+#### Solutions:
+
+1. **Check Claude Desktop configuration:**
+   ```bash
+   # macOS
+   ~/Library/Application Support/Claude/claude_desktop_config.json
+
+   # Windows
+   %APPDATA%\Claude\claude_desktop_config.json
+   ```
+1. **Verify server path in config**
+1. **Restart Claude Desktop**
+1. **Check server logs for connection attempts**
+
+## Performance Issues
+
+### Slow Response Times
+
+#### Symptoms:
+
+- Tools take a long time to respond
+- Timeouts on large requests
+- High memory usage
+
+#### Solutions:
+
+1. **Restart the server** to flush in-memory caches, or shorten `CACHE_TTL` / `ACTOR_CACHE_TTL` in your env.
+1. **Reduce request size** (limit results, narrow timelines with `limit` / `maxId` / `sinceId`).
+1. **Use more specific queries**
+1. **Monitor system resources** with OS-level tools (e.g., `top`, `htop`) or your deployment platform's metrics.
+
+### Memory Issues
+
+#### Symptoms:
+
+- Server crashes with out-of-memory errors
+- Gradual performance degradation
+- High memory usage
+
+#### Solutions:
+
+1. **Restart server regularly**
+1. **Reduce cache size in configuration**
+1. **Limit concurrent requests**
+1. **Monitor memory usage**
+
+## Debugging Tips
+
+### Enable Verbose Logging
+
+```bash
+export DEBUG=activitypub-mcp:*
+npm start
+```
+
+This will show detailed logs for all operations.
+
+### Test Individual Components
+
+```bash
+# Test WebFinger resolution
+curl "https://instance.com/.well-known/webfinger?resource=acct:user@instance.com"
+
+# Test ActivityPub endpoint
+curl -H "Accept: application/activity+json" "https://instance.com/users/username"
+```
+
+### Check Instance Health
+
+```bash
+# Check if instance is up
+curl -I https://instance.com
+
+# Check API availability
+curl https://instance.com/api/v1/instance
+```
+
+### Monitor Network Traffic
+
+Use browser developer tools or network monitoring tools to see actual HTTP requests and responses.
+
+## Getting Help
+
+### Before Reporting Issues
+
+- Check this troubleshooting guide
+- Review the basic usage guide
+- Test with known working instances (mastodon.social)
+- Collect relevant logs and error messages
+- Note your environment (OS, Node.js version, etc.)
+
+### Reporting Bugs
+
+If you've found a bug, please report it on GitHub:
+
+[Report an Issue](https://github.com/cameronrye/activitypub-mcp/issues)
+
+Include:
+
+- Steps to reproduce the issue
+- Expected vs actual behavior
+- Error messages and logs
+- System information
+
+### Community Support
+
+Join the discussion for help and tips:
+
+[GitHub Discussions](https://github.com/cameronrye/activitypub-mcp/discussions)
+
+## Related Resources
+
+- [Basic Usage Guide](/activitypub-mcp/docs/guides/basic-usage/)
+- [Practical Examples](/activitypub-mcp/docs/guides/examples/)
+- [Complete Tool Reference](/activitypub-mcp/docs/api/tools/)
