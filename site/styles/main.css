@@ -323,7 +323,7 @@ body {
 
 /* Header and Navigation */
 .site-header {
-  background: rgba(255, 255, 255, 0.95);
+  background: color-mix(in srgb, var(--color-paper) 90%, transparent);
   border-bottom: 1px solid var(--border-primary);
   position: sticky;
   top: 0;
@@ -335,7 +335,7 @@ body {
 /* Dark theme header */
 :root[data-theme="dark"] .site-header,
 :root.theme-dark .site-header {
-  background: rgba(17, 24, 39, 0.95);
+  background: color-mix(in srgb, var(--color-ink) 92%, transparent);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
@@ -343,7 +343,7 @@ body {
 @media (prefers-color-scheme: dark) {
   :root[data-theme="system"] .site-header,
   :root.theme-system .site-header {
-    background: rgba(17, 24, 39, 0.95);
+    background: color-mix(in srgb, var(--color-ink) 92%, transparent);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 }
@@ -470,7 +470,7 @@ body {
 
 .nav-link:hover {
   color: var(--color-primary);
-  background-color: rgba(37, 99, 235, 0.05);
+  background-color: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .nav-link:hover::after {
@@ -622,7 +622,7 @@ body {
 .mobile-search-toggle:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
 /* Hide mobile search toggle on desktop */
@@ -652,7 +652,7 @@ body {
   outline: none;
   border-color: var(--color-primary);
   box-shadow:
-    0 0 0 3px rgba(37, 99, 235, 0.1),
+    0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent),
     0 4px 12px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
 }
@@ -698,23 +698,6 @@ body {
   padding: 0 var(--space-4);
   position: relative;
   z-index: 1;
-}
-
-.hero-logo {
-  width: 120px;
-  height: 120px;
-  margin: 0 auto var(--space-8);
-  display: block;
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
 }
 
 .hero-title {
@@ -787,7 +770,7 @@ body {
   background: var(--color-primary-gradient);
   color: var(--color-white);
   border-color: var(--color-primary);
-  box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.25);
+  box-shadow: 0 4px 14px 0 color-mix(in srgb, var(--accent) 30%, transparent);
   position: relative;
   overflow: hidden;
 }
@@ -816,7 +799,7 @@ body {
   );
   border-color: var(--color-primary-dark);
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px 0 rgba(37, 99, 235, 0.35);
+  box-shadow: 0 8px 25px 0 color-mix(in srgb, var(--accent) 38%, transparent);
 }
 
 .btn-primary:hover::before {
@@ -846,7 +829,7 @@ body {
 .btn-outline:hover {
   color: var(--color-white);
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px 0 rgba(37, 99, 235, 0.25);
+  box-shadow: 0 8px 25px 0 color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 .btn-outline:hover::before {
@@ -1319,27 +1302,17 @@ pre code {
   white-space: pre; /* prevent wrapping inside code fences */
 }
 
-/* Version Badge */
+/* Version Badge (legacy base; the homepage supplies its own scoped badge).
+   No animation/box-shadow here so the old emerald pulse never leaks through. */
 .version-badge {
   display: inline-block;
-  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-accent) 100%);
+  background: linear-gradient(135deg, var(--accent-2) 0%, var(--accent-3) 100%);
   color: var(--color-white);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   margin-bottom: var(--space-6);
-  animation: pulse 2s ease-in-out infinite;
-  box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.3);
-}
-
-@keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.3);
-  }
-  50% {
-    box-shadow: 0 4px 20px 0 rgba(16, 185, 129, 0.5);
-  }
 }
 
 /* Hero Stats */
@@ -1613,4 +1586,57 @@ pre code {
 }
 .docs-content a:hover {
   color: var(--link-hover);
+}
+
+/* Copy buttons injected by public/scripts/main.js (initCodeCopy) into the
+   rendered Shiki code blocks in docs prose. These are created in plain JS
+   without the scoped CopyButton.astro styles, so they would otherwise render
+   as bare "Copy" text. Style them here as a brand-tokened, reveal-on-hover
+   control. The homepage install snippets use the CodeBlock component and are
+   skipped by the script, so this only targets docs code blocks. */
+.docs-content pre {
+  position: relative;
+}
+
+.docs-content pre .copy-button {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-raised);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.docs-content pre:hover .copy-button,
+.docs-content pre:focus-within .copy-button,
+.docs-content pre .copy-button:focus-visible {
+  opacity: 1;
+}
+
+.docs-content pre .copy-button:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.docs-content pre .copy-button.copied {
+  color: var(--accent-2);
+  border-color: var(--accent-2);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .docs-content pre .copy-button {
+    transition: none;
+  }
 }
