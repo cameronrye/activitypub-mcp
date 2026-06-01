@@ -1579,3 +1579,36 @@ pre code {
     background-color: var(--shiki-dark-bg);
   }
 }
+
+/* Prose link color — theme-aware, AA-compliant on paper (4.61) and ink (5.32).
+   Light: pine-teal; dark: a lighter teal. Vermilion fails AA as small text on
+   paper, so links use teal; vermilion stays for fills/accents/large headings. */
+:root {
+  --link: #2F7D6B;
+  --link-hover: #25604F;
+}
+:root[data-theme="dark"],
+:root.theme-dark {
+  --link: #4A9A86;
+  --link-hover: #5FB89F;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"],
+  :root.theme-system {
+    --link: #4A9A86;
+    --link-hover: #5FB89F;
+  }
+}
+
+/* Style rendered docs prose links (the MDX content area only — sidebar/TOC
+   live outside .docs-content and keep their own styles). */
+.docs-content a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  transition: color var(--transition-fast);
+}
+.docs-content a:hover {
+  color: var(--link-hover);
+}
