@@ -18,13 +18,21 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 // Files excluded from counting (instrumentation wrappers, not registrars).
+// Matched by basename: only src/mcp/capabilities.ts exists today, and any other
+// file named capabilities.ts would likewise be an instrumentation wrapper.
 const EXCLUDED_BASENAMES = new Set(["capabilities.ts"]);
 
-// Match the call form .registerTool("name", ... and capture the name.
+// Verified registry counts (spec §5.1). The generator must reproduce these; a
+// divergence means a registrar was added/removed or the regex/exclusion is wrong.
+const LOCKED_COUNTS = { tools: 37, resources: 10, prompts: 5 };
+
+// Match the call form .registerTool("name", ... and capture the name. Stored
+// without the global flag (no shared lastIndex state); extractNames builds a
+// fresh global copy per call.
 const PATTERNS = {
-  tools: /\.registerTool\(\s*["'`]([^"'`]+)["'`]/g,
-  resources: /\.registerResource\(\s*["'`]([^"'`]+)["'`]/g,
-  prompts: /\.registerPrompt\(\s*["'`]([^"'`]+)["'`]/g,
+  tools: /\.registerTool\(\s*["'`]([^"'`]+)["'`]/,
+  resources: /\.registerResource\(\s*["'`]([^"'`]+)["'`]/,
+  prompts: /\.registerPrompt\(\s*["'`]([^"'`]+)["'`]/,
 };
 
 /** Recursively collect all .ts files under dir, skipping .d.ts and excluded basenames. */
@@ -47,14 +55,8 @@ function collectTsFiles(dir) {
 }
 
 function extractNames(content, regex) {
-  const names = [];
-  regex.lastIndex = 0;
-  let m = regex.exec(content);
-  while (m !== null) {
-    names.push(m[1]);
-    m = regex.exec(content);
-  }
-  return names;
+  // Build a fresh global regex per call so there is no shared lastIndex state.
+  return [...content.matchAll(new RegExp(regex.source, "g"))].map((m) => m[1]);
 }
 
 /**
@@ -102,9 +104,14 @@ function main() {
   fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(outFile, `${JSON.stringify(manifest, null, 2)}\n`);
 
-  if (manifest.tools !== 37 || manifest.resources !== 10 || manifest.prompts !== 5) {
+  if (
+    manifest.tools !== LOCKED_COUNTS.tools ||
+    manifest.resources !== LOCKED_COUNTS.resources ||
+    manifest.prompts !== LOCKED_COUNTS.prompts
+  ) {
     console.error(
-      `Count mismatch: expected 37/10/5, got ${manifest.tools}/${manifest.resources}/${manifest.prompts}. ` +
+      `Count mismatch: expected ${LOCKED_COUNTS.tools}/${LOCKED_COUNTS.resources}/${LOCKED_COUNTS.prompts}, ` +
+        `got ${manifest.tools}/${manifest.resources}/${manifest.prompts}. ` +
         "Check that capabilities.ts is excluded and all .registerX( call-sites are matched.",
     );
     process.exit(1);
