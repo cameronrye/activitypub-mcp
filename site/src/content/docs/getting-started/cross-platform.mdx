@@ -1,0 +1,315 @@
+---
+title: "Cross-Platform Setup"
+description: "Platform-specific installation and setup instructions for Windows, macOS, and Linux."
+group: "Getting Started"
+order: 4
+---
+
+## macOS Setup
+
+### Prerequisites
+
+- macOS 10.15 (Catalina) or later
+- Node.js 20+ (recommended: use Homebrew)
+- Terminal or iTerm2
+
+### Installation Steps
+
+#### 1. Install Node.js
+
+```bash
+# Using Homebrew (recommended)
+brew install node
+
+# Verify installation
+node --version
+npm --version
+```
+
+#### 2. Install ActivityPub MCP Server
+
+```bash
+# Quick install
+npx activitypub-mcp install
+
+# Or install globally
+npm install -g activitypub-mcp
+```
+
+#### 3. Configure Claude Desktop
+
+Edit the configuration file:
+
+```bash
+# Open configuration file
+open ~/Library/Application\ Support/Claude/claude_desktop_config.json
+
+# Or create if it doesn't exist
+mkdir -p ~/Library/Application\ Support/Claude/
+touch ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
+
+Add the server configuration:
+
+```json
+{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}
+```
+
+#### 4. Restart Claude Desktop
+
+```bash
+# Force quit and restart Claude Desktop
+killall Claude
+open -a Claude
+```
+
+### macOS-Specific Notes
+
+- **Permissions:** You may need to grant Terminal permissions in System Preferences > Security &amp; Privacy
+- **Homebrew:** Install from [brew.sh](https://brew.sh) if you don't have it
+- **Apple Silicon:** Works natively on M1/M2 Macs
+- **Rosetta:** Not required for Apple Silicon
+
+## Windows Setup
+
+### Prerequisites
+
+- Windows 10 or Windows 11
+- Node.js 20+ (download from nodejs.org)
+- PowerShell or Command Prompt
+
+### Installation Steps
+
+#### 1. Install Node.js
+
+Download and install from [nodejs.org](https://nodejs.org)
+
+```bash
+# Verify installation in PowerShell
+node --version
+npm --version
+```
+
+#### 2. Install ActivityPub MCP Server
+
+```bash
+# In PowerShell or Command Prompt
+npx activitypub-mcp install
+
+# Or install globally
+npm install -g activitypub-mcp
+```
+
+#### 3. Configure Claude Desktop
+
+Edit the configuration file:
+
+```bash
+# Open configuration directory
+explorer %APPDATA%\Claude
+
+# Create config file if needed
+echo {} > %APPDATA%\Claude\claude_desktop_config.json
+```
+
+Edit `claude_desktop_config.json` with:
+
+```json
+{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}
+```
+
+#### 4. Restart Claude Desktop
+
+Close Claude Desktop completely and restart it.
+
+### Windows-Specific Notes
+
+- **PowerShell:** Use PowerShell for better command support
+- **Execution Policy:** You may need to run `Set-ExecutionPolicy RemoteSigned`
+- **Windows Defender:** May flag npm packages; add exclusions if needed
+- **WSL:** Can also run in Windows Subsystem for Linux
+
+## Linux Setup
+
+### Prerequisites
+
+- Modern Linux distribution (Ubuntu 20.04+, Fedora 35+, etc.)
+- Node.js 20+ (via package manager or NodeSource)
+- Terminal access
+
+### Installation Steps
+
+#### 1. Install Node.js
+
+**Ubuntu/Debian:**
+
+```bash
+# Using NodeSource repository (recommended)
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Or using snap
+sudo snap install node --classic
+```
+
+**Fedora/RHEL/CentOS:**
+
+```bash
+# Using NodeSource repository
+curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
+sudo dnf install nodejs npm
+
+# Or using dnf
+sudo dnf install nodejs npm
+```
+
+**Arch Linux:**
+
+```bash
+# Using pacman
+sudo pacman -S nodejs npm
+```
+
+#### 2. Install ActivityPub MCP Server
+
+```bash
+# Quick install
+npx activitypub-mcp install
+
+# Or install globally
+npm install -g activitypub-mcp
+```
+
+#### 3. Configure Claude Desktop (if using)
+
+```bash
+# Create config directory
+mkdir -p ~/.config/Claude
+
+# Create config file
+cat > ~/.config/Claude/claude_desktop_config.json << 'EOF'
+{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}
+EOF
+```
+
+#### 4. Test Installation
+
+```bash
+# Test the server directly
+npx activitypub-mcp
+
+# Or test with MCP Inspector
+npx @modelcontextprotocol/inspector
+```
+
+### Linux-Specific Notes
+
+- **Permissions:** Avoid using `sudo` with npm when possible
+- **Node Version Manager:** Consider using `nvm` for Node.js management
+- **Systemd:** Can create a service for persistent running
+- **Firewall:** Ensure local connections are allowed
+
+## Docker Setup
+
+### Using Docker (All Platforms)
+
+Run the server in a container for consistent behavior across platforms:
+
+#### 1. Pull the Docker Image
+
+```bash
+# Pull the latest image
+docker pull activitypub-mcp:latest
+
+# Or build from source
+git clone https://github.com/cameronrye/activitypub-mcp.git
+cd activitypub-mcp
+docker build -t activitypub-mcp .
+```
+
+#### 2. Run the Container
+
+```bash
+# Basic run
+docker run -p 8080:8080 activitypub-mcp
+
+# With environment variables
+docker run -p 8080:8080 \
+  -e LOG_LEVEL=debug \
+  -e CACHE_TTL=600 \
+  activitypub-mcp
+```
+
+#### 3. Configure Client
+
+Point your MCP client to the containerized server:
+
+```json
+{
+  "mcpServers": {
+    "activitypub": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "activitypub-mcp"],
+      "env": {
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}
+```
+
+## Troubleshooting by Platform
+
+### macOS Issues
+
+- **Permission denied:** Check System Preferences > Security &amp; Privacy
+- **Command not found:** Restart Terminal after Node.js install
+- **Claude not finding server:** Check file path in config
+
+### Windows Issues
+
+- **PowerShell execution policy:** Run as Administrator and set policy
+- **Path issues:** Use full paths in configuration
+- **Antivirus blocking:** Add npm cache to exclusions
+
+### Linux Issues
+
+- **Permission errors:** Don't use sudo with npm
+- **Node.js version:** Use NodeSource for latest versions
+- **Missing dependencies:** Install build-essential if needed
+
+## Next Steps
+
+- [Configuration Guide](/activitypub-mcp/docs/getting-started/configuration/) — Learn about advanced configuration options and environment variables.
+- [Basic Usage Guide](/activitypub-mcp/docs/guides/basic-usage/) — Start using the server with essential commands and workflows.
+- [Troubleshooting](/activitypub-mcp/docs/reference/troubleshooting/) — Solutions for platform-specific and general issues.
