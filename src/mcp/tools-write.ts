@@ -491,8 +491,8 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
 
 📝 ${wrapUntrusted(status.content, `post on ${account.instance}`)}
 
-🆔 ID: ${status.id}
-🔗 ${status.url || status.uri}
+🆔 ID: ${sanitizeInline(status.id)}
+🔗 ${sanitizeInline(status.url || status.uri)}
 👁️ Visibility: ${status.visibility}
 ${status.spoiler_text ? `⚠️ CW: ${wrapUntrusted(status.spoiler_text, `content warning on ${account.instance}`)}` : ""}
 
@@ -593,8 +593,8 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
 
 📝 ${wrapUntrusted(status.content, `post on ${account.instance}`)}
 
-🆔 ID: ${status.id}
-🔗 ${status.url || status.uri}
+🆔 ID: ${sanitizeInline(status.id)}
+🔗 ${sanitizeInline(status.url || status.uri)}
 ↩️ Replying to: ${statusId}`,
             },
           ],
@@ -749,7 +749,7 @@ function registerBoostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter): 
 
 You boosted a post by @${sanitizeInline(status.account.username || "")}
 
-🔗 ${status.url || status.uri}`,
+🔗 ${sanitizeInline(status.url || status.uri)}`,
             },
           ],
         };
@@ -897,7 +897,7 @@ function registerFavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimite
 
 You favourited a post by @${sanitizeInline(status.account.username || "")}
 
-🔗 ${status.url || status.uri}`,
+🔗 ${sanitizeInline(status.url || status.uri)}`,
             },
           ],
         };
@@ -1045,7 +1045,7 @@ function registerBookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimiter
 
 Saved post by @${sanitizeInline(status.account.username || "")}
 
-🔗 ${status.url || status.uri}`,
+🔗 ${sanitizeInline(status.url || status.uri)}`,
             },
           ],
         };

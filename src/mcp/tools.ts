@@ -192,10 +192,10 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
         // Build pagination info section
         const paginationInfo = [];
         if (timeline.hasMore && timeline.nextCursor) {
-          paginationInfo.push(`📄 Next page cursor: ${timeline.nextCursor}`);
+          paginationInfo.push(`📄 Next page cursor: ${sanitizeInline(timeline.nextCursor)}`);
         }
         if (timeline.prevCursor) {
-          paginationInfo.push(`📄 Previous page cursor: ${timeline.prevCursor}`);
+          paginationInfo.push(`📄 Previous page cursor: ${sanitizeInline(timeline.prevCursor)}`);
         }
 
         // Format pagination section
@@ -210,7 +210,7 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
               p.content || p.summary || "",
               `post by ${validIdentifier}`,
             );
-            const postType = p.type || "Post";
+            const postType = sanitizeInline(p.type || "") || "Post";
             return `${index + 1}. [${postType}] ${content}`;
           })
           .join("\n\n");
@@ -223,7 +223,7 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
 
 📊 Total items: ${timeline.totalItems || "Unknown"}
 📝 Posts retrieved: ${postCount}
-🔗 Collection ID: ${timeline.collectionId}
+🔗 Collection ID: ${sanitizeInline(timeline.collectionId)}
 ${timeline.hasMore ? "📄 More posts available (use cursor for next page)" : "📄 No more posts"}
 
 ${paginationSection}
@@ -562,7 +562,7 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
                 .map((r, i) => {
                   const stub = r as unknown as { crossOrigin?: boolean; fetched?: boolean };
                   if (stub.crossOrigin === true && stub.fetched === false) {
-                    return `${i + 1}. _(cross-origin, not fetched)_ ${r.id}`;
+                    return `${i + 1}. _(cross-origin, not fetched)_ ${sanitizeInline(r.id)}`;
                   }
                   const content = wrapUntrusted(r.content || r.summary || "", `post on ${domain}`);
                   const cw =
@@ -586,7 +586,7 @@ ${ancestorsSection}**Main Post**:
 ${spoilerText}${postContent}
 
 🔗 URL: ${sanitizeInline(thread.post.url || thread.post.id)}
-📅 Published: ${thread.post.published || "Unknown"}
+📅 Published: ${sanitizeInline(thread.post.published || "") || "Unknown"}
 
 ${repliesSection}
 
@@ -648,9 +648,11 @@ function registerGetTrendingHashtagsTool(mcpServer: McpServer, rateLimiter: Rate
         const hashtagsList = result.hashtags
           .map((tag, i) => {
             const history = tag.history?.[0];
-            const uses = history?.uses || "?";
-            const accounts = history?.accounts || "?";
-            return `${i + 1}. **#${sanitizeInline(tag.name || "")}** - ${uses} uses by ${accounts} accounts`;
+            // uses/accounts are unvalidated remote strings — coerce to numbers so
+            // an injected payload can't ride along (matches the unified-search path).
+            const uses = Number.parseInt(history?.uses ?? "", 10);
+            const accounts = Number.parseInt(history?.accounts ?? "", 10);
+            return `${i + 1}. **#${sanitizeInline(tag.name || "")}** - ${Number.isFinite(uses) ? uses : "?"} uses by ${Number.isFinite(accounts) ? accounts : "?"} accounts`;
           })
           .join("\n");
 

@@ -16,13 +16,8 @@ import {
   REQUEST_TIMEOUT,
   USER_AGENT,
 } from "../config.js";
-import { instanceBlocklist } from "../policy/instance-blocklist.js";
-import { pinnedFetch, readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { blocklistHop, pinnedFetch, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
-
-/** Operator instance-blocklist check for the initial URL and every redirect hop. */
-const blocklistHop = (target: string): void =>
-  instanceBlocklist.validateNotBlocked(new URL(target).hostname);
 
 const logger = getLogger("activitypub-mcp:discovery");
 

@@ -16,6 +16,17 @@ import { resolveAndPin } from "../validation/url.js";
 export type DispatchInit = RequestInit & { dispatcher?: Agent };
 
 /**
+ * onHop callback for guarded fetches: reject a (redirect) target whose host is
+ * on the operator instance blocklist. Shared so every fetch path enforces the
+ * blocklist identically — a future change to how the hop host is derived lands
+ * in one place. `resolveAndPin` parses the URL first, so a malformed target
+ * rejects there before this runs.
+ */
+export function blocklistHop(target: string): void {
+  instanceBlocklist.validateNotBlocked(new URL(target).hostname);
+}
+
+/**
  * Fetch wrapper that follows up to `maxHops` redirects, but re-runs the
  * caller-supplied `validate` function on every redirect target before
  * following. This closes the "public host 302s to a private IP" gap
@@ -187,10 +198,16 @@ export async function readJsonWithLimit<T = unknown>(
  * never throws (returns "" if the body can't be read) so it is safe in a catch.
  */
 export async function readErrorText(response: Response, maxBytes = 2048): Promise<string> {
-  const mark = (t: string) => (t.length > maxBytes ? `${t.slice(0, maxBytes)}…[truncated]` : t);
+  // Cap on BYTES (not UTF-16 code units) and let TextDecoder replace any partial
+  // multibyte sequence at the cut point, so the cap is an exact byte bound and
+  // can never emit a lone surrogate.
+  const decodeCapped = (bytes: Uint8Array): string => {
+    const text = new TextDecoder("utf-8").decode(bytes.subarray(0, maxBytes));
+    return bytes.length > maxBytes ? `${text}…[truncated]` : text;
+  };
   try {
     const reader = response.body?.getReader();
-    if (!reader) return mark(await response.text());
+    if (!reader) return decodeCapped(new TextEncoder().encode(await response.text()));
 
     const chunks: Uint8Array[] = [];
     let total = 0;
@@ -212,7 +229,7 @@ export async function readErrorText(response: Response, maxBytes = 2048): Promis
       merged.set(chunk, offset);
       offset += chunk.byteLength;
     }
-    return mark(new TextDecoder("utf-8").decode(merged));
+    return decodeCapped(merged);
   } catch {
     return "";
   }
@@ -260,7 +277,7 @@ export async function guardedFetch<T = unknown>(
         signal: controller.signal,
       },
       // Operator blocklist on the initial URL and every redirect hop.
-      (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname),
+      blocklistHop,
     );
 
     let data: T | undefined;

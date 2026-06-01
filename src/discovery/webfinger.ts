@@ -7,8 +7,7 @@ import {
   REQUEST_TIMEOUT,
   USER_AGENT,
 } from "../config.js";
-import { instanceBlocklist } from "../policy/instance-blocklist.js";
-import { pinnedFetch, readJsonWithLimit } from "../utils/fetch-helpers.js";
+import { blocklistHop, pinnedFetch, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
 import { ActorIdentifierSchema } from "../validation/schemas.js";
 
@@ -193,7 +192,7 @@ export class WebFingerClient {
           },
           signal: controller.signal,
         },
-        (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname),
+        blocklistHop,
       );
 
       clearTimeout(timeoutId);
@@ -266,7 +265,7 @@ export class WebFingerClient {
           },
           signal: controller.signal,
         },
-        (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname),
+        blocklistHop,
       );
 
       clearTimeout(timeoutId);

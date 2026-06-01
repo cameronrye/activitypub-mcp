@@ -9,9 +9,8 @@
 
 import { z } from "zod";
 import { REQUEST_TIMEOUT, USER_AGENT } from "../../config.js";
-import { instanceBlocklist } from "../../policy/instance-blocklist.js";
 import { TokenRejectedError } from "../../utils/errors.js";
-import { pinnedFetch } from "../../utils/fetch-helpers.js";
+import { blocklistHop, pinnedFetch } from "../../utils/fetch-helpers.js";
 import type { AccountCredentials } from "../account-manager.js";
 
 export type PostVisibility = "public" | "unlisted" | "private" | "direct";
@@ -220,7 +219,7 @@ export async function authenticatedFetch(
           ...options.headers,
         },
       },
-      (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname),
+      blocklistHop,
     );
     clearTimeout(timeoutId);
     if (response.status === 401) {

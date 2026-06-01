@@ -106,22 +106,44 @@ export class AuditLogger {
   }
 
   /**
-   * Scrub the `error` field before it is stored or logged. Error strings are
-   * attacker-influenceable — they embed remote (now length-capped) response
-   * bodies, which a hostile/misconfigured instance can fill with bearer-token
+   * Redact credential-bearing patterns from an attacker-influenceable string:
+   * bearer tokens, credential key=value pairs, and credential values carried in
+   * URL query strings. Idempotent, no length cap. The query-string pass is
+   * anchored on `?`/`&` so it redacts `?code=AUTHCODE` without touching prose
+   * like "error code: 500".
+   */
+  private redactSecrets(text: string): string {
+    return text
+      .replace(/Bearer\s+\S+/gi, "Bearer [REDACTED]")
+      .replace(
+        /\b(access_token|refresh_token|client_secret|token|secret|password|authorization|api[-_]?key|session[-_]?id|sid)\b(["':=\s]+)\S+/gi,
+        "$1$2[REDACTED]",
+      )
+      .replace(
+        /([?&](?:code|access_token|refresh_token|client_secret|token|api[-_]?key|session_id|sid)=)[^&\s#]+/gi,
+        "$1[REDACTED]",
+      );
+  }
+
+  /**
+   * Scrub the `error` field: redact credential patterns and cap length for
+   * storage. Error strings are attacker-influenceable — they embed remote (now
+   * length-capped) response bodies a hostile instance can fill with bearer-token
    * reflections, log-injection bytes, or second-order prompt-injection text.
-   * sanitizeParams only ever touched `params`, never `error`, so this closes the
-   * parallel channel: redact credential patterns and cap length for storage.
    */
   private scrubError(error?: string): string | undefined {
     if (!error) return error;
-    const redacted = error
-      .replace(/Bearer\s+\S+/gi, "Bearer [REDACTED]")
-      .replace(
-        /\b(access_token|refresh_token|client_secret|token|secret|password|authorization|api[-_]?key)\b(["':=\s]+)\S+/gi,
-        "$1$2[REDACTED]",
-      );
+    const redacted = this.redactSecrets(error);
     return redacted.length > 500 ? `${redacted.slice(0, 500)}... [truncated]` : redacted;
+  }
+
+  /** Redact credential patterns from the string values of a params/metadata record. */
+  private scrubValues(obj: Record<string, unknown>): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      out[key] = typeof value === "string" ? this.redactSecrets(value) : value;
+    }
+    return out;
   }
 
   /**
@@ -139,10 +161,10 @@ export class AuditLogger {
       timestamp: new Date().toISOString(),
       eventType: "tool_invocation",
       name: toolName,
-      params: this.sanitizeParams(params),
+      params,
       success: result.success,
       duration: result.duration,
-      error: this.scrubError(result.error),
+      error: result.error,
       domain: this.extractDomain(params),
       actor: this.extractActor(params),
     };
@@ -179,10 +201,10 @@ export class AuditLogger {
       timestamp: new Date().toISOString(),
       eventType: "resource_access",
       name: resourceName,
-      params: this.sanitizeParams(params),
+      params,
       success: result.success,
       duration: result.duration,
-      error: this.scrubError(result.error),
+      error: result.error,
       domain: this.extractDomain(params),
       actor: this.extractActor(params),
     };
@@ -231,7 +253,7 @@ export class AuditLogger {
       name: "instance_block",
       params: { domain, reason },
       success: false,
-      error: this.scrubError(reason),
+      error: reason,
       domain,
     };
 
@@ -260,13 +282,13 @@ export class AuditLogger {
       name: "ssrf_protection",
       params: { url: url.slice(0, 200) }, // Truncate URL for safety
       success: false,
-      error: this.scrubError(reason),
+      error: reason,
       domain,
     };
 
     this.addEntry(entry);
 
-    logger.warn("SSRF attempt blocked", { url: url.slice(0, 200), reason: entry.error });
+    logger.warn("SSRF attempt blocked", { url: entry.params?.url, reason: entry.error });
   }
 
   /**
@@ -281,7 +303,7 @@ export class AuditLogger {
       eventType: "error",
       name: context,
       success: false,
-      error: this.scrubError(error),
+      error,
       metadata,
     };
 
@@ -292,8 +314,16 @@ export class AuditLogger {
 
   /**
    * Add an entry to the log, managing size limits.
+   *
+   * This is the single scrubbing chokepoint: every entry, whichever logXxx
+   * method built it, has its attacker-influenceable fields redacted here — so no
+   * present or future event type can leak by forgetting to scrub at its own site.
    */
   private addEntry(entry: AuditLogEntry): void {
+    entry.error = this.scrubError(entry.error);
+    if (entry.params) entry.params = this.scrubValues(this.sanitizeParams(entry.params));
+    if (entry.metadata) entry.metadata = this.scrubValues(entry.metadata);
+
     this.entries.push(entry);
 
     // Trim to max size

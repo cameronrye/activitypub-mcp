@@ -22,6 +22,7 @@ import {
   SERVER_NAME,
   SERVER_VERSION,
 } from "../config.js";
+import { isLoopbackIPv4 } from "../validation/url.js";
 import { checkBearerAuth } from "./auth-middleware.js";
 
 const logger = getLogger("activitypub-mcp:http");
@@ -31,7 +32,7 @@ const LOOPBACK_HOSTS = new Set(["::1", "[::1]", "localhost"]);
 /** True for any loopback bind: 127.0.0.0/8, ::1, [::1], or localhost. */
 function isLoopbackHost(host: string): boolean {
   const h = host.toLowerCase();
-  return LOOPBACK_HOSTS.has(h) || /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(h);
+  return LOOPBACK_HOSTS.has(h) || isLoopbackIPv4(h);
 }
 
 /**

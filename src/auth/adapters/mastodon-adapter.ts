@@ -6,8 +6,12 @@
 
 import { z } from "zod";
 import { MAX_RESPONSE_SIZE, USER_AGENT } from "../../config.js";
-import { instanceBlocklist } from "../../policy/instance-blocklist.js";
-import { pinnedFetch, readErrorText, readJsonWithLimit } from "../../utils/fetch-helpers.js";
+import {
+  blocklistHop,
+  pinnedFetch,
+  readErrorText,
+  readJsonWithLimit,
+} from "../../utils/fetch-helpers.js";
 import type { AccountCredentials } from "../account-manager.js";
 import {
   type AccountInfo,
@@ -267,7 +271,7 @@ export class MastodonWriteAdapter implements WriteAdapter {
         },
         body: formData,
       },
-      (target) => instanceBlocklist.validateNotBlocked(new URL(target).hostname),
+      blocklistHop,
     );
     if (!response.ok) {
       const errorText = await readErrorText(response);

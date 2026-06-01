@@ -7,6 +7,32 @@ import { lookup } from "node:dns/promises";
 import { Agent } from "undici";
 
 /**
+ * Thrown when a URL is rejected for SSRF reasons (disallowed scheme, blocked
+ * hostname, private/internal IP, DNS-rebinding, or no resolvable address).
+ *
+ * Carrying a distinct TYPE — rather than relying on message text — lets the DNS
+ * error handler re-throw security rejections by `instanceof`, so a reworded
+ * message can never silently downgrade a fail-closed path to fail-open.
+ */
+export class SsrfBlockedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SsrfBlockedError";
+  }
+}
+
+/**
+ * Canonicalize a parsed hostname for validation: lowercase and strip any
+ * trailing FQDN dots ("127.0.0.1." / "evil.com..") that the WHATWG URL parser
+ * preserves. Sharing this across every validator ensures the IP-literal and
+ * blocklist checks see the same canonical form and can't be bypassed by
+ * appending one or more trailing dots.
+ */
+function canonicalizeHost(hostname: string): string {
+  return hostname.toLowerCase().replace(/\.+$/, "");
+}
+
+/**
  * Private IPv4 address ranges that should be blocked for SSRF protection.
  * Includes private ranges, localhost, link-local, and reserved addresses.
  */
@@ -107,6 +133,15 @@ export function isPrivateIPv4(ip: string): boolean {
 }
 
 /**
+ * True for an IPv4 loopback literal (127.0.0.0/8) — e.g. `127.0.0.1` or the
+ * short `127.1` form Node binds as 127.0.0.1. Single source of the loopback
+ * definition so callers (e.g. the HTTP transport bind-warning) don't diverge.
+ */
+export function isLoopbackIPv4(ip: string): boolean {
+  return /^127\./.test(ip);
+}
+
+/**
  * Checks if an IPv6 address is a private/internal IP that should be blocked.
  *
  * @param ip - The IPv6 address to check
@@ -187,14 +222,14 @@ export function isBlockedHostname(hostname: string): boolean {
 function validateIpHostname(hostname: string): void {
   if (IPV4_REGEX.test(hostname)) {
     if (isPrivateIPv4(hostname)) {
-      throw new Error(`Access to private IP address "${hostname}" is not allowed`);
+      throw new SsrfBlockedError(`Access to private IP address "${hostname}" is not allowed`);
     }
     return;
   }
 
   if (IPV6_REGEX.test(hostname) && hostname.includes(":")) {
     if (isPrivateIPv6(hostname)) {
-      throw new Error(`Access to private IP address "${hostname}" is not allowed`);
+      throw new SsrfBlockedError(`Access to private IP address "${hostname}" is not allowed`);
     }
   }
 }
@@ -219,13 +254,9 @@ function handleDnsLookupError(error: unknown): void {
     throw new Error("DNS validation failed (non-Error thrown)");
   }
 
-  // Re-throw our own security-related errors verbatim.
-  if (
-    error.message.includes("not allowed") ||
-    error.message.includes("rebinding") ||
-    error.message.includes("blocked") ||
-    error.message.includes("no addresses")
-  ) {
+  // Re-throw our own security rejections — identified by TYPE, not message text,
+  // so a reworded message can never silently downgrade fail-closed to fail-open.
+  if (error instanceof SsrfBlockedError) {
     throw error;
   }
 
@@ -247,15 +278,17 @@ function handleDnsLookupError(error: unknown): void {
  */
 export async function validateExternalUrl(url: string): Promise<void> {
   const parsedUrl = new URL(url);
-  const hostname = parsedUrl.hostname.toLowerCase();
+  const hostname = canonicalizeHost(parsedUrl.hostname);
 
   if (!ALLOWED_URL_SCHEMES.has(parsedUrl.protocol)) {
-    throw new Error(`URL scheme "${parsedUrl.protocol}" is not allowed (only https: is permitted)`);
+    throw new SsrfBlockedError(
+      `URL scheme "${parsedUrl.protocol}" is not allowed (only https: is permitted)`,
+    );
   }
 
   // Check for blocked hostnames
   if (isBlockedHostname(hostname)) {
-    throw new Error(`Access to internal hostname "${hostname}" is not allowed`);
+    throw new SsrfBlockedError(`Access to internal hostname "${hostname}" is not allowed`);
   }
 
   // If it's an IP address, validate directly
@@ -270,7 +303,7 @@ export async function validateExternalUrl(url: string): Promise<void> {
 
     for (const addr of addresses) {
       if (isPrivateIP(addr.address)) {
-        throw new Error(
+        throw new SsrfBlockedError(
           `DNS resolution for "${hostname}" returned private IP "${addr.address}" - possible DNS rebinding attack`,
         );
       }
@@ -356,14 +389,16 @@ function pinDispatcher(ip: string): Agent {
  */
 export async function resolveAndPin(url: string): Promise<PinnedTarget> {
   const parsed = new URL(url);
-  const hostname = parsed.hostname.toLowerCase();
+  const hostname = canonicalizeHost(parsed.hostname);
 
   if (!ALLOWED_URL_SCHEMES.has(parsed.protocol)) {
-    throw new Error(`URL scheme "${parsed.protocol}" is not allowed (only https: is permitted)`);
+    throw new SsrfBlockedError(
+      `URL scheme "${parsed.protocol}" is not allowed (only https: is permitted)`,
+    );
   }
 
   if (isBlockedHostname(hostname)) {
-    throw new Error(`Access to internal hostname "${hostname}" is not allowed`);
+    throw new SsrfBlockedError(`Access to internal hostname "${hostname}" is not allowed`);
   }
 
   // IP literal: validate (throws on private) and pin directly — no DNS needed.
@@ -376,11 +411,11 @@ export async function resolveAndPin(url: string): Promise<PinnedTarget> {
   try {
     const addresses = await lookup(hostname, { all: true });
     if (addresses.length === 0) {
-      throw new Error(`DNS resolution for "${hostname}" returned no addresses`);
+      throw new SsrfBlockedError(`DNS resolution for "${hostname}" returned no addresses`);
     }
     for (const addr of addresses) {
       if (isPrivateIP(addr.address)) {
-        throw new Error(
+        throw new SsrfBlockedError(
           `DNS resolution for "${hostname}" returned private IP "${addr.address}" - blocked (possible DNS rebinding)`,
         );
       }
@@ -412,15 +447,17 @@ export async function resolveAndPin(url: string): Promise<PinnedTarget> {
  */
 export function validateExternalUrlSync(url: string): void {
   const parsedUrl = new URL(url);
-  const hostname = parsedUrl.hostname.toLowerCase();
+  const hostname = canonicalizeHost(parsedUrl.hostname);
 
   if (!ALLOWED_URL_SCHEMES.has(parsedUrl.protocol)) {
-    throw new Error(`URL scheme "${parsedUrl.protocol}" is not allowed (only https: is permitted)`);
+    throw new SsrfBlockedError(
+      `URL scheme "${parsedUrl.protocol}" is not allowed (only https: is permitted)`,
+    );
   }
 
   // Check for blocked hostnames
   if (isBlockedHostname(hostname)) {
-    throw new Error(`Access to internal hostname "${hostname}" is not allowed`);
+    throw new SsrfBlockedError(`Access to internal hostname "${hostname}" is not allowed`);
   }
 
   // Validate IP addresses
