@@ -9,6 +9,60 @@ order: 2
 
 All notable changes to the ActivityPub MCP Server are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### v3.0.0 - 2026-05-31
+
+**Security &amp; surface-reduction overhaul.** Read-only by default, an untrusted-content envelope, and a leaner tool surface. See the [v3 Migration Guide](https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v3.md) for full upgrade details, and [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.
+
+#### Breaking &amp; Changed
+
+- **Read-only by default.** Mutation tools (post, reply, boost, follow, vote, scheduled posts, …) are only registered when `ACTIVITYPUB_ENABLE_WRITES=true`
+- `discover-instances-live` renamed to `discover-instances`; the static `recommend-instances` and old static `discover-instances` are removed
+- `search-instance` / `search-accounts` / `search-hashtags` / `search-posts` consolidated into `search` (pass `type: "all" | "accounts" | "posts" | "hashtags"`)
+- `get-local-timeline` + `get-federated-timeline` consolidated into `get-public-timeline` (pass `scope: "local" | "federated"`)
+- `get-instance-software` removed; `get-instance-info` now includes the software-detection block
+- All remote Fediverse content wrapped in an `<untrusted-content>` envelope before it reaches the model
+
+#### Added
+
+- `ACTIVITYPUB_ENABLE_WRITES` — master switch for all mutation tools (default `false`)
+- `MCP_HTTP_ALLOWED_HOSTS` / `MCP_HTTP_ALLOWED_ORIGINS` — allowlists for HTTP-transport DNS-rebinding protection
+- Browser-based login: `activitypub-mcp login <instance>` (Mastodon OAuth2 PKCE / Misskey MiAuth), plus `logout` and `accounts`; credentials persisted to `accounts.json` (mode `0600`)
+- `ACTIVITYPUB_CONFIG_DIR` to override the credential-store location
+
+#### Removed
+
+- Export tools (`export-timeline`, `export-thread`, `export-account-info`, `export-hashtag`)
+- `health-check` / `performance-metrics` tools, the telemetry subsystem, and the `/metrics` endpoint
+- `batch-fetch-actors` / `batch-fetch-posts`, `convert-url`, `recommend-instances`
+- MCP prompts `community-health`, `compare-instances`, `content-strategy`, `discover-content`, `migration-helper`, `thread-composer` (five remain)
+
+#### Security
+
+- Complete DNS-rebinding IP-pinning on **all** outbound fetch paths (previously HTTP transport only)
+- `<untrusted-content>` envelope structurally isolates Fediverse text from trusted context
+- HTTP transport rejects unexpected `Host` / `Origin` headers with `403`
+
+### v2.2.0 - 2026-05-29
+
+#### Added
+
+- **Platform-aware write layer.** Authenticated operations route to the correct Fediverse API per instance via NodeInfo software detection; a new Misskey/Foundkey adapter covers core-parity ops. Mastodon-API-compatible software (Pleroma, Akkoma, GotoSocial, Sharkey, Firefish) and undetected instances keep using the Mastodon adapter
+- `UnsupportedOnPlatformError` for operations with no Misskey equivalent (bookmarks, poll voting, scheduled posts)
+
+### v2.1.0 - 2026-05-28
+
+#### Added
+
+- **`get-instance-software` tool.** NodeInfo 2.0/2.1 software + version detection (Mastodon, Pleroma, Misskey, Akkoma, Sharkey, GotoSocial, Friendica, …)
+- `activitypub://instance-info/{domain}` enriched with a structured `software:` block
+- `MCP_INSTANCE_SOFTWARE_TTL_MS` to tune the NodeInfo positive-cache TTL (default 24h)
+- Dependabot config (weekly grouped npm + GitHub Actions updates)
+
+#### Breaking
+
+- `activitypub://post-thread/{postUrl}` URI form removed (deprecated in v2.0.0); use `activitypub://post-thread/{domain}/{statusId}`
+- `activitypub://instance-info/{domain}` `software` field is now an object (was a string); read `body.software.software?.name`
+
 ### v2.0.0 - 2026-05-27
 
 **Security &amp; correctness focused release.** See the [v2 Migration Guide](https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v2.md) for full breaking-change details, and [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.
@@ -50,6 +104,10 @@ All notable changes to the ActivityPub MCP Server are documented here. The forma
 For v1.0.0 and v1.1.0 release notes (initial public release and the authenticated-write-tools / multi-account additions), see the canonical [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) in the repository.
 
 ## Migration Guides
+
+### Upgrading to v3.0.0
+
+v3 is a security and surface-reduction overhaul: read-only by default, an untrusted-content envelope, and a trimmed tool set. See the full [v3 Migration Guide](https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v3.md) for details on enabling writes (`ACTIVITYPUB_ENABLE_WRITES=true`), the renamed/consolidated tools (`search`, `get-public-timeline`, `discover-instances`), and the removed tools and prompts.
 
 ### Upgrading to v2.0.0
 

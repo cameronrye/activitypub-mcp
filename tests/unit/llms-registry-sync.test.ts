@@ -88,3 +88,10 @@ describe("llms-full.txt capability sections stay in sync with the registry", () 
     }
   });
 });
+
+describe("site docs stay in sync with the package version", () => {
+  it("the changelog page documents the current release", () => {
+    const changelog = read("site/src/content/docs/reference/changelog.mdx");
+    expect(changelog).toContain(`### v${pkg.version}`);
+  });
+});
