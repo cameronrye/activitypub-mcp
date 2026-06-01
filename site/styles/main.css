@@ -1,77 +1,85 @@
 /* CSS Variables */
 :root {
-  /* Primary colors - Modern blue gradient */
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
-  --color-primary-light: #3b82f6;
-  --color-primary-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  /* Primary colors — vermilion brand (was blue). Legacy names repointed to brand tokens. */
+  --color-primary: var(--color-vermilion);
+  --color-primary-dark: var(--color-clay);
+  --color-primary-light: #F0795A;
+  --color-primary-gradient: linear-gradient(135deg, var(--color-vermilion) 0%, var(--color-clay) 100%);
 
-  /* Secondary colors - Purple accent */
-  --color-secondary: #7c3aed;
-  --color-secondary-dark: #6d28d9;
-  --color-secondary-light: #8b5cf6;
-  --color-secondary-gradient: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+  /* Secondary colors — pine-teal brand (was purple) */
+  --color-secondary: var(--color-pine-teal);
+  --color-secondary-dark: #25604F;
+  --color-secondary-light: #4A9A86;
+  --color-secondary-gradient: linear-gradient(135deg, var(--color-pine-teal) 0%, #25604F 100%);
 
-  /* Accent colors */
-  --color-accent: #06b6d4;
-  --color-accent-dark: #0891b2;
-  --color-accent-light: #22d3ee;
+  /* Accent colors — gold brand (was cyan) */
+  --color-accent: var(--color-gold);
+  --color-accent-dark: #D89E22;
+  --color-accent-light: #F8CB6B;
 
-  /* Neutral colors */
-  --color-white: #ffffff;
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f3f4f6;
-  --color-gray-200: #e5e7eb;
-  --color-gray-300: #d1d5db;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6b7280;
-  --color-gray-600: #4b5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1f2937;
-  --color-gray-900: #111827;
+  /* Neutral colors — warm paper→ink scale (was cool grays) */
+  --color-white: var(--color-paper);
+  --color-gray-50: #F6F1E8;
+  --color-gray-100: #F3EDE3;
+  --color-gray-200: #E0DDD8;
+  --color-gray-300: #CFC9C0;
+  --color-gray-400: #A8A097;
+  --color-gray-500: #5A534C;
+  --color-gray-600: #4A443E;
+  --color-gray-700: #332E29;
+  --color-gray-800: #231F1B;
+  --color-gray-900: var(--color-ink);
 
-  /* Semantic colors */
-  --color-success: #10b981;
-  --color-success-light: #34d399;
-  --color-warning: #f59e0b;
-  --color-warning-light: #fbbf24;
-  --color-error: #ef4444;
-  --color-error-light: #f87171;
-  --color-info: #3b82f6;
-  --color-info-light: #60a5fa;
+  /* Semantic colors — re-toned to read on paper/ink (spec §2.1) */
+  --color-success: #2F7D6B;
+  --color-success-light: #4A9A86;
+  --color-warning: #F4B740;
+  --color-warning-light: #F8CB6B;
+  --color-error: #C0392B;
+  --color-error-light: #D85A4C;
+  --color-info: #2F7D6B;
+  --color-info-light: #4A9A86;
 
   /* Background colors */
-  --bg-primary: var(--color-white);
+  --bg-primary: var(--color-paper);
   --bg-secondary: var(--color-gray-50);
   --bg-tertiary: var(--color-gray-100);
-  --bg-gradient-primary: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  --bg-gradient-secondary: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  --bg-raised: #F3EDE3;
+  --bg-gradient-primary: linear-gradient(135deg, #FBF7F0 0%, #F3EDE3 100%);
+  --bg-gradient-secondary: linear-gradient(135deg, #F3EDE3 0%, #E0DDD8 100%);
 
   /* Text colors */
-  --text-primary: var(--color-gray-900);
-  --text-secondary: var(--color-gray-600);
-  --text-tertiary: var(--color-gray-500);
-  --text-inverse: var(--color-white);
+  --text-primary: var(--color-ink);
+  --text-secondary: var(--color-gray-500);
+  --text-tertiary: #6F675E;
+  --text-muted: #5A534C;
+  --text-inverse: var(--color-paper);
+
+  /* Accent aliases (spec §2.4) */
+  --accent: var(--color-vermilion);
+  --accent-2: var(--color-pine-teal);
+  --accent-3: var(--color-gold);
 
   /* Border colors */
   --border-primary: var(--color-gray-200);
   --border-secondary: var(--color-gray-300);
+  --border-color: #E0DDD8;
 
-  /* Shadow colors */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  /* Logo flipping dot (spec §2.3/§2.4) */
+  --logo-dot-flip: var(--color-ink);
+
+  /* Shadow colors — warm ink-tinted shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(26 23 20 / 0.06);
+  --shadow-md: 0 4px 6px -1px rgb(26 23 20 / 0.10), 0 2px 4px -2px rgb(26 23 20 / 0.10);
   --shadow-lg:
-    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    0 10px 15px -3px rgb(26 23 20 / 0.10), 0 4px 6px -4px rgb(26 23 20 / 0.10);
   --shadow-xl:
-    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    0 20px 25px -5px rgb(26 23 20 / 0.10), 0 8px 10px -6px rgb(26 23 20 / 0.10);
 
-  /* Typography */
-  --font-family-sans:
-    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --font-family-mono:
-    "SF Mono", Monaco, Inconsolata, "Roboto Mono", Consolas, "Courier New",
-    monospace;
+  /* Typography — brand type roles (spec §2.2). Legacy names repointed. */
+  --font-family-sans: var(--font-body);
+  --font-family-display: var(--font-display);
+  --font-family-mono: var(--font-mono);
 
   /* Font sizes */
   --text-xs: 0.75rem;
@@ -141,77 +149,97 @@
   --z-toast: 1080;
 }
 
-/* Theme system - Light theme (default) */
+/* Theme system — Light theme (default; mirrors :root) */
 :root,
 :root[data-theme="light"],
 :root.theme-light {
-  --bg-primary: var(--color-white);
+  --bg-primary: var(--color-paper);
   --bg-secondary: var(--color-gray-50);
   --bg-tertiary: var(--color-gray-100);
-  --bg-gradient-primary: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  --bg-gradient-secondary: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  --bg-raised: #F3EDE3;
+  --bg-gradient-primary: linear-gradient(135deg, #FBF7F0 0%, #F3EDE3 100%);
+  --bg-gradient-secondary: linear-gradient(135deg, #F3EDE3 0%, #E0DDD8 100%);
 
-  --text-primary: var(--color-gray-900);
-  --text-secondary: var(--color-gray-600);
-  --text-tertiary: var(--color-gray-500);
-  --text-inverse: var(--color-white);
+  --text-primary: var(--color-ink);
+  --text-secondary: var(--color-gray-500);
+  --text-tertiary: #6F675E;
+  --text-muted: #5A534C;
+  --text-inverse: var(--color-paper);
 
   --border-primary: var(--color-gray-200);
   --border-secondary: var(--color-gray-300);
+  --border-color: #E0DDD8;
+
+  --logo-dot-flip: var(--color-ink);
 }
 
-/* Dark theme */
+/* Dark theme — ink surfaces, paper text (spec §2.1/§2.4) */
 :root[data-theme="dark"],
 :root.theme-dark {
-  --bg-primary: var(--color-gray-900);
-  --bg-secondary: var(--color-gray-800);
-  --bg-tertiary: var(--color-gray-700);
-  --bg-gradient-primary: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-  --bg-gradient-secondary: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+  --bg-primary: var(--color-ink);
+  --bg-secondary: #231F1B;
+  --bg-tertiary: #332E29;
+  --bg-raised: #231F1B;
+  --bg-gradient-primary: linear-gradient(135deg, #231F1B 0%, #1A1714 100%);
+  --bg-gradient-secondary: linear-gradient(135deg, #332E29 0%, #231F1B 100%);
 
-  --text-primary: var(--color-white);
-  --text-secondary: var(--color-gray-300);
-  --text-tertiary: var(--color-gray-400);
-  --text-inverse: var(--color-gray-900);
+  --text-primary: var(--color-paper);
+  --text-secondary: #C9C2B8;
+  --text-tertiary: #A29A8F;
+  --text-muted: #C9C2B8;
+  --text-inverse: var(--color-ink);
 
-  --border-primary: var(--color-gray-700);
-  --border-secondary: var(--color-gray-600);
+  --border-primary: #332E29;
+  --border-secondary: #4A443E;
+  --border-color: #332E29;
+
+  --logo-dot-flip: var(--color-paper);
 }
 
-/* System theme - follows OS preference */
+/* System theme — light defaults; flips to ink under prefers-color-scheme: dark */
 :root[data-theme="system"],
 :root.theme-system {
-  --bg-primary: var(--color-white);
+  --bg-primary: var(--color-paper);
   --bg-secondary: var(--color-gray-50);
   --bg-tertiary: var(--color-gray-100);
-  --bg-gradient-primary: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  --bg-gradient-secondary: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  --bg-raised: #F3EDE3;
+  --bg-gradient-primary: linear-gradient(135deg, #FBF7F0 0%, #F3EDE3 100%);
+  --bg-gradient-secondary: linear-gradient(135deg, #F3EDE3 0%, #E0DDD8 100%);
 
-  --text-primary: var(--color-gray-900);
-  --text-secondary: var(--color-gray-600);
-  --text-tertiary: var(--color-gray-500);
-  --text-inverse: var(--color-white);
+  --text-primary: var(--color-ink);
+  --text-secondary: var(--color-gray-500);
+  --text-tertiary: #6F675E;
+  --text-muted: #5A534C;
+  --text-inverse: var(--color-paper);
 
   --border-primary: var(--color-gray-200);
   --border-secondary: var(--color-gray-300);
+  --border-color: #E0DDD8;
+
+  --logo-dot-flip: var(--color-ink);
 }
 
 @media (prefers-color-scheme: dark) {
   :root[data-theme="system"],
   :root.theme-system {
-    --bg-primary: var(--color-gray-900);
-    --bg-secondary: var(--color-gray-800);
-    --bg-tertiary: var(--color-gray-700);
-    --bg-gradient-primary: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-    --bg-gradient-secondary: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+    --bg-primary: var(--color-ink);
+    --bg-secondary: #231F1B;
+    --bg-tertiary: #332E29;
+    --bg-raised: #231F1B;
+    --bg-gradient-primary: linear-gradient(135deg, #231F1B 0%, #1A1714 100%);
+    --bg-gradient-secondary: linear-gradient(135deg, #332E29 0%, #231F1B 100%);
 
-    --text-primary: var(--color-white);
-    --text-secondary: var(--color-gray-300);
-    --text-tertiary: var(--color-gray-400);
-    --text-inverse: var(--color-gray-900);
+    --text-primary: var(--color-paper);
+    --text-secondary: #C9C2B8;
+    --text-tertiary: #A29A8F;
+    --text-muted: #C9C2B8;
+    --text-inverse: var(--color-ink);
 
-    --border-primary: var(--color-gray-700);
-    --border-secondary: var(--color-gray-600);
+    --border-primary: #332E29;
+    --border-secondary: #4A443E;
+    --border-color: #332E29;
+
+    --logo-dot-flip: var(--color-paper);
   }
 }
 
