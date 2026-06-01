@@ -50,12 +50,12 @@ Add to your Claude Desktop configuration:
 
 ## Documentation
 
-### Setup & Installation
+### Getting Started
 
-- [Installation Guide](https://cameronrye.github.io/activitypub-mcp/docs/setup/): Complete setup instructions
-- [Claude Desktop Integration](https://cameronrye.github.io/activitypub-mcp/docs/setup/claude-desktop/): Configure with Claude Desktop
-- [Cross-Platform Setup](https://cameronrye.github.io/activitypub-mcp/docs/setup/cross-platform/): Platform-specific installation
-- [Configuration Guide](https://cameronrye.github.io/activitypub-mcp/docs/setup/config-guide/): Environment variables and options
+- [Installation & Setup](https://cameronrye.github.io/activitypub-mcp/docs/getting-started/installation/): Complete setup instructions
+- [Claude Desktop Integration](https://cameronrye.github.io/activitypub-mcp/docs/getting-started/claude-desktop/): Configure with Claude Desktop
+- [Configuration](https://cameronrye.github.io/activitypub-mcp/docs/getting-started/configuration/): Environment variables and options
+- [Cross-Platform Setup](https://cameronrye.github.io/activitypub-mcp/docs/getting-started/cross-platform/): Platform-specific installation
 
 ## API Reference
 
@@ -66,32 +66,35 @@ Add to your Claude Desktop configuration:
 ## Guides & Examples
 
 - [Basic Usage](https://cameronrye.github.io/activitypub-mcp/docs/guides/basic-usage/): Getting started with the MCP server
-- [Usage Guide](https://cameronrye.github.io/activitypub-mcp/docs/guides/usage-guide/): Comprehensive usage documentation
 - [Examples](https://cameronrye.github.io/activitypub-mcp/docs/guides/examples/): Practical examples and integration patterns
-- [Real-World Scenarios](https://cameronrye.github.io/activitypub-mcp/docs/guides/real-world-test-scenario/): Testing with actual fediverse instances
+- [Fediverse Exploration](https://cameronrye.github.io/activitypub-mcp/docs/guides/fediverse-exploration/): Discover actors, instances, and content
+- [Advanced Workflows](https://cameronrye.github.io/activitypub-mcp/docs/guides/advanced-workflows/): Best practices and real-world scenarios
 
 ## Development
 
-- [Performance Monitoring](https://cameronrye.github.io/activitypub-mcp/docs/development/performance-monitoring/): Built-in logging and metrics
-- [Dependency Management](https://cameronrye.github.io/activitypub-mcp/docs/development/dependency-management/): Managing project dependencies
-- [Security Audit](https://cameronrye.github.io/activitypub-mcp/docs/development/security-audit-checklist/): Security best practices and audit checklist
+- [Architecture](https://cameronrye.github.io/activitypub-mcp/docs/development/architecture/): System design and internals
+- [Dependency Management](https://cameronrye.github.io/activitypub-mcp/docs/development/dependencies/): Managing project dependencies
+- [Performance Monitoring](https://cameronrye.github.io/activitypub-mcp/docs/development/performance/): Built-in logging and metrics
+- [Security Audit](https://cameronrye.github.io/activitypub-mcp/docs/development/security/): Security best practices and audit checklist
 
 ## Specifications
 
-- [ActivityPub LLM Guide](https://cameronrye.github.io/activitypub-mcp/docs/specifications/activitypub-llm-specification-guide/): Understanding ActivityPub for LLM integration
+- [ActivityPub Guide](https://cameronrye.github.io/activitypub-mcp/docs/specifications/activitypub/): Understanding ActivityPub for LLM integration
+- [WebFinger Guide](https://cameronrye.github.io/activitypub-mcp/docs/specifications/webfinger/): Actor discovery via WebFinger
+- [ActivityStreams Guide](https://cameronrye.github.io/activitypub-mcp/docs/specifications/activitystreams/): The ActivityStreams vocabulary
 
 ## Project Resources
 
 - [GitHub Repository](https://github.com/cameronrye/activitypub-mcp): Source code and issue tracking
 - [npm Package](https://www.npmjs.com/package/activitypub-mcp): Install via npm
 - [Documentation Site](https://cameronrye.github.io/activitypub-mcp/): Complete documentation
-- [Changelog](https://cameronrye.github.io/activitypub-mcp/docs/changelog/): Version history and updates
+- [Changelog](https://cameronrye.github.io/activitypub-mcp/docs/reference/changelog/): Version history and updates
 
 ## Additional Resources
 
 ### Troubleshooting & Support
 
-- [Troubleshooting Guide](https://cameronrye.github.io/activitypub-mcp/docs/troubleshooting/): Common issues and solutions
+- [Troubleshooting Guide](https://cameronrye.github.io/activitypub-mcp/docs/reference/troubleshooting/): Common issues and solutions
 - [GitHub Issues](https://github.com/cameronrye/activitypub-mcp/issues): Report bugs and request features
 - [GitHub Discussions](https://github.com/cameronrye/activitypub-mcp/discussions): Community support
 
@@ -113,7 +116,7 @@ Upgrading from v1.x? See [MIGRATION-v2.md](https://github.com/cameronrye/activit
 
 ---
 
-**Version:** 2.0.0
+**Version:** 3.0.0
 **License:** MIT
 **Maintainer:** Cameron Rye (https://rye.dev/)
 **Repository:** https://github.com/cameronrye/activitypub-mcp
