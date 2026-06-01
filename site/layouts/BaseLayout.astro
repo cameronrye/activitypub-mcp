@@ -71,11 +71,6 @@ const structuredData = {
         price: "0",
         priceCurrency: "USD",
       },
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "5",
-        ratingCount: "1",
-      },
     },
     {
       "@type": "WebPage",
@@ -169,6 +164,7 @@ const structuredData = {
   <!-- Styles are imported in the frontmatter -->
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
   <div class="site-wrapper">
     <header class="site-header">
       <nav class="navbar">
@@ -228,7 +224,7 @@ const structuredData = {
       </nav>
     </header>
     
-    <main class="site-main" data-pagefind-body>
+    <main id="main-content" class="site-main" data-pagefind-body>
       <slot />
     </main>
 
@@ -279,6 +275,24 @@ const structuredData = {
 </html>
 
 <style>
+  /* Keyboard skip link — hidden off-screen until focused, then slides into the
+     top-left above the sticky header (z-index beats --z-sticky: 1020). */
+  .skip-link {
+    position: absolute;
+    left: var(--space-2);
+    top: -4rem;
+    z-index: 2000;
+    padding: var(--space-2) var(--space-4);
+    background: var(--accent);
+    color: var(--color-paper);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-weight: var(--font-semibold);
+  }
+  .skip-link:focus {
+    top: var(--space-2);
+  }
+
   /* Global styles will be moved to external CSS files */
   .site-wrapper {
     min-height: 100vh;
