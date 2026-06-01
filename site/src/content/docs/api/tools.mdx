@@ -1,0 +1,1024 @@
+---
+title: "MCP Tools Reference"
+description: "Complete reference for all Model Context Protocol tools provided by the ActivityPub MCP Server."
+group: "API Reference"
+order: 1
+---
+
+<div class="callout callout-info" style="margin-bottom: var(--space-8); padding: var(--space-4); background: var(--bg-secondary); border-left: 4px solid var(--color-primary); border-radius: var(--radius-md);">
+  <strong>Read-only by default.</strong> All tools listed here are available without any special configuration.
+  Write tools (post, reply, follow, boost, etc.) are only registered when <code>ACTIVITYPUB_ENABLE_WRITES=true</code> is set in the server environment.
+  See the [Configuration Options](/activitypub-mcp/docs/getting-started/configuration/) page for details.
+</div>
+
+## Discovery Tools
+
+Tools for discovering actors, instances, and content across the fediverse.
+
+<div class="tool-reference">
+
+### `discover-actor`
+
+Discover and get detailed information about fediverse actors (users).
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `identifier` | string | Yes | Actor identifier in WebFinger format (@user@domain) or ActivityPub URL |
+
+#### Examples
+
+```bash
+# WebFinger format
+discover-actor @mastodon@mastodon.social
+
+# ActivityPub URL
+discover-actor https://mastodon.social/users/mastodon
+
+# Profile URL
+discover-actor https://mastodon.social/@mastodon
+```
+
+#### Response
+
+Returns an ActivityPub Actor object with:
+
+- Actor ID and type
+- Display name and username
+- Profile information (bio, avatar, etc.)
+- Public key for verification
+- Endpoints (inbox, outbox, followers, etc.)
+
+</div>
+
+<div class="tool-reference">
+
+### `discover-instances`
+
+Discover popular fediverse instances by category, topic, or size.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `category` | enum | No | Type of fediverse software: "mastodon", "pleroma", "misskey", "peertube", "pixelfed", "lemmy", or "all" |
+| `topic` | string | No | Topic or interest to search for (e.g., "technology", "art", "gaming") |
+| `size` | enum | No | Instance size preference: "small", "medium", or "large" |
+| `region` | string | No | Geographic region or language |
+| `beginnerFriendly` | boolean | No | Show only beginner-friendly instances |
+
+#### Examples
+
+```bash
+# Find Mastodon instances
+discover-instances --category mastodon
+
+# Find technology-focused instances
+discover-instances --topic technology
+
+# Find small, beginner-friendly instances
+discover-instances --size small --beginnerFriendly true
+
+# Find instances in a specific region
+discover-instances --region europe
+```
+
+</div>
+
+## Information Tools
+
+Tools for getting information about instances, timelines, and content.
+
+<div class="tool-reference">
+
+### `get-instance-info`
+
+Get detailed information about a fediverse instance.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `domain` | string | Yes | Instance domain name (e.g., "mastodon.social") |
+
+#### Examples
+
+```bash
+# Get info about Mastodon.social
+get-instance-info mastodon.social
+
+# Check a smaller instance
+get-instance-info fosstodon.org
+```
+
+#### Response
+
+Returns instance metadata including:
+
+- Instance name and description
+- Software version and type
+- User and post statistics
+- Instance rules and policies
+- Contact information
+- Supported features
+
+</div>
+
+<div class="tool-reference">
+
+### `fetch-timeline`
+
+Fetch recent posts from any actor's timeline in the fediverse.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `identifier` | string | Yes | Actor identifier (e.g., user@example.social) |
+| `limit` | number | No | Number of posts to fetch (default: 20, max: 50) |
+
+#### Examples
+
+```bash
+# Get recent posts from an actor
+fetch-timeline user@mastodon.social
+
+# Limit to 10 posts
+fetch-timeline admin@fosstodon.org --limit 10
+```
+
+#### Response
+
+Returns timeline data including:
+
+- Array of recent posts/activities
+- Post content and metadata
+- Author information
+- Engagement metrics (likes, boosts, replies)
+- Media attachments
+
+</div>
+
+## Timeline Tools
+
+Tools for accessing public timelines and trending content from fediverse instances.
+
+<div class="tool-reference">
+
+### `get-public-timeline`
+
+Get the public timeline from a fediverse instance — local posts only, or the full federated feed.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `domain` | string | Yes | Instance domain (e.g., "mastodon.social") |
+| `scope` | enum | No | Timeline scope: "local" (posts from the instance only) or "federated" (posts from all connected instances). Default: "local" |
+| `limit` | number | No | Number of posts to fetch (default: 20, max: 40) |
+| `maxId` | string | No | Return results older than this ID (for pagination) |
+
+#### Examples
+
+```bash
+# Get local timeline
+get-public-timeline fosstodon.org
+
+# Get federated timeline
+get-public-timeline mastodon.social --scope federated
+
+# Paginate results
+get-public-timeline fosstodon.org --maxId 123456789
+```
+
+</div>
+
+<div class="tool-reference">
+
+### `get-trending-hashtags`
+
+Get currently trending hashtags on a fediverse instance.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `domain` | string | Yes | Instance domain (e.g., "mastodon.social") |
+| `limit` | number | No | Number of hashtags to fetch (default: 20, max: 40) |
+
+#### Examples
+
+```bash
+# Get trending hashtags
+get-trending-hashtags mastodon.social
+
+# Limit results
+get-trending-hashtags fosstodon.org --limit 10
+```
+
+</div>
+
+<div class="tool-reference">
+
+### `get-trending-posts`
+
+Get currently trending posts on a fediverse instance.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `domain` | string | Yes | Instance domain (e.g., "mastodon.social") |
+| `limit` | number | No | Number of posts to fetch (default: 20, max: 40) |
+
+#### Examples
+
+```bash
+# Get trending posts
+get-trending-posts mastodon.social
+```
+
+</div>
+
+## Content Tools
+
+Tools for fetching and searching content in the fediverse.
+
+<div class="tool-reference">
+
+### `get-post-thread`
+
+Fetch a post and its full conversation thread including replies and parent posts.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `postUrl` | string | Yes | The URL of the post to fetch the thread for |
+| `depth` | number | No | How many levels of nested replies to fetch (default: 2, max: 5) |
+| `maxReplies` | number | No | Maximum number of replies to fetch (default: 50, max: 100) |
+
+#### Examples
+
+```bash
+# Get post thread
+get-post-thread https://mastodon.social/@user/123456789
+
+# Get deeper thread
+get-post-thread https://mastodon.social/@user/123456789 --depth 3 --maxReplies 100
+```
+
+</div>
+
+<div class="tool-reference">
+
+### `search`
+
+Unified search across accounts, posts, and hashtags in a single query. Combines all search types with optional filtering.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `domain` | string | No | Instance domain to search. Defaults to `mastodon.social`. |
+| `query` | string | Yes | Search query |
+| `type` | enum | No | Filter results: "all", "accounts", "posts", "hashtags" (default: "all") |
+| `limit` | number | No | Results per type (default: 20, max: 40) |
+| `resolve` | boolean | No | Attempt WebFinger lookup for remote accounts |
+
+#### Examples
+
+```bash
+# Search everything
+search mastodon.social "programming"
+
+# Search only accounts
+search mastodon.social "developer" --type accounts
+
+# Search with remote lookup
+search fosstodon.org "@user@mastodon.social" --resolve true
+```
+
+#### Response
+
+Returns combined results with:
+
+- Accounts section with profile summaries
+- Posts section with content previews
+- Hashtags section with usage statistics
+- Result counts for each category
+
+</div>
+
+## Live Instance Discovery
+
+Real-time instance discovery using external APIs. The `discover-instances` tool queries instances.social for live data with advanced filtering.
+
+<div class="tool-reference">
+
+### `discover-instances` (live)
+
+Discover fediverse instances in real-time using the instances.social API with advanced filtering.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `software` | enum | No | Filter by software: "mastodon", "pleroma", "misskey", "pixelfed", "lemmy", "peertube", "any" |
+| `language` | string | No | Filter by language code (e.g., "en", "de", "ja") |
+| `minUsers` | number | No | Minimum number of users |
+| `maxUsers` | number | No | Maximum number of users |
+| `openRegistrations` | boolean | No | Only show instances with open registrations |
+| `sortBy` | enum | No | Sort by: "users", "statuses", "connections", "name" |
+| `limit` | number | No | Number of results (default: 20, max: 50) |
+
+#### Examples
+
+```bash
+# Find Mastodon instances
+discover-instances --software mastodon
+
+# Find large English instances with open registration
+discover-instances --language en --minUsers 10000 --openRegistrations true
+
+# Find small community instances
+discover-instances --maxUsers 5000 --sortBy users
+```
+
+</div>
+
+## Write Tools
+
+Write tools are **disabled by default** and only registered when `ACTIVITYPUB_ENABLE_WRITES=true` is set in the server environment.
+They additionally require OAuth token configuration via `ACTIVITYPUB_ACCOUNTS`.
+See the [Configuration Options](/activitypub-mcp/docs/getting-started/configuration/) page for setup instructions.
+
+### Account Management
+
+<div class="tool-reference">
+
+### `list-accounts`
+
+List all configured accounts with their authentication status.
+
+#### Parameters
+
+None required.
+
+#### Examples
+
+```bash
+# List all configured accounts
+list-accounts
+```
+
+#### Response
+
+Returns array of configured accounts with:
+
+- Account ID and instance domain
+- Username
+- Active status indicator
+
+</div>
+
+<div class="tool-reference">
+
+### `switch-account`
+
+Switch the active account for subsequent authenticated operations.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `accountId` | string | Yes | The ID of the account to switch to |
+
+#### Examples
+
+```bash
+# Switch to work account
+switch-account --accountId work
+
+# Switch to personal account
+switch-account --accountId personal
+```
+
+</div>
+
+<div class="tool-reference">
+
+### `verify-account`
+
+Verify the credentials and permissions of the active account.
+
+#### Parameters
+
+None required. Uses the currently active account.
+
+#### Examples
+
+```bash
+# Verify current account credentials
+verify-account
+```
+
+#### Response
+
+Returns verification status with:
+
+- Account details (username, display name)
+- Instance information
+- Granted OAuth scopes
+- Token validity status
+
+</div>
+
+### Posting Tools
+
+<div class="tool-reference">
+
+### `post-status`
+
+Create a new post/status on the fediverse.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | string | Yes | The text content of the post |
+| `visibility` | enum | No | Post visibility: "public", "unlisted", "private", "direct" (default: "public") |
+| `spoilerText` | string | No | Content warning/spoiler text |
+| `sensitive` | boolean | No | Mark media as sensitive |
+| `language` | string | No | ISO 639-1 language code (e.g., "en") |
+| `mediaIds` | string[] | No | Media attachment IDs from `upload-media` (max 4 per post, Mastodon limit) |
+| `scheduledAt` | string (ISO 8601) | No | Schedule the post for a future time (must be at least one hour in the future). Returns a scheduled post — manage with `get-scheduled-posts` / `update-scheduled-post` / `cancel-scheduled-post`. |
+| `accountId` | string | No | Account ID to post from (defaults to the active account from `switch-account`) |
+
+#### Examples
+
+```bash
+# Simple public post
+post-status --content "Hello fediverse!"
+
+# Post with content warning
+post-status --content "Spoiler discussion here" --spoilerText "Movie spoilers"
+
+# Unlisted post
+post-status --content "Only visible to followers" --visibility unlisted
+
+# Post with media (upload first via upload-media)
+post-status --content "Look at this!" --mediaIds '["12345"]'
+
+# Schedule a post for later
+post-status --content "Happy New Year!" --scheduledAt "2027-01-01T00:00:00Z"
+```
+
+</div>
+
+<div class="tool-reference">
+
+### `reply-to-post`
+
+Reply to an existing post.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `postUrl` | string | Yes | URL of the post to reply to |
+| `content` | string | Yes | The reply content |
+| `visibility` | enum | No | Reply visibility (defaults to original post's visibility) |
+| `spoilerText` | string | No | Content warning/spoiler text |
+
+#### Examples
+
+```bash
+# Reply to a post
+reply-to-post --postUrl "https://mastodon.social/@user/123456" --content "Great point!"
+```
+
+</div>
+
+<div class="tool-reference">
+
+### `delete-post`
+
+Delete one of your own posts.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `postId` | string | Yes | ID of the post to delete |
+
+#### Examples
+
+```bash
+# Delete a post
+delete-post --postId "123456789"
+```
+
+</div>
+
+### Interaction Tools
+
+<div class="tool-reference">
+
+### `boost-post` / `unboost-post`
+
+Boost (reblog) or unboost a post to share it with your followers.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `postUrl` | string | Yes | URL of the post to boost/unboost |
+
+#### Examples
+
+```bash
+# Boost a post
+boost-post --postUrl "https://mastodon.social/@user/123456"
+
+# Remove boost
+unboost-post --postUrl "https://mastodon.social/@user/123456"
+```
+
+</div>
+
+<div class="tool-reference">
+
+### `favourite-post` / `unfavourite-post`
+
+Favourite (like) or unfavourite a post.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `postUrl` | string | Yes | URL of the post to favourite/unfavourite |
+
+#### Examples
+
+```bash
+# Favourite a post
+favourite-post --postUrl "https://mastodon.social/@user/123456"
+
+# Remove favourite
+unfavourite-post --postUrl "https://mastodon.social/@user/123456"
+```
+
+</div>
+
+<div class="tool-reference">
+
+### `bookmark-post` / `unbookmark-post`
+
+Bookmark or unbookmark a post for later reference.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `postUrl` | string | Yes | URL of the post to bookmark/unbookmark |
+
+#### Examples
+
+```bash
+# Bookmark a post
+bookmark-post --postUrl "https://mastodon.social/@user/123456"
+
+# Remove bookmark
+unbookmark-post --postUrl "https://mastodon.social/@user/123456"
+```
+
+</div>
+
+### Relationship Tools
+
+<div class="tool-reference">
+
+### `get-relationship`
+
+Check your relationship status with one or more accounts (following, followed_by, blocking, muting, etc.).
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `acct` | string | Yes | Single account ID or acct handle (e.g. `user@instance.social`) to check the relationship for. Call once per account. |
+
+#### Examples
+
+```bash
+# Check relationship with a single account
+get-relationship --acct "user@mastodon.social"
+
+# To check multiple accounts, call the tool once per account.
+```
+
+#### Response
+
+Returns relationship status for each account:
+
+- following - Whether you follow them
+- followed_by - Whether they follow you
+- blocking - Whether you've blocked them
+- muting - Whether you've muted them
+- requested - Whether you've sent a follow request
+
+</div>
+
+<div class="tool-reference">
+
+### `follow-account` / `unfollow-account`
+
+Follow or unfollow another account.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `identifier` | string | Yes | Account identifier (@user@domain or URL) |
+
+#### Examples
+
+```bash
+# Follow an account
+follow-account --identifier "@user@mastodon.social"
+
+# Unfollow an account
+unfollow-account --identifier "@user@mastodon.social"
+```
+
+</div>
+
+<div class="tool-reference">
+
+### `mute-account` / `unmute-account`
+
+Mute or unmute an account (hide their posts without unfollowing).
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `identifier` | string | Yes | Account identifier (@user@domain or URL) |
+| `duration` | number | No | Mute duration in seconds (0 for permanent, mute-account only) |
+| `notifications` | boolean | No | Also mute notifications (default: true, mute-account only) |
+
+#### Examples
+
+```bash
+# Mute an account permanently
+mute-account --identifier "@user@mastodon.social"
+
+# Mute for 24 hours
+mute-account --identifier "@user@mastodon.social" --duration 86400
+
+# Unmute an account
+unmute-account --identifier "@user@mastodon.social"
+```
+
+</div>
+
+<div class="tool-reference">
+
+### `block-account` / `unblock-account`
+
+Block or unblock an account (prevents all interactions).
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `identifier` | string | Yes | Account identifier (@user@domain or URL) |
+
+#### Examples
+
+```bash
+# Block an account
+block-account --identifier "@user@mastodon.social"
+
+# Unblock an account
+unblock-account --identifier "@user@mastodon.social"
+```
+
+</div>
+
+### Authenticated Timelines
+
+<div class="tool-reference">
+
+### `get-home-timeline`
+
+Get your authenticated home timeline (posts from followed accounts).
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `limit` | number | No | Number of posts to fetch (default: 20, max: 40) |
+| `maxId` | string | No | Return results older than this ID (pagination) |
+| `sinceId` | string | No | Return results newer than this ID |
+
+#### Examples
+
+```bash
+# Get home timeline
+get-home-timeline
+
+# Paginate through timeline
+get-home-timeline --maxId "123456789" --limit 40
+```
+
+</div>
+
+<div class="tool-reference">
+
+### `get-notifications`
+
+Get your notifications (mentions, follows, boosts, favourites).
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `limit` | number | No | Number of notifications (default: 20, max: 40) |
+| `types` | array | No | Filter by type: "mention", "reblog", "favourite", "follow", "poll", "follow_request" |
+| `excludeTypes` | array | No | Exclude specific notification types |
+
+#### Examples
+
+```bash
+# Get all notifications
+get-notifications
+
+# Get only mentions
+get-notifications --types ["mention"]
+
+# Exclude follow notifications
+get-notifications --excludeTypes ["follow", "follow_request"]
+```
+
+</div>
+
+<div class="tool-reference">
+
+### `get-bookmarks`
+
+Get your bookmarked posts.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `limit` | number | No | Number of bookmarks (default: 20, max: 40) |
+| `maxId` | string | No | Return results older than this ID |
+
+#### Examples
+
+```bash
+# Get bookmarks
+get-bookmarks --limit 40
+```
+
+</div>
+
+<div class="tool-reference">
+
+### `get-favourites`
+
+Get posts you have favourited.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `limit` | number | No | Number of favourites (default: 20, max: 40) |
+| `maxId` | string | No | Return results older than this ID |
+
+#### Examples
+
+```bash
+# Get favourited posts
+get-favourites --limit 40
+```
+
+</div>
+
+### Poll Tools
+
+<div class="tool-reference">
+
+### `vote-on-poll`
+
+Vote on a poll attached to a post. Supports single and multiple choice polls.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pollId` | string | Yes | The ID of the poll to vote on |
+| `choices` | array | Yes | Array of choice indices (0-based). Single choice polls accept one index, multiple choice can accept several. |
+
+#### Examples
+
+```bash
+# Vote for option 1 (index 0)
+vote-on-poll --pollId "123456" --choices [0]
+
+# Vote for multiple options in a multi-choice poll
+vote-on-poll --pollId "123456" --choices [0, 2]
+```
+
+#### Response
+
+Returns the updated poll with:
+
+- Current vote counts for each option
+- Visual bar chart of results
+- Your vote confirmation
+- Poll expiration time
+
+</div>
+
+### Media Tools
+
+<div class="tool-reference">
+
+### `upload-media`
+
+Upload media files (images, videos, audio) to use in posts. Supports alt text for accessibility.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `filePath` | string | Yes | Local file path or URL of the media to upload |
+| `description` | string | No | Alt text description for accessibility (highly recommended) |
+| `focusX` | number | No | Horizontal focal point, -1.0 to 1.0 (determines crop center). Must be provided together with `focusY`. |
+| `focusY` | number | No | Vertical focal point, -1.0 to 1.0 (determines crop center). Must be provided together with `focusX`. |
+
+#### Examples
+
+```bash
+# Upload image with alt text
+upload-media --filePath "/path/to/image.jpg" --description "A sunset over mountains"
+
+# Upload with focal point for cropping
+upload-media --filePath "/path/to/photo.png" --description "Portrait photo" --focusX 0.0 --focusY 0.5
+
+# Upload from URL
+upload-media --filePath "https://example.com/image.jpg" --description "External image"
+```
+
+#### Response
+
+Returns media attachment details:
+
+- Media ID (use in post-status --mediaIds)
+- Media type (image, video, audio, gifv)
+- Preview URL
+- Blurhash for placeholders
+
+</div>
+
+### Scheduling Tools
+
+<div class="tool-reference">
+
+### `get-scheduled-posts`
+
+List all your pending scheduled posts.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `limit` | number | No | Number of scheduled posts to fetch (default: 20, max: 40) |
+| `maxId` | string | No | Return results older than this ID (pagination) |
+
+#### Examples
+
+```bash
+# Get all scheduled posts
+get-scheduled-posts
+
+# Get with limit
+get-scheduled-posts --limit 10
+```
+
+#### Response
+
+Returns list of scheduled posts with:
+
+- Scheduled post ID
+- Scheduled publication time
+- Post content and parameters
+- Attached media (if any)
+
+</div>
+
+<div class="tool-reference">
+
+### `update-scheduled-post`
+
+Reschedule a pending post to a new time.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `scheduledPostId` | string | Yes | ID of the scheduled post to update |
+| `scheduledAt` | string | Yes | New scheduled time in ISO 8601 format. Must be at least one hour in the future. |
+
+#### Examples
+
+```bash
+# Reschedule a post
+update-scheduled-post --scheduledPostId "123" --scheduledAt "<ISO 8601 timestamp at least one hour in the future>"
+```
+
+</div>
+
+<div class="tool-reference">
+
+### `cancel-scheduled-post`
+
+Cancel a scheduled post before it's published.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `scheduledPostId` | string | Yes | ID of the scheduled post to cancel |
+
+#### Examples
+
+```bash
+# Cancel a scheduled post
+cancel-scheduled-post --scheduledPostId "123"
+```
+
+</div>
+
+## Error Handling
+
+All tools follow consistent error handling patterns:
+
+<div class="error-type">
+
+### Validation Errors
+
+Returned when parameters are invalid or missing:
+
+```json
+{
+  "error": "Invalid parameter",
+  "message": "Actor identifier must be in @user@domain format or valid URL",
+  "code": "INVALID_PARAMETER"
+}
+```
+
+</div>
+
+<div class="error-type">
+
+### Network Errors
+
+Returned when external services are unreachable:
+
+```json
+{
+  "error": "Network error",
+  "message": "Failed to connect to instance: connection timeout",
+  "code": "NETWORK_ERROR"
+}
+```
+
+</div>
+
+<div class="error-type">
+
+### Not Found Errors
+
+Returned when requested resources don't exist:
+
+```json
+{
+  "error": "Not found",
+  "message": "Actor not found or not accessible",
+  "code": "NOT_FOUND"
+}
+```
+
+</div>
+
+## Related Documentation
+
+- [MCP Resources](/activitypub-mcp/docs/api/resources/) — Learn about the resources exposed by the server
+- [Basic Usage Guide](/activitypub-mcp/docs/guides/basic-usage/) — See these tools in action with practical examples
+- [Troubleshooting](/activitypub-mcp/docs/reference/troubleshooting/) — Solutions for common tool-related issues
