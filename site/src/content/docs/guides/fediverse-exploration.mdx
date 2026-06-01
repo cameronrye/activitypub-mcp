@@ -1,0 +1,180 @@
+---
+title: "Fediverse Exploration"
+description: "Master exploring the fediverse with AI assistance. Discover actors, instances, content, and communities across the decentralized social web."
+group: "Guides"
+order: 3
+---
+
+## Understanding the Fediverse
+
+### What is the Fediverse?
+
+The fediverse is a collection of interconnected social media servers that can communicate with each other using open protocols like ActivityPub. Each server (instance) is independently operated but can interact with others.
+
+### Key Concepts
+
+- **Instances:** Individual servers (e.g., mastodon.social, pixelfed.org)
+- **Actors:** Users, bots, or organizations with accounts
+- **Federation:** The ability for instances to communicate
+- **ActivityPub:** The protocol that enables federation
+
+## Discovery Strategies
+
+### 1. Actor Discovery
+
+Find interesting people and organizations across the fediverse:
+
+#### Discover by Handle
+
+Ask Claude: "Can you discover information about @gargron@mastodon.social?"
+
+**What you'll learn:** Profile info, follower count, recent posts, instance details
+
+#### Explore Followers/Following
+
+Ask Claude: "Who does @mastodon@mastodon.social follow?"
+
+**What you'll learn:** Network connections, related accounts, community insights
+
+### 2. Instance Exploration
+
+Understand different communities and their characteristics:
+
+#### Instance Information
+
+Ask Claude: "What can you tell me about the fosstodon.org instance?"
+
+**What you'll learn:** Community focus, rules, software, user count, federation status
+
+#### Compare Instances
+
+Ask Claude: "Compare mastodon.social and fosstodon.org — size, focus, moderation policies"
+
+**What you'll learn:** Differences in size, focus, policies, and community culture
+
+### 3. Content Discovery
+
+Find interesting content and conversations:
+
+#### Search Instance Content
+
+Ask Claude: "Search for 'climate change' posts on mastodon.social"
+
+**What you'll learn:** Recent posts, popular hashtags, active discussions
+
+#### Timeline Exploration
+
+Ask Claude: "Show me the public timeline from pixelfed.social"
+
+**What you'll learn:** Recent public posts, community activity, content types
+
+## Targeted Exploration
+
+### By Interest
+
+Use the explore-fediverse prompt to find communities based on your interests:
+
+#### Example Prompt Usage
+
+```
+Prompt: explore-fediverse
+Interests: "photography, open source, climate science"
+Instance Type: "any"
+```
+
+**Result:** Personalized recommendations for instances, actors, and content related to your interests.
+
+### By Platform Type
+
+Explore different types of fediverse platforms:
+
+#### Mastodon
+
+Twitter-like microblogging — `mastodon.social`, `fosstodon.org`
+
+#### Pixelfed
+
+Instagram-like photo sharing — `pixelfed.social`, `pixelfed.art`
+
+#### PeerTube
+
+YouTube-like video sharing — `framatube.org`, `tilvids.com`
+
+#### Pleroma/Akkoma
+
+Lightweight microblogging — `pleroma.social`, `social.vivaldi.net`
+
+## Advanced Techniques
+
+### Network Analysis
+
+Understand relationships and influence patterns:
+
+- Map follower networks of key actors
+- Identify community clusters and bridges
+- Track information flow between instances
+- Discover influential voices in specific topics
+
+### Instance Health Monitoring
+
+Assess instance reliability and community health:
+
+- Check instance uptime and performance
+- Monitor federation status with other instances
+- Evaluate moderation policies and enforcement
+- Track user growth and activity patterns
+
+### Content Trend Analysis
+
+Identify emerging topics and discussions:
+
+- Track hashtag popularity across instances
+- Monitor cross-instance conversation threads
+- Identify viral content and its propagation
+- Analyze sentiment and engagement patterns
+
+## Using MCP Prompts
+
+### explore-fediverse
+
+Get personalized recommendations for fediverse exploration:
+
+#### Parameters:
+
+- `interests`: Your topics of interest (required)
+- `instanceType`: Preferred platform type (optional)
+
+#### Example Usage:
+
+```
+Ask Claude: "Use the explore-fediverse prompt with interests 'sustainable technology, renewable energy' and instance type 'mastodon'"
+```
+
+## Best Practices
+
+### Be Respectful
+
+- Respect instance rules and community guidelines
+- Don't overwhelm small instances with requests
+- Be mindful of rate limits and server resources
+- Respect user privacy and consent
+
+### Start Small
+
+- Begin with well-known, stable instances
+- Explore one community at a time
+- Build understanding gradually
+- Document interesting findings
+
+### Scale Thoughtfully
+
+- Use caching to reduce redundant requests
+- Batch related queries when possible
+- Monitor your impact on target instances
+- Consider time zones and peak usage periods
+
+## Next Steps
+
+- [Practical Examples](/activitypub-mcp/docs/guides/examples/) — See real-world examples and use cases for fediverse exploration.
+- [API Tools Reference](/activitypub-mcp/docs/api/tools/) — Detailed documentation for all available exploration tools.
+- [MCP Prompts](/activitypub-mcp/docs/api/prompts/) — Complete guide to using pre-built exploration prompts.
