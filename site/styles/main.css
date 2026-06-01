@@ -164,7 +164,7 @@
   --color-primary:          var(--accent);
   --color-primary-dark:     var(--color-clay);
   --color-primary-light:    var(--color-vermilion);
-  --color-primary-gradient: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  --color-primary-gradient: var(--accent); /* solid vermilion (dropped the orange→teal gradient) */
 
   --color-secondary:          var(--accent-2);
   --color-secondary-dark:     #25604F;
@@ -376,14 +376,7 @@ body {
 }
 
 .navbar-brand .brand-text {
-  background: linear-gradient(
-    135deg,
-    var(--accent) 0%,
-    var(--accent-2) 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent);
 }
 
 .navbar-brand .brand-link:hover {
@@ -792,11 +785,7 @@ body {
 }
 
 .btn-primary:hover {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary-dark) 0%,
-    var(--color-primary) 100%
-  );
+  background: var(--color-primary-dark);
   border-color: var(--color-primary-dark);
   transform: translateY(-2px);
   box-shadow: 0 8px 25px 0 color-mix(in srgb, var(--accent) 38%, transparent);
