@@ -1,4 +1,6 @@
 ---
+import "../src/styles/fonts.css";
+import "../src/styles/tokens.css";
 import "../styles/main.css";
 import Search from "../components/Search.astro";
 import SocialLinks from "../components/SocialLinks.astro";
@@ -101,7 +103,7 @@ const structuredData = {
   <meta name="author" content={author}>
   <meta name="keywords" content={keywords}>
   <meta name="robots" content="index, follow">
-  <meta name="theme-color" content="#6366f1">
+  <meta name="theme-color" content="#E8552D">
   <meta name="color-scheme" content="light dark">
 
   <!-- Canonical URL -->
@@ -142,10 +144,6 @@ const structuredData = {
   <!-- Humans.txt -->
   <link rel="author" href={`${baseURL}humans.txt`}>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Theme initialization script (prevent FOUC) -->
   <script is:inline>
