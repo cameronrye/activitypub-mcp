@@ -167,7 +167,7 @@
   --color-primary-gradient: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
 
   --color-secondary:          var(--accent-2);
-  --color-secondary-dark:     #25624F;
+  --color-secondary-dark:     #25604F;
   --color-secondary-light:    var(--color-pine-teal);
   --color-secondary-gradient: linear-gradient(135deg, var(--accent-2) 0%, var(--accent) 100%);
 
