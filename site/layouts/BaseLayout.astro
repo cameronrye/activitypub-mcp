@@ -19,7 +19,6 @@ const {
 } = Astro.props;
 
 const canonicalURL = canonical || new URL(Astro.url.pathname, Astro.site);
-const socialImage = new URL(image, Astro.site);
 const siteName = "ActivityPub MCP Server";
 const twitterHandle = "@cameronrye"; // Update with actual Twitter handle if different
 
@@ -27,6 +26,8 @@ const twitterHandle = "@cameronrye"; // Update with actual Twitter handle if dif
 const baseURL = import.meta.env.BASE_URL.endsWith("/")
   ? import.meta.env.BASE_URL
   : `${import.meta.env.BASE_URL}/`;
+
+const socialImage = new URL(image.startsWith("http") ? image : baseURL + "og-image.png", Astro.site);
 
 // Structured data for Schema.org
 const structuredData = {
@@ -172,7 +173,14 @@ const structuredData = {
         <div class="container">
           <div class="navbar-brand">
             <a href={baseURL} class="brand-link">
-              <img src={`${baseURL}logo.svg`} alt="ActivityPub MCP" class="brand-logo" width="32" height="32">
+              <svg class="brand-logo" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="ActivityPub MCP" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 8 L24 24" stroke="var(--color-vermilion)" stroke-width="3" stroke-linecap="round" fill="none"/>
+                <path d="M24 8 L8 24" stroke="var(--color-pine-teal)" stroke-width="3" stroke-linecap="round" fill="none"/>
+                <circle cx="6" cy="26" r="3" fill="var(--color-vermilion)"/>
+                <circle cx="26" cy="6" r="3" fill="var(--color-pine-teal)"/>
+                <circle cx="6" cy="6" r="3" fill="var(--logo-dot-flip)"/>
+                <circle cx="26" cy="26" r="3" fill="var(--color-gold)"/>
+              </svg>
               <span class="brand-text">ActivityPub MCP</span>
             </a>
           </div>
@@ -180,7 +188,7 @@ const structuredData = {
           <div class="navbar-menu">
             <div class="navbar-nav">
               <a href={baseURL} class="nav-link">Home</a>
-              <a href={`${baseURL}docs/`} class="nav-link">Documentation</a>
+              <a href={`${baseURL}docs/getting-started/installation/`} class="nav-link">Documentation</a>
               <a href={`${baseURL}docs/guides/basic-usage/`} class="nav-link">Guides</a>
               <a href={`${baseURL}docs/api/tools/`} class="nav-link">API Reference</a>
             </div>
@@ -236,7 +244,7 @@ const structuredData = {
           <div class="footer-section">
             <h4>Documentation</h4>
             <ul>
-              <li><a href={`${baseURL}docs/`}>Getting Started</a></li>
+              <li><a href={`${baseURL}docs/getting-started/installation/`}>Getting Started</a></li>
               <li><a href={`${baseURL}docs/guides/basic-usage/`}>Usage Guide</a></li>
               <li><a href={`${baseURL}docs/api/tools/`}>API Reference</a></li>
               <li><a href={`${baseURL}llms.txt`}>llms.txt</a></li>
@@ -254,7 +262,7 @@ const structuredData = {
         </div>
         
         <div class="footer-bottom">
-          <p>&copy; 2025 ActivityPub MCP Server Contributors. Licensed under MIT.</p>
+          <p>&copy; 2026 ActivityPub MCP Server Contributors. Licensed under MIT.</p>
           <p>Made with ❤️ by <a href="https://rye.dev/" target="_blank" rel="noopener">Cameron Rye</a></p>
         </div>
       </div>
