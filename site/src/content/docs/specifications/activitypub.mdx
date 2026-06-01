@@ -1,0 +1,267 @@
+---
+title: "ActivityPub Protocol Guide"
+description: "Comprehensive guide to the ActivityPub specification as implemented by the ActivityPub MCP Server."
+group: "Specifications"
+order: 1
+---
+
+## ActivityPub Overview
+
+### What is ActivityPub?
+
+ActivityPub is a W3C Recommendation that provides a client-to-server API for creating, updating and deleting content, as well as a federated server-to-server API for delivering notifications and content.
+
+#### Key Features:
+
+- **Decentralized:** No single point of control
+- **Federated:** Servers communicate with each other
+- **Extensible:** Built on Activity Streams 2.0
+- **Interoperable:** Standard protocol for social networking
+
+### Core Concepts
+
+#### Actors
+
+Entities that can perform activities (users, bots, services)
+
+#### Activities
+
+Actions performed by actors (Create, Update, Delete, Follow)
+
+#### Objects
+
+Things that activities are performed on (Notes, Articles, Images)
+
+#### Collections
+
+Ordered or unordered sets of objects (Inbox, Outbox, Followers)
+
+## ActivityPub Architecture
+
+### Client-to-Server (C2S)
+
+How clients interact with their home server
+
+- Authentication and authorization
+- Content creation and management
+- Activity submission to outbox
+- Collection access (inbox, outbox)
+
+### Server-to-Server (S2S)
+
+How servers federate with each other
+
+- Activity delivery between servers
+- Actor discovery and verification
+- Collection synchronization
+- HTTP signatures for authentication
+
+### MCP Server Role
+
+How our server fits into the ecosystem
+
+- Read-only access to public data
+- Actor and instance discovery
+- Content aggregation and analysis
+- No content creation or modification
+
+## Core ActivityPub Objects
+
+### Actor Object
+
+Represents an entity capable of performing activities
+
+```json
+{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Person",
+  "id": "https://mastodon.social/users/gargron",
+  "preferredUsername": "gargron",
+  "name": "Eugen Rochko",
+  "summary": "Creator of Mastodon",
+  "inbox": "https://mastodon.social/users/gargron/inbox",
+  "outbox": "https://mastodon.social/users/gargron/outbox",
+  "followers": "https://mastodon.social/users/gargron/followers",
+  "following": "https://mastodon.social/users/gargron/following",
+  "publicKey": {
+    "id": "https://mastodon.social/users/gargron#main-key",
+    "owner": "https://mastodon.social/users/gargron",
+    "publicKeyPem": "-----BEGIN PUBLIC KEY-----..."
+  }
+}
+```
+
+### Activity Object
+
+Represents an action performed by an actor
+
+```json
+{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Create",
+  "id": "https://mastodon.social/activities/123",
+  "actor": "https://mastodon.social/users/gargron",
+  "object": {
+    "type": "Note",
+    "id": "https://mastodon.social/users/gargron/statuses/456",
+    "content": "Hello, fediverse!",
+    "published": "2025-01-15T10:30:00Z",
+    "to": ["https://www.w3.org/ns/activitystreams#Public"]
+  },
+  "published": "2025-01-15T10:30:00Z"
+}
+```
+
+### Collection Object
+
+Represents an ordered or unordered set of objects
+
+```json
+{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "OrderedCollection",
+  "id": "https://mastodon.social/users/gargron/outbox",
+  "totalItems": 1247,
+  "first": "https://mastodon.social/users/gargron/outbox?page=1",
+  "last": "https://mastodon.social/users/gargron/outbox?page=62"
+}
+```
+
+## MCP Server Implementation
+
+### Actor Discovery
+
+How the MCP server discovers and retrieves actor information:
+
+#### Discovery Process:
+
+1. **WebFinger Lookup:** Resolve @user@domain to actor URL
+2. **Actor Retrieval:** Fetch actor object via HTTP GET
+3. **Validation:** Verify object structure and required fields
+4. **Caching:** Store actor data with appropriate TTL
+
+#### Supported Actor Types:
+
+- `Person` - Individual users
+- `Service` - Bot accounts and services
+- `Organization` - Organizational accounts
+- `Application` - Application accounts
+
+### Content Retrieval
+
+How the server accesses public content:
+
+#### Collection Access:
+
+- **Outbox:** Actor's published activities
+- **Public Collections:** Publicly accessible content
+- **Pagination:** Handle large collections efficiently
+- **Rate Limiting:** Respect server limits
+
+#### Content Types:
+
+- `Note` - Short text posts (like tweets)
+- `Article` - Longer form content
+- `Image` - Image posts
+- `Video` - Video content
+
+### Instance Information
+
+How the server gathers instance metadata:
+
+#### Data Sources:
+
+- **NodeInfo:** Standard instance metadata
+- **Instance API:** Platform-specific endpoints
+- **Well-known URLs:** Standard discovery endpoints
+- **Actor Analysis:** Infer from actor data
+
+#### Collected Information:
+
+- Software name and version
+- User and post counts
+- Registration status
+- Instance rules and policies
+
+## Security Considerations
+
+### HTTP Signatures
+
+ActivityPub uses HTTP signatures for server-to-server authentication:
+
+- **Verification:** Verify signatures on incoming requests
+- **Key Management:** Retrieve and cache public keys
+- **Signature Validation:** Ensure request integrity
+- **Replay Protection:** Prevent replay attacks
+
+### Content Validation
+
+Ensuring received content is valid and safe:
+
+- **Schema Validation:** Verify ActivityStreams format
+- **Content Sanitization:** Clean HTML content
+- **URL Validation:** Verify URL formats and schemes
+- **Size Limits:** Prevent oversized content
+
+### Privacy Protection
+
+Respecting user privacy and data protection:
+
+- **Public Data Only:** Access only public information
+- **Respect Robots.txt:** Honor crawling restrictions
+- **Data Minimization:** Collect only necessary data
+- **Retention Limits:** Implement data retention policies
+
+## Federation Protocols
+
+### Activity Delivery
+
+How activities are delivered between servers:
+
+```http
+POST /users/alice/inbox HTTP/1.1
+Host: example.com
+Content-Type: application/activity+json
+Signature: keyId="https://sender.com/users/bob#main-key",
+           algorithm="rsa-sha256",
+           headers="(request-target) host date",
+           signature="..."
+
+{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "type": "Follow",
+  "actor": "https://sender.com/users/bob",
+  "object": "https://example.com/users/alice"
+}
+```
+
+### Collection Synchronization
+
+How collections are kept in sync across servers:
+
+- **Pagination:** Handle large collections efficiently
+- **Incremental Updates:** Sync only new content
+- **Error Handling:** Graceful failure recovery
+- **Rate Limiting:** Respect server capabilities
+
+## Extensions and Compatibility
+
+### Common Extensions
+
+- **Mastodon Extensions:** Custom properties for Mastodon features
+- **PeerTube Extensions:** Video-specific properties
+- **Pleroma Extensions:** Additional metadata fields
+- **Misskey Extensions:** Reaction and emoji support
+
+### Compatibility Strategy
+
+- **Graceful Degradation:** Handle unknown properties
+- **Core Compliance:** Support standard ActivityPub
+- **Extension Detection:** Identify platform-specific features
+- **Future-Proofing:** Design for extensibility
+
+## Related Resources
+
+- [W3C ActivityPub Specification](https://www.w3.org/TR/activitypub/) — Official W3C Recommendation for ActivityPub
+- [ActivityStreams Vocabulary](/activitypub-mcp/docs/specifications/activitystreams/) — Learn about the underlying vocabulary used by ActivityPub
+- [WebFinger Guide](/activitypub-mcp/docs/specifications/webfinger/) — Understand how actor discovery works with WebFinger
