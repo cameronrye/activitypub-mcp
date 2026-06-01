@@ -255,17 +255,15 @@ Resources provide read-only access to remote ActivityPub data via `activitypub:/
 activitypub://remote-actor/@gargron@mastodon.social
 ```
 
-### MCP Tools (53 total)
+### MCP Tools (37 total)
 
-Tools fall into three groups. Full schemas and examples at <https://cameronrye.github.io/activitypub-mcp/docs/api/tools/>.
+Tools fall into two groups. Full schemas and examples at <https://cameronrye.github.io/activitypub-mcp/docs/api/tools/>.
 
-**Read-only (21):** `discover-actor`, `fetch-timeline`, `search-instance`, `get-instance-info`, `discover-instances`, `discover-instances-live`, `recommend-instances`, `health-check`, `performance-metrics`, `get-post-thread`, `get-trending-hashtags`, `get-trending-posts`, `get-local-timeline`, `get-federated-timeline`, `search-accounts`, `search-hashtags`, `search-posts`, `search`, `convert-url`, `batch-fetch-actors`, `batch-fetch-posts`.
+**Read-only (9):** `discover-actor`, `discover-instances`, `get-instance-info`, `fetch-timeline`, `get-post-thread`, `get-public-timeline`, `get-trending-hashtags`, `get-trending-posts`, `search`.
 
 **Authenticated write (28):** `list-accounts`, `switch-account`, `verify-account`, `post-status`, `reply-to-post`, `delete-post`, `boost-post`, `unboost-post`, `favourite-post`, `unfavourite-post`, `bookmark-post`, `unbookmark-post`, `follow-account`, `unfollow-account`, `mute-account`, `unmute-account`, `block-account`, `unblock-account`, `get-relationship`, `get-home-timeline`, `get-notifications`, `get-bookmarks`, `get-favourites`, `vote-on-poll`, `upload-media`, `get-scheduled-posts`, `update-scheduled-post`, `cancel-scheduled-post`.
 
-**Export (4):** `export-timeline`, `export-thread`, `export-account-info`, `export-hashtag` — output JSON, Markdown, or CSV.
-
-**Notable v2 changes:**
+**Behavior notes:**
 - `post-status` accepts `mediaIds` and `scheduledAt` for media attachments and scheduled posts.
 - `cancel-scheduled-post` / `update-scheduled-post` use `scheduledPostId` (not v1's `scheduledId`).
 - `get-relationship` takes `acct: string` (not v1's `accountIds: string[]`).
@@ -279,23 +277,17 @@ Tools fall into three groups. Full schemas and examples at <https://cameronrye.g
 }
 ```
 
-### MCP Prompts (11 total)
+### MCP Prompts (5 total)
 
 Guided workflows. Full reference at <https://cameronrye.github.io/activitypub-mcp/docs/api/prompts/>.
 
 | Prompt | Purpose |
 |---|---|
 | `explore-fediverse` | Open-ended fediverse exploration |
-| `compare-instances` | Side-by-side instance comparison |
-| `discover-content` | Find content across instances on a topic |
 | `compare-accounts` | Compare two fediverse accounts |
 | `analyze-user-activity` | Detailed activity analysis |
 | `find-experts` | Discover experts on a topic |
 | `summarize-trending` | Summarize trending posts and hashtags |
-| `content-strategy` | Plan fediverse content strategy |
-| `community-health` | Analyze instance moderation and health |
-| `migration-helper` | Evaluate and plan instance migration |
-| `thread-composer` | Compose well-structured threaded posts |
 
 ---
 
@@ -534,10 +526,8 @@ activitypub-mcp/
 │   │   └── instance-blocklist.ts
 │   ├── audit/                        # Audit logging
 │   │   └── logger.ts
-│   ├── telemetry/                    # Health, logging, perf
-│   │   ├── health-check.ts
-│   │   ├── logging.ts
-│   │   └── performance-monitor.ts
+│   ├── telemetry/                    # Structured logging
+│   │   └── logging.ts
 │   ├── transport/                    # HTTP transport + Bearer auth middleware
 │   │   ├── http.ts
 │   │   └── auth-middleware.ts
@@ -943,7 +933,7 @@ Major release. Security, correctness, and ergonomics overhaul.
 
 **Added:**
 - `post-status` supports `mediaIds` and `scheduledAt` (round-trip with `upload-media`).
-- `search-instance` returns prose output (was raw JSON).
+- Unified `search` tool with `type: "all" | "accounts" | "posts" | "hashtags"` (consolidates the former `search-instance` / `search-accounts` / `search-hashtags` / `search-posts`), returning prose output.
 - `fetch-timeline` renders all posts (was capped at 10) with 500-char per-post truncation.
 - Dynamic `server-info` capabilities — list comes from the live registry.
 - Thread traversal caps: `MCP_THREAD_MAX_DEPTH=5`, `MCP_THREAD_MAX_REPLIES=50`, with `MCP_THREAD_CROSS_ORIGIN_FETCH=false` cross-origin gate.

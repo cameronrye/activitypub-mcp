@@ -58,7 +58,7 @@ export const LOG_LEVEL = process.env.LOG_LEVEL || "info";
 // =============================================================================
 
 /** User-Agent string for HTTP requests */
-export const USER_AGENT = process.env.USER_AGENT || "ActivityPub-MCP-Client/1.0.0";
+export const USER_AGENT = process.env.USER_AGENT || `ActivityPub-MCP-Client/${SERVER_VERSION}`;
 
 /** Request timeout in milliseconds (default: 10 seconds) */
 export const REQUEST_TIMEOUT = parseIntEnv(process.env.REQUEST_TIMEOUT, 10000);

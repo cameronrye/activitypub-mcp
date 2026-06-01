@@ -82,7 +82,9 @@ const tocHeadings = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
           </div>
         </aside>
 
-        <main class="docs-main">
+        <div class="docs-main">
+          <h1 class="docs-title">{_pageTitle}</h1>
+
           {tocHeadings.length > 0 && (
             <nav class="docs-toc" aria-label="Table of contents">
               <h2 class="toc-title">On this page</h2>
@@ -99,7 +101,7 @@ const tocHeadings = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
           <div class="docs-content" data-pagefind-body>
             <slot />
           </div>
-        </main>
+        </div>
       </div>
     </div>
   </div>
@@ -220,6 +222,16 @@ const tocHeadings = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
 
   .docs-main { display: block; }
   .docs-content { max-width: none; }
+
+  .docs-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.875rem, 4vw, 2.5rem);
+    font-weight: var(--font-bold);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-6);
+  }
 
   .docs-toc {
     background-color: var(--bg-raised);
