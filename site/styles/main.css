@@ -1192,55 +1192,6 @@ p {
   border-radius: 0;
 }
 
-.copy-button {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-md);
-  color: #e2e8f0;
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-xs);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  backdrop-filter: blur(4px);
-  z-index: 10;
-  min-width: 60px;
-  white-space: nowrap;
-}
-
-.copy-button:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
-}
-
-.copy-button.copied {
-  background-color: rgba(34, 197, 94, 0.2);
-  border-color: rgba(34, 197, 94, 0.3);
-  color: #22c55e;
-}
-
-.copy-button .check-icon {
-  display: none;
-}
-
-.copy-button.copied .copy-icon {
-  display: none;
-}
-
-.copy-button.copied .check-icon {
-  display: block;
-}
-
-.copy-button.copied .copy-text::after {
-  content: "ied";
-}
-
 /* Next Steps */
 .next-steps {
   margin-top: var(--space-16);
@@ -1281,14 +1232,6 @@ p {
   .code-block pre {
     padding: var(--space-3);
     font-size: var(--text-xs);
-  }
-
-  .copy-button {
-    top: var(--space-2);
-    right: var(--space-2);
-    padding: var(--space-1) var(--space-2);
-    font-size: 10px;
-    min-width: 50px;
   }
 }
 

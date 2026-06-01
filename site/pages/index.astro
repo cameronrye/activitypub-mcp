@@ -1,301 +1,409 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import CopyButton from "../components/CopyButton.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+import SocialLinks from "../components/SocialLinks.astro";
+import registryManifest from "../src/data/registry-manifest.json";
+import pkg from "../../package.json";
 
 const title = "ActivityPub MCP Server";
 const description =
-  "A comprehensive Model Context Protocol server that enables LLMs like Claude to explore and interact with the existing Fediverse through standardized MCP tools, resources, and prompts.";
+  "An MCP server connecting LLMs like Claude and ChatGPT to the existing Fediverse through ActivityPub and WebFinger.";
 
-// Get the base URL for proper path resolution
+// Build-derived values — never hardcode (spec §5, §5.1)
+const version = pkg.version; // "3.0.0"
+const { tools, resources, prompts } = registryManifest;
+
+// Base URL for path resolution under /activitypub-mcp (spec §8)
 const baseURL = import.meta.env.BASE_URL.endsWith("/")
   ? import.meta.env.BASE_URL
   : `${import.meta.env.BASE_URL}/`;
+
+// Install snippets (one source of truth shared by CodeBlock/CopyButton)
+const npxCommand = "npx activitypub-mcp install";
+const claudeConfig = `{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"]
+    }
+  }
+}`;
+const chatgptConfig = `{
+  "mcpServers": {
+    "activitypub": {
+      "command": "npx",
+      "args": ["-y", "activitypub-mcp"],
+      "env": { "ACTIVITYPUB_BASE_URL": "https://mastodon.social" }
+    }
+  }
+}`;
 ---
 
 <BaseLayout title={title} description={description}>
-  <div class="hero-section">
-    <div class="hero-content">
-      <div class="version-badge">v2.0.0 - Security &amp; Correctness Hardened</div>
-      <img src={`${baseURL}logo.svg`} alt="ActivityPub MCP Logo" class="hero-logo" width="120" height="120">
-      <h1 class="hero-title">
-        Connect LLMs to the <span class="text-primary">Fediverse</span>
-      </h1>
-      <p class="hero-description">
-        A comprehensive <strong>Model Context Protocol (MCP)</strong> server that enables LLMs like Claude to <strong>explore and interact with the existing Fediverse</strong> through standardized MCP tools, resources, and prompts.
-      </p>
-      <div class="hero-stats">
-        <div class="stat"><span class="stat-number">53</span><span class="stat-label">Tools</span></div>
-        <div class="stat"><span class="stat-number">10</span><span class="stat-label">Resources</span></div>
-        <div class="stat"><span class="stat-number">11</span><span class="stat-label">Prompts</span></div>
+  <section class="hero" aria-labelledby="hero-heading">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <span class="version-badge">v{version}</span>
+        <h1 id="hero-heading" class="hero-heading">
+          Connect LLMs to the <span class="hero-accent">Fediverse</span>
+        </h1>
+        <p class="hero-subhead">
+          <strong>ActivityPub MCP</strong> is an MCP server connecting LLMs like Claude and
+          ChatGPT to the Fediverse through <strong>ActivityPub</strong> and
+          <strong>WebFinger</strong> &mdash; no instance of your own required.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary btn-lg" href={`${baseURL}docs/getting-started/installation/`}>Get Started</a>
+          <a class="btn btn-outline btn-lg" href="https://github.com/cameronrye/activitypub-mcp" target="_blank" rel="noopener">View on GitHub</a>
+        </div>
       </div>
-      <div class="hero-actions">
-        <a href="#quick-start" class="btn btn-primary btn-lg">Get Started</a>
-        <a href={`${baseURL}docs/`} class="btn btn-outline btn-lg">Documentation</a>
-        <a href="https://github.com/cameronrye/activitypub-mcp" class="btn btn-secondary btn-lg" target="_blank" rel="noopener">
-          View on GitHub
+      <div class="hero-visual" aria-hidden="true">
+        <img src={`${baseURL}logo.svg`} alt="" class="hero-logo" width="320" height="320" loading="eager" />
+      </div>
+    </div>
+  </section>
+
+  <section class="how" aria-labelledby="how-heading">
+    <div class="container">
+      <h2 id="how-heading" class="section-heading">How it works</h2>
+      <p class="section-lede">
+        Your LLM talks to the ActivityPub MCP server over the Model Context Protocol; the server
+        speaks ActivityPub and WebFinger to the wider Fediverse.
+      </p>
+      <div class="how-diagram">
+        <svg viewBox="0 0 920 240" role="img" aria-labelledby="how-svg-title how-svg-desc" class="how-svg">
+          <title id="how-svg-title">ActivityPub MCP data flow</title>
+          <desc id="how-svg-desc">
+            An LLM such as Claude or ChatGPT connects over the MCP protocol to the activitypub-mcp
+            server, which connects over ActivityPub and WebFinger to Fediverse instances like
+            Mastodon and Misskey.
+          </desc>
+          <line x1="230" y1="120" x2="370" y2="120" stroke="var(--accent)" stroke-width="3" marker-end="url(#arrow-vermilion)" />
+          <text x="300" y="104" text-anchor="middle" class="how-edge-label">MCP protocol</text>
+          <line x1="550" y1="120" x2="690" y2="120" stroke="var(--accent-2)" stroke-width="3" marker-end="url(#arrow-teal)" />
+          <text x="620" y="104" text-anchor="middle" class="how-edge-label">ActivityPub / WebFinger</text>
+          <g>
+            <rect x="40" y="76" width="190" height="88" rx="14" class="how-node" />
+            <text x="135" y="112" text-anchor="middle" class="how-node-title">LLM</text>
+            <text x="135" y="138" text-anchor="middle" class="how-node-sub">Claude / ChatGPT</text>
+          </g>
+          <g>
+            <rect x="370" y="60" width="180" height="120" rx="16" class="how-node how-node-center" />
+            <image href={`${baseURL}logo.svg`} x="408" y="74" width="48" height="48" />
+            <text x="460" y="138" text-anchor="middle" class="how-node-title">activitypub-mcp</text>
+            <text x="460" y="160" text-anchor="middle" class="how-node-sub">MCP server</text>
+          </g>
+          <g>
+            <rect x="690" y="76" width="190" height="88" rx="14" class="how-node" />
+            <circle cx="745" cy="104" r="7" fill="var(--accent)" />
+            <circle cx="785" cy="104" r="7" fill="var(--accent-2)" />
+            <circle cx="825" cy="104" r="7" fill="var(--accent-3)" />
+            <text x="785" y="138" text-anchor="middle" class="how-node-title">Fediverse</text>
+            <text x="785" y="160" text-anchor="middle" class="how-node-sub">Mastodon / Misskey / …</text>
+          </g>
+          <defs>
+            <marker id="arrow-vermilion" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)" />
+            </marker>
+            <marker id="arrow-teal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--accent-2)" />
+            </marker>
+          </defs>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="capabilities" aria-labelledby="cap-heading">
+    <div class="container">
+      <h2 id="cap-heading" class="section-heading">Capabilities</h2>
+      <p class="section-lede">
+        A complete MCP surface for reading and acting across the Fediverse, generated directly
+        from the server&rsquo;s registry.
+      </p>
+      <div class="cap-grid">
+        <a class="cap-card" href={`${baseURL}docs/api/tools/`}>
+          <span class="cap-number">{tools}</span>
+          <span class="cap-label">Tools</span>
+          <span class="cap-desc">Discover actors, read timelines and threads, and write posts, boosts, follows, and more.</span>
+          <span class="cap-link">Explore tools &rarr;</span>
+        </a>
+        <a class="cap-card" href={`${baseURL}docs/api/resources/`}>
+          <span class="cap-number">{resources}</span>
+          <span class="cap-label">Resources</span>
+          <span class="cap-desc">Structured, LLM-readable views of actors, posts, instances, and server capabilities.</span>
+          <span class="cap-link">Explore resources &rarr;</span>
+        </a>
+        <a class="cap-card" href={`${baseURL}docs/api/prompts/`}>
+          <span class="cap-number">{prompts}</span>
+          <span class="cap-label">Prompts</span>
+          <span class="cap-desc">Ready-made prompt templates that guide LLMs through common Fediverse workflows.</span>
+          <span class="cap-link">Explore prompts &rarr;</span>
         </a>
       </div>
     </div>
-  </div>
+  </section>
 
-  <section class="whats-new-section">
+  <section class="features" aria-labelledby="features-heading">
     <div class="container">
-      <h2>What's New in v2.0.0</h2>
-      <p class="section-subtitle">A security &amp; correctness focused release. See the <a href="https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v2.md">migration guide</a> for breaking changes.</p>
+      <h2 id="features-heading" class="section-heading">What sets it apart</h2>
+      <ol class="feature-list">
+        <li class="feature-item">
+          <h3 class="feature-title">Native ActivityPub &amp; WebFinger</h3>
+          <p class="feature-body">Resolve any <code>@user@instance</code> handle and traverse real ActivityPub data &mdash; actors, outboxes, threads &mdash; without running a server of your own.</p>
+        </li>
+        <li class="feature-item">
+          <h3 class="feature-title">Multi-account, timeline &amp; write tooling</h3>
+          <p class="feature-body">Switch between configured accounts, read home and public timelines, and post, reply, boost, favourite, and follow &mdash; all as first-class MCP tools.</p>
+        </li>
+        <li class="feature-item">
+          <h3 class="feature-title">LLM-optimized resources &amp; prompts</h3>
+          <p class="feature-body">Capabilities are exposed as structured resources and guided prompt templates, so models reason over clean data instead of scraping HTML.</p>
+        </li>
+        <li class="feature-item">
+          <h3 class="feature-title">Hardened by design</h3>
+          <p class="feature-body">SSRF guards, response-size caps, thread-traversal limits, and full-surface audit logging keep exploration safe against hostile peers.</p>
+        </li>
+        <li class="feature-item">
+          <h3 class="feature-title">Typed end to end</h3>
+          <p class="feature-body">A fully typed TypeScript + ESM implementation with strict linting, so behavior stays predictable and contributions stay safe.</p>
+        </li>
+        <li class="feature-item">
+          <h3 class="feature-title">Cross-platform install</h3>
+          <p class="feature-body">One <code>npx</code> command wires the server into Claude Desktop, ChatGPT, and any MCP-compatible client on macOS, Linux, and Windows.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
 
-      <div class="new-features-grid">
-        <div class="new-feature-card highlight">
-          <div class="feature-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
-          </div>
-          <h3>HTTP Secret Required</h3>
-          <p>HTTP transport requires <code>MCP_HTTP_SECRET</code>. Bearer-token auth gates <code>/mcp</code>; <code>/health</code> stays open for liveness probes. The <code>/metrics</code> endpoint was removed in v3.</p>
+  <section class="install" id="quick-start" aria-labelledby="install-heading">
+    <div class="container">
+      <h2 id="install-heading" class="section-heading">Quick install</h2>
+      <p class="section-lede">
+        Install once, then point your MCP client at it. Copy the snippet for your client below.
+      </p>
+
+      <div class="install-block">
+        <h3 class="install-step-title">1. Install</h3>
+        <CodeBlock code={npxCommand} lang="bash" label="Copy install command" />
+      </div>
+
+      <div class="install-grid">
+        <div class="install-block">
+          <h3 class="install-step-title">Claude Desktop</h3>
+          <CodeBlock code={claudeConfig} lang="json" label="Copy Claude Desktop config" />
         </div>
-
-        <div class="new-feature-card highlight">
-          <div class="feature-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            </svg>
-          </div>
-          <h3>SSRF &amp; Response-Size Guards</h3>
-          <p>Every outbound fetch validates against private IP ranges and streams responses with a hard byte cap. No more silent memory blow-ups on hostile peers.</p>
-        </div>
-
-        <div class="new-feature-card">
-          <div class="feature-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-          </div>
-          <h3>Thread Traversal Caps</h3>
-          <p><code>MCP_THREAD_MAX_DEPTH</code>, <code>MCP_THREAD_MAX_REPLIES</code>, and an opt-in cross-origin fetch flag prevent runaway thread exploration.</p>
-        </div>
-
-        <div class="new-feature-card">
-          <div class="feature-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-          </div>
-          <h3>Multi-Account: Pipe Delimiter</h3>
-          <p><strong>Breaking:</strong> <code>ACTIVITYPUB_ACCOUNTS</code> now uses <code>|</code> as the field separator. The legacy colon form is rejected with a clear migration error.</p>
-        </div>
-
-        <div class="new-feature-card">
-          <div class="feature-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="9" y1="15" x2="15" y2="15"></line>
-            </svg>
-          </div>
-          <h3>Full-Surface Audit Logging</h3>
-          <p>Every write tool (post, boost, favourite, follow, mute, block, schedule, media-upload, …) emits structured audit events on both success and failure paths.</p>
-        </div>
-
-        <div class="new-feature-card">
-          <div class="feature-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="16 18 22 12 16 6"></polyline>
-              <polyline points="8 6 2 12 8 18"></polyline>
-            </svg>
-          </div>
-          <h3>Node 20+ &amp; Tighter Types</h3>
-          <p>Engine requirement bumped to Node 20+. TypeScript <code>noUnusedLocals</code>/<code>noUnusedParameters</code> and Biome <code>noUnusedVariables</code> enforced in CI.</p>
+        <div class="install-block">
+          <h3 class="install-step-title">ChatGPT / MCP client</h3>
+          <CodeBlock code={chatgptConfig} lang="json" label="Copy ChatGPT config" />
         </div>
       </div>
     </div>
   </section>
 
-  <section class="features-section" id="quick-start">
+  <section class="docs-cards" aria-labelledby="docs-heading">
     <div class="container">
-      <h2>Key Features</h2>
-      
-      <div class="features-grid">
-        <div class="feature-card">
-          <h3>Fediverse Client</h3>
-          <p>Interact with existing ActivityPub servers like Mastodon, Pleroma, and Misskey without running your own server.</p>
-        </div>
-        
-        <div class="feature-card">
-          <h3>WebFinger Discovery</h3>
-          <p>Find and discover actors across the fediverse using standardized WebFinger protocols.</p>
-        </div>
-        
-        <div class="feature-card">
-          <h3>MCP Protocol</h3>
-          <p>Complete MCP server with resources, tools, and prompts designed specifically for LLM interaction patterns.</p>
-        </div>
-        
-        <div class="feature-card">
-          <h3>LLM-Optimized</h3>
-          <p>Built from the ground up for seamless integration with Large Language Models like Claude.</p>
-        </div>
-        
-        <div class="feature-card">
-          <h3>TypeScript</h3>
-          <p>Fully typed with modern TypeScript and ESM for excellent developer experience and reliability.</p>
-        </div>
-        
-        <div class="feature-card">
-          <h3>High Performance</h3>
-          <p>Efficient resource management, caching, and built-in performance monitoring.</p>
-        </div>
+      <h2 id="docs-heading" class="section-heading">Explore the docs</h2>
+      <div class="docs-grid">
+        <a class="docs-card" href={`${baseURL}docs/getting-started/installation/`}>
+          <span class="docs-card-title">Getting Started</span>
+          <span class="docs-card-desc">Install, configure, and connect your first client.</span>
+        </a>
+        <a class="docs-card" href={`${baseURL}docs/guides/basic-usage/`}>
+          <span class="docs-card-title">Guides</span>
+          <span class="docs-card-desc">Hands-on walkthroughs, examples, and advanced workflows.</span>
+        </a>
+        <a class="docs-card" href={`${baseURL}docs/api/tools/`}>
+          <span class="docs-card-title">API Reference</span>
+          <span class="docs-card-desc">Every tool, resource, and prompt the server exposes.</span>
+        </a>
+        <a class="docs-card" href={`${baseURL}docs/reference/troubleshooting/`}>
+          <span class="docs-card-title">Reference</span>
+          <span class="docs-card-desc">Troubleshooting and the full changelog.</span>
+        </a>
+        <a class="docs-card" href={`${baseURL}docs/development/architecture/`}>
+          <span class="docs-card-title">Development</span>
+          <span class="docs-card-desc">Architecture, dependencies, performance, and security.</span>
+        </a>
+        <a class="docs-card" href={`${baseURL}docs/specifications/activitypub/`}>
+          <span class="docs-card-title">Specifications</span>
+          <span class="docs-card-desc">ActivityPub, WebFinger, and ActivityStreams guides.</span>
+        </a>
       </div>
     </div>
   </section>
 
-  <section class="installation-section" id="quick-start">
-    <div class="container">
-      <h2>Quick Installation</h2>
-
-      <div class="installation-steps">
-        <div class="installation-step">
-          <h3>1. Install with NPX</h3>
-          <p>Get started instantly with a single command:</p>
-          <div class="code-block">
-            <pre><code>npx activitypub-mcp install</code></pre>
-            <button class="copy-button" data-copy="npx activitypub-mcp install" aria-label="Copy command">
-              <svg class="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-              <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                <polyline points="20,6 9,17 4,12"></polyline>
-              </svg>
-              <span class="copy-text">Copy</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="installation-step">
-          <h3>2. Configure Claude Desktop</h3>
-          <p>Add this configuration to your Claude Desktop settings:</p>
-          <div class="code-block">
-            <pre><code>{`{
-  "mcpServers": {
-    "activitypub": {
-      "command": "npx",
-      "args": ["-y", "activitypub-mcp"]
-    }
-  }
-}`}</code></pre>
-            <button class="copy-button" data-copy={`{
-  "mcpServers": {
-    "activitypub": {
-      "command": "npx",
-      "args": ["-y", "activitypub-mcp"]
-    }
-  }
-}`} aria-label="Copy configuration">
-              <svg class="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-              <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                <polyline points="20,6 9,17 4,12"></polyline>
-              </svg>
-              <span class="copy-text">Copy</span>
-            </button>
-          </div>
-        </div>
+  <footer class="home-footer">
+    <div class="container home-footer-grid">
+      <div class="home-footer-brand">
+        <img src={`${baseURL}logo.svg`} alt="" class="home-footer-logo" width="40" height="40" aria-hidden="true" />
+        <p class="home-footer-tagline">Connect LLMs to the Fediverse over ActivityPub.</p>
+        <SocialLinks variant="footer" size="md" />
       </div>
-
-      <div class="next-steps">
-        <h3>Next Steps</h3>
-        <div class="next-steps-grid">
-          <a href={`${baseURL}docs/`} class="next-step-card">
-            <div class="step-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-              </svg>
-            </div>
-            <h4>Read the Documentation</h4>
-            <p>Learn about all features and configuration options</p>
-          </a>
-
-          <a href={`${baseURL}docs/guides/basic-usage/`} class="next-step-card">
-            <div class="step-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"></polygon>
-              </svg>
-            </div>
-            <h4>View Examples</h4>
-            <p>See practical examples and usage patterns</p>
-          </a>
-
-          <a href="https://github.com/cameronrye/activitypub-mcp" class="next-step-card" target="_blank" rel="noopener">
-            <div class="step-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
-              </svg>
-            </div>
-            <h4>Explore the Code</h4>
-            <p>Browse the source code and contribute</p>
-          </a>
-        </div>
+      <div class="home-footer-col">
+        <h3 class="home-footer-heading">Docs</h3>
+        <ul class="home-footer-list">
+          <li><a href={`${baseURL}docs/getting-started/installation/`}>Getting Started</a></li>
+          <li><a href={`${baseURL}docs/guides/basic-usage/`}>Guides</a></li>
+          <li><a href={`${baseURL}docs/api/tools/`}>API Reference</a></li>
+          <li><a href={`${baseURL}docs/specifications/activitypub/`}>Specifications</a></li>
+        </ul>
+      </div>
+      <div class="home-footer-col">
+        <h3 class="home-footer-heading">Community</h3>
+        <ul class="home-footer-list">
+          <li><a href="https://github.com/cameronrye/activitypub-mcp" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/activitypub-mcp" target="_blank" rel="noopener">npm</a></li>
+          <li><a href="https://github.com/cameronrye/activitypub-mcp/issues" target="_blank" rel="noopener">Issues</a></li>
+          <li><a href={`${baseURL}docs/reference/changelog/`}>Changelog</a></li>
+        </ul>
       </div>
     </div>
-  </section>
+  </footer>
 </BaseLayout>
 
-<script>
-  // Copy button functionality
-  document.addEventListener('DOMContentLoaded', () => {
-    const copyButtons = document.querySelectorAll('.copy-button');
+<style>
+  .hero {
+    padding: clamp(3rem, 8vw, 6rem) 0;
+    background: linear-gradient(180deg, var(--bg-raised) 0%, var(--bg-primary) 100%);
+    border-bottom: 1px solid var(--border-color);
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: center;
+  }
+  .version-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    padding: 0.3rem 0.7rem;
+    border-radius: 2rem;
+    margin-bottom: 1.25rem;
+  }
+  .hero-heading {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.25rem, 5vw, 3.5rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin: 0 0 1.25rem;
+  }
+  .hero-accent { color: var(--accent); }
+  .hero-subhead {
+    font-family: var(--font-body);
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+    line-height: 1.6;
+    color: var(--text-muted);
+    max-width: 36ch;
+    margin: 0 0 2rem;
+  }
+  .hero-cta { display: flex; flex-wrap: wrap; gap: 1rem; }
+  .hero-visual { display: flex; justify-content: center; align-items: center; }
+  .hero-logo {
+    width: clamp(200px, 80%, 320px);
+    height: auto;
+    filter: drop-shadow(0 12px 32px color-mix(in srgb, var(--color-ink) 18%, transparent));
+  }
+  @media (max-width: 820px) {
+    .hero-grid { grid-template-columns: 1fr; text-align: center; }
+    .hero-subhead { margin-inline: auto; }
+    .hero-cta { justify-content: center; }
+    .hero-visual { order: -1; }
+  }
 
-    copyButtons.forEach(button => {
-      button.addEventListener('click', async () => {
-        const textToCopy = button.dataset.copy;
-        const copyText = button.querySelector('.copy-text');
+  .section-heading {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    text-align: center;
+    margin: 0 0 0.75rem;
+  }
+  .section-lede {
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    text-align: center;
+    max-width: 56ch;
+    margin: 0 auto 2.5rem;
+  }
+  .how { padding: clamp(3rem, 7vw, 5rem) 0; }
+  .how-diagram { overflow-x: auto; }
+  .how-svg { width: 100%; height: auto; min-width: 640px; display: block; margin: 0 auto; }
+  .how-node { fill: var(--bg-raised); stroke: var(--border-color); stroke-width: 1.5; }
+  .how-node-center { stroke: var(--accent); stroke-width: 2; }
+  .how-node-title { font-family: var(--font-display); font-weight: 700; font-size: 18px; fill: var(--text-primary); }
+  .how-node-sub { font-family: var(--font-body); font-size: 13px; fill: var(--text-muted); }
+  .how-edge-label { font-family: var(--font-mono); font-size: 12px; font-weight: 600; fill: var(--text-muted); }
 
-        try {
-          await navigator.clipboard.writeText(textToCopy);
+  .capabilities { padding: clamp(3rem, 7vw, 5rem) 0; background: var(--bg-raised); }
+  .cap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .cap-card {
+    display: flex; flex-direction: column; padding: 2rem;
+    background: var(--bg-primary); border: 1px solid var(--border-color);
+    border-radius: 1rem; text-decoration: none; color: var(--text-primary);
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .cap-card:hover {
+    transform: translateY(-3px); border-color: var(--accent);
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--color-ink) 12%, transparent);
+  }
+  .cap-number { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.75rem, 6vw, 3.75rem); line-height: 1; color: var(--accent); }
+  .cap-label { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; margin: 0.4rem 0 0.75rem; color: var(--text-primary); }
+  .cap-desc { font-family: var(--font-body); font-size: 0.95rem; line-height: 1.55; color: var(--text-muted); flex: 1; }
+  .cap-link { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 600; color: var(--accent); margin-top: 1.25rem; }
+  @media (max-width: 820px) { .cap-grid { grid-template-columns: 1fr; } }
 
-          // Visual feedback
-          button.classList.add('copied');
-          copyText.textContent = 'Cop';
+  .features { padding: clamp(3rem, 7vw, 5rem) 0; }
+  .feature-list { list-style: none; counter-reset: feat; margin: 2.5rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem 3rem; }
+  .feature-item { counter-increment: feat; position: relative; padding-left: 3rem; }
+  .feature-item::before { content: counter(feat, decimal-leading-zero); position: absolute; left: 0; top: 0.1rem; font-family: var(--font-mono); font-weight: 600; font-size: 1rem; color: var(--accent); }
+  .feature-item::after { content: ""; position: absolute; left: 0.55rem; top: 1.9rem; bottom: 0.2rem; width: 2px; background: var(--border-color); }
+  .feature-title { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; color: var(--text-primary); margin: 0 0 0.5rem; }
+  .feature-body { font-family: var(--font-body); font-size: 0.98rem; line-height: 1.6; color: var(--text-muted); margin: 0; }
+  .feature-body code { font-family: var(--font-mono); font-size: 0.85em; padding: 0.1em 0.35em; border-radius: 0.3rem; background: var(--bg-raised); color: var(--text-primary); }
+  @media (max-width: 820px) { .feature-list { grid-template-columns: 1fr; } }
 
-          // Reset after 2 seconds
-          setTimeout(() => {
-            button.classList.remove('copied');
-            copyText.textContent = 'Copy';
-          }, 2000);
+  .install { padding: clamp(3rem, 7vw, 5rem) 0; background: var(--bg-raised); }
+  .install-block { margin-bottom: 1.5rem; }
+  .install-step-title { font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; color: var(--text-primary); margin: 0 0 0.6rem; }
+  .install-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+  .install-grid .install-block { margin-bottom: 0; }
+  @media (max-width: 820px) { .install-grid { grid-template-columns: 1fr; } }
 
-        } catch (err) {
-          console.error('Failed to copy text: ', err);
+  .docs-cards { padding: clamp(3rem, 7vw, 5rem) 0; }
+  .docs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2.5rem; }
+  .docs-card {
+    display: flex; flex-direction: column; gap: 0.5rem; padding: 1.75rem;
+    border: 1px solid var(--border-color); border-left: 4px solid var(--accent-2);
+    border-radius: 0.875rem; background: var(--bg-primary); text-decoration: none;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .docs-card:hover {
+    transform: translateY(-3px); border-left-color: var(--accent);
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--color-ink) 12%, transparent);
+  }
+  .docs-card-title { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; color: var(--text-primary); }
+  .docs-card-desc { font-family: var(--font-body); font-size: 0.92rem; line-height: 1.55; color: var(--text-muted); }
+  @media (max-width: 820px) { .docs-grid { grid-template-columns: 1fr; } }
 
-          // Fallback for older browsers
-          const textArea = document.createElement('textarea');
-          textArea.value = textToCopy;
-          document.body.appendChild(textArea);
-          textArea.select();
-
-          try {
-            document.execCommand('copy');
-            button.classList.add('copied');
-            copyText.textContent = 'Cop';
-
-            setTimeout(() => {
-              button.classList.remove('copied');
-              copyText.textContent = 'Copy';
-            }, 2000);
-          } catch (fallbackErr) {
-            console.error('Fallback copy failed: ', fallbackErr);
-          }
-
-          document.body.removeChild(textArea);
-        }
-      });
-    });
-  });
-</script>
+  .home-footer { padding: clamp(3rem, 7vw, 4.5rem) 0 clamp(2rem, 5vw, 3rem); background: var(--bg-raised); border-top: 1px solid var(--border-color); }
+  .home-footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 2.5rem; }
+  .home-footer-logo { display: block; margin-bottom: 0.75rem; }
+  .home-footer-tagline { font-family: var(--font-body); font-size: 0.95rem; line-height: 1.55; color: var(--text-muted); max-width: 32ch; margin: 0 0 1.25rem; }
+  .home-footer-heading { font-family: var(--font-display); font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-primary); margin: 0 0 1rem; }
+  .home-footer-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+  .home-footer-list a { font-family: var(--font-body); font-size: 0.95rem; color: var(--text-muted); text-decoration: none; transition: color 0.15s ease; }
+  .home-footer-list a:hover { color: var(--accent); }
+  @media (max-width: 820px) { .home-footer-grid { grid-template-columns: 1fr; gap: 2rem; } }
+</style>
