@@ -260,13 +260,13 @@ export class AuditLogger {
       name: "ssrf_protection",
       params: { url: url.slice(0, 200) }, // Truncate URL for safety
       success: false,
-      error: reason,
+      error: this.scrubError(reason),
       domain,
     };
 
     this.addEntry(entry);
 
-    logger.warn("SSRF attempt blocked", { url: url.slice(0, 200), reason });
+    logger.warn("SSRF attempt blocked", { url: url.slice(0, 200), reason: entry.error });
   }
 
   /**

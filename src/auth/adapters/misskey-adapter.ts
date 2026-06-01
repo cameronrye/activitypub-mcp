@@ -170,15 +170,16 @@ async function misskeyFetch(
     body: JSON.stringify(body),
   });
   if (!response.ok) {
+    // Bound the attacker-influenceable error body (2KB) before it reaches the
+    // thrown message / logs / tool output — same cap the Mastodon adapter uses.
+    const errorText = await readErrorText(response);
     let message = `HTTP ${response.status}`;
     try {
-      const data = await readJsonWithLimit<{ error?: { message?: string } }>(
-        response,
-        MAX_RESPONSE_SIZE,
-      );
+      const data = JSON.parse(errorText) as { error?: { message?: string } };
       if (data?.error?.message) message = data.error.message;
     } catch {
-      // body not JSON — keep the HTTP status message
+      // body not JSON — fall back to the bounded raw text if present
+      if (errorText) message = errorText;
     }
     throw new Error(`Failed to ${failVerb}: ${message}`);
   }

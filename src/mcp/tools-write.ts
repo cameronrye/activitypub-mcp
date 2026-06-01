@@ -348,8 +348,8 @@ Run \`activitypub-mcp login ${account.instance}\` to re-authorize.`,
               text: `✅ **Account Verified**
 
 👤 **${sanitizeInline(info.display_name || info.username || "")}** (@${sanitizeInline(info.acct || "")})
-🆔 ID: ${info.id}
-🔗 ${info.url}
+🆔 ID: ${sanitizeInline(info.id)}
+🔗 ${sanitizeInline(info.url)}
 
 📊 **Stats:**
 - Followers: ${info.followers_count.toLocaleString()}
@@ -2331,8 +2331,8 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
 
 🆔 **Media ID**: \`${media.id}\`
 📝 Type: ${media.type}
-${media.description ? `📖 Description: ${media.description}` : "⚠️ No alt text set"}
-${media.url ? `🔗 URL: ${media.url}` : ""}
+${media.description ? `📖 Description: ${sanitizeInline(media.description)}` : "⚠️ No alt text set"}
+${media.url ? `🔗 URL: ${sanitizeInline(media.url)}` : ""}
 
 💡 **Usage:**
 Use this media ID with the \`post-status\` tool by including it in the mediaIds parameter:
@@ -2429,11 +2429,13 @@ No scheduled posts found.
 
         const postsList = scheduled
           .map((post, i) => {
-            const content = post.params.text || "No content";
+            const content = sanitizeInline(post.params.text || "") || "No content";
             const truncated = content.length > 150 ? `${content.slice(0, 150)}...` : content;
             const scheduledDate = new Date(post.scheduled_at).toLocaleString();
             const visibility = post.params.visibility || "public";
-            const cw = post.params.spoiler_text ? `⚠️ CW: ${post.params.spoiler_text}\n` : "";
+            const cw = post.params.spoiler_text
+              ? `⚠️ CW: ${sanitizeInline(post.params.spoiler_text)}\n`
+              : "";
             const mediaCount = post.media_attachments?.length || 0;
             const pollInfo = post.params.poll ? "📊 Has poll" : "";
 

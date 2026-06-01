@@ -100,11 +100,13 @@ export class AccountManager {
       // Migration guard: legacy `:`-delimited format silently truncated tokens
       // containing colons. Refuse to start if ANY entry looks legacy — catches
       // both all-legacy input and mixed legacy/v2 input.
-      const legacyEntry = entries.find((e) => e.includes(":") && !e.includes("|"));
-      if (legacyEntry) {
+      const legacyIndex = entries.findIndex((e) => e.includes(":") && !e.includes("|"));
+      if (legacyIndex !== -1) {
+        // Never echo the raw entry — a legacy `:`-delimited value still contains
+        // the access token. Reference it by position instead.
         throw new Error(
           "ACTIVITYPUB_ACCOUNTS uses pipe (|) delimiter as of v2. " +
-            `Legacy entry detected: "${legacyEntry}". ` +
+            `Entry #${legacyIndex + 1} uses the legacy ':' format. ` +
             "Migrate from 'id:inst:tok:user:label' to 'id|inst|tok|user|label'. " +
             "See MIGRATION-v2.md.",
         );

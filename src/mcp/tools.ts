@@ -99,14 +99,14 @@ function registerDiscoverActorTool(mcpServer: McpServer, rateLimiter: RateLimite
               type: "text",
               text: `Successfully discovered actor: ${sanitizeInline(actor.preferredUsername || actor.name || "") || validIdentifier}
 
-🆔 ID: ${actor.id}
+🆔 ID: ${sanitizeInline(actor.id)}
 👤 Name: ${sanitizeInline(actor.name || "") || "Not specified"}
 📝 Summary: ${actor.summary ? wrapUntrusted(actor.summary, `bio of ${validIdentifier}`) : "No bio provided"}
-🔗 URL: ${actor.url || actor.id}
-📥 Inbox: ${actor.inbox}
-📤 Outbox: ${actor.outbox}
-👥 Followers: ${actor.followers || "Not available"}
-👤 Following: ${actor.following || "Not available"}`,
+🔗 URL: ${sanitizeInline(actor.url || actor.id)}
+📥 Inbox: ${sanitizeInline(actor.inbox)}
+📤 Outbox: ${sanitizeInline(actor.outbox)}
+👥 Followers: ${sanitizeInline(actor.followers || "") || "Not available"}
+👤 Following: ${sanitizeInline(actor.following || "") || "Not available"}`,
             },
           ],
         };
@@ -585,7 +585,7 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
 ${ancestorsSection}**Main Post**:
 ${spoilerText}${postContent}
 
-🔗 URL: ${thread.post.url || thread.post.id}
+🔗 URL: ${sanitizeInline(thread.post.url || thread.post.id)}
 📅 Published: ${thread.post.published || "Unknown"}
 
 ${repliesSection}

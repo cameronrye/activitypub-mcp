@@ -278,8 +278,22 @@ describe("ACTIVITYPUB_ACCOUNTS pipe delimiter (H6)", () => {
     delete process.env.ACTIVITYPUB_DEFAULT_INSTANCE;
     delete process.env.ACTIVITYPUB_DEFAULT_TOKEN;
     await expect(import("../../src/auth/account-manager.js")).rejects.toThrow(
-      /Legacy entry detected/i,
+      /uses the legacy ':' format/i,
     );
+  });
+
+  it("does not echo the raw access token in the legacy migration error", async () => {
+    // A legacy `:`-delimited entry still carries the access token. The startup
+    // refusal must reference the entry by position, never echo its raw value.
+    process.env.ACTIVITYPUB_ACCOUNTS = "acct1:inst.test:SECRET-TOKEN-xyz:user:label";
+    delete process.env.ACTIVITYPUB_DEFAULT_INSTANCE;
+    delete process.env.ACTIVITYPUB_DEFAULT_TOKEN;
+    await expect(import("../../src/auth/account-manager.js")).rejects.toThrow(
+      /Entry #1 uses the legacy/i,
+    );
+    await import("../../src/auth/account-manager.js").catch((err: unknown) => {
+      expect((err as Error).message).not.toContain("SECRET-TOKEN-xyz");
+    });
   });
 });
 
