@@ -90,8 +90,8 @@ async function generateOGImage() {
       <text x="420" y="400" 
             font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" 
             font-size="24" 
-            font-weight="400" 
-            fill="#94a3b8"
+            font-weight="400"
+            fill="#C9C2B8"
             letter-spacing="0">
         Model Context Protocol Server
       </text>
