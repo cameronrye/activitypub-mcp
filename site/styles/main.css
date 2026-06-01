@@ -1615,3 +1615,24 @@ pre code {
 .mb-8 {
   margin-bottom: var(--space-8);
 }
+
+/* Dual-theme Shiki code blocks (spec §3.6) */
+.astro-code,
+.astro-code span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+
+[data-theme="dark"] .astro-code,
+[data-theme="dark"] .astro-code span {
+  color: var(--shiki-dark);
+  background-color: var(--shiki-dark-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] .astro-code,
+  [data-theme="system"] .astro-code span {
+    color: var(--shiki-dark);
+    background-color: var(--shiki-dark-bg);
+  }
+}
