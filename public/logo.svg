@@ -8,7 +8,7 @@
     <path d="M22 22 Q50 70 78 78" stroke="#2F7D6B" />
   </g>
   <!-- Four corner dots (no center node) -->
-  <!-- Top-left: ink, flips to paper on dark via --logo-dot-flip -->
+  <!-- Top-left: ink, flips to paper on dark via the logo-dot-flip variable -->
   <circle cx="18" cy="18" r="9" fill="var(--logo-dot-flip, #1A1714)" />
   <!-- Top-right: pine-teal -->
   <circle cx="82" cy="18" r="9" fill="#2F7D6B" />
