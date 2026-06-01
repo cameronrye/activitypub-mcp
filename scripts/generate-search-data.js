@@ -13,7 +13,7 @@ import { JSDOM } from "jsdom";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const distDir = path.join(__dirname, "..", "dist");
+const distDir = path.join(__dirname, "..", "dist-site");
 const searchDataPath = path.join(distDir, "search.json");
 
 // Function to extract text content from HTML
@@ -115,7 +115,10 @@ function generateSearchData() {
     console.log(`Generated search data with ${searchData.length} pages`);
     console.log(`Search data written to: ${searchDataPath}`);
   } else {
-    console.error('Dist directory not found. Please run "npm run build:site" first.');
+    console.error(
+      'dist-site directory not found. Run "astro build" before generate-search-data.js.',
+    );
+    process.exit(1);
   }
 }
 
