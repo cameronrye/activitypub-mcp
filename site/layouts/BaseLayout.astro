@@ -136,8 +136,11 @@ const structuredData = {
   <!-- JSON-LD Structured Data -->
   <script type="application/ld+json" is:inline set:html={JSON.stringify(structuredData)} />
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href={`${baseURL}favicon.svg`}>
+  <!-- Favicons & app icons -->
+  <link rel="icon" href={`${baseURL}favicon.svg`} sizes="any" type="image/svg+xml">
+  <link rel="icon" href={`${baseURL}favicon.ico`} sizes="32x32">
+  <link rel="apple-touch-icon" href={`${baseURL}apple-touch-icon.png`}>
+  <link rel="manifest" href={`${baseURL}manifest.webmanifest`}>
 
   <!-- Humans.txt -->
   <link rel="author" href={`${baseURL}humans.txt`}>
