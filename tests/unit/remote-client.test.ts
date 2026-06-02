@@ -418,6 +418,25 @@ describe("RemoteActivityPubClient", () => {
 
       await expect(client.fetchObject("https://example.social/notfound")).rejects.toThrow();
     });
+
+    it("accepts a single-string to/cc (AS2 allows a scalar IRI, not just an array)", async () => {
+      server.use(
+        http.get("https://as2.test/note", () => {
+          return HttpResponse.json({
+            id: "https://as2.test/note",
+            type: "Note",
+            content: "hello",
+            // AS2 permits to/cc to be a single string, e.g. the public collection.
+            to: "https://www.w3.org/ns/activitystreams#Public",
+            cc: "https://as2.test/users/alice/followers",
+          });
+        }),
+      );
+
+      const object = await client.fetchObject("https://as2.test/note");
+      expect(object.id).toBe("https://as2.test/note");
+      expect(object.to).toBe("https://www.w3.org/ns/activitystreams#Public");
+    });
   });
 
   describe("SSRF protection", () => {
@@ -487,6 +506,34 @@ describe("RemoteActivityPubClient", () => {
       const outbox = await client.fetchActorOutbox("user@retry.social");
       expect(outbox.id).toBe("https://retry.social/users/user/outbox");
       expect(outboxAttempts).toBe(3);
+    });
+
+    it("does not retry a non-retryable status (404) — fails after a single attempt", async () => {
+      let attempts = 0;
+      server.use(
+        http.get("https://noretry.test/object", () => {
+          attempts++;
+          return new HttpResponse(null, { status: 404 });
+        }),
+      );
+      await expect(client.fetchObject("https://noretry.test/object")).rejects.toThrow();
+      expect(attempts).toBe(1);
+    });
+
+    it("retries a 429 (honoring Retry-After) and then succeeds", async () => {
+      let attempts = 0;
+      server.use(
+        http.get("https://ratelimited.test/object", () => {
+          attempts++;
+          if (attempts === 1) {
+            return new HttpResponse(null, { status: 429, headers: { "Retry-After": "0" } });
+          }
+          return HttpResponse.json({ id: "https://ratelimited.test/object", type: "Note" });
+        }),
+      );
+      const obj = await client.fetchObject("https://ratelimited.test/object");
+      expect(obj.id).toBe("https://ratelimited.test/object");
+      expect(attempts).toBe(2);
     });
   });
 });

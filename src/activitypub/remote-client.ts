@@ -18,6 +18,7 @@ import { type ActivityPubActor, webfingerClient } from "../discovery/webfinger.j
 import { getErrorMessage } from "../utils/errors.js";
 import { blocklistHop, pinnedFetch, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
+import { isRetryableStatus, parseRetryAfter } from "../utils/retry.js";
 import { DomainSchema } from "../validation/schemas.js";
 
 const logger = getLogger("activitypub-mcp");
@@ -78,8 +79,11 @@ const ActivityPubObjectSchema = z.object({
   published: z.string().optional(),
   updated: z.string().optional(),
   url: z.string().optional(),
-  to: z.array(z.string()).optional(),
-  cc: z.array(z.string()).optional(),
+  // AS2 addressing: `to`/`cc` may be a single IRI string or an array of them
+  // (e.g. `"to": "https://www.w3.org/ns/activitystreams#Public"`). Accept both so
+  // spec-conformant non-Mastodon objects don't fail validation and abort the fetch.
+  to: z.union([z.string(), z.array(z.string())]).optional(),
+  cc: z.union([z.string(), z.array(z.string())]).optional(),
   inReplyTo: z.string().optional(),
   replies: z.union([z.string(), z.object({})]).optional(),
   likes: z.union([z.string(), z.object({})]).optional(),
@@ -150,6 +154,29 @@ interface CachedResponse<T> {
   data: T;
   etag: string;
   cachedAt: number;
+}
+
+/** A non-2xx HTTP status that must NOT be retried (e.g. 404 Not Found, 401). */
+class NonRetryableHttpError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "NonRetryableHttpError";
+  }
+}
+
+/** A retryable non-2xx HTTP status, carrying an optional Retry-After delay (ms). */
+class RetryableHttpError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+    readonly retryAfterMs?: number,
+  ) {
+    super(message);
+    this.name = "RetryableHttpError";
+  }
 }
 
 export class RemoteActivityPubClient {
@@ -627,10 +654,20 @@ export class RemoteActivityPubClient {
   }
 
   /**
-   * Handle retry delay with logging.
+   * Handle retry delay with logging. Honors a server-supplied Retry-After (ms),
+   * clamped to maxRetryDelay so a hostile/huge value can't stall the client;
+   * otherwise falls back to jittered exponential backoff.
    */
-  private async handleRetryDelay(attempt: number, url: string, error: Error): Promise<void> {
-    const delay = this.calculateBackoffDelay(attempt);
+  private async handleRetryDelay(
+    attempt: number,
+    url: string,
+    error: Error,
+    retryAfterMs?: number,
+  ): Promise<void> {
+    const delay =
+      retryAfterMs !== undefined
+        ? Math.min(retryAfterMs, this.maxRetryDelay)
+        : this.calculateBackoffDelay(attempt);
     logger.warn(`Attempt ${attempt} failed, retrying in ${Math.round(delay)}ms...`, {
       url,
       error: error.message,
@@ -638,6 +675,24 @@ export class RemoteActivityPubClient {
       delay: Math.round(delay),
     });
     await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+
+  /**
+   * Throw a typed error for a non-2xx response: retryable statuses (429/408/5xx)
+   * become a {@link RetryableHttpError} carrying any Retry-After delay; everything
+   * else becomes a {@link NonRetryableHttpError} so the retry loop fails fast
+   * instead of hammering a permanently-failing endpoint.
+   */
+  private throwForHttpStatus(response: Response): never {
+    const message = `HTTP ${response.status}: ${response.statusText}`;
+    if (isRetryableStatus(response.status)) {
+      throw new RetryableHttpError(
+        response.status,
+        message,
+        parseRetryAfter(response.headers.get("retry-after")),
+      );
+    }
+    throw new NonRetryableHttpError(response.status, message);
   }
 
   /**
@@ -685,21 +740,26 @@ export class RemoteActivityPubClient {
             );
           }
           if (!freshResponse.ok) {
-            throw new Error(`HTTP ${freshResponse.status}: ${freshResponse.statusText}`);
+            this.throwForHttpStatus(freshResponse);
           }
           return await this.processResponse(freshResponse, url, schema);
         }
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          this.throwForHttpStatus(response);
         }
 
         return await this.processResponse(response, url, schema);
       } catch (error) {
+        // A definitively non-retryable HTTP status (404/401/403/410, …) fails
+        // fast — retrying it only wastes the budget.
+        if (error instanceof NonRetryableHttpError) throw error;
+
         lastError = error instanceof Error ? error : new Error(String(error));
 
         if (attempt < this.maxRetries) {
-          await this.handleRetryDelay(attempt, url, lastError);
+          const retryAfterMs = error instanceof RetryableHttpError ? error.retryAfterMs : undefined;
+          await this.handleRetryDelay(attempt, url, lastError, retryAfterMs);
         }
       }
     }
