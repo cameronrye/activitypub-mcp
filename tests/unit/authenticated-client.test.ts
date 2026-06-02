@@ -3,13 +3,13 @@
  */
 
 import { HttpResponse, http } from "msw";
-import { setupServer } from "msw/node";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { accountManager } from "../../src/auth/account-manager.js";
 import { authenticatedFetch } from "../../src/auth/adapters/write-adapter.js";
 import { AuthenticatedClient } from "../../src/auth/authenticated-client.js";
 import { getInstanceSoftware } from "../../src/discovery/nodeinfo.js";
 import { TokenRejectedError, UnsupportedOnPlatformError } from "../../src/utils/errors.js";
+import { server } from "../mocks/server.js";
 
 // Mock logtape
 vi.mock("@logtape/logtape", () => ({
@@ -48,13 +48,6 @@ vi.mock("../../src/discovery/nodeinfo.js", () => ({
   }),
   clearNodeInfoCache: vi.fn(),
 }));
-
-// Create MSW server
-const server = setupServer();
-
-// Start and stop MSW server at file scope so all describe blocks share it.
-beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
-afterAll(() => server.close());
 
 // Mock account credentials
 const mockAccount = {

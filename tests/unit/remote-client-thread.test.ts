@@ -1,6 +1,6 @@
 import { HttpResponse, http } from "msw";
-import { setupServer } from "msw/node";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { server } from "../mocks/server.js";
 
 // Pin DNS to a public IP so resolveAndPin succeeds for fixture hosts (which
 // don't resolve on the real resolver) and MSW intercepts the pinned fetch.
@@ -10,17 +10,12 @@ vi.mock("node:dns/promises", () => ({
   lookup: async () => [{ address: "93.184.216.34", family: 4 }],
 }));
 
-const server = setupServer();
-// Note: the production fetch helper catches and silently skips unmatched
-// requests, so MSW's "error" mode would only add console noise without
-// failing tests. The strict `.toBe(3)` assertion below is the real guard
-// against the cap regressing.
-beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
+// The production fetch helper catches and silently skips unmatched requests,
+// so unhandled requests only add console noise; the strict `.toBe(3)`
+// assertion below is the real guard against the cap regressing.
 afterEach(() => {
-  server.resetHandlers();
   vi.restoreAllMocks();
 });
-afterAll(() => server.close());
 
 describe("fetchPostThread cross-origin guard (M3)", () => {
   const originalEnv = process.env;

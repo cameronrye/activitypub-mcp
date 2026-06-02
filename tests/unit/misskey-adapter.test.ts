@@ -3,19 +3,14 @@
  */
 
 import { HttpResponse, http } from "msw";
-import { setupServer } from "msw/node";
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MisskeyWriteAdapter } from "../../src/auth/adapters/misskey-adapter.js";
+import { server } from "../mocks/server.js";
 
 vi.mock("../../src/validation/url.js", () => ({
   validateExternalUrl: vi.fn().mockResolvedValue(undefined),
   resolveAndPin: vi.fn().mockResolvedValue({}),
 }));
-
-const server = setupServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
 
 const account = {
   id: "mk",
