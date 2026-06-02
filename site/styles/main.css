@@ -1629,3 +1629,256 @@ pre code {
     transition: none;
   }
 }
+
+/* =========================================================================
+   Documentation prose — rendered MDX inside .docs-content. The content is
+   slotted, so it's styled globally here (scoped styles wouldn't reach it).
+   Every color is a brand token, so light/dark parity is automatic.
+   ========================================================================= */
+
+.docs-content {
+  color: var(--text-primary);
+}
+
+/* Headings — display font, weight-led hierarchy, and a scroll offset so TOC /
+   anchor jumps land below the sticky header. */
+.docs-content :is(h2, h3, h4, h5, h6) {
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  scroll-margin-top: calc(var(--space-20) + var(--space-2));
+}
+.docs-content h2 {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  margin: var(--space-12) 0 var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-color);
+}
+.docs-content h3 {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  margin: var(--space-8) 0 var(--space-3);
+}
+.docs-content h4 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  margin: var(--space-6) 0 var(--space-2);
+}
+.docs-content :is(h5, h6) {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: var(--space-5) 0 var(--space-2);
+}
+/* Code in a heading reads as a name; vermilion only where the text is large
+   enough to pass AA at the 3:1 large-text threshold (h2/h3). */
+.docs-content :is(h2, h3) code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  color: var(--accent);
+}
+.docs-content :is(h4, h5, h6) code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  color: var(--text-primary);
+}
+
+/* Body copy */
+.docs-content p {
+  margin: 0 0 var(--space-4);
+  line-height: var(--leading-relaxed);
+}
+.docs-content strong {
+  font-weight: var(--font-semibold);
+}
+
+/* Lists — the global reset zeroes padding; restore indentation + markers. */
+.docs-content :is(ul, ol) {
+  margin: 0 0 var(--space-4);
+  padding-left: var(--space-6);
+}
+.docs-content ul {
+  list-style: disc;
+}
+.docs-content ol {
+  list-style: decimal;
+}
+.docs-content li {
+  margin-bottom: var(--space-2);
+  line-height: var(--leading-relaxed);
+}
+.docs-content li::marker {
+  color: var(--accent);
+}
+.docs-content li > :is(ul, ol) {
+  margin-top: var(--space-2);
+  margin-bottom: 0;
+}
+
+/* Inline code chip (prose only — excludes Shiki blocks and headings). The
+   accent tint keeps it distinct from the grey card/table surfaces, which sit
+   close to --bg-raised, in both themes. */
+.docs-content :not(pre, h1, h2, h3, h4, h5, h6) > code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  padding: 0.12em 0.4em;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border-color));
+  color: var(--text-primary);
+}
+
+/* Tables */
+.docs-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 var(--space-6);
+  font-size: var(--text-sm);
+}
+.docs-content :is(th, td) {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-color);
+  text-align: left;
+  vertical-align: top;
+}
+.docs-content thead th {
+  font-family: var(--font-display);
+  font-weight: var(--font-semibold);
+  background: var(--bg-raised);
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+}
+.docs-content tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+@media (max-width: 640px) {
+  .docs-content table {
+    display: block;
+    overflow-x: auto;
+    min-width: 100%;
+  }
+}
+
+/* Blockquotes */
+.docs-content blockquote {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--accent-2);
+  background: color-mix(in srgb, var(--accent-2) 7%, transparent);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  color: var(--text-muted);
+}
+.docs-content blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* Horizontal rule */
+.docs-content hr {
+  border: none;
+  height: 1px;
+  background: var(--border-color);
+  margin: var(--space-10) 0;
+}
+
+/* Shiki code blocks — frame them and honor the configured soft-wrap. */
+.docs-content pre.astro-code {
+  margin: 0 0 var(--space-6);
+  padding: var(--space-4);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+}
+.docs-content pre.astro-code code {
+  white-space: pre-wrap;
+}
+
+/* ----- Reference cards (full tool / resource / prompt / error specs) ----- */
+.docs-content :is(.tool-reference, .resource-reference, .prompt-card, .error-type) {
+  margin: 0 0 var(--space-6);
+  padding: var(--space-6);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-lg);
+}
+.docs-content :is(.tool-reference, .resource-reference, .prompt-card, .error-type) > :first-child {
+  margin-top: 0;
+}
+.docs-content :is(.tool-reference, .resource-reference, .prompt-card, .error-type) > :last-child {
+  margin-bottom: 0;
+}
+
+/* ----- Card grids (resource type cards, quick-prompt cards) ----- */
+.docs-content :is(.resource-types, .quick-prompts) {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+  margin: 0 0 var(--space-6);
+}
+@media (max-width: 640px) {
+  .docs-content :is(.resource-types, .quick-prompts) {
+    grid-template-columns: 1fr;
+  }
+}
+.docs-content :is(.type-card, .quick-prompt) {
+  padding: var(--space-4) var(--space-5);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+.docs-content .type-card h3 {
+  font-size: var(--text-base);
+  margin: 0 0 var(--space-1);
+}
+.docs-content .type-card p {
+  color: var(--text-muted);
+}
+.docs-content .type-card p:last-child {
+  margin-bottom: 0;
+}
+.docs-content .quick-prompt strong {
+  display: block;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+.docs-content .quick-prompt blockquote {
+  margin: 0;
+  padding: 0 0 0 var(--space-3);
+  background: none;
+  border-left: 2px solid var(--accent);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+/* Card titles are decorative labels — strip section-heading chrome so an
+   unexpected heading level inside a small card still degrades gracefully. */
+.docs-content :is(.type-card, .quick-prompt) :is(h2, h3, h4) {
+  border-bottom: none;
+  text-transform: none;
+  margin-top: 0;
+}
+
+/* ----- Callout / admonition ----- */
+.docs-content .callout {
+  margin: 0 0 var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  background: var(--bg-raised);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-md);
+}
+.docs-content .callout > :last-child {
+  margin-bottom: 0;
+}
+.docs-content .callout-info {
+  border-left-color: var(--accent-2);
+}
