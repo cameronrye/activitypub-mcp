@@ -101,6 +101,7 @@
     "dev:site": "astro dev",
     "preview:site": "astro preview",
     "generate:og-image": "node scripts/generate-og-image.js",
+    "generate:favicons": "node scripts/generate-favicons.js",
     "check": "astro check",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist",
