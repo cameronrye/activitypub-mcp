@@ -1,17 +1,12 @@
 import { HttpResponse, http } from "msw";
-import { setupServer } from "msw/node";
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MastodonOAuthStrategy } from "../../src/auth/login/mastodon-oauth.js";
+import { server } from "../mocks/server.js";
 
 vi.mock("../../src/validation/url.js", () => ({
   validateExternalUrl: vi.fn().mockResolvedValue(undefined),
   resolveAndPin: vi.fn().mockResolvedValue({}),
 }));
-
-const server = setupServer();
-beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
 
 const strategy = new MastodonOAuthStrategy();
 
