@@ -68,7 +68,21 @@ updates:
         update-types:
           - "minor"
           - "patch"
-    
+
+      # Group Astro with its integrations. Unlike the other groups this
+      # includes "major": astro and @astrojs/* are peer-coupled (an astro major
+      # requires a matching @astrojs/mdx major), so they must land in one PR or
+      # npm ci fails on the peer conflict. Keeping them grouped is the exception
+      # that lets coordinated majors be reviewed and merged together.
+      astro:
+        patterns:
+          - "astro"
+          - "@astrojs/*"
+        update-types:
+          - "major"
+          - "minor"
+          - "patch"
+
     # Allow specific dependency types
     allow:
       - dependency-type: "direct"
