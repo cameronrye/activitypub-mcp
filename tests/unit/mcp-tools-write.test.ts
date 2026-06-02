@@ -957,6 +957,51 @@ describe("MCP Write Tools", () => {
     });
   });
 
+  // The audit log is the security record for LLM-driven account mutations, so the
+  // FAILURE branch must log too — not only the success branch. These guard the
+  // catch path of the shared write-tool wrapper for representative destructive
+  // tools (a simple toggle, and the lookup-then-act shape).
+  describe("destructive write tools audit logging on failure (exception path)", () => {
+    it("boost-post: audits success:false when the operation throws", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      (authenticatedClient.boostPost as Mock).mockRejectedValueOnce(new Error("upstream boom"));
+      const tool = registeredTools.get("boost-post");
+      const result = await tool?.handler({ statusId: "status-1" });
+      expect((result as { isError?: boolean }).isError).toBe(true);
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "boost-post",
+        expect.anything(),
+        expect.objectContaining({ success: false, error: "upstream boom" }),
+      );
+    });
+
+    it("follow-account: audits success:false when the operation throws", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      (authenticatedClient.followAccount as Mock).mockRejectedValueOnce(new Error("upstream boom"));
+      const tool = registeredTools.get("follow-account");
+      const result = await tool?.handler({ acct: "u@example.social" });
+      expect((result as { isError?: boolean }).isError).toBe(true);
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "follow-account",
+        expect.anything(),
+        expect.objectContaining({ success: false, error: "upstream boom" }),
+      );
+    });
+
+    it("block-account: audits success:false when the operation throws", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      (authenticatedClient.blockAccount as Mock).mockRejectedValueOnce(new Error("upstream boom"));
+      const tool = registeredTools.get("block-account");
+      const result = await tool?.handler({ acct: "u@example.social" });
+      expect((result as { isError?: boolean }).isError).toBe(true);
+      expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
+        "block-account",
+        expect.anything(),
+        expect.objectContaining({ success: false, error: "upstream boom" }),
+      );
+    });
+  });
+
   describe("media/poll/timeline tool audit logging (L2)", () => {
     it("upload-media: calls auditLogger.logToolInvocation on success", async () => {
       auditLoggerMock.logToolInvocation.mockClear();
