@@ -48,7 +48,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
-    "@astrojs/mdx": "^4.3.10",
+    "@astrojs/mdx": "^6.0.1",
     "@astrojs/sitemap": "^3.6.0",
     "@biomejs/biome": "^2.2.4",
     "@dotenvx/dotenvx": "^1.51.1",
@@ -57,7 +57,7 @@
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@types/node": "^24.5.2",
     "@vitest/coverage-v8": "^4.0.18",
-    "astro": "^5.18.2",
+    "astro": "^6.4.2",
     "cross-env": "^10.0.0",
     "jsdom": "^29.1.1",
     "msw": "^2.7.0",
