@@ -4,7 +4,7 @@
     "includes": [
       "src/**/*.ts",
       "src/**/*.js",
-      "src/**/*.astro",
+      "site/**/*.astro",
       "tests/**/*.ts",
       "scripts/**/*.js",
       "public/**/*.js",
