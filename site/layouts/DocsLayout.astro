@@ -14,8 +14,7 @@ const { entry, headings = [] } = Astro.props as {
 };
 
 const _pageTitle = entry?.data?.title || "Documentation";
-const _pageDescription =
-  entry?.data?.description || "ActivityPub MCP Server Documentation";
+const _pageDescription = entry?.data?.description || "ActivityPub MCP Server Documentation";
 
 const baseURL = import.meta.env.BASE_URL.endsWith("/")
   ? import.meta.env.BASE_URL

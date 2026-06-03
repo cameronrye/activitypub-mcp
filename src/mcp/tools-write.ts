@@ -7,7 +7,7 @@
 
 import { getLogger } from "@logtape/logtape";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
+import { type CallToolResult, ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { auditLogger } from "../audit/logger.js";
 import { accountManager, authenticatedClient } from "../auth/index.js";
@@ -125,6 +125,92 @@ function requireAuthEnabled(): void {
         "or set ACTIVITYPUB_DEFAULT_INSTANCE and ACTIVITYPUB_DEFAULT_TOKEN environment variables.",
     );
   }
+}
+
+/** A resolved (non-null) account, as returned by the account manager. */
+type ResolvedAccount = NonNullable<ReturnType<typeof accountManager.getActiveAccount>>;
+
+/**
+ * Specification for a mutation tool, supplying only the parts that differ between
+ * tools. See {@link withWriteTool}.
+ */
+interface WriteToolSpec<RawArgs extends { accountId?: string }> {
+  /** Tool name, used as the audit-log identifier. */
+  name: string;
+  rateLimiter: RateLimiter;
+  /** Verb for the failure message, e.g. "Failed to boost". */
+  failurePrefix: string;
+  /** Audit-log parameters derived from the (default-applied) input. */
+  auditParams: (args: RawArgs) => Record<string, unknown>;
+  /** Perform the mutation and return the success message text. */
+  run: (args: RawArgs, account: ResolvedAccount) => Promise<string>;
+}
+
+/**
+ * Build the handler for a mutation tool, factoring out the scaffold every write
+ * tool shares: the writes-enabled gate, account resolution, the no-account branch,
+ * the rate-limit check, and success/failure audit logging. Each tool supplies only
+ * its audit params, the operation (returning the success message), and the failure
+ * verb.
+ *
+ * Centralizing this is a correctness control, not just deduplication: the audit
+ * log is the security record for LLM-driven account mutations, and hand-copying
+ * the success/failure logging per tool made it easy for a new tool to ship missing
+ * an audit entry. Here it cannot.
+ */
+function withWriteTool<RawArgs extends { accountId?: string }>(
+  spec: WriteToolSpec<RawArgs>,
+): (args: RawArgs) => Promise<CallToolResult> {
+  return async (args: RawArgs): Promise<CallToolResult> => {
+    requireWriteEnabled();
+    const startTime = Date.now();
+    const auditParams = spec.auditParams(args);
+
+    const account = args.accountId
+      ? accountManager.getAccount(args.accountId)
+      : accountManager.getActiveAccount();
+
+    if (!account) {
+      auditLogger.logToolInvocation(spec.name, auditParams, {
+        success: false,
+        duration: Date.now() - startTime,
+        error: "No account configured",
+      });
+      return {
+        content: [{ type: "text", text: "❌ No account configured." }],
+        isError: true,
+      };
+    }
+
+    // Before the try (mirrors the read tools' McpError-propagation contract): a
+    // rate-limit McpError must surface as a protocol error, not be captured into
+    // an isError text response.
+    checkRateLimit(spec.rateLimiter, account.instance);
+
+    try {
+      const text = await spec.run(args, account);
+      auditLogger.logToolInvocation(spec.name, auditParams, {
+        success: true,
+        duration: Date.now() - startTime,
+      });
+      return { content: [{ type: "text", text }] };
+    } catch (error) {
+      auditLogger.logToolInvocation(spec.name, auditParams, {
+        success: false,
+        duration: Date.now() - startTime,
+        error: getErrorMessage(error),
+      });
+      return {
+        content: [
+          {
+            type: "text",
+            text: `❌ ${spec.failurePrefix}: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  };
 }
 
 // =============================================================================
@@ -711,66 +797,20 @@ function registerBoostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter): 
       },
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
-    async ({ statusId, accountId }) => {
-      requireWriteEnabled();
-      const startTime = Date.now();
-      const auditParams = { statusId, accountId };
-
-      const account = accountId
-        ? accountManager.getAccount(accountId)
-        : accountManager.getActiveAccount();
-
-      if (!account) {
-        auditLogger.logToolInvocation("boost-post", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: "No account configured",
-        });
-        return {
-          content: [{ type: "text", text: "❌ No account configured." }],
-          isError: true,
-        };
-      }
-
-      checkRateLimit(rateLimiter, account.instance);
-
-      try {
+    withWriteTool<{ statusId: string; accountId?: string }>({
+      name: "boost-post",
+      rateLimiter,
+      failurePrefix: "Failed to boost",
+      auditParams: ({ statusId, accountId }) => ({ statusId, accountId }),
+      run: async ({ statusId, accountId }) => {
         const status = await authenticatedClient.boostPost(statusId, accountId);
-        auditLogger.logToolInvocation("boost-post", auditParams, {
-          success: true,
-          duration: Date.now() - startTime,
-        });
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `🔁 **Post Boosted!**
+        return `🔁 **Post Boosted!**
 
 You boosted a post by @${sanitizeInline(status.account.username || "")}
 
-🔗 ${sanitizeInline(status.url || status.uri)}`,
-            },
-          ],
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        auditLogger.logToolInvocation("boost-post", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: message,
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ Failed to boost: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+🔗 ${sanitizeInline(status.url || status.uri)}`;
+      },
+    }),
   );
 }
 
@@ -786,64 +826,18 @@ function registerUnboostPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
       },
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
-    async ({ statusId, accountId }) => {
-      requireWriteEnabled();
-      const startTime = Date.now();
-      const auditParams = { statusId, accountId };
-
-      const account = accountId
-        ? accountManager.getAccount(accountId)
-        : accountManager.getActiveAccount();
-
-      if (!account) {
-        auditLogger.logToolInvocation("unboost-post", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: "No account configured",
-        });
-        return {
-          content: [{ type: "text", text: "❌ No account configured." }],
-          isError: true,
-        };
-      }
-
-      checkRateLimit(rateLimiter, account.instance);
-
-      try {
+    withWriteTool<{ statusId: string; accountId?: string }>({
+      name: "unboost-post",
+      rateLimiter,
+      failurePrefix: "Failed to unboost",
+      auditParams: ({ statusId, accountId }) => ({ statusId, accountId }),
+      run: async ({ statusId, accountId }) => {
         await authenticatedClient.unboostPost(statusId, accountId);
-        auditLogger.logToolInvocation("unboost-post", auditParams, {
-          success: true,
-          duration: Date.now() - startTime,
-        });
+        return `✅ **Boost Removed**
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: `✅ **Boost Removed**
-
-Your boost has been removed from post ${statusId}.`,
-            },
-          ],
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        auditLogger.logToolInvocation("unboost-post", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: message,
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ Failed to unboost: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+Your boost has been removed from post ${statusId}.`;
+      },
+    }),
   );
 }
 
@@ -859,66 +853,20 @@ function registerFavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimite
       },
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
-    async ({ statusId, accountId }) => {
-      requireWriteEnabled();
-      const startTime = Date.now();
-      const auditParams = { statusId, accountId };
-
-      const account = accountId
-        ? accountManager.getAccount(accountId)
-        : accountManager.getActiveAccount();
-
-      if (!account) {
-        auditLogger.logToolInvocation("favourite-post", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: "No account configured",
-        });
-        return {
-          content: [{ type: "text", text: "❌ No account configured." }],
-          isError: true,
-        };
-      }
-
-      checkRateLimit(rateLimiter, account.instance);
-
-      try {
+    withWriteTool<{ statusId: string; accountId?: string }>({
+      name: "favourite-post",
+      rateLimiter,
+      failurePrefix: "Failed to favourite",
+      auditParams: ({ statusId, accountId }) => ({ statusId, accountId }),
+      run: async ({ statusId, accountId }) => {
         const status = await authenticatedClient.favouritePost(statusId, accountId);
-        auditLogger.logToolInvocation("favourite-post", auditParams, {
-          success: true,
-          duration: Date.now() - startTime,
-        });
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `⭐ **Post Favourited!**
+        return `⭐ **Post Favourited!**
 
 You favourited a post by @${sanitizeInline(status.account.username || "")}
 
-🔗 ${sanitizeInline(status.url || status.uri)}`,
-            },
-          ],
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        auditLogger.logToolInvocation("favourite-post", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: message,
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ Failed to favourite: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+🔗 ${sanitizeInline(status.url || status.uri)}`;
+      },
+    }),
   );
 }
 
@@ -934,64 +882,18 @@ function registerUnfavouritePostTool(mcpServer: McpServer, rateLimiter: RateLimi
       },
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
-    async ({ statusId, accountId }) => {
-      requireWriteEnabled();
-      const startTime = Date.now();
-      const auditParams = { statusId, accountId };
-
-      const account = accountId
-        ? accountManager.getAccount(accountId)
-        : accountManager.getActiveAccount();
-
-      if (!account) {
-        auditLogger.logToolInvocation("unfavourite-post", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: "No account configured",
-        });
-        return {
-          content: [{ type: "text", text: "❌ No account configured." }],
-          isError: true,
-        };
-      }
-
-      checkRateLimit(rateLimiter, account.instance);
-
-      try {
+    withWriteTool<{ statusId: string; accountId?: string }>({
+      name: "unfavourite-post",
+      rateLimiter,
+      failurePrefix: "Failed to unfavourite",
+      auditParams: ({ statusId, accountId }) => ({ statusId, accountId }),
+      run: async ({ statusId, accountId }) => {
         await authenticatedClient.unfavouritePost(statusId, accountId);
-        auditLogger.logToolInvocation("unfavourite-post", auditParams, {
-          success: true,
-          duration: Date.now() - startTime,
-        });
+        return `✅ **Favourite Removed**
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: `✅ **Favourite Removed**
-
-Post ${statusId} has been removed from your favourites.`,
-            },
-          ],
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        auditLogger.logToolInvocation("unfavourite-post", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: message,
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ Failed to unfavourite: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+Post ${statusId} has been removed from your favourites.`;
+      },
+    }),
   );
 }
 
@@ -1007,66 +909,20 @@ function registerBookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimiter
       },
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
-    async ({ statusId, accountId }) => {
-      requireWriteEnabled();
-      const startTime = Date.now();
-      const auditParams = { statusId, accountId };
-
-      const account = accountId
-        ? accountManager.getAccount(accountId)
-        : accountManager.getActiveAccount();
-
-      if (!account) {
-        auditLogger.logToolInvocation("bookmark-post", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: "No account configured",
-        });
-        return {
-          content: [{ type: "text", text: "❌ No account configured." }],
-          isError: true,
-        };
-      }
-
-      checkRateLimit(rateLimiter, account.instance);
-
-      try {
+    withWriteTool<{ statusId: string; accountId?: string }>({
+      name: "bookmark-post",
+      rateLimiter,
+      failurePrefix: "Failed to bookmark",
+      auditParams: ({ statusId, accountId }) => ({ statusId, accountId }),
+      run: async ({ statusId, accountId }) => {
         const status = await authenticatedClient.bookmarkPost(statusId, accountId);
-        auditLogger.logToolInvocation("bookmark-post", auditParams, {
-          success: true,
-          duration: Date.now() - startTime,
-        });
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `🔖 **Post Bookmarked!**
+        return `🔖 **Post Bookmarked!**
 
 Saved post by @${sanitizeInline(status.account.username || "")}
 
-🔗 ${sanitizeInline(status.url || status.uri)}`,
-            },
-          ],
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        auditLogger.logToolInvocation("bookmark-post", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: message,
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ Failed to bookmark: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+🔗 ${sanitizeInline(status.url || status.uri)}`;
+      },
+    }),
   );
 }
 
@@ -1082,64 +938,18 @@ function registerUnbookmarkPostTool(mcpServer: McpServer, rateLimiter: RateLimit
       },
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
-    async ({ statusId, accountId }) => {
-      requireWriteEnabled();
-      const startTime = Date.now();
-      const auditParams = { statusId, accountId };
-
-      const account = accountId
-        ? accountManager.getAccount(accountId)
-        : accountManager.getActiveAccount();
-
-      if (!account) {
-        auditLogger.logToolInvocation("unbookmark-post", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: "No account configured",
-        });
-        return {
-          content: [{ type: "text", text: "❌ No account configured." }],
-          isError: true,
-        };
-      }
-
-      checkRateLimit(rateLimiter, account.instance);
-
-      try {
+    withWriteTool<{ statusId: string; accountId?: string }>({
+      name: "unbookmark-post",
+      rateLimiter,
+      failurePrefix: "Failed to unbookmark",
+      auditParams: ({ statusId, accountId }) => ({ statusId, accountId }),
+      run: async ({ statusId, accountId }) => {
         await authenticatedClient.unbookmarkPost(statusId, accountId);
-        auditLogger.logToolInvocation("unbookmark-post", auditParams, {
-          success: true,
-          duration: Date.now() - startTime,
-        });
+        return `✅ **Bookmark Removed**
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: `✅ **Bookmark Removed**
-
-Post ${statusId} has been removed from your bookmarks.`,
-            },
-          ],
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        auditLogger.logToolInvocation("unbookmark-post", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: message,
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ Failed to unbookmark: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+Post ${statusId} has been removed from your bookmarks.`;
+      },
+    }),
   );
 }
 
@@ -1169,30 +979,17 @@ function registerFollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
       },
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
-    async ({ acct, showBoosts = true, notify = false, accountId }) => {
-      requireWriteEnabled();
-      const startTime = Date.now();
-      const auditParams = { acct, showBoosts, notify, accountId };
-
-      const account = accountId
-        ? accountManager.getAccount(accountId)
-        : accountManager.getActiveAccount();
-
-      if (!account) {
-        auditLogger.logToolInvocation("follow-account", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: "No account configured",
-        });
-        return {
-          content: [{ type: "text", text: "❌ No account configured." }],
-          isError: true,
-        };
-      }
-
-      checkRateLimit(rateLimiter, account.instance);
-
-      try {
+    withWriteTool<{ acct: string; showBoosts?: boolean; notify?: boolean; accountId?: string }>({
+      name: "follow-account",
+      rateLimiter,
+      failurePrefix: "Failed to follow",
+      auditParams: ({ acct, showBoosts = true, notify = false, accountId }) => ({
+        acct,
+        showBoosts,
+        notify,
+        accountId,
+      }),
+      run: async ({ acct, showBoosts = true, notify = false, accountId }) => {
         // First, lookup the account to get its ID
         const targetAccount = await authenticatedClient.lookupAccount(acct, accountId);
 
@@ -1206,42 +1003,14 @@ function registerFollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
           ? "Follow request sent (awaiting approval)"
           : "Now following";
 
-        auditLogger.logToolInvocation("follow-account", auditParams, {
-          success: true,
-          duration: Date.now() - startTime,
-        });
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `✅ **${statusText}** @${acct}
+        return `✅ **${statusText}** @${acct}
 
 👥 Relationship:
 - Following: ${relationship.following ? "Yes" : "Pending"}
 - Show Boosts: ${showBoosts ? "Yes" : "No"}
-- Notifications: ${notify ? "Enabled" : "Disabled"}`,
-            },
-          ],
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        auditLogger.logToolInvocation("follow-account", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: message,
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ Failed to follow: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+- Notifications: ${notify ? "Enabled" : "Disabled"}`;
+      },
+    }),
   );
 }
 
@@ -1257,66 +1026,20 @@ function registerUnfollowAccountTool(mcpServer: McpServer, rateLimiter: RateLimi
       },
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
-    async ({ acct, accountId }) => {
-      requireWriteEnabled();
-      const startTime = Date.now();
-      const auditParams = { acct, accountId };
-
-      const account = accountId
-        ? accountManager.getAccount(accountId)
-        : accountManager.getActiveAccount();
-
-      if (!account) {
-        auditLogger.logToolInvocation("unfollow-account", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: "No account configured",
-        });
-        return {
-          content: [{ type: "text", text: "❌ No account configured." }],
-          isError: true,
-        };
-      }
-
-      checkRateLimit(rateLimiter, account.instance);
-
-      try {
+    withWriteTool<{ acct: string; accountId?: string }>({
+      name: "unfollow-account",
+      rateLimiter,
+      failurePrefix: "Failed to unfollow",
+      auditParams: ({ acct, accountId }) => ({ acct, accountId }),
+      run: async ({ acct, accountId }) => {
         const targetAccount = await authenticatedClient.lookupAccount(acct, accountId);
         await authenticatedClient.unfollowAccount(targetAccount.id, accountId);
 
-        auditLogger.logToolInvocation("unfollow-account", auditParams, {
-          success: true,
-          duration: Date.now() - startTime,
-        });
+        return `✅ **Unfollowed** @${acct}
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: `✅ **Unfollowed** @${acct}
-
-You are no longer following this account.`,
-            },
-          ],
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        auditLogger.logToolInvocation("unfollow-account", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: message,
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ Failed to unfollow: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+You are no longer following this account.`;
+      },
+    }),
   );
 }
 
@@ -1340,30 +1063,22 @@ function registerMuteAccountTool(mcpServer: McpServer, rateLimiter: RateLimiter)
       },
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
-    async ({ acct, muteNotifications = true, duration = 0, accountId }) => {
-      requireWriteEnabled();
-      const startTime = Date.now();
-      const auditParams = { acct, muteNotifications, duration, accountId };
-
-      const account = accountId
-        ? accountManager.getAccount(accountId)
-        : accountManager.getActiveAccount();
-
-      if (!account) {
-        auditLogger.logToolInvocation("mute-account", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: "No account configured",
-        });
-        return {
-          content: [{ type: "text", text: "❌ No account configured." }],
-          isError: true,
-        };
-      }
-
-      checkRateLimit(rateLimiter, account.instance);
-
-      try {
+    withWriteTool<{
+      acct: string;
+      muteNotifications?: boolean;
+      duration?: number;
+      accountId?: string;
+    }>({
+      name: "mute-account",
+      rateLimiter,
+      failurePrefix: "Failed to mute",
+      auditParams: ({ acct, muteNotifications = true, duration = 0, accountId }) => ({
+        acct,
+        muteNotifications,
+        duration,
+        accountId,
+      }),
+      run: async ({ acct, muteNotifications = true, duration = 0, accountId }) => {
         const targetAccount = await authenticatedClient.lookupAccount(acct, accountId);
         await authenticatedClient.muteAccount(
           targetAccount.id,
@@ -1373,39 +1088,11 @@ function registerMuteAccountTool(mcpServer: McpServer, rateLimiter: RateLimiter)
 
         const durationText = duration > 0 ? `for ${duration} seconds` : "indefinitely";
 
-        auditLogger.logToolInvocation("mute-account", auditParams, {
-          success: true,
-          duration: Date.now() - startTime,
-        });
+        return `🔇 **Muted** @${acct} ${durationText}
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: `🔇 **Muted** @${acct} ${durationText}
-
-- Notifications muted: ${muteNotifications ? "Yes" : "No"}`,
-            },
-          ],
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        auditLogger.logToolInvocation("mute-account", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: message,
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ Failed to mute: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+- Notifications muted: ${muteNotifications ? "Yes" : "No"}`;
+      },
+    }),
   );
 }
 
@@ -1421,66 +1108,20 @@ function registerUnmuteAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
       },
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
-    async ({ acct, accountId }) => {
-      requireWriteEnabled();
-      const startTime = Date.now();
-      const auditParams = { acct, accountId };
-
-      const account = accountId
-        ? accountManager.getAccount(accountId)
-        : accountManager.getActiveAccount();
-
-      if (!account) {
-        auditLogger.logToolInvocation("unmute-account", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: "No account configured",
-        });
-        return {
-          content: [{ type: "text", text: "❌ No account configured." }],
-          isError: true,
-        };
-      }
-
-      checkRateLimit(rateLimiter, account.instance);
-
-      try {
+    withWriteTool<{ acct: string; accountId?: string }>({
+      name: "unmute-account",
+      rateLimiter,
+      failurePrefix: "Failed to unmute",
+      auditParams: ({ acct, accountId }) => ({ acct, accountId }),
+      run: async ({ acct, accountId }) => {
         const targetAccount = await authenticatedClient.lookupAccount(acct, accountId);
         await authenticatedClient.unmuteAccount(targetAccount.id, accountId);
 
-        auditLogger.logToolInvocation("unmute-account", auditParams, {
-          success: true,
-          duration: Date.now() - startTime,
-        });
+        return `🔊 **Unmuted** @${acct}
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: `🔊 **Unmuted** @${acct}
-
-Their posts will now appear in your timelines again.`,
-            },
-          ],
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        auditLogger.logToolInvocation("unmute-account", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: message,
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ Failed to unmute: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+Their posts will now appear in your timelines again.`;
+      },
+    }),
   );
 }
 
@@ -1496,66 +1137,20 @@ function registerBlockAccountTool(mcpServer: McpServer, rateLimiter: RateLimiter
       },
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
-    async ({ acct, accountId }) => {
-      requireWriteEnabled();
-      const startTime = Date.now();
-      const auditParams = { acct, accountId };
-
-      const account = accountId
-        ? accountManager.getAccount(accountId)
-        : accountManager.getActiveAccount();
-
-      if (!account) {
-        auditLogger.logToolInvocation("block-account", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: "No account configured",
-        });
-        return {
-          content: [{ type: "text", text: "❌ No account configured." }],
-          isError: true,
-        };
-      }
-
-      checkRateLimit(rateLimiter, account.instance);
-
-      try {
+    withWriteTool<{ acct: string; accountId?: string }>({
+      name: "block-account",
+      rateLimiter,
+      failurePrefix: "Failed to block",
+      auditParams: ({ acct, accountId }) => ({ acct, accountId }),
+      run: async ({ acct, accountId }) => {
         const targetAccount = await authenticatedClient.lookupAccount(acct, accountId);
         await authenticatedClient.blockAccount(targetAccount.id, accountId);
 
-        auditLogger.logToolInvocation("block-account", auditParams, {
-          success: true,
-          duration: Date.now() - startTime,
-        });
+        return `🚫 **Blocked** @${acct}
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: `🚫 **Blocked** @${acct}
-
-They can no longer see your posts or interact with you.`,
-            },
-          ],
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        auditLogger.logToolInvocation("block-account", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: message,
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ Failed to block: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+They can no longer see your posts or interact with you.`;
+      },
+    }),
   );
 }
 
@@ -1571,66 +1166,20 @@ function registerUnblockAccountTool(mcpServer: McpServer, rateLimiter: RateLimit
       },
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },
-    async ({ acct, accountId }) => {
-      requireWriteEnabled();
-      const startTime = Date.now();
-      const auditParams = { acct, accountId };
-
-      const account = accountId
-        ? accountManager.getAccount(accountId)
-        : accountManager.getActiveAccount();
-
-      if (!account) {
-        auditLogger.logToolInvocation("unblock-account", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: "No account configured",
-        });
-        return {
-          content: [{ type: "text", text: "❌ No account configured." }],
-          isError: true,
-        };
-      }
-
-      checkRateLimit(rateLimiter, account.instance);
-
-      try {
+    withWriteTool<{ acct: string; accountId?: string }>({
+      name: "unblock-account",
+      rateLimiter,
+      failurePrefix: "Failed to unblock",
+      auditParams: ({ acct, accountId }) => ({ acct, accountId }),
+      run: async ({ acct, accountId }) => {
         const targetAccount = await authenticatedClient.lookupAccount(acct, accountId);
         await authenticatedClient.unblockAccount(targetAccount.id, accountId);
 
-        auditLogger.logToolInvocation("unblock-account", auditParams, {
-          success: true,
-          duration: Date.now() - startTime,
-        });
+        return `✅ **Unblocked** @${acct}
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: `✅ **Unblocked** @${acct}
-
-They can now see your posts and interact with you again.`,
-            },
-          ],
-        };
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        auditLogger.logToolInvocation("unblock-account", auditParams, {
-          success: false,
-          duration: Date.now() - startTime,
-          error: message,
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: `❌ Failed to unblock: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+They can now see your posts and interact with you again.`;
+      },
+    }),
   );
 }
 

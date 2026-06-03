@@ -9,6 +9,23 @@ order: 2
 
 All notable changes to the ActivityPub MCP Server are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### v3.0.1 - 2026-06-02
+
+**Correctness &amp; distribution.** A cross-origin redirect security fix, Misskey and remote-fetch correctness fixes, and the server is now publishable to the official MCP Registry. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.
+
+#### Security
+
+- **Cross-origin redirect credential stripping.** `Authorization`, `Cookie`, and the request body are dropped when an outbound fetch is redirected to a different origin, so credentials can never leak to an unexpected host.
+
+#### Added
+
+- **MCP Registry manifest.** A `server.json` and a `mcpName` marker make the server publishable to [registry.modelcontextprotocol.io](https://registry.modelcontextprotocol.io) — npm package, stdio transport, read-only by default.
+
+#### Fixed
+
+- Misskey `get-home-timeline` now maps `minId` to the correct API parameter
+- Remote fetches honor `Retry-After`, retry transient (5xx / network) failures with backoff, and tolerate ActivityStreams `to`/`cc` delivered as a single string
+
 ### v3.0.0 - 2026-05-31
 
 **Security &amp; surface-reduction overhaul.** Read-only by default, an untrusted-content envelope, and a leaner tool surface. See the [v3 Migration Guide](https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v3.md) for full upgrade details, and [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.

@@ -174,4 +174,71 @@ describe("fetchWithRedirectGuard", () => {
       /Too many redirects/,
     );
   });
+
+  it("strips Authorization and the request body when a redirect crosses origin", async () => {
+    let landingAuth: string | null = "unset";
+    let landingBody = "unset";
+    server.use(
+      // A configured-but-hostile (or open-redirect) origin 307s the request,
+      // which would otherwise replay the bearer token + body to a new host.
+      http.post(
+        "https://orig.example/start",
+        () =>
+          new HttpResponse(null, {
+            status: 307,
+            headers: { Location: "https://evil.example/steal" },
+          }),
+      ),
+      http.post("https://evil.example/steal", async ({ request }) => {
+        landingAuth = request.headers.get("authorization");
+        landingBody = await request.text();
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+
+    const response = await fetchWithRedirectGuard(
+      "https://orig.example/start",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer super-secret-token",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ client_secret: "leak-me" }),
+      },
+      async () => {},
+    );
+
+    expect(response.status).toBe(200);
+    // The attacker host must NOT receive the credential or the secret-bearing body.
+    expect(landingAuth).toBeNull();
+    expect(landingBody).toBe("");
+  });
+
+  it("preserves Authorization across a same-origin redirect", async () => {
+    let landingAuth: string | null = null;
+    server.use(
+      http.get(
+        "https://same.example/start",
+        () =>
+          new HttpResponse(null, {
+            status: 302,
+            headers: { Location: "https://same.example/landing" },
+          }),
+      ),
+      http.get("https://same.example/landing", ({ request }) => {
+        landingAuth = request.headers.get("authorization");
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+
+    const response = await fetchWithRedirectGuard(
+      "https://same.example/start",
+      { headers: { Authorization: "Bearer keep-me" } },
+      async () => {},
+    );
+
+    expect(response.status).toBe(200);
+    expect(landingAuth).toBe("Bearer keep-me");
+  });
 });

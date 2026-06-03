@@ -431,7 +431,10 @@ export class MisskeyWriteAdapter implements WriteAdapter {
   async getHomeTimeline(account: AccountCredentials, options?: ListPageOptions): Promise<Status[]> {
     const body: Record<string, unknown> = { limit: options?.limit ?? 20 };
     if (options?.maxId) body.untilId = options.maxId;
-    if (options?.sinceId) body.sinceId = options.sinceId;
+    // Misskey has no min_id; Mastodon min_id and since_id both mean "newer than",
+    // so map either to Misskey's sinceId (minId wins), matching getNotifications.
+    if (options?.minId) body.sinceId = options.minId;
+    else if (options?.sinceId) body.sinceId = options.sinceId;
     const notes = await misskeyPostJson<MisskeyNote[]>(
       account,
       "/api/notes/timeline",

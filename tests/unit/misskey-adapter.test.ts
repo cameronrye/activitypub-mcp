@@ -201,4 +201,19 @@ describe("MisskeyWriteAdapter timeline", () => {
     expect(tl).toHaveLength(1);
     expect(tl[0].id).toBe("note1");
   });
+
+  it("getHomeTimeline maps maxId/minId to Misskey untilId/sinceId", async () => {
+    let received: Record<string, unknown> | undefined;
+    server.use(
+      http.post("https://misskey.test/api/notes/timeline", async ({ request }) => {
+        received = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json([sampleNote]);
+      }),
+    );
+    // Misskey has no min_id; both Mastodon min_id and since_id mean "newer than",
+    // so minId must map to Misskey's sinceId — matching getNotifications.
+    await adapter.getHomeTimeline(account, { maxId: "older", minId: "newer" });
+    expect(received?.untilId).toBe("older");
+    expect(received?.sinceId).toBe("newer");
+  });
 });

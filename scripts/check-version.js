@@ -26,6 +26,14 @@ const lockJson = JSON.parse(readFileSync(lockPath, "utf-8"));
 const lockVersion = lockJson.version;
 const lockRootPkgVersion = lockJson.packages?.[""]?.version;
 
+// Read server.json (the MCP registry manifest). Its version must track
+// package.json so a release bump can't publish a stale manifest. The tests run
+// the full structural contract; this guard runs at prepublish, where they do not.
+const serverJsonPath = join(rootDir, "server.json");
+const serverJson = JSON.parse(readFileSync(serverJsonPath, "utf-8"));
+const serverJsonVersion = serverJson.version;
+const serverJsonPkgVersion = serverJson.packages?.[0]?.version;
+
 // Read config.ts to find MCP_SERVER_VERSION default
 const configPath = join(rootDir, "src", "config.ts");
 const configContent = readFileSync(configPath, "utf-8");
@@ -46,12 +54,22 @@ console.log("──────────────────────�
 console.log(`package.json version:           ${packageVersion}`);
 console.log(`package-lock.json version:      ${lockVersion}`);
 console.log(`package-lock.json root pkg:     ${lockRootPkgVersion}`);
+console.log(`server.json version:            ${serverJsonVersion}`);
+console.log(`server.json package version:    ${serverJsonPkgVersion}`);
 console.log(`MCP_SERVER_VERSION default:     ${codeVersion}`);
 console.log("─────────────────────────────");
 
 const mismatches = [];
 if (packageVersion !== codeVersion) {
   mismatches.push(`package.json (${packageVersion}) vs src/config.ts (${codeVersion})`);
+}
+if (packageVersion !== serverJsonVersion) {
+  mismatches.push(`package.json (${packageVersion}) vs server.json (${serverJsonVersion})`);
+}
+if (packageVersion !== serverJsonPkgVersion) {
+  mismatches.push(
+    `package.json (${packageVersion}) vs server.json packages[0] (${serverJsonPkgVersion})`,
+  );
 }
 if (packageVersion !== lockVersion) {
   mismatches.push(
@@ -77,4 +95,5 @@ for (const m of mismatches) {
 console.error("");
 console.error("To fix package-lock.json drift, run: npm install --package-lock-only");
 console.error("To fix src/config.ts drift, update the SERVER_VERSION default.");
+console.error("To fix server.json drift, update both 'version' and packages[0].version.");
 process.exit(1);

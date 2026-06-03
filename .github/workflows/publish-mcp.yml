@@ -1,0 +1,41 @@
+name: Publish to MCP Registry
+
+# Publishes server.json to the official MCP registry
+# (registry.modelcontextprotocol.io) using GitHub Actions OIDC — no stored
+# secret, since the io.github.cameronrye/* namespace is authorized by the
+# repo owner's OIDC identity.
+#
+# Run this AFTER the matching npm version is live: the registry validates that
+# the published npm tarball's package.json carries the same `mcpName`. Kept
+# workflow_dispatch-only and separate from release.yml so the proven npm-release
+# path is never coupled to a registry hiccup, and so it can be re-run on its own.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required for `mcp-publisher login github-oidc`
+
+jobs:
+  publish:
+    name: Publish server.json
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Install mcp-publisher
+      run: |
+        curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar -xz mcp-publisher
+
+    - name: Authenticate via GitHub OIDC
+      run: ./mcp-publisher login github-oidc
+
+    - name: Publish to the MCP registry
+      run: ./mcp-publisher publish
+
+    - name: Confirm the listing
+      run: |
+        sleep 5
+        curl -fsSL "https://registry.modelcontextprotocol.io/v0/servers?search=activitypub-mcp" | head -c 2000 || true

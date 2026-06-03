@@ -1,0 +1,38 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.cameronrye/activitypub-mcp",
+  "description": "Security-first, read-only-by-default MCP server for ActivityPub and the Fediverse.",
+  "version": "3.0.1",
+  "repository": {
+    "url": "https://github.com/cameronrye/activitypub-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "activitypub-mcp",
+      "version": "3.0.1",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "ACTIVITYPUB_ENABLE_WRITES",
+          "description": "Enable write/mutation tools (post, reply, follow, boost, block). Off by default: read-only unless set to 'true'. See SECURITY.md.",
+          "isRequired": false,
+          "isSecret": false,
+          "default": "false"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "description": "Logging verbosity: debug, info, warn, or error.",
+          "isRequired": false,
+          "isSecret": false,
+          "default": "info"
+        }
+      ]
+    }
+  ]
+}

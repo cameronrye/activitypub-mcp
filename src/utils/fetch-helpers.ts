@@ -16,6 +16,31 @@ import { resolveAndPin } from "../validation/url.js";
 export type DispatchInit = RequestInit & { dispatcher?: Agent };
 
 /**
+ * Request headers that carry credentials and MUST NOT be replayed to a different
+ * origin on a redirect. Matched case-insensitively via the Headers API.
+ */
+const CREDENTIAL_HEADERS = ["authorization", "cookie", "proxy-authorization"];
+
+/**
+ * Drop credential headers (and the request body) from an init for a cross-origin
+ * redirect hop. A configured-but-hostile instance, a compromised one, or a benign
+ * instance with an open redirect could otherwise 302/307 an authenticated request
+ * to an attacker-controlled host and receive the bearer token verbatim (and, on a
+ * method-preserving redirect, the POST body — e.g. an OAuth token exchange that
+ * carries client_secret). This mirrors what browser `fetch` and undici's built-in
+ * redirect handling do; we must do it ourselves because we follow redirects
+ * manually (`redirect: "manual"`), which bypasses that built-in stripping.
+ */
+function stripCredentialsForCrossOrigin(init: DispatchInit): DispatchInit {
+  const headers = new Headers(init.headers);
+  for (const name of CREDENTIAL_HEADERS) headers.delete(name);
+  // Discard the body too: a method-preserving (307/308) cross-origin redirect
+  // would otherwise resend a secret-bearing payload to the new origin.
+  const { body: _body, ...rest } = init;
+  return { ...rest, headers };
+}
+
+/**
  * onHop callback for guarded fetches: reject a (redirect) target whose host is
  * on the operator instance blocklist. Shared so every fetch path enforces the
  * blocklist identically — a future change to how the hop host is derived lands
@@ -45,6 +70,10 @@ export async function fetchWithRedirectGuard(
   maxHops = 3,
 ): Promise<Response> {
   let currentUrl = url;
+  // The init used for the current hop. Starts from the caller-supplied init and
+  // is replaced with a credential-stripped copy the first time a redirect crosses
+  // origin — once stripped it stays stripped for the rest of the chain.
+  let currentInit = init;
   // The dispatcher pinned for the current hop. Starts from the caller-supplied
   // init (pinned to the initial URL's validated IP) and is replaced per hop with
   // the dispatcher the validator returns for the next target.
@@ -52,7 +81,7 @@ export async function fetchWithRedirectGuard(
 
   for (let hop = 0; hop <= maxHops; hop++) {
     const response = await fetch(currentUrl, {
-      ...init,
+      ...currentInit,
       dispatcher: currentDispatcher,
       redirect: "manual",
     } as DispatchInit);
@@ -77,6 +106,12 @@ export async function fetchWithRedirectGuard(
       nextUrl = new URL(location, currentUrl).toString();
     } catch {
       throw new Error(`Redirect from ${currentUrl} has malformed Location: ${location}`);
+    }
+
+    // Cross-origin hop: strip credentials + body before following so a redirect
+    // can't exfiltrate the bearer token / OAuth secret to a different host.
+    if (new URL(nextUrl).origin !== new URL(currentUrl).origin) {
+      currentInit = stripCredentialsForCrossOrigin(currentInit);
     }
 
     // Re-validate the next hop. The validator may return a dispatcher pinned to
