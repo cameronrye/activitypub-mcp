@@ -143,63 +143,45 @@ A `.mcpb` bundle (a zip of `manifest.json` + server code; the format formerly
 called `.dxt`) installs into Claude for macOS/Windows with a double-click —
 Claude ships its own Node runtime.
 
+The manifest is committed at [`manifest.json`](../manifest.json) (manifest
+version `0.2`, validated by `mcpb`). It models the read-only default as a
+`user_config` boolean so the **install dialog makes read-only the explicit
+default** and any write access an explicit opt-in (`ACTIVITYPUB_ENABLE_WRITES`
+maps to the `enable_writes` toggle, default `false`).
+
+Reproducible build of a **self-contained** bundle (the entrypoint is ESM, so the
+bundle must carry a `package.json` with `"type":"module"` plus production
+`node_modules`, or Node loads `dist/*.js` as CommonJS and the imports fail):
+
 ```bash
 npm install -g @anthropic-ai/mcpb
-mcpb init        # or hand-write manifest.json (below)
-npm run build    # dist/ must exist; vendor node_modules for a self-contained bundle
-mcpb validate
-mcpb pack        # → activitypub-mcp.mcpb
+npm run clean && npm run build               # produce dist/
+stage=$(mktemp -d)
+cp manifest.json package.json package-lock.json "$stage"/
+cp -R dist "$stage"/dist
+( cd "$stage" && npm ci --omit=dev --ignore-scripts )   # prod deps only
+mcpb validate manifest.json
+mcpb pack "$stage" activitypub-mcp-$(node -p 'require("./package.json").version').mcpb
 ```
 
-Attach the `.mcpb` to GitHub Releases for one-click install. Model the
-read-only default as a `user_config` boolean so the **install dialog makes
-read-only the explicit default** and any write access an explicit opt-in:
-
-```json
-{
-  "manifest_version": "0.3",
-  "name": "activitypub-mcp",
-  "version": "3.0.0",
-  "description": "Security-first, read-only-by-default MCP server for ActivityPub and the Fediverse.",
-  "author": { "name": "Cameron Rye" },
-  "server": {
-    "type": "node",
-    "entry_point": "dist/mcp-main.js",
-    "mcp_config": {
-      "command": "node",
-      "args": ["${__dirname}/dist/mcp-main.js"],
-      "env": {
-        "MCP_TRANSPORT_MODE": "stdio",
-        "ACTIVITYPUB_ENABLE_WRITES": "${user_config.enable_writes}",
-        "LOG_LEVEL": "${user_config.log_level}"
-      }
-    }
-  },
-  "user_config": {
-    "enable_writes": {
-      "type": "boolean",
-      "title": "Enable write / mutation tools",
-      "description": "Leave OFF for safe read-only use. Turning this on lets the LLM post, reply, follow, boost, and block. Read SECURITY.md first.",
-      "default": false
-    },
-    "log_level": { "type": "string", "title": "Log level", "default": "info" }
-  }
-}
-```
-
-You can also list the bundle in the official registry by adding a second
-`packages[]` entry to `server.json` with `"registryType": "mcpb"`.
+The built bundle is attached to each GitHub Release (e.g. the
+[v3.0.1 release](https://github.com/cameronrye/activitypub-mcp/releases/tag/v3.0.1))
+for one-click install. You can also list the bundle in the official registry by
+adding a second `packages[]` entry to `server.json` with `"registryType": "mcpb"`.
 
 ---
 
 ## 4. Recommended sequence
 
-1. ✅ `mcpName` + `server.json` + contract test + version guard (done, this branch).
-2. Cut the next release (bump version → npm publish with `mcpName` → registry
-   publish). This alone seeds PulseMCP, mcp.so, and the modelcontextprotocol
-   redirect.
-3. Claim Glama (~5 min) and tighten tool descriptions; optionally add `glama.json`.
-4. Build the `.mcpb` and attach it to the release for one-click Desktop install.
+1. ✅ `mcpName` + `server.json` + contract test + version guard.
+2. ✅ Released 3.0.1 (npm publish with `mcpName` → registry publish). The server
+   is live in the registry, which seeds PulseMCP, mcp.so, and the
+   modelcontextprotocol redirect downstream.
+3. ✅ Built the `.mcpb` and attached it to the v3.0.1 release; committed
+   `glama.json`. **Manual step left: claim the Glama listing** at glama.ai via
+   GitHub OAuth (a personal repo claims with OAuth alone), then tighten tool
+   descriptions.
+4. ⏳ Confirm PulseMCP / mcp.so picked up the registry entry (≤ ~1 week).
 5. Smithery last, only if there's demand.
 
 ---

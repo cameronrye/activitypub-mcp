@@ -1,0 +1,49 @@
+{
+  "manifest_version": "0.2",
+  "name": "activitypub-mcp",
+  "display_name": "ActivityPub MCP",
+  "version": "3.0.1",
+  "description": "Security-first, read-only-by-default MCP server for ActivityPub and the Fediverse.",
+  "long_description": "Lets an LLM explore and interact with the existing Fediverse — Mastodon, Misskey, Foundkey, Pleroma, and compatible servers. Read-only by default; write tools are opt-in. Untrusted fediverse content is wrapped in an <untrusted-content> envelope before it reaches the model.",
+  "author": {
+    "name": "Cameron Rye",
+    "url": "https://rye.dev/"
+  },
+  "homepage": "https://github.com/cameronrye/activitypub-mcp",
+  "documentation": "https://cameronrye.github.io/activitypub-mcp/docs/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cameronrye/activitypub-mcp"
+  },
+  "license": "MIT",
+  "keywords": ["activitypub", "mcp", "fediverse", "mastodon", "misskey"],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/mcp-main.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/mcp-main.js"],
+      "env": {
+        "MCP_TRANSPORT_MODE": "stdio",
+        "ACTIVITYPUB_ENABLE_WRITES": "${user_config.enable_writes}",
+        "LOG_LEVEL": "${user_config.log_level}"
+      }
+    }
+  },
+  "user_config": {
+    "enable_writes": {
+      "type": "boolean",
+      "title": "Enable write / mutation tools",
+      "description": "Leave OFF for safe read-only use. Turning this on lets the model post, reply, follow, boost, and block on your behalf. Read SECURITY.md first.",
+      "default": false,
+      "required": false
+    },
+    "log_level": {
+      "type": "string",
+      "title": "Log level",
+      "description": "Logging verbosity: debug, info, warn, or error.",
+      "default": "info",
+      "required": false
+    }
+  }
+}
