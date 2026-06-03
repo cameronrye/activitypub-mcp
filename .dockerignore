@@ -1,0 +1,16 @@
+node_modules
+dist
+dist-site
+coverage
+.astro
+.git
+.github
+site
+tests
+docs
+public
+scripts
+*.mcpb
+*.log
+.env*
+.vscode
