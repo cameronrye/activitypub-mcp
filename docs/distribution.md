@@ -32,9 +32,10 @@ The two in-repo artifacts already exist:
 
 **Hard ordering constraint — the registry validates the _live_ npm tarball.**
 The registry checks that the published npm package's `package.json` contains a
-matching `mcpName`. The currently-published `activitypub-mcp@3.0.0` predates
-`mcpName`, so **registry publish will fail until a new npm version ships with
-it**. You cannot register against `3.0.0`.
+matching `mcpName`. No 3.x has ever shipped to npm (`latest` is `2.2.0`; the
+`v3.0.0` tag was created but never published), so `3.0.1` is the first tarball
+to carry `mcpName`. **It must be live on npm before you register** — the
+registry has nothing to validate against otherwise.
 
 So the sequence is:
 
@@ -67,37 +68,28 @@ mcp-publisher status
 curl "https://registry.modelcontextprotocol.io/v0/servers?search=activitypub-mcp"
 ```
 
-### Automating it (recommended)
+### Automating it (the CI path)
 
-Fold the registry publish into the **existing** `release.yml` job rather than a
-new tag-triggered workflow. `release.yml` already runs on `v*` tags **and** has
-a `workflow_dispatch` fallback, and already sets `id-token: write` (for npm
-provenance) — the same permission `mcp-publisher login github-oidc` needs, so
-there are **no new secrets** to store. Add these steps after the npm publish
-step:
+[`publish-mcp.yml`](../.github/workflows/publish-mcp.yml) does this in CI with
+**no stored secret** — it authenticates with GitHub Actions OIDC
+(`mcp-publisher login github-oidc`), which the registry maps to the repo owner's
+identity to authorize the `io.github.cameronrye/*` namespace. It is
+`workflow_dispatch`-only and kept **separate** from `release.yml` on purpose:
 
-```yaml
-      # --- Publish to the official MCP Registry (after npm publish) ---
-      - name: Sync server.json version to the tag
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          tmp=$(mktemp)
-          jq --arg v "$VERSION" '.version=$v | .packages[0].version=$v' server.json > "$tmp" && mv "$tmp" server.json
-      - name: Install mcp-publisher
-        run: curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
-      - name: Publish to MCP Registry (OIDC, no stored secret)
-        run: |
-          ./mcp-publisher login github-oidc
-          ./mcp-publisher publish
+```bash
+# After the npm release for this version is live:
+gh workflow run publish-mcp.yml
 ```
 
-> **Gotcha (matches the release-tag `GITHUB_TOKEN` note in project memory):** a
-> tag pushed by another workflow using `GITHUB_TOKEN` (e.g. `auto-release.yml`)
-> will **not** trigger a separate `on: push: tags` workflow — GitHub's
-> anti-recursion rule. Folding into `release.yml` (which is also manually
-> re-runnable via `workflow_dispatch`) sidesteps this. Before relying on CI,
-> confirm the GitHub Actions OIDC subject for `cameronrye/activitypub-mcp` is
-> authorized for the `io.github.cameronrye/*` namespace.
+> **Why separate, not folded into `release.yml`:** a tag pushed by another
+> workflow using `GITHUB_TOKEN` (e.g. `auto-release.yml`) will **not** trigger a
+> separate `on: push: tags` workflow — GitHub's anti-recursion rule. The npm
+> release is therefore dispatched by hand (`gh workflow run release.yml --ref
+> vX.Y.Z`), and the registry publish is its own dispatchable job so a registry
+> hiccup can never break the proven npm-release path, and so it can be re-run on
+> its own. Before relying on the OIDC path, confirm the Actions OIDC subject for
+> `cameronrye/activitypub-mcp` is authorized for the `io.github.cameronrye/*`
+> namespace (it is owner-scoped, so it should be).
 
 ---
 
@@ -214,10 +206,12 @@ You can also list the bundle in the official registry by adding a second
 
 ## Open questions / risks (carried from research)
 
-- **npm-republish-first:** registry publish fails until a version with `mcpName`
-  is live on npm (current `3.0.0` lacks it).
+- **npm-first:** registry publish fails until a version with `mcpName` is live on
+  npm; `3.0.1` is the first (no 3.x is on npm yet — `latest` is `2.2.0`).
 - **Tag-trigger anti-recursion:** a `GITHUB_TOKEN`-pushed tag won't fire a
-  separate `on: push: tags` workflow — fold publish into `release.yml`.
+  separate `on: push: tags` workflow, so the npm release is dispatched manually
+  and the registry publish lives in its own `workflow_dispatch` job
+  ([`publish-mcp.yml`](../.github/workflows/publish-mcp.yml)).
 - **OIDC namespace:** verify the Actions OIDC subject maps to
   `io.github.cameronrye/*` before relying on `login github-oidc`.
 - **Unverified sync:** mcp.so's auto-sync from the registry and whether Smithery
