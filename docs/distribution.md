@@ -108,19 +108,19 @@ gh workflow run publish-mcp.yml
 Glama scores listings **~70% on tool-definition quality**, 30% on coherence —
 earned by the tool/parameter descriptions we already control, not by hosting.
 
-1. Sign in to [glama.ai](https://glama.ai) with GitHub (`cameronrye`) and claim
-   `https://glama.ai/mcp/servers/cameronrye/activitypub-mcp` via OAuth (a
-   personal repo claims with OAuth alone).
-2. Optionally commit a `glama.json` at repo root to lock metadata, then **re-run
-   the claim flow** to trigger a re-sync (there is no automatic re-sync after
-   edits):
-
-   ```json
-   { "$schema": "https://glama.ai/mcp/schemas/server.json", "maintainers": ["cameronrye"] }
-   ```
-3. Tighten every tool + parameter description: lead with read-only intent and
+1. ✅ Claimed at [glama.ai](https://glama.ai) via GitHub OAuth (`cameronrye`).
+   Glama indexes the listing as `hn4391ubvo` (`glama.ai/mcp/servers/cameronrye/activitypub-mcp`).
+2. ✅ [`glama.json`](../glama.json) committed at repo root (`maintainers: ["cameronrye"]`).
+   Re-run the claim flow to re-sync after edits (there is no automatic re-sync).
+3. ✅ [`Dockerfile`](../Dockerfile) committed so Glama can build and **host** the
+   server as an installable container. Glama runs it over stdio and bridges to
+   SSE / Streamable HTTP, so the entrypoint is `node dist/mcp-main.js` with no
+   exposed port (read-only by default; non-root). **Final manual step (Glama
+   admin UI): open the server's Dockerfile / Deploy page → deploy → once the
+   checks pass, "Make Release" to turn on the install button.**
+4. Tighten every tool + parameter description: lead with read-only intent and
    explicitly flag the write tools as gated behind `ACTIVITYPUB_ENABLE_WRITES`.
-   This both communicates the security posture and raises the score.
+   This both communicates the security posture and raises the ~70% score.
 
 ### Smithery — defer (highest effort, lowest marginal reach)
 
