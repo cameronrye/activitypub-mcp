@@ -77,7 +77,10 @@ jobs:
     
     - name: Run npm audit
       run: npm audit --audit-level=high
-    
+
+    - name: Audit production dependencies (must be clean)
+      run: npm run audit:prod
+
     - name: Run npm audit fix (dry run)
       run: npm audit fix --dry-run || true
 

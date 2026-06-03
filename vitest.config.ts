@@ -28,12 +28,21 @@ export default defineConfig({
         "src/pages/**",
         "src/styles/**",
       ],
-      // Coverage thresholds
+      // Coverage thresholds. Global floors are kept a few points under current
+      // actuals (≈78/66/87/80) so a real regression fails CI without flaking on
+      // minor legitimate changes. Per-directory floors guard the security-critical
+      // paths, which would otherwise be free to erode under the global aggregate
+      // (dominated by the larger, less-covered files like remote-client.ts).
       thresholds: {
-        statements: 70,
-        branches: 60,
-        functions: 70,
-        lines: 70,
+        statements: 76,
+        branches: 63,
+        functions: 84,
+        lines: 77,
+        "src/validation/**": { statements: 88, branches: 74, functions: 92, lines: 88 },
+        "src/utils/**": { statements: 90, branches: 80, functions: 86, lines: 92 },
+        "src/policy/**": { statements: 94, branches: 84, functions: 100, lines: 94 },
+        "src/audit/**": { statements: 94, branches: 88, functions: 100, lines: 97 },
+        "src/transport/**": { statements: 84, branches: 84, functions: 86, lines: 84 },
       },
     },
 
