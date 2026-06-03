@@ -917,7 +917,21 @@ Log levels:
 
 The canonical changelog lives in [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md). Highlights:
 
-### Version 3.0.0 (Current) — 2026-05-27
+### Version 3.0.1 (Current) — 2026-06-02
+
+Correctness and distribution release.
+
+**Security:**
+- Strip `Authorization`, `Cookie`, and the request body when an outbound fetch follows a cross-origin redirect, preventing credential leakage to a redirected host.
+
+**Added:**
+- Official MCP Registry manifest (`server.json` + a `mcpName` marker) — the server is now publishable to registry.modelcontextprotocol.io (npm, stdio, read-only by default).
+
+**Fixed:**
+- Misskey `get-home-timeline` maps `minId` to the correct API parameter.
+- Remote fetches honor `Retry-After`, retry transient (5xx / network) failures with backoff, and tolerate ActivityStreams `to`/`cc` delivered as a single string.
+
+### Version 3.0.0 — 2026-05-27
 
 Major release. Security, correctness, and ergonomics overhaul.
 

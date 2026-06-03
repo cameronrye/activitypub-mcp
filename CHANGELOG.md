@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-06-02
+
+### Security
+
+- **Strip credentials on cross-origin redirects.** `Authorization`, `Cookie`, and the request body are dropped when an outbound fetch is redirected to a different origin, so credentials can never leak to an unexpected host.
+
+### Added
+
+- **Official MCP registry manifest.** A `server.json` and a `mcpName` marker in `package.json` let the server be published to the [MCP Registry](https://registry.modelcontextprotocol.io) — npm package, stdio transport, read-only by default. See `docs/distribution.md` for the publishing playbook.
+
+### Fixed
+
+- **Misskey `get-home-timeline` pagination.** `minId` is now mapped to the correct Misskey API parameter.
+- **Resilient remote fetches.** Outbound requests honor `Retry-After`, retry transient (5xx / network) failures with backoff, and tolerate ActivityStreams `to`/`cc` delivered as a single string instead of an array.
+
 ## [3.0.0] - 2026-05-31
 
 > **Major release.** v3 is a security and surface-reduction overhaul of the v2 server. See `MIGRATION-v3.md` for the full upgrade guide.
