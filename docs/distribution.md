@@ -113,11 +113,15 @@ earned by the tool/parameter descriptions we already control, not by hosting.
 2. ✅ [`glama.json`](../glama.json) committed at repo root (`maintainers: ["cameronrye"]`).
    Re-run the claim flow to re-sync after edits (there is no automatic re-sync).
 3. ✅ [`Dockerfile`](../Dockerfile) committed so Glama can build and **host** the
-   server as an installable container. Glama runs it over stdio and bridges to
-   SSE / Streamable HTTP, so the entrypoint is `node dist/mcp-main.js` with no
-   exposed port (read-only by default; non-root). **Final manual step (Glama
-   admin UI): open the server's Dockerfile / Deploy page → deploy → once the
-   checks pass, "Make Release" to turn on the install button.**
+   server as an installable container. Glama runs it over stdio (wrapped by
+   `mcp-proxy`) and bridges to SSE / Streamable HTTP, so the start command is
+   `CMD ["node", "dist/mcp-main.js"]` with no exposed port (read-only by default;
+   non-root). **Use `CMD`, not `ENTRYPOINT`** — Glama reads the image's `Cmd`, so
+   an `ENTRYPOINT`-only image leaves it empty and the deploy fails with
+   "At least one command argument is required". **Final manual step (Glama admin
+   UI): open the server's Dockerfile / Deploy page → deploy → if a Command field
+   is shown, it is `node dist/mcp-main.js` → once checks pass, "Make Release" to
+   turn on the install button.**
 4. Tighten every tool + parameter description: lead with read-only intent and
    explicitly flag the write tools as gated behind `ACTIVITYPUB_ENABLE_WRITES`.
    This both communicates the security posture and raises the ~70% score.

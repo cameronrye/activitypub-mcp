@@ -23,5 +23,8 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 COPY --from=build /app/dist ./dist
 USER node
-# stdio transport on stdin/stdout; no port is exposed.
-ENTRYPOINT ["node", "dist/mcp-main.js"]
+# stdio transport on stdin/stdout; no port is exposed. Use CMD (not ENTRYPOINT)
+# so hosts that read the image's start command — e.g. Glama wrapping it with
+# mcp-proxy — pick it up; an ENTRYPOINT-only image leaves Cmd empty and Glama
+# reports "At least one command argument is required".
+CMD ["node", "dist/mcp-main.js"]
