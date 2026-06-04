@@ -8,7 +8,7 @@ import { runAccounts } from "./accounts.js";
 import { runLogin } from "./login.js";
 import { runLogout } from "./logout.js";
 
-const COMMANDS = new Set(["login", "logout", "accounts"]);
+export const COMMANDS = new Set(["login", "logout", "accounts"]);
 
 export async function dispatchCli(argv: string[]): Promise<boolean> {
   const [command, ...rest] = argv;
