@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile:1
 
-# Container image for the ActivityPub MCP server, primarily for Glama-style
-# hosting that runs each server as a stdio container and bridges it to
-# SSE / Streamable HTTP. Read-only by default; writes stay disabled unless
-# ACTIVITYPUB_ENABLE_WRITES=true is supplied at runtime.
+# Generic container image for self-hosting the ActivityPub MCP server as a
+# stdio container — pipe MCP JSON-RPC over the container's stdin/stdout
+# (`docker run --rm -i activitypub-mcp`) or wrap it with a stdio<->HTTP bridge.
+# Read-only by default; writes stay disabled unless ACTIVITYPUB_ENABLE_WRITES=true.
+# Note: Glama builds its own image and does NOT use this file (see docs/distribution.md).
 
 # --- Build stage: install all deps and compile TypeScript to dist/. ---
 FROM node:22-slim AS build

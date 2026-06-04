@@ -112,19 +112,41 @@ earned by the tool/parameter descriptions we already control, not by hosting.
    Glama indexes the listing as `hn4391ubvo` (`glama.ai/mcp/servers/cameronrye/activitypub-mcp`).
 2. ✅ [`glama.json`](../glama.json) committed at repo root (`maintainers: ["cameronrye"]`).
    Re-run the claim flow to re-sync after edits (there is no automatic re-sync).
-3. ✅ [`Dockerfile`](../Dockerfile) committed so Glama can build and **host** the
-   server as an installable container. Glama runs it over stdio (wrapped by
-   `mcp-proxy`) and bridges to SSE / Streamable HTTP, so the start command is
-   `CMD ["node", "dist/mcp-main.js"]` with no exposed port (read-only by default;
-   non-root). **Use `CMD`, not `ENTRYPOINT`** — Glama reads the image's `Cmd`, so
-   an `ENTRYPOINT`-only image leaves it empty and the deploy fails with
-   "At least one command argument is required". **Final manual step (Glama admin
-   UI): open the server's Dockerfile / Deploy page → deploy → if a Command field
-   is shown, it is `node dist/mcp-main.js` → once checks pass, "Make Release" to
-   turn on the install button.**
+3. ✅ Set the Glama **build spec** to run the published npm package. Glama does
+   **not** use the repo's `Dockerfile` — its managed builder uses its own base
+   image (`debian:trixie-slim` + Node 26 + `mcp-proxy` + pnpm/uv), `git clone`s
+   the repo, runs `mcp-proxy -- <cmdArguments>`, and does **not** run
+   `npm install` / `npm run build` — so there is no `dist/` in the container to
+   point at. Run the prebuilt npm package instead, from a neutral directory
+   (plain `npx` inside the cloned repo resolves the same-named local
+   `package.json` and fails with `activitypub-mcp: command not found`):
+
+   ```json
+   "cmdArguments": ["mcp-proxy", "--", "sh", "-c", "cd /tmp && exec npx -y activitypub-mcp"]
+   ```
+
+   Sturdier alternative — bake the package into the image so there is no download
+   on each cold start, and run the global bin (on `PATH`, so no repo collision):
+
+   ```json
+   "buildSteps":   ["npm install -g activitypub-mcp"],
+   "cmdArguments": ["mcp-proxy", "--", "activitypub-mcp"]
+   ```
+
+   Gotchas: a `debian:trixie-slim ... context deadline exceeded` build error is a
+   transient Docker Hub timeout on Glama's builder — just retry. The public Glama
+   API/listing lags a successful deploy by a while before it shows the hosted
+   state and enumerates tools. **Final step: once the deploy's checks pass,
+   "Make Release" to turn on the install button + hosted SSE/Streamable-HTTP URL.**
 4. Tighten every tool + parameter description: lead with read-only intent and
    explicitly flag the write tools as gated behind `ACTIVITYPUB_ENABLE_WRITES`.
-   This both communicates the security posture and raises the ~70% score.
+   This both communicates the security posture and raises the ~70% score — and it
+   is the **single biggest Glama lever still in our control** (70% of the score).
+
+> The repo's [`Dockerfile`](../Dockerfile) is **not** used by Glama (it builds its
+> own image). It remains as a generic self-host image — `docker build -t
+> activitypub-mcp . && docker run --rm -i activitypub-mcp` runs the stdio server
+> for anyone wiring it into their own container stack.
 
 ### Smithery — defer (highest effort, lowest marginal reach)
 
@@ -182,11 +204,12 @@ adding a second `packages[]` entry to `server.json` with `"registryType": "mcpb"
    is live in the registry, which seeds PulseMCP, mcp.so, and the
    modelcontextprotocol redirect downstream.
 3. ✅ Built the `.mcpb` and attached it to the v3.0.1 release; committed
-   `glama.json`. **Manual step left: claim the Glama listing** at glama.ai via
-   GitHub OAuth (a personal repo claims with OAuth alone), then tighten tool
-   descriptions.
-4. ⏳ Confirm PulseMCP / mcp.so picked up the registry entry (≤ ~1 week).
-5. Smithery last, only if there's demand.
+   `glama.json`; claimed the Glama listing and deployed its hosted container
+   (npx build spec, §2). **Make Release in Glama's UI turns on the install button.**
+4. ⏳ Tighten tool/parameter descriptions — the biggest remaining Glama-score
+   lever and a win for every client.
+5. ⏳ Confirm PulseMCP / mcp.so picked up the registry entry (≤ ~1 week).
+6. Smithery last, only if there's demand (the `.mcpb` makes it lower-effort now).
 
 ---
 
