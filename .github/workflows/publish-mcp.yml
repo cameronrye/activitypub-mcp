@@ -6,10 +6,11 @@ name: Publish to MCP Registry
 # repo owner's OIDC identity.
 #
 # Run this AFTER the matching npm version is live: the registry validates that
-# the published npm tarball's package.json carries the same `mcpName`. Kept
-# workflow_dispatch-only and separate from release.yml so the proven npm-release
-# path is never coupled to a registry hiccup, and so it can be re-run on its own.
+# the published npm tarball's package.json carries the same `mcpName`. auto-release
+# calls it as a reusable workflow after npm publish; it also stays
+# workflow_dispatch-able so it can be re-run on its own if a registry push hiccups.
 on:
+  workflow_call:
   workflow_dispatch:
 
 permissions:

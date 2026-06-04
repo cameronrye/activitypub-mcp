@@ -73,3 +73,19 @@ describe("server.json registry manifest", () => {
     expect(writes.default).toBe("false");
   });
 });
+
+// The Claude Desktop Extension bundle (.mcpb) is built and uploaded by hand,
+// outside CI, and carries its own version field. Without a guard it can silently
+// drift from package.json and ship a stale bundle. check-version.js enforces this
+// at prepublish; this test enforces it in the suite.
+describe("manifest.json (.mcpb desktop-extension bundle)", () => {
+  const manifest = readJson("manifest.json");
+
+  it("keeps its version in sync with package.json", () => {
+    expect(manifest.version).toBe(pkg.version);
+  });
+
+  it("points at the built bin entry point", () => {
+    expect(manifest.server.entry_point).toBe("dist/mcp-main.js");
+  });
+});
