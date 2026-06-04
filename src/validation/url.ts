@@ -59,13 +59,14 @@ const PRIVATE_IPV4_RANGES = [
  * Private IPv6 address ranges that should be blocked for SSRF protection.
  * Includes loopback, link-local, unique local, and other reserved addresses.
  */
+// NOTE: link-local (fe80::/10) and unique-local (fc00::/7) are NOT listed here
+// as prefix regexes — a literal /^fe80:/ or /^fc00:/ matches only the canonical
+// hextet and leaves most of each block reachable (e.g. fe90::, fc12::). They are
+// blocked by leadingHextetMaskIsPrivate() below, which masks the first hextet.
 const PRIVATE_IPV6_RANGES = [
   /^::1$/i, // Loopback
   /^::$/i, // Unspecified address
   /^::ffff:/i, // IPv4-mapped IPv6 addresses (check the mapped IPv4)
-  /^fe80:/i, // Link-local (fe80::/10)
-  /^fc00:/i, // Unique local address (fc00::/7)
-  /^fd/i, // Unique local address (fd00::/8)
   /^ff0[\da-f]:/i, // Multicast (ff00::/8)
   /^2001:db8:/i, // Documentation (2001:db8::/32)
   /^2001::/i, // Teredo tunneling (2001::/32) - could be abused
@@ -73,6 +74,27 @@ const PRIVATE_IPV6_RANGES = [
   /^100::/i, // Discard prefix (100::/64)
   /^2002:/i, // 6to4 (2002::/16) - deprecated, could be abused
 ];
+
+/**
+ * True if an IPv6 address's leading hextet falls inside one of the CIDR blocks
+ * that a literal-prefix regex can't express. Masking the first hextet covers the
+ * WHOLE block instead of only its canonical address:
+ *   - fc00::/7  unique-local       — (h & 0xfe00) === 0xfc00 → fc00..fdff
+ *   - fe80::/10 link-local         — (h & 0xffc0) === 0xfe80 → fe80..febf
+ *   - fec0::/10 site-local (dep.)  — (h & 0xffc0) === 0xfec0 → fec0..feff
+ * Returns false for `::`-prefixed (compressed leading-zero) addresses, which are
+ * handled by the explicit ranges / embedded-IPv4 checks instead.
+ */
+function leadingHextetMaskIsPrivate(normalizedIp: string): boolean {
+  if (normalizedIp.startsWith("::")) return false;
+  const firstGroup = normalizedIp.split(":", 1)[0];
+  if (!/^[\da-f]{1,4}$/i.test(firstGroup)) return false;
+  const h = Number.parseInt(firstGroup, 16);
+  if ((h & 0xfe00) === 0xfc00) return true; // ULA fc00::/7
+  if ((h & 0xffc0) === 0xfe80) return true; // link-local fe80::/10
+  if ((h & 0xffc0) === 0xfec0) return true; // deprecated site-local fec0::/10
+  return false;
+}
 
 /**
  * Private/reserved hostnames that should be blocked for SSRF protection.
@@ -175,6 +197,10 @@ export function isPrivateIPv6(ip: string): boolean {
     const lo = Number.parseInt(ipv4CompatHex[2], 16);
     const embedded = `${hi >>> 8}.${hi & 0xff}.${lo >>> 8}.${lo & 0xff}`;
     return isPrivateIPv4(embedded);
+  }
+
+  if (leadingHextetMaskIsPrivate(normalizedIp)) {
+    return true;
   }
 
   return PRIVATE_IPV6_RANGES.some((range) => range.test(normalizedIp));

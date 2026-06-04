@@ -10,7 +10,7 @@ const description =
   "An MCP server connecting LLMs like Claude and ChatGPT to the existing Fediverse through ActivityPub and WebFinger.";
 
 // Build-derived values — never hardcode (spec §5, §5.1)
-const version = pkg.version; // "3.0.0"
+const version = pkg.version;
 const { tools, resources, prompts } = registryManifest;
 
 // Base URL for path resolution under /activitypub-mcp (spec §8)
@@ -19,7 +19,7 @@ const baseURL = import.meta.env.BASE_URL.endsWith("/")
   : `${import.meta.env.BASE_URL}/`;
 
 // Install snippets (one source of truth shared by CodeBlock/CopyButton)
-const npxCommand = "npx activitypub-mcp install";
+const npxCommand = "npx -y activitypub-mcp";
 const claudeConfig = `{
   "mcpServers": {
     "activitypub": {
@@ -33,7 +33,7 @@ const chatgptConfig = `{
     "activitypub": {
       "command": "npx",
       "args": ["-y", "activitypub-mcp"],
-      "env": { "ACTIVITYPUB_BASE_URL": "https://mastodon.social" }
+      "env": { "ACTIVITYPUB_DEFAULT_INSTANCE": "mastodon.social" }
     }
   }
 }`;

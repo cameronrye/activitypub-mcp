@@ -49,11 +49,6 @@ order: 1
    ```bash
    curl -I https://mastodon.social
    ```
-1. **Configure proxy if needed:**
-   ```bash
-   export HTTP_PROXY=http://proxy:8080
-   export HTTPS_PROXY=http://proxy:8080
-   ```
 1. **Increase timeout settings in config**
 
 ## Access and Permission Issues
@@ -80,7 +75,7 @@ order: 1
    curl https://instance.com/.well-known/webfinger?resource=acct:username@instance.com
    ```
 1. **Try alternative discovery methods**
-1. **Restart the server** to flush the in-memory actor cache (cache TTL also expires naturally; configure via `ACTOR_CACHE_TTL`).
+1. **Restart the server** to flush the in-memory actor cache (cache TTL also expires naturally; configure via `CACHE_TTL`).
 
 ### Rate Limiting
 
@@ -172,7 +167,7 @@ order: 1
 
 #### Solutions:
 
-1. **Restart the server** to flush in-memory caches, or shorten `CACHE_TTL` / `ACTOR_CACHE_TTL` in your env.
+1. **Restart the server** to flush in-memory caches, or shorten `CACHE_TTL` in your env.
 1. **Reduce request size** (limit results, narrow timelines with `limit` / `maxId` / `sinceId`).
 1. **Use more specific queries**
 1. **Monitor system resources** with OS-level tools (e.g., `top`, `htop`) or your deployment platform's metrics.
@@ -197,8 +192,8 @@ order: 1
 ### Enable Verbose Logging
 
 ```bash
-export DEBUG=activitypub-mcp:*
-npm start
+export LOG_LEVEL=debug
+npm run mcp
 ```
 
 This will show detailed logs for all operations.

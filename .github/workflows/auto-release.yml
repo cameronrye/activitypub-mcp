@@ -11,9 +11,13 @@ permissions:
 
 jobs:
   check-version:
-    name: Check Version and Create Release
+    name: Check Version and Create Tag
     runs-on: ubuntu-latest
-    
+    outputs:
+      should_release: ${{ steps.decide.outputs.should_release }}
+      version: ${{ steps.current_version.outputs.version }}
+      tag: ${{ steps.check_tag.outputs.tag_name }}
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -127,38 +131,16 @@ jobs:
         
         echo "Created and pushed tag: $TAG_NAME"
     
-    - name: Create release notes
-      if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true' && steps.validate_version.outputs.valid == 'true'
-      id: release_notes
+    - name: Decide whether to release
+      id: decide
+      if: always()
       run: |
-        VERSION="${{ steps.current_version.outputs.version }}"
-        TAG_NAME="${{ steps.check_tag.outputs.tag_name }}"
-        
-        # Create release notes
-        cat > release_notes.md << EOF
-        # Release $VERSION
-        
-        ## What's Changed
-        
-        This release includes the latest changes and improvements to the ActivityPub MCP Server.
-        
-        ## Installation
-        
-        \`\`\`bash
-        npm install -g activitypub-mcp@$VERSION
-        \`\`\`
-        
-        ## Documentation
-        
-        - [Documentation](https://cameronrye.github.io/activitypub-mcp/docs/)
-        - [Usage Guide](https://cameronrye.github.io/activitypub-mcp/docs/guides/basic-usage/)
-        - [Migration Guide (v2)](https://github.com/cameronrye/activitypub-mcp/blob/main/MIGRATION-v2.md)
-        
-        **Full Changelog**: https://github.com/cameronrye/activitypub-mcp/compare/v${{ steps.previous_version.outputs.version }}...$TAG_NAME
-        EOF
-        
-        echo "Release notes created for version $VERSION"
-    
+        if [ "${{ steps.check_tag.outputs.exists }}" == "false" ] && [ "${{ steps.version_changed.outputs.changed }}" == "true" ] && [ "${{ steps.validate_version.outputs.valid }}" == "true" ]; then
+          echo "should_release=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "should_release=false" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Summary
       if: always()
       run: |
@@ -168,9 +150,38 @@ jobs:
         echo "- **Tag Exists**: ${{ steps.check_tag.outputs.exists }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Version Changed**: ${{ steps.version_changed.outputs.changed }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Version Valid**: ${{ steps.validate_version.outputs.valid }}" >> $GITHUB_STEP_SUMMARY
-        
-        if [ "${{ steps.check_tag.outputs.exists }}" == "false" ] && [ "${{ steps.version_changed.outputs.changed }}" == "true" ] && [ "${{ steps.validate_version.outputs.valid }}" == "true" ]; then
-          echo "- **Action**: ✅ Tag created and pushed - Release workflow will be triggered" >> $GITHUB_STEP_SUMMARY
+
+        if [ "${{ steps.decide.outputs.should_release }}" == "true" ]; then
+          echo "- **Action**: ✅ Tag created — release + registry publish jobs will run in this workflow" >> $GITHUB_STEP_SUMMARY
         else
           echo "- **Action**: ⏭️ No action taken" >> $GITHUB_STEP_SUMMARY
         fi
+
+  # Publish to npm + create the GitHub release by CALLING release.yml as a reusable
+  # workflow. Because this runs inside the same (human-merge-triggered) run rather
+  # than reacting to the GITHUB_TOKEN-pushed tag, it is not subject to the
+  # anti-recursion rule that previously required a manual workflow_dispatch.
+  release:
+    name: Publish release
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    permissions:
+      contents: write
+      packages: write
+      pull-requests: read
+      id-token: write
+    uses: ./.github/workflows/release.yml
+    with:
+      version: ${{ needs.check-version.outputs.version }}
+    secrets: inherit
+
+  # Publish server.json to the MCP registry once npm is live.
+  publish-mcp:
+    name: Publish to MCP registry
+    needs: [check-version, release]
+    if: needs.check-version.outputs.should_release == 'true'
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/publish-mcp.yml
+    secrets: inherit

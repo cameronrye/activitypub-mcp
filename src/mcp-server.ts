@@ -45,6 +45,26 @@ const CONFIG = {
 };
 
 /**
+ * Build the stderr hint shown when the stdio server is started from an
+ * interactive terminal. A real MCP client attaches over piped stdio, so a TTY
+ * on stdin means a human ran the bin directly — without this hint the process
+ * just blocks on stdin and looks hung. Returns null when stdin is piped so the
+ * hint never interleaves with a connected client's session.
+ *
+ * Emitted on stderr (never stdout) so it cannot corrupt the MCP protocol stream.
+ */
+export function stdioStartupHint(isTTY: boolean | undefined): string | null {
+  if (!isTTY) return null;
+  return [
+    `${SERVER_NAME} v${SERVER_VERSION} started in stdio mode and is waiting for an MCP client on stdin.`,
+    "Running this directly in a terminal looks like it hangs — that's expected; it speaks the MCP protocol over stdin/stdout.",
+    "  • To use it, add it to an MCP client (Claude Desktop, Cursor, …): https://github.com/cameronrye/activitypub-mcp#install",
+    "  • To log in to a Fediverse account:  activitypub-mcp login <instance>",
+    "  • Press Ctrl+C to exit.",
+  ].join("\n");
+}
+
+/**
  * Sets up global error handlers for uncaught exceptions and unhandled rejections.
  * These handlers log the errors and exit the process for uncaught exceptions.
  */
@@ -184,6 +204,9 @@ class ActivityPubMCPServer {
    * Starts the server with stdio transport.
    */
   private async startStdioTransport(): Promise<void> {
+    const hint = stdioStartupHint(process.stdin.isTTY);
+    if (hint) process.stderr.write(`${hint}\n`);
+
     const transport = new StdioServerTransport();
     await this.mcpServer.connect(transport);
     logger.info("ActivityPub MCP Server started (stdio transport)", {

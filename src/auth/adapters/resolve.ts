@@ -6,20 +6,18 @@
  * Firefish/Iceshrimp.
  */
 
-import { getInstanceSoftware } from "../../discovery/nodeinfo.js";
+import { detectSoftwareKind, type SoftwareKind } from "../../discovery/software-kind.js";
 import type { AccountCredentials } from "../account-manager.js";
 import { mastodonWriteAdapter } from "./mastodon-adapter.js";
 import { misskeyWriteAdapter } from "./misskey-adapter.js";
 import type { WriteAdapter } from "./write-adapter.js";
 
-export type SoftwareKind = "mastodon" | "misskey";
-
-const MISSKEY_FAMILY = new Set(["misskey", "foundkey"]);
+// Re-exported for back-compat; the family set + classification now live in the
+// shared discovery/software-kind module so read/write/login routing can't drift.
+export type { SoftwareKind };
 
 export async function resolveSoftwareKind(account: AccountCredentials): Promise<SoftwareKind> {
-  const info = await getInstanceSoftware(account.instance);
-  const name = info.software?.name?.toLowerCase();
-  return name && MISSKEY_FAMILY.has(name) ? "misskey" : "mastodon";
+  return detectSoftwareKind(account.instance);
 }
 
 export async function resolveWriteAdapter(account: AccountCredentials): Promise<WriteAdapter> {

@@ -4,9 +4,17 @@ on:
   push:
     tags:
       - 'v*'
-  # Manual fallback: auto-release.yml pushes the tag with GITHUB_TOKEN, which
-  # cannot trigger this workflow (GitHub anti-recursion). Run this manually
-  # against the vX.Y.Z tag to publish + create the release without a re-push.
+  # Called by auto-release.yml as a reusable workflow after it creates the tag.
+  # Running it as a called workflow (not via the tag-push event) is what sidesteps
+  # the GitHub anti-recursion rule — a GITHUB_TOKEN-pushed tag can't trigger
+  # `on: push: tags`, but it CAN be released by calling this workflow inline.
+  workflow_call:
+    inputs:
+      version:
+        description: "Version to release (no leading v). Omit to derive from the pushed tag."
+        required: false
+        type: string
+  # Manual fallback: run against the vX.Y.Z tag to publish without a re-push.
   workflow_dispatch:
 
 # id-token: write is required for OIDC-based npm provenance attestations.
@@ -109,9 +117,16 @@ jobs:
     - name: Build project (clean first)
       run: npm run clean && npm run build
 
-    - name: Get version from tag
+    - name: Resolve version and tag
       id: get_version
-      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          VERSION="${{ inputs.version }}"
+        else
+          VERSION="${GITHUB_REF#refs/tags/v}"
+        fi
+        echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "TAG=v$VERSION" >> "$GITHUB_OUTPUT"
 
     - name: Generate changelog
       id: changelog
@@ -133,7 +148,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
+        tag_name: ${{ steps.get_version.outputs.TAG }}
         name: Release v${{ steps.get_version.outputs.VERSION }}
         body_path: release_notes.md
         draft: false

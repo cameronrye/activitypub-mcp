@@ -9,7 +9,7 @@ order: 1
 
 ### Node.js 20+
 
-v2 requires Node.js 20 LTS or later (Node 18 reached end-of-life April 30, 2025).
+Requires Node.js 20 LTS or later (Node 18 reached end-of-life April 30, 2025).
 
 [Download Node.js](https://nodejs.org/)
 
@@ -29,22 +29,21 @@ Useful for testing and debugging MCP connections.
 
 The fastest way to get started is using npx:
 
-### Install and Configure
+### Run the Server
 
 ```bash
-npx activitypub-mcp install
+npx -y activitypub-mcp
 ```
 
 This command will:
 
-- Install the latest version of the server
-- Detect your MCP client (Claude Desktop, Cursor, etc.)
-- Automatically configure the client
-- Verify the installation
+- Download and run the latest version of the server over stdio
+
+There is no auto-install step — the server does not detect or configure your MCP client for you. Instead, add the server to your MCP client's configuration (see below) and restart the client. The client launches the server for you on demand.
 
 ### Manual Configuration
 
-If you prefer manual setup, add this to your Claude Desktop configuration:
+Add this to your Claude Desktop configuration, then restart Claude Desktop:
 
 ```json
 {
@@ -60,6 +59,8 @@ If you prefer manual setup, add this to your Claude Desktop configuration:
 }
 ```
 
+To sign in to a fediverse account for authenticated tools, see [Authentication](/activitypub-mcp/docs/getting-started/authentication/).
+
 ## Configuration Options
 
 Customize the server behavior with environment variables:
@@ -67,24 +68,23 @@ Customize the server behavior with environment variables:
 | Variable | Default | Description |
 |---|---|---|
 | `LOG_LEVEL` | `info` | Logging level: debug, info, warning, error, fatal |
-| `USER_AGENT` | `ActivityPub-MCP-Client/3.0.0` | Custom User-Agent for HTTP requests |
-| `REQUEST_TIMEOUT` | `15000` | HTTP request timeout in milliseconds (production default: 10000) |
-| `CACHE_TTL` | `300` | Cache time-to-live in seconds |
+| `USER_AGENT` | `ActivityPub-MCP-Client/<version>` | Custom User-Agent for HTTP requests |
+| `REQUEST_TIMEOUT` | `10000` | HTTP request timeout in milliseconds (10 seconds) |
+| `CACHE_TTL` | `300000` | Cache time-to-live in milliseconds (5 minutes) |
 | `MCP_HTTP_SECRET` | *none* | **Required** when `MCP_TRANSPORT_MODE=http`. 32+ random chars; gates `/mcp` via Bearer auth. `/health` stays unauthenticated. |
-| `MCP_HTTP_ALLOWED_ORIGINS` | *empty* | Comma-separated CORS origins. Default is empty (no origins allowed); set explicitly for browser clients. |
+| `MCP_HTTP_ALLOWED_ORIGINS` | *empty* | Comma-separated Origin allowlist for DNS-rebinding protection. Empty → derived from the CORS origins. |
 | `MCP_HTTP_ALLOWED_HOSTS` | *empty* | Comma-separated allowed `Host` header values for DNS-rebinding protection. |
 | `ACTIVITYPUB_ENABLE_WRITES` | `false` | Set to `true` to register write tools. Read-only by default. |
 | `MCP_THREAD_MAX_DEPTH` | `5` | Max recursion depth for `get-post-thread`. |
 | `MCP_THREAD_MAX_REPLIES` | `50` | Max total replies fetched per thread. |
 | `MCP_THREAD_CROSS_ORIGIN_FETCH` | `false` | Set `true` to fetch replies whose origin differs from the root post. |
-| `HEALTH_CHECK_EXTERNAL_PROBE` | `true` | Gates the outbound mastodon.social connectivity probe (replaces removed `HEALTH_CHECK_ENABLED`). |
-| `ACTIVITYPUB_ACCOUNTS` | *none* | Multi-account config. v2 uses pipe `\|` delimiter: `id\|instance\|token\|username\|label`. v2 refuses to start on legacy colon form. |
+| `ACTIVITYPUB_ACCOUNTS` | *none* | Multi-account config. Uses the pipe (`\|`) delimiter: `id\|instance\|token\|username\|label`. The legacy colon-delimited form is rejected at startup. |
 
 > **HTTP transport notes for v3:**
 >
 > - `MCP_HTTP_SECRET` is required. Requests to `/mcp` must include `Authorization: Bearer <secret>`. `/health` stays unauthenticated for load balancers.
 > - The `/metrics` endpoint was removed in v3. Only `/mcp` and `/health` are available.
-> - `MCP_HTTP_ALLOWED_ORIGINS` (renamed from `MCP_HTTP_CORS_ORIGINS`) defaults to empty. Set it explicitly when browser clients need cross-origin access.
+> - `MCP_HTTP_CORS_ORIGINS` and `MCP_HTTP_ALLOWED_ORIGINS` are distinct, independently-read variables. `MCP_HTTP_CORS_ORIGINS` (with `MCP_HTTP_CORS_ENABLED`) controls CORS for browser clients; `MCP_HTTP_ALLOWED_ORIGINS` is the DNS-rebinding Origin allowlist (empty → derived from the CORS origins). Both default to empty.
 
 ## Verification
 

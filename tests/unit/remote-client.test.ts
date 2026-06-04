@@ -5,7 +5,36 @@
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RemoteActivityPubClient } from "../../src/activitypub/remote-client.js";
+import { clearNodeInfoCache } from "../../src/discovery/nodeinfo.js";
 import { server } from "../mocks/server.js";
+
+/**
+ * The public read methods (search/trending/timelines) now resolve a read adapter
+ * via NodeInfo software detection before fetching. Mock detection for the fixture
+ * domains as Mastodon so those tests exercise the Mastodon path offline + fast
+ * (otherwise the unmocked `.well-known/nodeinfo` GET hits the real network).
+ */
+function mastodonNodeInfo(domain: string) {
+  return [
+    http.get(`https://${domain}/.well-known/nodeinfo`, () =>
+      HttpResponse.json({
+        links: [
+          {
+            rel: "http://nodeinfo.diaspora.software/ns/schema/2.0",
+            href: `https://${domain}/nodeinfo/2.0`,
+          },
+        ],
+      }),
+    ),
+    http.get(`https://${domain}/nodeinfo/2.0`, () =>
+      HttpResponse.json({
+        version: "2.0",
+        software: { name: "mastodon", version: "4.2.0" },
+        protocols: ["activitypub"],
+      }),
+    ),
+  ];
+}
 
 // resolveAndPin (the SSRF pin) resolves fixture hosts via node:dns before
 // fetching, and now fails closed when a host doesn't resolve. The fixture
@@ -355,6 +384,11 @@ describe("RemoteActivityPubClient", () => {
   });
 
   describe("searchInstance", () => {
+    beforeEach(() => {
+      clearNodeInfoCache();
+      server.use(...mastodonNodeInfo("example.social"), ...mastodonNodeInfo("searchfail.social"));
+    });
+
     it("should search instance for accounts", async () => {
       const results = await client.searchInstance("example.social", "test", "accounts");
 

@@ -20,6 +20,12 @@ import { blocklistHop, pinnedFetch, readJsonWithLimit } from "../utils/fetch-hel
 import { LRUCache } from "../utils/lru-cache.js";
 import { isRetryableStatus, parseRetryAfter } from "../utils/retry.js";
 import { DomainSchema } from "../validation/schemas.js";
+import {
+  type NormalizedHashtag,
+  type NormalizedPost,
+  type PublicTimelineResult,
+  resolveReadAdapter,
+} from "./read-adapter.js";
 
 const logger = getLogger("activitypub-mcp");
 
@@ -568,18 +574,10 @@ export class RemoteActivityPubClient {
     const validDomain = DomainSchema.parse(domain);
     logger.info("Searching instance", { domain: validDomain, query, type });
 
-    const searchUrl = `https://${validDomain}/api/v2/search?q=${encodeURIComponent(query)}&type=${type}&limit=20`;
-
-    return await this.fetchWithRetry(
-      searchUrl,
-      {
-        headers: {
-          Accept: "application/json",
-          "User-Agent": USER_AGENT,
-        },
-      },
-      z.any(),
-    );
+    // Route by detected software (Mastodon /api/v2/search vs Misskey's
+    // users/notes/hashtags search), normalizing into one Mastodon-shaped result.
+    const adapter = await resolveReadAdapter(validDomain);
+    return adapter.searchInstance(validDomain, query, type);
   }
 
   /**
@@ -1070,34 +1068,15 @@ export class RemoteActivityPubClient {
   async fetchTrendingHashtags(
     domain: string,
     options: { limit?: number; offset?: number } = {},
-  ): Promise<{
-    hashtags: Array<{
-      name: string;
-      url: string;
-      history?: Array<{ day: string; uses: string; accounts: string }>;
-    }>;
-  }> {
+  ): Promise<{ hashtags: NormalizedHashtag[] }> {
     const validDomain = DomainSchema.parse(domain);
     const { limit = 20, offset = 0 } = options;
 
     logger.info("Fetching trending hashtags", { domain: validDomain, limit, offset });
 
-    const url = `https://${validDomain}/api/v1/trends/tags?limit=${limit}&offset=${offset}`;
-
     try {
-      const response = await this.fetchWithTimeout(url, {
-        headers: {
-          Accept: "application/json",
-          "User-Agent": USER_AGENT,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await readJsonWithLimit<unknown>(response, MAX_RESPONSE_SIZE);
-      return { hashtags: Array.isArray(data) ? data : [] };
+      const adapter = await resolveReadAdapter(validDomain);
+      return await adapter.fetchTrendingHashtags(validDomain, { limit, offset });
     } catch (error) {
       logger.error("Failed to fetch trending hashtags", {
         domain: validDomain,
@@ -1113,40 +1092,15 @@ export class RemoteActivityPubClient {
   async fetchTrendingPosts(
     domain: string,
     options: { limit?: number; offset?: number } = {},
-  ): Promise<{
-    posts: Array<{
-      id: string;
-      content: string;
-      account: { username: string; display_name?: string; url: string };
-      created_at: string;
-      reblogs_count: number;
-      favourites_count: number;
-      replies_count: number;
-      url: string;
-      spoiler_text?: string;
-    }>;
-  }> {
+  ): Promise<{ posts: NormalizedPost[] }> {
     const validDomain = DomainSchema.parse(domain);
     const { limit = 20, offset = 0 } = options;
 
     logger.info("Fetching trending posts", { domain: validDomain, limit, offset });
 
-    const url = `https://${validDomain}/api/v1/trends/statuses?limit=${limit}&offset=${offset}`;
-
     try {
-      const response = await this.fetchWithTimeout(url, {
-        headers: {
-          Accept: "application/json",
-          "User-Agent": USER_AGENT,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await readJsonWithLimit<unknown>(response, MAX_RESPONSE_SIZE);
-      return { posts: Array.isArray(data) ? data : [] };
+      const adapter = await resolveReadAdapter(validDomain);
+      return await adapter.fetchTrendingPosts(validDomain, { limit, offset });
     } catch (error) {
       logger.error("Failed to fetch trending posts", {
         domain: validDomain,
@@ -1162,53 +1116,13 @@ export class RemoteActivityPubClient {
   async fetchLocalTimeline(
     domain: string,
     options: { limit?: number; maxId?: string; sinceId?: string; minId?: string } = {},
-  ): Promise<{
-    posts: Array<{
-      id: string;
-      content: string;
-      account: { username: string; display_name?: string; url: string };
-      created_at: string;
-      reblogs_count: number;
-      favourites_count: number;
-      replies_count: number;
-      url: string;
-      spoiler_text?: string;
-    }>;
-    hasMore: boolean;
-    nextMaxId?: string;
-  }> {
+  ): Promise<PublicTimelineResult> {
     const validDomain = DomainSchema.parse(domain);
-    const { limit = 20, maxId, sinceId, minId } = options;
-
-    logger.info("Fetching local timeline", { domain: validDomain, limit });
-
-    const params = new URLSearchParams({ limit: String(limit), local: "true" });
-    if (maxId) params.set("max_id", maxId);
-    if (sinceId) params.set("since_id", sinceId);
-    if (minId) params.set("min_id", minId);
-
-    const url = `https://${validDomain}/api/v1/timelines/public?${params.toString()}`;
+    logger.info("Fetching local timeline", { domain: validDomain, limit: options.limit ?? 20 });
 
     try {
-      const response = await this.fetchWithTimeout(url, {
-        headers: {
-          Accept: "application/json",
-          "User-Agent": USER_AGENT,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await readJsonWithLimit<unknown>(response, MAX_RESPONSE_SIZE);
-      const posts = Array.isArray(data) ? data : [];
-
-      return {
-        posts,
-        hasMore: posts.length === limit,
-        nextMaxId: posts.length > 0 ? posts[posts.length - 1]?.id : undefined,
-      };
+      const adapter = await resolveReadAdapter(validDomain);
+      return await adapter.fetchPublicTimeline(validDomain, "local", options);
     } catch (error) {
       logger.error("Failed to fetch local timeline", {
         domain: validDomain,
@@ -1224,53 +1138,13 @@ export class RemoteActivityPubClient {
   async fetchFederatedTimeline(
     domain: string,
     options: { limit?: number; maxId?: string; sinceId?: string; minId?: string } = {},
-  ): Promise<{
-    posts: Array<{
-      id: string;
-      content: string;
-      account: { username: string; display_name?: string; url: string };
-      created_at: string;
-      reblogs_count: number;
-      favourites_count: number;
-      replies_count: number;
-      url: string;
-      spoiler_text?: string;
-    }>;
-    hasMore: boolean;
-    nextMaxId?: string;
-  }> {
+  ): Promise<PublicTimelineResult> {
     const validDomain = DomainSchema.parse(domain);
-    const { limit = 20, maxId, sinceId, minId } = options;
-
-    logger.info("Fetching federated timeline", { domain: validDomain, limit });
-
-    const params = new URLSearchParams({ limit: String(limit) });
-    if (maxId) params.set("max_id", maxId);
-    if (sinceId) params.set("since_id", sinceId);
-    if (minId) params.set("min_id", minId);
-
-    const url = `https://${validDomain}/api/v1/timelines/public?${params.toString()}`;
+    logger.info("Fetching federated timeline", { domain: validDomain, limit: options.limit ?? 20 });
 
     try {
-      const response = await this.fetchWithTimeout(url, {
-        headers: {
-          Accept: "application/json",
-          "User-Agent": USER_AGENT,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await readJsonWithLimit<unknown>(response, MAX_RESPONSE_SIZE);
-      const posts = Array.isArray(data) ? data : [];
-
-      return {
-        posts,
-        hasMore: posts.length === limit,
-        nextMaxId: posts.length > 0 ? posts[posts.length - 1]?.id : undefined,
-      };
+      const adapter = await resolveReadAdapter(validDomain);
+      return await adapter.fetchPublicTimeline(validDomain, "federated", options);
     } catch (error) {
       logger.error("Failed to fetch federated timeline", {
         domain: validDomain,

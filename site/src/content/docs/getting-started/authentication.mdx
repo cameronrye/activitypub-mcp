@@ -1,0 +1,100 @@
+---
+title: "Authentication"
+description: "Log in to a fediverse account so the ActivityPub MCP Server can read your home timeline, notifications, bookmarks, and (optionally) post on your behalf."
+group: "Getting Started"
+order: 2
+---
+
+## Overview
+
+Public read tools (such as `discover-actor` and `fetch-timeline`) work without any
+credentials. To use **authenticated** tools — your home timeline, notifications,
+bookmarks, favourites, and relationships — you must sign in to an account. Write
+tools (posting, following, boosting, etc.) require an account **and** an explicit
+opt-in via `ACTIVITYPUB_ENABLE_WRITES`.
+
+There are two ways to provide credentials: the interactive CLI login flow
+(recommended) or environment variables.
+
+## CLI Login
+
+Run the `login` subcommand with an instance hostname:
+
+```bash
+npx activitypub-mcp login mastodon.social
+```
+
+This opens your browser to authorize the app and runs the appropriate flow for the
+instance's software:
+
+- **OAuth2** for the Mastodon family (Mastodon, Pleroma, GoToSocial, and most other
+  ActivityPub servers).
+- **MiAuth** for the Misskey family (Misskey, Foundkey).
+
+The server picks the flow automatically by detecting the instance's software via
+NodeInfo; anything that isn't a Misskey-family server uses OAuth2. The browser
+redirect comes back to an ephemeral `127.0.0.1` loopback callback that the CLI
+opens for the duration of the login and then closes.
+
+By default the CLI requests **least-privilege** (read-only) scopes. To store a token
+that can also perform writes, either set `ACTIVITYPUB_ENABLE_WRITES=true` or pass the
+`--write` flag.
+
+### Where credentials are stored
+
+On success, the account is written to:
+
+```
+${XDG_CONFIG_HOME:-~/.config}/activitypub-mcp/accounts.json
+```
+
+The file is created with `0600` permissions (owner read/write only). Override the
+directory with the `ACTIVITYPUB_CONFIG_DIR` environment variable.
+
+## Multiple Accounts
+
+You can sign in to several accounts and switch between them:
+
+- **List accounts:** `activitypub-mcp accounts` — shows every configured account
+  (both env-based and persisted), tagged by source, with the active one marked.
+- **Switch the active account:** use the `switch-account` tool from within your MCP
+  client (Claude Desktop, etc.).
+- **Log out:** `activitypub-mcp logout <id>` — revokes the token where supported and
+  removes the local record.
+
+## Without the CLI
+
+If you already have an access token, you can configure accounts entirely through
+environment variables (useful for headless or containerized deployments):
+
+- **Single account:** set `ACTIVITYPUB_DEFAULT_INSTANCE` and
+  `ACTIVITYPUB_DEFAULT_TOKEN` (optionally `ACTIVITYPUB_DEFAULT_USERNAME`).
+- **Multiple accounts:** set `ACTIVITYPUB_ACCOUNTS` using the pipe (`|`) delimiter,
+  comma-separated:
+
+```bash
+# Format: id|instance|token|username|label, comma-separated
+ACTIVITYPUB_ACCOUNTS=work|fosstodon.org|TOKEN1|me|Work,home|mastodon.social|TOKEN2|me|Personal
+```
+
+The pipe delimiter is required so tokens containing colons (e.g. JWTs) parse
+correctly; the legacy colon-delimited form is rejected at startup.
+
+## What Requires an Account
+
+| Capability | Requirement |
+|------------|-------------|
+| Public reads (discover, fetch public timelines, instance info) | No account |
+| Authenticated reads (home timeline, notifications, bookmarks, favourites, relationships) | An account (CLI login or env vars) |
+| Writes (post, reply, delete, boost, favourite, bookmark, follow, mute, block, vote, upload media, scheduled posts) | An account **and** `ACTIVITYPUB_ENABLE_WRITES=true` |
+
+Write tools are not even registered unless `ACTIVITYPUB_ENABLE_WRITES` is `true`, so a
+read-only deployment cannot mutate fediverse state. Before enabling writes, read the
+[threat model](https://github.com/cameronrye/activitypub-mcp/blob/main/SECURITY.md) —
+fediverse content is world-writable and can carry prompt-injection payloads.
+
+## Next Steps
+
+- [Configuration Guide](/activitypub-mcp/docs/getting-started/configuration/) — Tune logging, caching, and rate limits.
+- [Claude Desktop Integration](/activitypub-mcp/docs/getting-started/claude-desktop/) — Wire the server into Claude Desktop.
+- [Basic Usage Guide](/activitypub-mcp/docs/guides/basic-usage/) — Start using the authenticated tools.
