@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-06-04
+
+### Added
+
+- **Misskey / Foundkey read support.** `search`, `get-trending-hashtags`, `get-trending-posts`, and `get-public-timeline` now work on Misskey-family instances. Reads are routed per instance by NodeInfo software detection through a new read adapter and normalized into the same Mastodon-shaped results, so these tools no longer silently fail on platforms already supported for writes.
+- **Authentication guide on the docs site** covering the `activitypub-mcp login` (Mastodon OAuth2 / Misskey MiAuth) flow, credential storage, and multi-account usage.
+
+### Fixed
+
+- **Install command on the site.** The "Quick install" step shipped `npx activitypub-mcp install`, a subcommand the CLI does not dispatch — it silently started a stdio server that blocked on stdin. Corrected to `npx -y activitypub-mcp`.
+- **Interactive runs no longer look hung.** Starting the stdio server directly in a terminal now prints a one-line stderr hint that it is waiting for an MCP client; the hint never appears for a connected (piped) client.
+- **Getting-started docs reconciled with the code.** Removed phantom env vars (`ACTOR_/INSTANCE_/TIMELINE_CACHE_TTL`, `CONCURRENT_REQUESTS`), a removed `HEALTH_CHECK_EXTERNAL_PROBE` setting, and non-existent npm scripts; corrected the `REQUEST_TIMEOUT`/`CACHE_TTL` defaults and a false CORS "renamed from" claim. A new drift test fails CI if a config page documents an env var the code never reads.
+
+### Security
+
+- **Full IPv6 private-range SSRF blocking.** The private-range checks used literal-prefix regexes that matched only the canonical address, leaving most of `fc00::/7` (unique-local) and `fe80::/10` (link-local) reachable — e.g. `https://[fc12:3456::1]`. Replaced with leading-hextet masks covering each block in full, plus deprecated site-local `fec0::/10`.
+- **All GitHub Actions pinned to commit SHAs**, so a retagged or compromised third-party action can no longer run in the credential-bearing release jobs.
+
+### Changed
+
+- **Releases now publish automatically.** `release.yml` and `publish-mcp.yml` are reusable workflows that `auto-release` calls inline after tagging, removing the manual `workflow_dispatch` step the `GITHUB_TOKEN` anti-recursion rule previously required.
+
 ## [3.0.1] - 2026-06-02
 
 ### Security

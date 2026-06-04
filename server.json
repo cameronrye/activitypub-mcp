@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.cameronrye/activitypub-mcp",
   "description": "Security-first, read-only-by-default MCP server for ActivityPub and the Fediverse.",
-  "version": "3.0.1",
+  "version": "3.1.0",
   "repository": {
     "url": "https://github.com/cameronrye/activitypub-mcp",
     "source": "github"
@@ -12,7 +12,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "activitypub-mcp",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"

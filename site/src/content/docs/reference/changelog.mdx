@@ -9,6 +9,24 @@ order: 2
 
 All notable changes to the ActivityPub MCP Server are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### v3.1.0 - 2026-06-04
+
+**Multi-platform reads &amp; activation fixes.** Misskey/Foundkey instances now work for search, trending, and public timelines; a broken homepage install command and several docs-drift issues are fixed; and an IPv6 SSRF gap is closed. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.
+
+#### Added
+
+- **Misskey / Foundkey read support** for `search`, `get-trending-hashtags`, `get-trending-posts`, and `get-public-timeline`, routed per instance by NodeInfo software detection and normalized into Mastodon-shaped results.
+- **Authentication guide** documenting the `activitypub-mcp login` (Mastodon OAuth2 / Misskey MiAuth) flow, credential storage, and multi-account usage.
+
+#### Fixed
+
+- The site's "Quick install" command (`npx activitypub-mcp install` → `npx -y activitypub-mcp`); running the bin directly in a terminal now prints a hint instead of appearing to hang; getting-started docs reconciled with the actual configuration (phantom env vars and wrong defaults removed).
+
+#### Security
+
+- **Full IPv6 private-range SSRF blocking** (`fc00::/7`, `fe80::/10`, `fec0::/10`) — closes a gap where most of those ranges were reachable via crafted IPv6 hosts.
+- **All GitHub Actions pinned to commit SHAs** so a retagged or compromised action can't run in the credential-bearing release jobs.
+
 ### v3.0.1 - 2026-06-02
 
 **Correctness &amp; distribution.** A cross-origin redirect security fix, Misskey and remote-fetch correctness fixes, and the server is now publishable to the official MCP Registry. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.
