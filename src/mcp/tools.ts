@@ -144,7 +144,9 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
     "fetch-timeline",
     {
       title: "Fetch Actor Timeline",
-      description: "Fetch posts from any actor's timeline in the fediverse with pagination support",
+      description:
+        "Fetch recent posts (the outbox) from any fediverse actor — a user or account — " +
+        "with cursor- and ID-based pagination. Pass a handle like 'alice@mastodon.social'.",
       inputSchema: {
         identifier: ActorIdentifierSchema.describe("Actor identifier (e.g., user@example.social)"),
         limit: z
@@ -157,9 +159,9 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
           .string()
           .optional()
           .describe("Pagination cursor from previous response to fetch next page"),
-        minId: z.string().optional().describe("Return results newer than this ID"),
-        maxId: z.string().optional().describe("Return results older than this ID"),
-        sinceId: z.string().optional().describe("Return results since this ID"),
+        minId: z.string().optional().describe("Return posts newer than this post ID (pagination)"),
+        maxId: z.string().optional().describe("Return posts older than this post ID (pagination)"),
+        sinceId: z.string().optional().describe("Return posts more recent than this post ID"),
       },
       annotations: { readOnlyHint: true },
     },
@@ -266,7 +268,10 @@ function registerGetInstanceInfoTool(mcpServer: McpServer, rateLimiter: RateLimi
     "get-instance-info",
     {
       title: "Get Instance Information",
-      description: "Get detailed information about a fediverse instance",
+      description:
+        "Get detailed information about a fediverse instance: software and version, " +
+        "description, registration policy, supported languages, user/post/domain counts, " +
+        "and contact account.",
       inputSchema: {
         domain: DomainSchema.describe("Instance domain (e.g., example.social)"),
       },
@@ -623,7 +628,9 @@ function registerGetTrendingHashtagsTool(mcpServer: McpServer, rateLimiter: Rate
     "get-trending-hashtags",
     {
       title: "Get Trending Hashtags",
-      description: "Get currently trending hashtags on a fediverse instance",
+      description:
+        "Get currently trending hashtags on a fediverse instance (Mastodon-compatible " +
+        "instances that expose a trends API).",
       inputSchema: {
         domain: DomainSchema.describe("Instance domain (e.g., mastodon.social)"),
         limit: z
@@ -700,7 +707,9 @@ function registerGetTrendingPostsTool(mcpServer: McpServer, rateLimiter: RateLim
     "get-trending-posts",
     {
       title: "Get Trending Posts",
-      description: "Get currently trending posts/statuses on a fediverse instance",
+      description:
+        "Get currently trending posts on a fediverse instance (Mastodon-compatible " +
+        "instances that expose a trends API).",
       inputSchema: {
         domain: DomainSchema.describe("Instance domain (e.g., mastodon.social)"),
         limit: z
