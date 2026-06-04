@@ -2,7 +2,7 @@
 title: "Claude Desktop Integration"
 description: "Set up seamless integration between the ActivityPub MCP Server and Claude Desktop for AI-powered fediverse exploration."
 group: "Getting Started"
-order: 2
+order: 4
 ---
 
 ## Overview
@@ -24,10 +24,10 @@ Download and install Claude Desktop from the official Anthropic website.
 
 ### ActivityPub MCP Server
 
-Ensure the ActivityPub MCP Server is installed and working.
+Ensure the ActivityPub MCP Server runs. The MCP client launches it for you via the config below, but you can verify it starts:
 
 ```bash
-npx activitypub-mcp install
+npx -y activitypub-mcp
 ```
 
 ### Node.js 20+
@@ -90,9 +90,9 @@ If the file doesn't exist, create it. Add the ActivityPub MCP Server configurati
       "args": ["-y", "activitypub-mcp"],
       "env": {
         "LOG_LEVEL": "debug",
-        "USER_AGENT": "Claude-ActivityPub-Explorer/3.0.0",
+        "USER_AGENT": "Claude-ActivityPub-Explorer/1.0",
         "REQUEST_TIMEOUT": "60000",
-        "CACHE_TTL": "600",
+        "CACHE_TTL": "600000",
         "RATE_LIMIT_MAX": "100"
       }
     }
