@@ -75,6 +75,26 @@ function checkRateLimit(rateLimiter: RateLimiter, identifier: string): void {
 }
 
 /**
+ * Wraps a resource handler body with the shared read-path error handling: log
+ * the failure with the given context, re-throw McpError unchanged (so protocol
+ * errors propagate verbatim), and otherwise wrap into an InternalError carrying
+ * the same failure-prefixed message. Mirrors `withWriteTool` in tools-write.ts.
+ */
+async function withReadResource<T>(
+  failurePrefix: string,
+  logContext: Record<string, unknown>,
+  run: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    logger.error(failurePrefix, { ...logContext, error: getErrorMessage(error) });
+    if (error instanceof McpError) throw error;
+    throw new McpError(ErrorCode.InternalError, `${failurePrefix}: ${getErrorMessage(error)}`);
+  }
+}
+
+/**
  * Server info resource - get information about this MCP server.
  */
 function registerServerInfoResource(mcpServer: McpServer, config: ResourceConfig): void {
@@ -164,7 +184,7 @@ function registerRemoteActorResource(mcpServer: McpServer, rateLimiter: RateLimi
       mimeType: "application/json",
     },
     async (uri, { identifier }) => {
-      try {
+      return withReadResource("Failed to fetch remote actor", { identifier }, async () => {
         const identifierStr = extractSingleValue(identifier);
         const validIdentifier = validateActorIdentifier(identifierStr);
 
@@ -186,21 +206,7 @@ function registerRemoteActorResource(mcpServer: McpServer, rateLimiter: RateLimi
             },
           ],
         };
-      } catch (error) {
-        logger.error("Failed to fetch remote actor", {
-          identifier,
-          error: getErrorMessage(error),
-        });
-
-        if (error instanceof McpError) {
-          throw error;
-        }
-
-        throw new McpError(
-          ErrorCode.InternalError,
-          `Failed to fetch remote actor: ${getErrorMessage(error)}`,
-        );
-      }
+      });
     },
   );
 }
@@ -230,7 +236,7 @@ function registerRemoteTimelineResource(mcpServer: McpServer, rateLimiter: RateL
       mimeType: "application/json",
     },
     async (uri, { identifier }) => {
-      try {
+      return withReadResource("Failed to fetch remote timeline", { identifier }, async () => {
         const identifierStr = extractSingleValue(identifier);
         const validIdentifier = validateActorIdentifier(identifierStr);
 
@@ -262,21 +268,7 @@ function registerRemoteTimelineResource(mcpServer: McpServer, rateLimiter: RateL
             },
           ],
         };
-      } catch (error) {
-        logger.error("Failed to fetch remote timeline", {
-          identifier,
-          error: getErrorMessage(error),
-        });
-
-        if (error instanceof McpError) {
-          throw error;
-        }
-
-        throw new McpError(
-          ErrorCode.InternalError,
-          `Failed to fetch remote timeline: ${getErrorMessage(error)}`,
-        );
-      }
+      });
     },
   );
 }
@@ -305,7 +297,7 @@ function registerInstanceInfoResource(mcpServer: McpServer, rateLimiter: RateLim
       mimeType: "application/json",
     },
     async (uri, { domain }) => {
-      try {
+      return withReadResource("Failed to fetch instance info", { domain }, async () => {
         const domainStr = extractSingleValue(domain);
         const validDomain = DomainSchema.parse(domainStr);
 
@@ -337,21 +329,7 @@ function registerInstanceInfoResource(mcpServer: McpServer, rateLimiter: RateLim
             },
           ],
         };
-      } catch (error) {
-        logger.error("Failed to fetch instance info", {
-          domain,
-          error: getErrorMessage(error),
-        });
-
-        if (error instanceof McpError) {
-          throw error;
-        }
-
-        throw new McpError(
-          ErrorCode.InternalError,
-          `Failed to fetch instance info: ${getErrorMessage(error)}`,
-        );
-      }
+      });
     },
   );
 }
@@ -380,7 +358,7 @@ function registerRemoteFollowersResource(mcpServer: McpServer, rateLimiter: Rate
       mimeType: "application/json",
     },
     async (uri, { identifier }) => {
-      try {
+      return withReadResource("Failed to fetch remote followers", { identifier }, async () => {
         const identifierStr = extractSingleValue(identifier);
         const validIdentifier = validateActorIdentifier(identifierStr);
 
@@ -402,21 +380,7 @@ function registerRemoteFollowersResource(mcpServer: McpServer, rateLimiter: Rate
             },
           ],
         };
-      } catch (error) {
-        logger.error("Failed to fetch remote followers", {
-          identifier,
-          error: getErrorMessage(error),
-        });
-
-        if (error instanceof McpError) {
-          throw error;
-        }
-
-        throw new McpError(
-          ErrorCode.InternalError,
-          `Failed to fetch remote followers: ${getErrorMessage(error)}`,
-        );
-      }
+      });
     },
   );
 }
@@ -445,7 +409,7 @@ function registerRemoteFollowingResource(mcpServer: McpServer, rateLimiter: Rate
       mimeType: "application/json",
     },
     async (uri, { identifier }) => {
-      try {
+      return withReadResource("Failed to fetch remote following", { identifier }, async () => {
         const identifierStr = extractSingleValue(identifier);
         const validIdentifier = validateActorIdentifier(identifierStr);
 
@@ -467,21 +431,7 @@ function registerRemoteFollowingResource(mcpServer: McpServer, rateLimiter: Rate
             },
           ],
         };
-      } catch (error) {
-        logger.error("Failed to fetch remote following", {
-          identifier,
-          error: getErrorMessage(error),
-        });
-
-        if (error instanceof McpError) {
-          throw error;
-        }
-
-        throw new McpError(
-          ErrorCode.InternalError,
-          `Failed to fetch remote following: ${getErrorMessage(error)}`,
-        );
-      }
+      });
     },
   );
 }
@@ -511,7 +461,7 @@ function registerTrendingResource(mcpServer: McpServer, rateLimiter: RateLimiter
       mimeType: "application/json",
     },
     async (uri, { domain }) => {
-      try {
+      return withReadResource("Failed to fetch trending content", { domain }, async () => {
         const domainStr = extractSingleValue(domain);
         const validDomain = DomainSchema.parse(domainStr);
 
@@ -549,21 +499,7 @@ function registerTrendingResource(mcpServer: McpServer, rateLimiter: RateLimiter
             },
           ],
         };
-      } catch (error) {
-        logger.error("Failed to fetch trending content", {
-          domain,
-          error: getErrorMessage(error),
-        });
-
-        if (error instanceof McpError) {
-          throw error;
-        }
-
-        throw new McpError(
-          ErrorCode.InternalError,
-          `Failed to fetch trending content: ${getErrorMessage(error)}`,
-        );
-      }
+      });
     },
   );
 }
@@ -593,7 +529,7 @@ function registerLocalTimelineResource(mcpServer: McpServer, rateLimiter: RateLi
       mimeType: "application/json",
     },
     async (uri, { domain }) => {
-      try {
+      return withReadResource("Failed to fetch local timeline", { domain }, async () => {
         const domainStr = extractSingleValue(domain);
         const validDomain = DomainSchema.parse(domainStr);
 
@@ -624,21 +560,7 @@ function registerLocalTimelineResource(mcpServer: McpServer, rateLimiter: RateLi
             },
           ],
         };
-      } catch (error) {
-        logger.error("Failed to fetch local timeline", {
-          domain,
-          error: getErrorMessage(error),
-        });
-
-        if (error instanceof McpError) {
-          throw error;
-        }
-
-        throw new McpError(
-          ErrorCode.InternalError,
-          `Failed to fetch local timeline: ${getErrorMessage(error)}`,
-        );
-      }
+      });
     },
   );
 }
@@ -668,7 +590,7 @@ function registerFederatedTimelineResource(mcpServer: McpServer, rateLimiter: Ra
       mimeType: "application/json",
     },
     async (uri, { domain }) => {
-      try {
+      return withReadResource("Failed to fetch federated timeline", { domain }, async () => {
         const domainStr = extractSingleValue(domain);
         const validDomain = DomainSchema.parse(domainStr);
 
@@ -699,21 +621,7 @@ function registerFederatedTimelineResource(mcpServer: McpServer, rateLimiter: Ra
             },
           ],
         };
-      } catch (error) {
-        logger.error("Failed to fetch federated timeline", {
-          domain,
-          error: getErrorMessage(error),
-        });
-
-        if (error instanceof McpError) {
-          throw error;
-        }
-
-        throw new McpError(
-          ErrorCode.InternalError,
-          `Failed to fetch federated timeline: ${getErrorMessage(error)}`,
-        );
-      }
+      });
     },
   );
 }

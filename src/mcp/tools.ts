@@ -7,7 +7,7 @@
 
 import { getLogger } from "@logtape/logtape";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
+import { type CallToolResult, ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { remoteClient } from "../activitypub/remote-client.js";
 import { dynamicInstanceDiscovery } from "../discovery/dynamic-instance-discovery.js";
@@ -61,6 +61,33 @@ export function registerTools(mcpServer: McpServer, rateLimiter: RateLimiter): v
 function checkRateLimit(rateLimiter: RateLimiter, identifier: string): void {
   if (!rateLimiter.checkLimit(identifier)) {
     throw new McpError(ErrorCode.InternalError, "Rate limit exceeded. Please try again later.");
+  }
+}
+
+/**
+ * Wraps a read tool's body with the shared failure handling: log the error with
+ * the given context and return an `isError` text result carrying the
+ * failure-prefixed, suggestion-augmented message. Any input validation that must
+ * surface as a protocol error (e.g. an McpError from a validator) is expected to
+ * run BEFORE this call, outside the wrapped `run`, mirroring the read tools'
+ * existing contract. Companion to `withWriteTool` in tools-write.ts.
+ */
+async function withReadTool(
+  failurePrefix: string,
+  logContext: Record<string, unknown>,
+  run: () => Promise<CallToolResult>,
+): Promise<CallToolResult> {
+  try {
+    return await run();
+  } catch (error) {
+    const errorMessage = getErrorMessage(error);
+    logger.error(failurePrefix, { ...logContext, error: errorMessage });
+    return {
+      content: [
+        { type: "text", text: `${failurePrefix}: ${formatErrorWithSuggestion(errorMessage)}` },
+      ],
+      isError: true,
+    };
   }
 }
 
@@ -530,7 +557,7 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
       annotations: { readOnlyHint: true },
     },
     async ({ postUrl, depth = 2, maxReplies = 50 }) => {
-      try {
+      return withReadTool("Failed to fetch post thread", { postUrl }, async () => {
         const domain = new URL(postUrl).hostname;
         checkRateLimit(rateLimiter, domain);
 
@@ -601,21 +628,7 @@ ${repliesSection}
             },
           ],
         };
-      } catch (error) {
-        const errorMessage = getErrorMessage(error);
-
-        logger.error("Failed to fetch post thread", { postUrl, error: errorMessage });
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Failed to fetch post thread: ${formatErrorWithSuggestion(errorMessage)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
+      });
     },
   );
 }
@@ -645,56 +658,43 @@ function registerGetTrendingHashtagsTool(mcpServer: McpServer, rateLimiter: Rate
     async ({ domain, limit = 20 }) => {
       const validDomain = validateDomain(domain);
 
-      try {
-        checkRateLimit(rateLimiter, validDomain);
+      return withReadTool(
+        "Failed to fetch trending hashtags",
+        { domain: validDomain },
+        async () => {
+          checkRateLimit(rateLimiter, validDomain);
 
-        logger.info("Fetching trending hashtags", { domain: validDomain, limit });
+          logger.info("Fetching trending hashtags", { domain: validDomain, limit });
 
-        const result = await remoteClient.fetchTrendingHashtags(validDomain, { limit });
+          const result = await remoteClient.fetchTrendingHashtags(validDomain, { limit });
 
-        const hashtagsList = result.hashtags
-          .map((tag, i) => {
-            const history = tag.history?.[0];
-            // uses/accounts are unvalidated remote strings — coerce to numbers so
-            // an injected payload can't ride along (matches the unified-search path).
-            const uses = Number.parseInt(history?.uses ?? "", 10);
-            const accounts = Number.parseInt(history?.accounts ?? "", 10);
-            return `${i + 1}. **#${sanitizeInline(tag.name || "")}** - ${Number.isFinite(uses) ? uses : "?"} uses by ${Number.isFinite(accounts) ? accounts : "?"} accounts`;
-          })
-          .join("\n");
+          const hashtagsList = result.hashtags
+            .map((tag, i) => {
+              const history = tag.history?.[0];
+              // uses/accounts are unvalidated remote strings — coerce to numbers so
+              // an injected payload can't ride along (matches the unified-search path).
+              const uses = Number.parseInt(history?.uses ?? "", 10);
+              const accounts = Number.parseInt(history?.accounts ?? "", 10);
+              return `${i + 1}. **#${sanitizeInline(tag.name || "")}** - ${Number.isFinite(uses) ? uses : "?"} uses by ${Number.isFinite(accounts) ? accounts : "?"} accounts`;
+            })
+            .join("\n");
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: `📈 **Trending Hashtags on ${validDomain}**
+          return {
+            content: [
+              {
+                type: "text",
+                text: `📈 **Trending Hashtags on ${validDomain}**
 
 ${hashtagsList || "No trending hashtags found"}
 
 💡 **Tips:**
 - Use \`search\` with \`type: "hashtags"\` to explore posts with a specific hashtag
 - Use \`get-public-timeline\` to see recent posts from this instance`,
-            },
-          ],
-        };
-      } catch (error) {
-        const errorMessage = getErrorMessage(error);
-
-        logger.error("Failed to fetch trending hashtags", {
-          domain: validDomain,
-          error: errorMessage,
-        });
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Failed to fetch trending hashtags: ${formatErrorWithSuggestion(errorMessage)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
+              },
+            ],
+          };
+        },
+      );
     },
   );
 }
@@ -724,7 +724,7 @@ function registerGetTrendingPostsTool(mcpServer: McpServer, rateLimiter: RateLim
     async ({ domain, limit = 20 }) => {
       const validDomain = validateDomain(domain);
 
-      try {
+      return withReadTool("Failed to fetch trending posts", { domain: validDomain }, async () => {
         checkRateLimit(rateLimiter, validDomain);
 
         logger.info("Fetching trending posts", { domain: validDomain, limit });
@@ -763,24 +763,7 @@ ${postsList || "No trending posts found"}${moreText}
             },
           ],
         };
-      } catch (error) {
-        const errorMessage = getErrorMessage(error);
-
-        logger.error("Failed to fetch trending posts", {
-          domain: validDomain,
-          error: errorMessage,
-        });
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Failed to fetch trending posts: ${formatErrorWithSuggestion(errorMessage)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
+      });
     },
   );
 }
