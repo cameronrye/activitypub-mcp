@@ -116,9 +116,10 @@ chmod +x .git/hooks/pre-commit
 When you add or modify an MCP tool parameter:
 
 1. **Add the parameter to the Zod schema in `src/mcp/`** first.
-2. **Update the README and the Astro docs (`src/pages/docs/api/tools.astro`)
+2. **Update the README and the Astro docs (`site/src/content/docs/api/tools.mdx`)
    in the same commit.** Code and docs drifted in v1; the v2 audit found
-   five mismatched tools. Keep them in sync at commit time.
+   five mismatched tools. Keep them in sync at commit time. The
+   `llms-registry-sync` and `config-env-drift` tests fail CI on tool/env drift.
 3. **Add a test** that exercises the new parameter (success + at least one
    refusal/refinement case).
 
@@ -234,9 +235,9 @@ tests/
 ### User Documentation
 
 - **Update README.md** for user-facing changes
-- **Add examples** to `src/pages/docs/guides/examples.astro`
-- **Update the relevant page under `src/pages/docs/`** for new features
-- **Maintain CHANGELOG.md and MIGRATION-v2.md** for releases
+- **Add examples** to `site/src/content/docs/guides/examples.mdx`
+- **Update the relevant page under `site/src/content/docs/`** for new features
+- **Maintain CHANGELOG.md** (and the `MIGRATION-v*.md` guides) for releases
 
 ## Security
 
@@ -262,11 +263,23 @@ We follow **Semantic Versioning** (SemVer):
 
 ### Release Workflow
 
-1. **Update version** in package.json
-2. **Update CHANGELOG.md** with changes
-3. **Create release tag**: `git tag v1.2.3`
-4. **Push tag**: `git push origin v1.2.3`
-5. **GitHub Actions** will automatically publish to npm
+Releases are automated from the version in `package.json` — you do not push tags
+by hand:
+
+1. **Bump the version** in `package.json` (and run `npm install --package-lock-only`
+   so the lockfile tracks it). `npm run validate:version` checks that
+   `package.json`, `package-lock.json`, `server.json`, `manifest.json`, and the
+   `src/config.ts` default all agree.
+2. **Update CHANGELOG.md** with the changes for that version.
+3. **Open a PR and merge to `main`** (squash). On merge, `auto-release.yml` detects
+   the version change, creates and pushes the `vX.Y.Z` tag, then calls `release.yml`
+   (npm publish with provenance + GitHub release) and `publish-mcp.yml` (MCP registry)
+   automatically — all in the same run.
+4. **If you ever need to re-run a publish** (e.g. a registry hiccup), run the
+   `Release` or `Publish to MCP Registry` workflow manually via `workflow_dispatch`
+   against the tag.
+5. **The `.mcpb` desktop-extension bundle** is still built and attached to the
+   GitHub release by hand; keep its version in `manifest.json` in sync (CI enforces).
 
 ## Project Goals
 

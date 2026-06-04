@@ -47,6 +47,8 @@ Used only when `MCP_TRANSPORT_MODE=http` is set. The default stdio transport (us
 
 In v3, the HTTP server exposes two endpoints: `/mcp` (Bearer-auth required) and `/health` (unauthenticated liveness probe returning `\{"status":"ok"\}`). The `/metrics` endpoint was removed in v3.
 
+> **Operator note — `/health` is liveness, not readiness.** v3 deliberately reduced `/health` to a trivial in-process liveness check; it no longer performs an outbound connectivity probe (the `HEALTH_CHECK_*` knobs were removed), so a `200 OK` confirms the process is up but **not** that the Fediverse is reachable from the host. If your orchestrator needs a readiness signal, drive a real read tool (e.g. `discover-actor`) against a known instance instead of relying on `/health`.
+
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `MCP_TRANSPORT_MODE` | `stdio` | Transport mode: `stdio` (default) or `http` |
