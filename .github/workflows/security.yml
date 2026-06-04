@@ -24,15 +24,15 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
     
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v4
+      uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4
       with:
         languages: ${{ matrix.language }}
     
     - name: Setup Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
       with:
         node-version: '20.x'
         cache: 'npm'
@@ -44,7 +44,7 @@ jobs:
       run: npm run build
     
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v4
+      uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4
 
   dependency-review:
     name: Dependency Review
@@ -53,10 +53,10 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
     
     - name: Dependency Review
-      uses: actions/dependency-review-action@v5
+      uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5
 
   security-audit:
     name: Security Audit
@@ -64,10 +64,10 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
     
     - name: Setup Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
       with:
         node-version: '20.x'
         cache: 'npm'
@@ -90,10 +90,10 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
     
     - name: Setup Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
       with:
         node-version: '20.x'
         cache: 'npm'
