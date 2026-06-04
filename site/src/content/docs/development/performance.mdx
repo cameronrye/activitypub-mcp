@@ -42,11 +42,17 @@ curl http://localhost:3000/health
 activitypub://server-info
 ```
 
-#### Available Metrics:
-- Request count and timing statistics
-- Memory usage and garbage collection stats
-- Cache performance metrics
-- Error counts and types
+#### Available Information:
+
+`/health` is a liveness-only probe: it returns exactly `\{ status: "ok" \}` and performs no outbound connectivity or readiness check.
+
+The `activitypub://server-info` MCP resource returns server metadata only — no request timing, memory/GC, cache, or error metrics. Its fields are:
+
+- `name`, `version`, and `description`
+- `capabilities` (counts of resources, tools, and prompts)
+- `features` (audit logging, instance blocklist, content warnings, trending content, thread support)
+- `configuration` (rate limit settings and log level)
+- `uptime` and `timestamp`
 
 ### External Monitoring Tools
 
@@ -123,13 +129,9 @@ node --inspect server.js
 
 #### Cache Metrics
 
-```bash
-# Check cache statistics
-curl activitypub://server-info | jq '.statistics'
+The `activitypub://server-info` resource has no `.statistics` field, and `activitypub://` is an MCP resource URI (accessed via the MCP protocol), not an HTTP endpoint that `curl` can fetch. No `cacheHits`/`cacheMisses` are exposed through `server-info` or `/health`.
 
-# Monitor cache hit rate
-watch -n 5 'curl -s activitypub://server-info | jq ".statistics.cacheHits, .statistics.cacheMisses"'
-```
+Cache statistics exist only internally (`LRUCache.getStats` and the WebFinger cache) and are not surfaced to clients.
 
 #### Optimization Strategies
 
@@ -180,9 +182,12 @@ watch -n 5 'curl -s activitypub://server-info | jq ".statistics.cacheHits, .stat
 ```bash
 # Simple performance monitor
 #!/bin/bash
+# Note: activitypub://server-info is an MCP resource URI accessed via the MCP
+# protocol, not an HTTP endpoint — curl cannot fetch it. Time the HTTP liveness
+# probe (/health) instead.
 while true; do
   MEMORY=$(ps -o pid,vsz,rss,comm -p $(pgrep -f activitypub-mcp))
-  RESPONSE_TIME=$(curl -w "%{time_total}" -s -o /dev/null activitypub://server-info)
+  RESPONSE_TIME=$(curl -w "%{time_total}" -s -o /dev/null http://localhost:3000/health)
 
   echo "$(date): Memory: $MEMORY, Response: ${RESPONSE_TIME}s"
 

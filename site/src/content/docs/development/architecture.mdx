@@ -15,7 +15,7 @@ order: 1
 
 ↕ HTTP/HTTPS
 
-**Fediverse Layer** — Mastodon, Pixelfed, PeerTube, Other ActivityPub Servers
+**Fediverse Layer** — Mastodon, Misskey/Foundkey, Pixelfed, PeerTube, Other ActivityPub Servers
 
 ## Core Components
 
@@ -39,25 +39,15 @@ HTTP client for communicating with fediverse servers
 - HTTP request optimization
 - Error handling and retries
 
-### Performance Monitor
+As of v3.1.0, reads and writes are routed by NodeInfo software detection. A dedicated Misskey/Foundkey read adapter (`src/activitypub/read-adapter.ts`) normalizes Misskey responses into Mastodon shapes for `search`, trending hashtags/posts, and public timelines, so these tools work on Misskey/Foundkey instances as well as Mastodon-compatible ones.
 
-System performance tracking and metrics collection
+### Health Endpoint
 
-#### Key Features:
-- Request timing and latency tracking
-- Memory usage monitoring
-- Error rate tracking
-- Performance analytics
-
-### Health Checker
-
-System health monitoring and diagnostics
+Liveness check for the HTTP transport
 
 #### Key Features:
-- Server status verification
-- Dependency health checks
-- Resource availability monitoring
-- Diagnostic reporting
+- Trivial `/health` liveness endpoint returning `{ status: "ok" }`
+- No dependency, connectivity, or readiness probing
 
 ### Instance Discovery
 
@@ -156,10 +146,12 @@ Secure error handling that doesn't leak sensitive information
 Intelligent caching reduces redundant requests and improves response times
 
 #### Cache Layers:
-- **WebFinger Cache:** 5-minute TTL for actor resolution
-- **Actor Profile Cache:** 5-minute TTL for profile data
-- **Instance Info Cache:** 15-minute TTL for instance metadata
-- **Error Cache:** 1-minute TTL for failed requests
+The remote client (`src/activitypub/remote-client.ts`) keeps two LRU caches — an instance-info cache and an ETag cache — and the WebFinger client keeps its own response and actor caches. All use the shared `CACHE_TTL` (default 300000 ms = 5 minutes), configurable via the `CACHE_TTL` env var.
+
+- **WebFinger Cache:** 5-minute default TTL for actor resolution
+- **Actor Profile Cache:** 5-minute default TTL for profile data
+- **Instance Info Cache:** 5-minute default TTL for instance metadata
+- **ETag Cache:** 5-minute default TTL for conditional requests
 
 ### Request Optimization
 
@@ -214,9 +206,9 @@ RFC 7033 standard for resource discovery
 
 ### Performance Metrics
 
-Comprehensive performance tracking and analysis
+The server does not currently track or expose performance metrics — there is no perf-monitoring code. The items below are aspirational and not part of the current implementation:
 
-#### Tracked Metrics:
+#### Aspirational Metrics:
 - Request latency and throughput
 - Error rates and types
 - Cache hit/miss ratios
@@ -224,9 +216,9 @@ Comprehensive performance tracking and analysis
 
 ### Health Monitoring
 
-Continuous health checks and system diagnostics
+The only health surface is the `/health` liveness endpoint, which returns a trivial `{ status: "ok" }`. It does not perform continuous, dependency, or configuration health checks. The items below are aspirational and not part of the current implementation:
 
-#### Health Checks:
+#### Aspirational Health Checks:
 - Server responsiveness
 - External dependency status
 - Resource availability

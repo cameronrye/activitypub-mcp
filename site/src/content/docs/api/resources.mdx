@@ -30,7 +30,7 @@ MCP Resources provide read-only access to remote ActivityPub data from any fediv
 
 ### `activitypub://server-info`
 
-Provides comprehensive information about the MCP server instance. In v2 the
+Provides comprehensive information about the MCP server instance. The
 tools/resources/prompts arrays are populated dynamically from the live capability
 registry, so the list never drifts from what the server actually serves.
 
@@ -39,7 +39,7 @@ registry, so the list never drifts from what the server actually serves.
 Returns comprehensive server information including:
 
 - Server name, version, and uptime
-- Available tools, resources, and prompts (live from the registry — v2)
+- Available tools, resources, and prompts (live from the registry)
 - Configuration settings and feature flags
 - Performance statistics
 
@@ -331,14 +331,14 @@ Replace `{domain}` with the instance domain and `{statusId}`
 with the Mastodon status ID. Constructs
 `https://{domain}/web/statuses/{statusId}` internally — the Mastodon-compatible URL.
 
-#### Legacy URI Template (deprecated, removed in 2.1.0)
+#### Legacy URI Template (removed in 2.1.0)
 
 `activitypub://post-thread/{postUrl}`
 
-The original URL-encoded form is still accepted with a deprecation warning. It remains
-useful for non-Mastodon ActivityPub implementations (Pleroma, Akkoma, Misskey, etc.)
-whose status URLs do not match the Mastodon shape. Will be removed in v2.1.0 once
-instance-software detection lands.
+The original URL-encoded form has been removed. The resource handler now rejects
+encoded-URL input with an error. For non-Mastodon ActivityPub implementations
+(Misskey, Calckey, Pixelfed, PeerTube, etc.) whose status URLs do not match the
+Mastodon shape, use the `get-post-thread` tool with the full post URL instead.
 
 #### Content Structure
 
@@ -360,9 +360,9 @@ URI: `activitypub://post-thread/mastodon.social/123456`
 
 > "Show me the full conversation for this post"
 
-**Legacy form (Pleroma/Misskey/etc.)**
+**Non-Mastodon instances (Misskey/Calckey/Pixelfed/PeerTube)**
 
-URI: `activitypub://post-thread/https%3A%2F%2Fpleroma.example%2Fnotice%2FAaBbCc`
+Use the `get-post-thread` tool with the full post URL, e.g. `https://misskey.example/notes/AaBbCc`
 
 </div>
 

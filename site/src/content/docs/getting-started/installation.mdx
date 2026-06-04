@@ -137,7 +137,7 @@ npm run mcp
 Run the server in a container:
 
 ```bash
-docker run -p 8080:8080 \
+docker run --rm -i \
   -e LOG_LEVEL=debug \
   activitypub-mcp
 ```

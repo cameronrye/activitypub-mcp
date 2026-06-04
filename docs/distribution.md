@@ -32,14 +32,13 @@ The two in-repo artifacts already exist:
 
 **Hard ordering constraint — the registry validates the _live_ npm tarball.**
 The registry checks that the published npm package's `package.json` contains a
-matching `mcpName`. No 3.x has ever shipped to npm (`latest` is `2.2.0`; the
-`v3.0.0` tag was created but never published), so `3.0.1` is the first tarball
-to carry `mcpName`. **It must be live on npm before you register** — the
-registry has nothing to validate against otherwise.
+matching `mcpName`. 3.x has shipped to npm (`latest` is `3.1.0`); `3.0.1` was
+the first tarball to carry `mcpName`. **It must be live on npm before you
+register** — the registry has nothing to validate against otherwise.
 
 So the sequence is:
 
-1. Bump the version (e.g. `3.0.1`) — update `package.json`, `package-lock.json`
+1. Bump the version (e.g. `3.1.0`) — update `package.json`, `package-lock.json`
    (`npm install --package-lock-only`), `src/config.ts`, **and** `server.json`
    (both `version` and `packages[0].version`). `npm run validate:version`
    enforces all five agree.
@@ -47,6 +46,12 @@ So the sequence is:
    [`release.yml`](../.github/workflows/release.yml) does this with
    `--provenance --access public`). Now the live tarball carries `mcpName`.
 3. Publish to the registry (§1). Everything downstream (§2) flows from there.
+
+Steps 2 and 3 run **automatically**: merging the version bump from step 1 to
+`main` triggers [`auto-release.yml`](../.github/workflows/auto-release.yml),
+which tags `vX.Y.Z` and calls `release.yml` (npm publish) and
+[`publish-mcp.yml`](../.github/workflows/publish-mcp.yml) (registry) inline as
+reusable workflows in a single run — zero manual steps.
 
 ---
 
@@ -73,23 +78,29 @@ curl "https://registry.modelcontextprotocol.io/v0/servers?search=activitypub-mcp
 [`publish-mcp.yml`](../.github/workflows/publish-mcp.yml) does this in CI with
 **no stored secret** — it authenticates with GitHub Actions OIDC
 (`mcp-publisher login github-oidc`), which the registry maps to the repo owner's
-identity to authorize the `io.github.cameronrye/*` namespace. It is
-`workflow_dispatch`-only and kept **separate** from `release.yml` on purpose:
+identity to authorize the `io.github.cameronrye/*` namespace. It declares both
+`on: workflow_call` and `on: workflow_dispatch`, and `auto-release.yml` calls it
+inline (`uses: ./.github/workflows/publish-mcp.yml`) after the npm release in the
+same run. The normal path is fully automatic on merge to `main`; the manual
+dispatch is only a fallback re-run:
 
 ```bash
-# After the npm release for this version is live:
+# Fallback only — re-run the registry publish on its own:
 gh workflow run publish-mcp.yml
 ```
 
-> **Why separate, not folded into `release.yml`:** a tag pushed by another
-> workflow using `GITHUB_TOKEN` (e.g. `auto-release.yml`) will **not** trigger a
-> separate `on: push: tags` workflow — GitHub's anti-recursion rule. The npm
-> release is therefore dispatched by hand (`gh workflow run release.yml --ref
-> vX.Y.Z`), and the registry publish is its own dispatchable job so a registry
-> hiccup can never break the proven npm-release path, and so it can be re-run on
-> its own. Before relying on the OIDC path, confirm the Actions OIDC subject for
-> `cameronrye/activitypub-mcp` is authorized for the `io.github.cameronrye/*`
-> namespace (it is owner-scoped, so it should be).
+> **Why it runs as a reusable workflow, not as `on: push: tags`:** a tag pushed
+> by another workflow using `GITHUB_TOKEN` (e.g. `auto-release.yml`) will **not**
+> trigger a separate `on: push: tags` workflow — GitHub's anti-recursion rule.
+> `auto-release.yml` sidesteps this by **calling** `release.yml` and
+> `publish-mcp.yml` as reusable workflows within the same merge-triggered run, so
+> it never relies on a tag-push event. The npm release auto-publishes; it is no
+> longer dispatched by hand. Keeping the registry publish as its own reusable
+> (and `workflow_dispatch`-able) job means a registry hiccup can never break the
+> proven npm-release path, and it can be re-run on its own. Before relying on the
+> OIDC path, confirm the Actions OIDC subject for `cameronrye/activitypub-mcp` is
+> authorized for the `io.github.cameronrye/*` namespace (it is owner-scoped, so
+> it should be).
 
 ---
 
@@ -200,9 +211,10 @@ adding a second `packages[]` entry to `server.json` with `"registryType": "mcpb"
 ## 4. Recommended sequence
 
 1. ✅ `mcpName` + `server.json` + contract test + version guard.
-2. ✅ Released 3.0.1 (npm publish with `mcpName` → registry publish). The server
-   is live in the registry, which seeds PulseMCP, mcp.so, and the
-   modelcontextprotocol redirect downstream.
+2. ✅ Released 3.0.1 (npm publish with `mcpName` → registry publish); the latest
+   release is now 3.1.0 (npm `latest` = `3.1.0`). The server is live in the
+   registry, which seeds PulseMCP, mcp.so, and the modelcontextprotocol redirect
+   downstream.
 3. ✅ Built the `.mcpb` and attached it to the v3.0.1 release; committed
    `glama.json`; claimed the Glama listing and deployed its hosted container
    (npx build spec, §2). **Make Release in Glama's UI turns on the install button.**
@@ -216,11 +228,15 @@ adding a second `packages[]` entry to `server.json` with `"registryType": "mcpb"
 ## Open questions / risks (carried from research)
 
 - **npm-first:** registry publish fails until a version with `mcpName` is live on
-  npm; `3.0.1` is the first (no 3.x is on npm yet — `latest` is `2.2.0`).
-- **Tag-trigger anti-recursion:** a `GITHUB_TOKEN`-pushed tag won't fire a
-  separate `on: push: tags` workflow, so the npm release is dispatched manually
-  and the registry publish lives in its own `workflow_dispatch` job
-  ([`publish-mcp.yml`](../.github/workflows/publish-mcp.yml)).
+  npm; `3.0.1` was the first tarball with `mcpName`, and 3.x is published (npm
+  `latest` is `3.1.0`).
+- **Tag-trigger anti-recursion (resolved):** a `GITHUB_TOKEN`-pushed tag won't
+  fire a separate `on: push: tags` workflow, so `auto-release.yml` invokes
+  `release.yml` and `publish-mcp.yml`
+  ([`publish-mcp.yml`](../.github/workflows/publish-mcp.yml)) as reusable
+  workflows in-run — neither the npm release nor the registry publish depends on
+  a tag-push event or manual dispatch. The manual dispatch remains only as a
+  fallback.
 - **OIDC namespace:** verify the Actions OIDC subject maps to
   `io.github.cameronrye/*` before relying on `login github-oidc`.
 - **Unverified sync:** mcp.so's auto-sync from the registry and whether Smithery

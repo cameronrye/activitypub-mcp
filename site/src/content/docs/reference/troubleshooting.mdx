@@ -17,22 +17,16 @@ order: 1
 
 #### Solutions:
 
-1. **Check server status:**
+1. **Restart the server** by re-launching your MCP client, or run it directly:
    ```bash
-   npm run status
+   npm run mcp
    ```
-1. **Restart the server:**
+1. **Check logs for errors** by enabling verbose logging:
    ```bash
-   npm run restart
+   export LOG_LEVEL=debug
+   npm run mcp
    ```
-1. **Verify configuration:**
-   ```bash
-   npm run config:check
-   ```
-1. **Check logs for errors:**
-   ```bash
-   npm run logs
-   ```
+1. **Verify your environment variables** (read by `src/config.ts`) are set correctly
 
 ### Network Connectivity Problems
 
@@ -122,15 +116,7 @@ order: 1
 
 #### Solutions:
 
-1. **Validate configuration file:**
-   ```bash
-   npm run config:validate
-   ```
-1. **Reset to default configuration:**
-   ```bash
-   npm run config:reset
-   ```
-1. **Check required environment variables**
+1. **Check required environment variables** — configuration is supplied via environment variables read by `src/config.ts`, not a config file
 1. **Review configuration documentation**
 
 ### Claude Desktop Integration

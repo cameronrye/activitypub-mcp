@@ -10,16 +10,17 @@ order: 2
 ### Core Dependencies
 
 - **@modelcontextprotocol/sdk:** MCP protocol implementation
-- **node-fetch:** HTTP client for ActivityPub requests
-- **@types/node:** TypeScript definitions for Node.js
-- **typescript:** TypeScript compiler and tooling
+- **@logtape/logtape:** Structured logging
+- **undici:** HTTP client for ActivityPub requests
+- **zod:** Schema validation
 
 ### Development Dependencies
 
 - **@biomejs/biome:** Linting and formatting
-- **vitest:** Testing framework
-- **@types/jest:** TypeScript definitions for testing
+- **vitest** (+ **@vitest/coverage-v8**): Testing framework and coverage
 - **tsx:** TypeScript execution environment
+- **typescript:** TypeScript compiler and tooling
+- **@types/node:** TypeScript definitions for Node.js
 
 ## Package Management
 
@@ -109,8 +110,8 @@ npm audit --json > audit-report.json
 ### Bundle Size Analysis
 
 ```bash
-# Analyze bundle size
-npm run build:analyze
+# Build the project
+npm run build
 
 # Check package sizes
 npm ls --depth=0

@@ -29,8 +29,8 @@ npm --version
 #### 2. Install ActivityPub MCP Server
 
 ```bash
-# Quick install
-npx activitypub-mcp install
+# Run directly with npx
+npx -y activitypub-mcp
 
 # Or install globally
 npm install -g activitypub-mcp
@@ -104,7 +104,7 @@ npm --version
 
 ```bash
 # In PowerShell or Command Prompt
-npx activitypub-mcp install
+npx -y activitypub-mcp
 
 # Or install globally
 npm install -g activitypub-mcp
@@ -193,8 +193,8 @@ sudo pacman -S nodejs npm
 #### 2. Install ActivityPub MCP Server
 
 ```bash
-# Quick install
-npx activitypub-mcp install
+# Run directly with npx
+npx -y activitypub-mcp
 
 # Or install globally
 npm install -g activitypub-mcp
@@ -245,13 +245,12 @@ npx @modelcontextprotocol/inspector
 
 Run the server in a container for consistent behavior across platforms:
 
-#### 1. Pull the Docker Image
+#### 1. Build the Docker Image
+
+No prebuilt image is published to a registry; the included Dockerfile is for self-hosting, built from source (Glama builds its own image rather than using this file).
 
 ```bash
-# Pull the latest image
-docker pull activitypub-mcp:latest
-
-# Or build from source
+# Build from source
 git clone https://github.com/cameronrye/activitypub-mcp.git
 cd activitypub-mcp
 docker build -t activitypub-mcp .
@@ -260,13 +259,13 @@ docker build -t activitypub-mcp .
 #### 2. Run the Container
 
 ```bash
-# Basic run
-docker run -p 8080:8080 activitypub-mcp
+# Basic run (stdio transport on stdin/stdout; no port to publish)
+docker run --rm -i activitypub-mcp
 
 # With environment variables
-docker run -p 8080:8080 \
+docker run --rm -i \
   -e LOG_LEVEL=debug \
-  -e CACHE_TTL=600 \
+  -e CACHE_TTL=600000 \
   activitypub-mcp
 ```
 
