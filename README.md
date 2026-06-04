@@ -22,6 +22,7 @@
 
 <p align="center">
   <a href="https://github.com/cameronrye/activitypub-mcp/actions"><img src="https://github.com/cameronrye/activitypub-mcp/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://glama.ai/mcp/servers/cameronrye/activitypub-mcp"><img src="https://glama.ai/mcp/servers/cameronrye/activitypub-mcp/badge" alt="Glama" /></a>
   <a href="https://www.npmjs.com/package/activitypub-mcp"><img src="https://img.shields.io/npm/dm/activitypub-mcp.svg" alt="npm downloads" /></a>
   <a href="https://github.com/cameronrye/activitypub-mcp"><img src="https://img.shields.io/github/stars/cameronrye/activitypub-mcp?style=social" alt="GitHub stars" /></a>
 </p>
@@ -36,9 +37,16 @@ Requires **Node.js 20+**.
 npx -y activitypub-mcp
 ```
 
+**One-click install:**
+
+[![Add to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](cursor://anysphere.cursor-deeplink/mcp/install?name=activitypub-mcp&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImFjdGl2aXR5cHViLW1jcCJdfQ==)
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=activitypub-mcp&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22activitypub-mcp%22%5D%7D)
+
 ### Claude Desktop
 
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+**One-click:** download `activitypub-mcp.mcpb` from the [latest release](https://github.com/cameronrye/activitypub-mcp/releases/latest) and open it in Claude Desktop.
+
+**Manual:** edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 
 ```json
 {
