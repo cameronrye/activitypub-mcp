@@ -166,7 +166,7 @@ A single call returns the root post plus ancestors and replies. Capped at depth 
 GET activitypub://post-thread/mastodon.social/111234567890
 ```
 
-The legacy `activitypub://post-thread/\{postUrl\}` URL-encoded form is still accepted with a deprecation warning and will be removed in v2.1.0.
+The legacy `activitypub://post-thread/\{postUrl\}` URL-encoded form was removed in v2.1.0 and is now rejected: passing an encoded/`://`-containing value throws an `InvalidParams` error directing you to use `activitypub://post-thread/\{domain\}/\{statusId\}` instead.
 
 #### Step 3: Explore Participants
 

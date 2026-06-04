@@ -54,37 +54,9 @@ Returns an ActivityPub Actor object with:
 
 <div class="tool-reference">
 
-### `discover-instances`
-
-Discover popular fediverse instances by category, topic, or size.
-
-#### Parameters
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `category` | enum | No | Type of fediverse software: "mastodon", "pleroma", "misskey", "peertube", "pixelfed", "lemmy", or "all" |
-| `topic` | string | No | Topic or interest to search for (e.g., "technology", "art", "gaming") |
-| `size` | enum | No | Instance size preference: "small", "medium", or "large" |
-| `region` | string | No | Geographic region or language |
-| `beginnerFriendly` | boolean | No | Show only beginner-friendly instances |
-
-#### Examples
-
-```bash
-# Find Mastodon instances
-discover-instances --category mastodon
-
-# Find technology-focused instances
-discover-instances --topic technology
-
-# Find small, beginner-friendly instances
-discover-instances --size small --beginnerFriendly true
-
-# Find instances in a specific region
-discover-instances --region europe
-```
-
 </div>
+
+> **`discover-instances`** is documented under [Live Instance Discovery](#live-instance-discovery) below — it queries instances.social for real-time data.
 
 ## Information Tools
 
@@ -331,6 +303,7 @@ Discover fediverse instances in real-time using the instances.social API with ad
 | `maxUsers` | number | No | Maximum number of users |
 | `openRegistrations` | boolean | No | Only show instances with open registrations |
 | `sortBy` | enum | No | Sort by: "users", "statuses", "connections", "name" |
+| `sortOrder` | enum | No | Sort direction: "asc" or "desc" (default: "desc") |
 | `limit` | number | No | Number of results (default: 20, max: 50) |
 
 #### Examples
@@ -351,8 +324,8 @@ discover-instances --maxUsers 5000 --sortBy users
 ## Write Tools
 
 Write tools are **disabled by default** and only registered when `ACTIVITYPUB_ENABLE_WRITES=true` is set in the server environment.
-They additionally require OAuth token configuration via `ACTIVITYPUB_ACCOUNTS`.
-See the [Configuration Options](/activitypub-mcp/docs/getting-started/configuration/) page for setup instructions.
+They also require an authenticated account. The recommended way to authenticate is the CLI flow — `activitypub-mcp login <instance>` (Mastodon OAuth2 / Misskey MiAuth), which stores credentials in the on-disk credential store; alternatively set `ACTIVITYPUB_ACCOUNTS` (or `ACTIVITYPUB_DEFAULT_INSTANCE` + `ACTIVITYPUB_DEFAULT_TOKEN`).
+See the [Authentication](/activitypub-mcp/docs/getting-started/authentication/) and [Configuration Options](/activitypub-mcp/docs/getting-started/configuration/) pages for setup instructions.
 
 ### Account Management
 

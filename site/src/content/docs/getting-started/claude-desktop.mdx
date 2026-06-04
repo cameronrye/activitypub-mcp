@@ -219,7 +219,7 @@ Claude should chain multiple tools together to fulfill this request.
 **Solutions:**
 
 1. Reduce cache TTL for faster updates
-2. Limit concurrent requests
+2. Lower `RATE_LIMIT_MAX` to throttle outbound requests
 3. Use more specific queries
 4. Clear server cache periodically
 

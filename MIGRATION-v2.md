@@ -123,6 +123,10 @@ v1 user code path constructs non-https URLs, but `HEALTH_CHECK_URL` is
 operator-configurable. If you set it to an `http://` endpoint in v1, the
 v2 health check will fail. Update to `https://`.
 
+> **Note (v3+):** `HEALTH_CHECK_URL` and the `/health` outbound reach test
+> were removed in v3; `/health` is now a trivial liveness check. See
+> [`MIGRATION-v3.md`](./MIGRATION-v3.md).
+
 ### Blocklist now applied to WebFinger and authenticated writes
 
 v1's `BLOCKED_INSTANCES` only gated read-side calls through the remote
@@ -218,6 +222,13 @@ the outbound connectivity probe (the `/health` endpoint's reach test to
 `mastodon.social`), use the new `HEALTH_CHECK_EXTERNAL_PROBE=false`
 instead.
 
+> **Note (v3+):** This describes the v1 → v2 transition only. In current
+> (v3.x) releases, the `/health` outbound connectivity probe was removed and
+> `/health` is now a trivial liveness check (200 OK, no reach test). All
+> `HEALTH_CHECK_*` env vars — including `HEALTH_CHECK_EXTERNAL_PROBE` and
+> `HEALTH_CHECK_URL` — were removed in v3 and are read by nothing. See
+> [`MIGRATION-v3.md`](./MIGRATION-v3.md).
+
 Reference commit: `1c70764` — `fix(health): replace dead HEALTH_CHECK_ENABLED with HEALTH_CHECK_EXTERNAL_PROBE (M7)`
 
 ## Resource URI changes
@@ -252,7 +263,7 @@ which is the Mastodon-compatible ActivityPub URL.
 > (`https://{domain}/web/statuses/{statusId}`); non-Mastodon implementations
 > (Pleroma, Akkoma, Misskey, etc.) have different status URL shapes and may not
 > resolve via this form. To identify an instance's software before constructing a
-> URL, use the `get-instance-software` tool added in v2.1.0.
+> URL, use the `get-instance-info` tool (which includes the software field).
 
 Reference commit: `a6f8049`
 
