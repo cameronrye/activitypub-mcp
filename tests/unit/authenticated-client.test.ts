@@ -135,8 +135,9 @@ describe("AuthenticatedClient", () => {
       );
 
       const result = await client.createPost({ content: "Hello world" });
-      expect(result.id).toBe("post-123");
-      expect(result.content).toContain("Hello world");
+      if (result.kind !== "published") throw new Error("expected published");
+      expect(result.status.id).toBe("post-123");
+      expect(result.status.content).toContain("Hello world");
     });
 
     it("should throw when no active account", async () => {
@@ -193,8 +194,9 @@ describe("AuthenticatedClient", () => {
         sensitive: true,
         language: "en",
       });
-      expect(result.id).toBe("post-456");
-      expect(result.visibility).toBe("unlisted");
+      if (result.kind !== "published") throw new Error("expected published");
+      expect(result.status.id).toBe("post-456");
+      expect(result.status.visibility).toBe("unlisted");
     });
 
     it("should use specific account when accountId provided", async () => {
@@ -224,7 +226,8 @@ describe("AuthenticatedClient", () => {
       );
 
       const result = await client.createPost({ content: "Test" }, "test-account");
-      expect(result.id).toBe("post-789");
+      if (result.kind !== "published") throw new Error("expected published");
+      expect(result.status.id).toBe("post-789");
       expect(accountManager.getAccount).toHaveBeenCalledWith("test-account");
     });
   });

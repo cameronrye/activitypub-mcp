@@ -19,6 +19,7 @@ import {
   type AccountLookup,
   authenticatedFetch,
   type CreatePostOptions,
+  type CreatePostResult,
   type FollowOptions,
   type ListPageOptions,
   type MediaAttachment,
@@ -28,6 +29,7 @@ import {
   type NotificationOptions,
   type Relationship,
   RelationshipSchema,
+  ScheduledStatusSchema,
   type Status,
   StatusSchema,
   type UploadMediaOptions,
@@ -63,7 +65,10 @@ async function postAndParseRelationship(
 }
 
 export class MastodonWriteAdapter implements WriteAdapter {
-  async createPost(account: AccountCredentials, options: CreatePostOptions): Promise<Status> {
+  async createPost(
+    account: AccountCredentials,
+    options: CreatePostOptions,
+  ): Promise<CreatePostResult> {
     const body: Record<string, unknown> = { status: options.content };
     if (options.spoilerText) body.spoiler_text = options.spoilerText;
     if (options.visibility) body.visibility = options.visibility;
@@ -77,12 +82,22 @@ export class MastodonWriteAdapter implements WriteAdapter {
     const headers: Record<string, string> = {};
     if (options.idempotencyKey) headers["Idempotency-Key"] = options.idempotencyKey;
 
-    return postAndParseStatus(
-      account,
-      "/api/v1/statuses",
-      { method: "POST", headers, body: JSON.stringify(body) },
-      "create post",
-    );
+    const response = await authenticatedFetch(account, "/api/v1/statuses", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errorText = await readErrorText(response);
+      throw new Error(`Failed to create post: HTTP ${response.status} - ${errorText}`);
+    }
+    const json = await readJsonWithLimit(response, MAX_RESPONSE_SIZE);
+    // A scheduled post comes back as a ScheduledStatus (no uri/content/account),
+    // so parse it with the matching schema instead of mis-rejecting it.
+    if (options.scheduledAt) {
+      return { kind: "scheduled", scheduled: ScheduledStatusSchema.parse(json) };
+    }
+    return { kind: "published", status: StatusSchema.parse(json) };
   }
 
   async deletePost(account: AccountCredentials, statusId: string): Promise<void> {

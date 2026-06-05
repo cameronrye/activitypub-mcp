@@ -17,12 +17,15 @@ import { resolveSoftwareKind, resolveWriteAdapter } from "./adapters/resolve.js"
 import {
   authenticatedFetch,
   type CreatePostOptions,
+  type CreatePostResult,
   type ListPageOptions,
   type MediaAttachment,
   MediaAttachmentSchema,
   type NotificationItem,
   type NotificationOptions,
   type Relationship,
+  type ScheduledStatus,
+  ScheduledStatusSchema,
   type Status,
   StatusSchema,
   type WriteAdapter,
@@ -31,9 +34,11 @@ import {
 // Re-export shared types so existing importers (auth/index.ts, tools-write.ts) are unaffected.
 export type {
   CreatePostOptions,
+  CreatePostResult,
   MediaAttachment,
   PostVisibility,
   Relationship,
+  ScheduledStatus,
   Status,
 } from "./adapters/write-adapter.js";
 
@@ -52,29 +57,6 @@ const PollSchema = z.object({
   options: z.array(z.object({ title: z.string(), votes_count: z.number().nullable() })),
 });
 export type Poll = z.infer<typeof PollSchema>;
-
-const ScheduledStatusSchema = z.object({
-  id: z.string(),
-  scheduled_at: z.string(),
-  params: z.object({
-    text: z.string().optional(),
-    visibility: z.enum(["public", "unlisted", "private", "direct"]).optional(),
-    spoiler_text: z.string().optional(),
-    media_ids: z.array(z.string()).nullable().optional(),
-    in_reply_to_id: z.string().nullable().optional(),
-    poll: z
-      .object({
-        options: z.array(z.string()),
-        expires_in: z.number(),
-        multiple: z.boolean().optional(),
-        hide_totals: z.boolean().optional(),
-      })
-      .nullable()
-      .optional(),
-  }),
-  media_attachments: z.array(z.any()).optional(),
-});
-export type ScheduledStatus = z.infer<typeof ScheduledStatusSchema>;
 
 export class AuthenticatedClient {
   private requireActiveAccount(): AccountCredentials {
@@ -115,7 +97,7 @@ export class AuthenticatedClient {
 
   // --- Interface ops: delegate to the resolved adapter ---
 
-  async createPost(options: CreatePostOptions, accountId?: string): Promise<Status> {
+  async createPost(options: CreatePostOptions, accountId?: string): Promise<CreatePostResult> {
     const { account, adapter } = await this.resolve(accountId);
     logger.info("Creating post", {
       instance: account.instance,

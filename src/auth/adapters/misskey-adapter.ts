@@ -8,6 +8,7 @@
  */
 
 import { MAX_RESPONSE_SIZE, USER_AGENT } from "../../config.js";
+import { UnsupportedOnPlatformError } from "../../utils/errors.js";
 import {
   blocklistHop,
   pinnedFetch,
@@ -20,6 +21,7 @@ import {
   type AccountLookup,
   authenticatedFetch,
   type CreatePostOptions,
+  type CreatePostResult,
   type FollowOptions,
   type ListPageOptions,
   type MediaAttachment,
@@ -212,7 +214,15 @@ async function misskeyPostVoid(
 }
 
 export class MisskeyWriteAdapter implements WriteAdapter {
-  async createPost(account: AccountCredentials, options: CreatePostOptions): Promise<Status> {
+  async createPost(
+    account: AccountCredentials,
+    options: CreatePostOptions,
+  ): Promise<CreatePostResult> {
+    // Misskey core has no scheduled-post API. Reject up front so a "schedule for
+    // later" request can't silently publish immediately (a destructive surprise).
+    if (options.scheduledAt) {
+      throw new UnsupportedOnPlatformError("Scheduled posts", "Misskey");
+    }
     const body: Record<string, unknown> = {
       text: options.content,
       visibility: mastodonToMisskeyVisibility(options.visibility),
@@ -233,7 +243,7 @@ export class MisskeyWriteAdapter implements WriteAdapter {
       body,
       "create post",
     );
-    return noteToStatus(data.createdNote, account.instance);
+    return { kind: "published", status: noteToStatus(data.createdNote, account.instance) };
   }
 
   async deletePost(account: AccountCredentials, statusId: string): Promise<void> {

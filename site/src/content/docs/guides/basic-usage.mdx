@@ -37,12 +37,12 @@ Returns detailed information about the @mastodon account on mastodon.social
 
 ### `fetch-timeline`
 
-Get recent posts from an actor's timeline.
+Get recent posts from an actor's timeline. Identify the actor by handle (`@user@domain` or `user@domain`) — not by URL.
 
 #### Example:
 
 ```
-fetch-timeline https://mastodon.social/users/mastodon
+fetch-timeline @mastodon@mastodon.social
 ```
 
 Retrieves the latest posts from the specified actor
@@ -61,15 +61,15 @@ Returns instance metadata, rules, and statistics
 
 ### `discover-instances`
 
-Find fediverse instances by category or search term.
+Find fediverse instances by software, language, size, registration status, and sort order. (It filters on instance metadata — it does **not** take a free-text topic. For topical discovery, use `search` with `--type hashtags` or `--type accounts`.)
 
 #### Example:
 
 ```
-discover-instances technology
+discover-instances --software mastodon --language en --minUsers 1000
 ```
 
-Finds instances focused on technology topics
+Finds Mastodon instances in English with at least 1000 users
 
 ## Common Workflows
 
@@ -77,17 +77,17 @@ Finds instances focused on technology topics
 
 1. Get instance information: `get-instance-info example.social`
 2. Discover popular actors: `discover-actor @admin@example.social`
-3. Check recent activity: `fetch-timeline https://example.social/users/admin`
+3. Check recent activity: `fetch-timeline @admin@example.social`
 
 ### Following an Actor's Activity
 
 1. Discover the actor: `discover-actor @username@instance.com`
-2. Get their recent posts: `fetch-timeline [actor-url-from-step-1]`
+2. Get their recent posts: `fetch-timeline @username@instance.com`
 3. Check their followers/following (if public)
 
 ### Finding Communities
 
-1. Search for instances: `discover-instances [topic]`
+1. Filter instances by software/language/size: `discover-instances --software mastodon --language en`
 2. Check instance info for each result
 3. Explore popular actors on interesting instances
 
@@ -95,11 +95,12 @@ Finds instances focused on technology topics
 
 ### Actor Identifiers
 
-You can use different formats to identify actors:
+Actor tools (`discover-actor`, `fetch-timeline`) identify actors by **handle**, not URL:
 
-- `@username@instance.com` - WebFinger format
-- `https://instance.com/users/username` - Direct URL
-- `https://instance.com/@username` - Profile URL
+- `@username@instance.com` - WebFinger format (leading `@` optional)
+- `username@instance.com` - also accepted
+
+A full profile URL (e.g. `https://instance.com/users/username`) is **not** a valid identifier for these tools — convert it to the `username@instance.com` handle first.
 
 ### Performance
 
@@ -132,8 +133,8 @@ If something doesn't work:
 Use multiple tools together for comprehensive exploration:
 
 ```bash
-# First discover instances in a topic
-discover-instances "open source"
+# First filter instances by software and language
+discover-instances --software mastodon --language en
 
 # Then explore each instance
 get-instance-info fosstodon.org
@@ -142,7 +143,7 @@ get-instance-info fosstodon.org
 discover-actor @admin@fosstodon.org
 
 # Check their activity
-fetch-timeline https://fosstodon.org/users/admin
+fetch-timeline @admin@fosstodon.org
 ```
 
 ### Using with Claude Desktop

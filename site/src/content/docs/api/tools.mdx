@@ -460,16 +460,17 @@ Reply to an existing post.
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `postUrl` | string | Yes | URL of the post to reply to |
+| `statusId` | string | Yes | The ID of the post to reply to (a bare post ID, not a URL — e.g. from `fetch-timeline`) |
 | `content` | string | Yes | The reply content |
-| `visibility` | enum | No | Reply visibility (defaults to original post's visibility) |
+| `visibility` | enum | No | Reply visibility: "public", "unlisted", "private", "direct" |
 | `spoilerText` | string | No | Content warning/spoiler text |
+| `accountId` | string | No | Account ID to reply from (defaults to the active account) |
 
 #### Examples
 
 ```bash
-# Reply to a post
-reply-to-post --postUrl "https://mastodon.social/@user/123456" --content "Great point!"
+# Reply to a post (statusId is the bare post ID)
+reply-to-post --statusId "123456" --content "Great point!"
 ```
 
 </div>
@@ -484,13 +485,14 @@ Delete one of your own posts.
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `postId` | string | Yes | ID of the post to delete |
+| `statusId` | string | Yes | The ID of your post to delete |
+| `accountId` | string | No | Account ID the post belongs to (defaults to the active account) |
 
 #### Examples
 
 ```bash
 # Delete a post
-delete-post --postId "123456789"
+delete-post --statusId "123456789"
 ```
 
 </div>
@@ -507,16 +509,17 @@ Boost (reblog) or unboost a post to share it with your followers.
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `postUrl` | string | Yes | URL of the post to boost/unboost |
+| `statusId` | string | Yes | The ID of the post to boost/unboost (a bare post ID, not a URL) |
+| `accountId` | string | No | Account ID to act from (defaults to the active account) |
 
 #### Examples
 
 ```bash
 # Boost a post
-boost-post --postUrl "https://mastodon.social/@user/123456"
+boost-post --statusId "123456"
 
 # Remove boost
-unboost-post --postUrl "https://mastodon.social/@user/123456"
+unboost-post --statusId "123456"
 ```
 
 </div>
@@ -531,16 +534,17 @@ Favourite (like) or unfavourite a post.
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `postUrl` | string | Yes | URL of the post to favourite/unfavourite |
+| `statusId` | string | Yes | The ID of the post to favourite/unfavourite (a bare post ID, not a URL) |
+| `accountId` | string | No | Account ID to act from (defaults to the active account) |
 
 #### Examples
 
 ```bash
 # Favourite a post
-favourite-post --postUrl "https://mastodon.social/@user/123456"
+favourite-post --statusId "123456"
 
 # Remove favourite
-unfavourite-post --postUrl "https://mastodon.social/@user/123456"
+unfavourite-post --statusId "123456"
 ```
 
 </div>
@@ -555,16 +559,17 @@ Bookmark or unbookmark a post for later reference.
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `postUrl` | string | Yes | URL of the post to bookmark/unbookmark |
+| `statusId` | string | Yes | The ID of the post to bookmark/unbookmark (a bare post ID, not a URL) |
+| `accountId` | string | No | Account ID to act from (defaults to the active account) |
 
 #### Examples
 
 ```bash
 # Bookmark a post
-bookmark-post --postUrl "https://mastodon.social/@user/123456"
+bookmark-post --statusId "123456"
 
 # Remove bookmark
-unbookmark-post --postUrl "https://mastodon.social/@user/123456"
+unbookmark-post --statusId "123456"
 ```
 
 </div>
@@ -614,16 +619,19 @@ Follow or unfollow another account.
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `identifier` | string | Yes | Account identifier (@user@domain or URL) |
+| `acct` | string | Yes | Account to follow (`username@instance`, or just `username` for a local account) |
+| `showBoosts` | boolean | No | Show boosts from this account (default: true, follow-account only) |
+| `notify` | boolean | No | Get notified when this account posts (default: false, follow-account only) |
+| `accountId` | string | No | Your account ID to act from (defaults to the active account) |
 
 #### Examples
 
 ```bash
 # Follow an account
-follow-account --identifier "@user@mastodon.social"
+follow-account --acct "user@mastodon.social"
 
 # Unfollow an account
-unfollow-account --identifier "@user@mastodon.social"
+unfollow-account --acct "user@mastodon.social"
 ```
 
 </div>
@@ -638,21 +646,22 @@ Mute or unmute an account (hide their posts without unfollowing).
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `identifier` | string | Yes | Account identifier (@user@domain or URL) |
-| `duration` | number | No | Mute duration in seconds (0 for permanent, mute-account only) |
-| `notifications` | boolean | No | Also mute notifications (default: true, mute-account only) |
+| `acct` | string | Yes | Account to mute/unmute (`username@instance`) |
+| `muteNotifications` | boolean | No | Also mute notifications (default: true, mute-account only) |
+| `duration` | number | No | Mute duration in seconds (0 for indefinite, mute-account only) |
+| `accountId` | string | No | Your account ID to act from (defaults to the active account) |
 
 #### Examples
 
 ```bash
-# Mute an account permanently
-mute-account --identifier "@user@mastodon.social"
+# Mute an account indefinitely
+mute-account --acct "user@mastodon.social"
 
 # Mute for 24 hours
-mute-account --identifier "@user@mastodon.social" --duration 86400
+mute-account --acct "user@mastodon.social" --duration 86400
 
 # Unmute an account
-unmute-account --identifier "@user@mastodon.social"
+unmute-account --acct "user@mastodon.social"
 ```
 
 </div>
@@ -667,16 +676,17 @@ Block or unblock an account (prevents all interactions).
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `identifier` | string | Yes | Account identifier (@user@domain or URL) |
+| `acct` | string | Yes | Account to block/unblock (`username@instance`) |
+| `accountId` | string | No | Your account ID to act from (defaults to the active account) |
 
 #### Examples
 
 ```bash
 # Block an account
-block-account --identifier "@user@mastodon.social"
+block-account --acct "user@mastodon.social"
 
 # Unblock an account
-unblock-account --identifier "@user@mastodon.social"
+unblock-account --acct "user@mastodon.social"
 ```
 
 </div>
@@ -951,7 +961,7 @@ Returned when parameters are invalid or missing:
 ```json
 {
   "error": "Invalid parameter",
-  "message": "Actor identifier must be in @user@domain format or valid URL",
+  "message": "Invalid identifier format. Expected: user@domain.com or @user@domain.com",
   "code": "INVALID_PARAMETER"
 }
 ```
