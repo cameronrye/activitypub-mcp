@@ -12,6 +12,16 @@
   A lightweight <strong>Model Context Protocol (MCP)</strong> server that lets an LLM explore and interact with the existing Fediverse — Mastodon, Misskey, Foundkey, Pleroma, and compatible servers. Read-only by default; write tools are opt-in.
 </p>
 
+<!--
+  DEMO: record a ~20-30s screen capture of a Claude session using activitypub-mcp
+  (see docs/launch-kit.md for the shot list), save it to docs/demo.gif, then
+  uncomment the block below. Kept commented so the README never shows a broken image.
+
+<p align="center">
+  <img src="docs/demo.gif" alt="Demo: Claude exploring the Fediverse via activitypub-mcp" width="720" />
+</p>
+-->
+
 <p align="center">
   <a href="https://badge.fury.io/js/activitypub-mcp"><img src="https://badge.fury.io/js/activitypub-mcp.svg" alt="npm version" /></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>

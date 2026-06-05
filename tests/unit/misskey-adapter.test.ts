@@ -46,7 +46,7 @@ describe("MisskeyWriteAdapter.createPost", () => {
       }),
     );
 
-    const status = await adapter.createPost(account, {
+    const result = await adapter.createPost(account, {
       content: "hello mfm",
       visibility: "unlisted",
       spoilerText: "cw",
@@ -55,6 +55,9 @@ describe("MisskeyWriteAdapter.createPost", () => {
     expect(received?.text).toBe("hello mfm");
     expect(received?.visibility).toBe("home"); // unlisted -> home
     expect(received?.cw).toBe("cw");
+    expect(result.kind).toBe("published");
+    if (result.kind !== "published") throw new Error("expected published");
+    const status = result.status;
     expect(status.id).toBe("note1");
     expect(status.content).toBe("hello mfm");
     expect(status.visibility).toBe("unlisted"); // home -> unlisted
@@ -62,6 +65,26 @@ describe("MisskeyWriteAdapter.createPost", () => {
     expect(status.favourites_count).toBe(4); // 3 + 1 reactions
     expect(status.replies_count).toBe(1);
     expect(status.account.acct).toBe("alice");
+  });
+
+  it("rejects scheduledAt without publishing — Misskey core has no schedule API", async () => {
+    let createCalled = false;
+    server.use(
+      http.post("https://misskey.test/api/notes/create", () => {
+        createCalled = true;
+        return HttpResponse.json({ createdNote: sampleNote });
+      }),
+    );
+
+    await expect(
+      adapter.createPost(account, {
+        content: "later",
+        scheduledAt: "2099-01-01T15:00:00.000Z",
+      }),
+    ).rejects.toThrow(/not supported on Misskey/i);
+
+    // The silent-publish bug: a scheduled request must NOT hit notes/create.
+    expect(createCalled).toBe(false);
   });
 
   it("extracts Misskey error messages", async () => {

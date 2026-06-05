@@ -43,10 +43,12 @@ Get comprehensive information about a fediverse instance:
 
 ### Step-by-Step Process
 
-#### Step 1: Find Technology-Focused Instances
+#### Step 1: Find Candidate Instances
+
+`discover-instances` filters by software, language, and size — not by topic. Filter to the kind of server you want, then use `search --type hashtags` for the actual topic.
 
 ```bash
-discover-instances technology
+discover-instances --software mastodon --language en --minUsers 1000
 ```
 
 **Expected Output:**
@@ -125,7 +127,7 @@ discover-actor @kev@fosstodon.org
 #### Step 4: Check Recent Activity
 
 ```bash
-fetch-timeline https://fosstodon.org/users/kev
+fetch-timeline @kev@fosstodon.org
 ```
 
 **Expected Output:**
@@ -184,8 +186,10 @@ Learn more about active participants in the conversation.
 
 #### Step 1: Find Relevant Instances
 
+Filter for candidate servers, then (Step 2) search them for the topic with `search --type posts`/`--type hashtags`.
+
 ```bash
-discover-instances "climate change"
+discover-instances --software mastodon --language en
 ```
 
 #### Step 2: Search Each Instance
@@ -207,7 +211,7 @@ discover-actor @scientist@climate.social
 #### Step 4: Monitor Their Activity
 
 ```bash
-fetch-timeline https://climate.social/users/scientist
+fetch-timeline @scientist@climate.social
 ```
 
 ## Example 4: Using with Claude Desktop
@@ -267,9 +271,9 @@ discover-actor @admin@hachyderm.io
 
 ```bash
 # Get recent posts to understand community tone
-fetch-timeline https://mastodon.social/users/admin
-fetch-timeline https://fosstodon.org/users/kev
-fetch-timeline https://hachyderm.io/users/admin
+fetch-timeline @admin@mastodon.social
+fetch-timeline @kev@fosstodon.org
+fetch-timeline @admin@hachyderm.io
 ```
 
 ## Research Scenarios

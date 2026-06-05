@@ -2,6 +2,8 @@
  * Error handling utilities for the ActivityPub MCP Server.
  */
 
+import { wrapUntrusted } from "./untrusted.js";
+
 /**
  * Error patterns and their corresponding suggestions
  */
@@ -137,6 +139,26 @@ export function getErrorMessage(error: unknown): string {
     return error.message;
   }
   return String(error);
+}
+
+/**
+ * Format an error for model-facing tool output when the message may embed
+ * attacker-influenceable remote text.
+ *
+ * Remote HTTP error bodies (a hostile or compromised instance controls them)
+ * flow into the thrown Error message — e.g. `Failed to X: HTTP 403 - <body>` —
+ * and every tool catch block renders that straight into the model's context.
+ * The success paths fence remote content in the untrusted-content envelope, but
+ * the error paths did not, leaving a prompt-injection bypass: an injected
+ * instruction in the body reached the model un-fenced. This closes that gap by
+ * fencing the whole message as quoted DATA (defanging any forged delimiters)
+ * while still computing the actionable suggestion from the raw text.
+ */
+export function formatRemoteError(error: unknown, source = "remote instance error"): string {
+  const message = getErrorMessage(error);
+  const suggestion = getErrorSuggestion(message);
+  const fenced = wrapUntrusted(message, source);
+  return suggestion ? `${fenced}\n\n💡 Suggestion: ${suggestion}` : fenced;
 }
 
 /**

@@ -85,7 +85,7 @@ By default, the server registers only read-only tools. Write tools (posting, fol
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ACTIVITYPUB_ENABLE_WRITES` | `false` | Set to `true` to register write tools (post-status, reply-to-post, follow-account, boost-post, etc.). Also requires `ACTIVITYPUB_ACCOUNTS` to be configured. |
+| `ACTIVITYPUB_ENABLE_WRITES` | `false` | Set to `true` to register write tools (post-status, reply-to-post, follow-account, boost-post, etc.). Also requires at least one authenticated account — from `ACTIVITYPUB_ACCOUNTS`, the `ACTIVITYPUB_DEFAULT_INSTANCE`/`ACTIVITYPUB_DEFAULT_TOKEN` pair, or `activitypub-mcp login`. |
 
 ## Logging Configuration
 

@@ -13,7 +13,7 @@ import { auditLogger } from "../audit/logger.js";
 import { accountManager, authenticatedClient } from "../auth/index.js";
 import { ENABLE_WRITES } from "../config.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
-import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
+import { formatRemoteError, getErrorMessage } from "../utils/errors.js";
 import { sniffMediaType } from "../utils/media-type.js";
 import { sanitizeInline, wrapUntrusted } from "../utils/untrusted.js";
 import { trackedMcpServer } from "./capabilities.js";
@@ -205,7 +205,7 @@ function withWriteTool<RawArgs extends { accountId?: string }>(
         content: [
           {
             type: "text",
-            text: `❌ ${spec.failurePrefix}: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+            text: `❌ ${spec.failurePrefix}: ${formatRemoteError(error)}`,
           },
         ],
         isError: true,
@@ -458,7 +458,7 @@ Run \`activitypub-mcp login ${account.instance}\` to re-authorize.`,
           content: [
             {
               type: "text",
-              text: `❌ Verification failed: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+              text: `❌ Verification failed: ${formatRemoteError(error)}`,
             },
           ],
           isError: true,
@@ -552,7 +552,7 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
       try {
         logger.info("Creating post", { instance: account.instance, visibility });
 
-        const status = await authenticatedClient.createPost(
+        const result = await authenticatedClient.createPost(
           {
             content,
             visibility,
@@ -570,6 +570,25 @@ function registerPostStatusTool(mcpServer: McpServer, rateLimiter: RateLimiter):
           duration: Date.now() - startTime,
         });
 
+        if (result.kind === "scheduled") {
+          const scheduled = result.scheduled;
+          return {
+            content: [
+              {
+                type: "text",
+                text: `✅ **Post Scheduled!**
+
+🆔 Scheduled ID: ${sanitizeInline(scheduled.id)}
+🕒 Scheduled for: ${sanitizeInline(scheduled.scheduled_at)}
+📝 ${wrapUntrusted(scheduled.params.text || content, `scheduled post on ${account.instance}`)}
+
+Use \`get-scheduled-posts\` to view it or \`cancel-scheduled-post\` to cancel.`,
+              },
+            ],
+          };
+        }
+
+        const status = result.status;
         return {
           content: [
             {
@@ -598,7 +617,7 @@ Posted as @${sanitizeInline(status.account.username || "")}`,
           content: [
             {
               type: "text",
-              text: `❌ Failed to create post: ${formatErrorWithSuggestion(message)}`,
+              text: `❌ Failed to create post: ${formatRemoteError(message)}`,
             },
           ],
           isError: true,
@@ -657,7 +676,7 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
       checkRateLimit(rateLimiter, account.instance);
 
       try {
-        const status = await authenticatedClient.createPost(
+        const result = await authenticatedClient.createPost(
           {
             content,
             visibility,
@@ -666,6 +685,11 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
           },
           accountId,
         );
+        // Replies never carry scheduledAt, so the result is always published.
+        if (result.kind !== "published") {
+          throw new Error("Reply unexpectedly returned a scheduled status");
+        }
+        const status = result.status;
 
         auditLogger.logToolInvocation("reply-to-post", auditParams, {
           success: true,
@@ -697,7 +721,7 @@ function registerReplyToPostTool(mcpServer: McpServer, rateLimiter: RateLimiter)
           content: [
             {
               type: "text",
-              text: `❌ Failed to reply: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+              text: `❌ Failed to reply: ${formatRemoteError(error)}`,
             },
           ],
           isError: true,
@@ -772,7 +796,7 @@ Post ${statusId} has been deleted.`,
           content: [
             {
               type: "text",
-              text: `❌ Failed to delete post: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+              text: `❌ Failed to delete post: ${formatRemoteError(error)}`,
             },
           ],
           isError: true,
@@ -1272,7 +1296,7 @@ ${posts.length > 0 ? `📄 Use maxId: "${posts[posts.length - 1].id}" for next p
           content: [
             {
               type: "text",
-              text: `❌ Failed to get timeline: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+              text: `❌ Failed to get timeline: ${formatRemoteError(error)}`,
             },
           ],
           isError: true,
@@ -1391,7 +1415,7 @@ ${notificationList || "No notifications"}`,
           content: [
             {
               type: "text",
-              text: `❌ Failed to get notifications: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+              text: `❌ Failed to get notifications: ${formatRemoteError(error)}`,
             },
           ],
           isError: true,
@@ -1474,7 +1498,7 @@ ${bookmarkList || "No bookmarks found"}`,
           content: [
             {
               type: "text",
-              text: `❌ Failed to get bookmarks: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+              text: `❌ Failed to get bookmarks: ${formatRemoteError(error)}`,
             },
           ],
           isError: true,
@@ -1557,7 +1581,7 @@ ${favouriteList || "No favourites found"}`,
           content: [
             {
               type: "text",
-              text: `❌ Failed to get favourites: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+              text: `❌ Failed to get favourites: ${formatRemoteError(error)}`,
             },
           ],
           isError: true,
@@ -1669,7 +1693,7 @@ ${relationship.note ? `\n📝 **Note**: ${wrapUntrusted(relationship.note, `rela
           content: [
             {
               type: "text",
-              text: `❌ Failed to get relationship: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+              text: `❌ Failed to get relationship: ${formatRemoteError(error)}`,
             },
           ],
           isError: true,
@@ -1777,7 +1801,7 @@ ${expiryText}`,
           content: [
             {
               type: "text",
-              text: `❌ Failed to vote: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+              text: `❌ Failed to vote: ${formatRemoteError(error)}`,
             },
           ],
           isError: true,
@@ -1918,7 +1942,7 @@ post-status content="Your post" mediaIds=["${media.id}"]
           content: [
             {
               type: "text",
-              text: `❌ Failed to upload media: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+              text: `❌ Failed to upload media: ${formatRemoteError(error)}`,
             },
           ],
           isError: true,
@@ -2035,7 +2059,7 @@ ${postsList}
           content: [
             {
               type: "text",
-              text: `❌ Failed to get scheduled posts: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+              text: `❌ Failed to get scheduled posts: ${formatRemoteError(error)}`,
             },
           ],
           isError: true,
@@ -2114,7 +2138,7 @@ The scheduled post \`${scheduledPostId}\` has been canceled and will not be publ
           content: [
             {
               type: "text",
-              text: `❌ Failed to cancel scheduled post: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+              text: `❌ Failed to cancel scheduled post: ${formatRemoteError(error)}`,
             },
           ],
           isError: true,
@@ -2206,7 +2230,7 @@ Post \`${scheduledPostId}\` is now scheduled for: **${newDate}**`,
           content: [
             {
               type: "text",
-              text: `❌ Failed to update scheduled post: ${formatErrorWithSuggestion(getErrorMessage(error))}`,
+              text: `❌ Failed to update scheduled post: ${formatRemoteError(error)}`,
             },
           ],
           isError: true,

@@ -56,6 +56,45 @@ export const StatusSchema = z.object({
 });
 export type Status = z.infer<typeof StatusSchema>;
 
+/**
+ * A post that was queued for future publication instead of published now. The
+ * server returns this shape (NOT a Status — no uri/content/visibility/account)
+ * when `scheduled_at` is set, so createPost must surface it distinctly rather
+ * than forcing it through StatusSchema (which would reject a successful schedule
+ * and report a false failure).
+ */
+export const ScheduledStatusSchema = z.object({
+  id: z.string(),
+  scheduled_at: z.string(),
+  params: z.object({
+    text: z.string().optional(),
+    visibility: z.enum(["public", "unlisted", "private", "direct"]).optional(),
+    spoiler_text: z.string().optional(),
+    media_ids: z.array(z.string()).nullable().optional(),
+    in_reply_to_id: z.string().nullable().optional(),
+    poll: z
+      .object({
+        options: z.array(z.string()),
+        expires_in: z.number(),
+        multiple: z.boolean().optional(),
+        hide_totals: z.boolean().optional(),
+      })
+      .nullable()
+      .optional(),
+  }),
+  media_attachments: z.array(z.any()).optional(),
+});
+export type ScheduledStatus = z.infer<typeof ScheduledStatusSchema>;
+
+/**
+ * Result of createPost: a discriminated union so a scheduled post (different
+ * server shape) is reported distinctly from an immediate one instead of being
+ * mis-parsed as a failure.
+ */
+export type CreatePostResult =
+  | { kind: "published"; status: Status }
+  | { kind: "scheduled"; scheduled: ScheduledStatus };
+
 export const RelationshipSchema = z.object({
   id: z.string(),
   following: z.boolean(),
@@ -151,7 +190,7 @@ export interface NotificationOptions {
  * they remain Mastodon-only on AuthenticatedClient.
  */
 export interface WriteAdapter {
-  createPost(account: AccountCredentials, options: CreatePostOptions): Promise<Status>;
+  createPost(account: AccountCredentials, options: CreatePostOptions): Promise<CreatePostResult>;
   deletePost(account: AccountCredentials, statusId: string): Promise<void>;
   boostPost(account: AccountCredentials, statusId: string): Promise<Status>;
   unboostPost(account: AccountCredentials, statusId: string): Promise<Status>;

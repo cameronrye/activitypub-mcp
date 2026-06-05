@@ -71,7 +71,7 @@ Customize the server behavior with environment variables:
 | `USER_AGENT` | `ActivityPub-MCP-Client/<version>` | Custom User-Agent for HTTP requests |
 | `REQUEST_TIMEOUT` | `10000` | HTTP request timeout in milliseconds (10 seconds) |
 | `CACHE_TTL` | `300000` | Cache time-to-live in milliseconds (5 minutes) |
-| `MCP_HTTP_SECRET` | *none* | **Required** when `MCP_TRANSPORT_MODE=http`. 32+ random chars; gates `/mcp` via Bearer auth. `/health` stays unauthenticated. |
+| `MCP_HTTP_SECRET` | *none* | **Required** when `MCP_TRANSPORT_MODE=http`. At least 16 chars (32+ recommended); gates `/mcp` via Bearer auth. `/health` stays unauthenticated. |
 | `MCP_HTTP_ALLOWED_ORIGINS` | *empty* | Comma-separated Origin allowlist for DNS-rebinding protection. Empty → derived from the CORS origins. |
 | `MCP_HTTP_ALLOWED_HOSTS` | *empty* | Comma-separated allowed `Host` header values for DNS-rebinding protection. |
 | `ACTIVITYPUB_ENABLE_WRITES` | `false` | Set to `true` to register write tools. Read-only by default. |

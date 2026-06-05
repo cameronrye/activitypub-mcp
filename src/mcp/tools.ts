@@ -12,7 +12,7 @@ import { z } from "zod";
 import { remoteClient } from "../activitypub/remote-client.js";
 import { dynamicInstanceDiscovery } from "../discovery/dynamic-instance-discovery.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
-import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
+import { formatRemoteError, getErrorMessage } from "../utils/errors.js";
 import { sanitizeInline, wrapUntrusted } from "../utils/untrusted.js";
 import { ActorIdentifierSchema, DomainSchema, QuerySchema } from "../validation/schemas.js";
 import {
@@ -83,9 +83,7 @@ async function withReadTool(
     const errorMessage = getErrorMessage(error);
     logger.error(failurePrefix, { ...logContext, error: errorMessage });
     return {
-      content: [
-        { type: "text", text: `${failurePrefix}: ${formatErrorWithSuggestion(errorMessage)}` },
-      ],
+      content: [{ type: "text", text: `${failurePrefix}: ${formatRemoteError(errorMessage)}` }],
       isError: true,
     };
   }
@@ -153,7 +151,7 @@ function registerDiscoverActorTool(mcpServer: McpServer, rateLimiter: RateLimite
           content: [
             {
               type: "text",
-              text: `Failed to discover actor: ${formatErrorWithSuggestion(errorMessage)}`,
+              text: `Failed to discover actor: ${formatRemoteError(errorMessage)}`,
             },
           ],
           isError: true,
@@ -277,7 +275,7 @@ ${postsSection}`,
           content: [
             {
               type: "text",
-              text: `Failed to fetch timeline: ${formatErrorWithSuggestion(errorMessage)}`,
+              text: `Failed to fetch timeline: ${formatRemoteError(errorMessage)}`,
             },
           ],
           isError: true,
@@ -357,7 +355,7 @@ ${instanceInfo.contact_account ? `📞 Contact: @${sanitizeInline(instanceInfo.c
           content: [
             {
               type: "text",
-              text: `Failed to get instance info: ${formatErrorWithSuggestion(errorMessage)}`,
+              text: `Failed to get instance info: ${formatRemoteError(errorMessage)}`,
             },
           ],
           isError: true,
@@ -519,7 +517,7 @@ ${instanceList}${hasMoreText}
           content: [
             {
               type: "text",
-              text: `Failed to discover instances: ${formatErrorWithSuggestion(errorMessage)}`,
+              text: `Failed to discover instances: ${formatRemoteError(errorMessage)}`,
             },
           ],
           isError: true,
@@ -857,7 +855,7 @@ ${postsList || "No posts found"}${paginationInfo}
           content: [
             {
               type: "text",
-              text: `Failed to fetch ${scope} timeline: ${formatErrorWithSuggestion(errorMessage)}`,
+              text: `Failed to fetch ${scope} timeline: ${formatRemoteError(errorMessage)}`,
             },
           ],
           isError: true,
@@ -1036,7 +1034,7 @@ ${resultsText}
           content: [
             {
               type: "text",
-              text: `Failed to search: ${formatErrorWithSuggestion(errorMessage)}`,
+              text: `Failed to search: ${formatRemoteError(errorMessage)}`,
             },
           ],
           isError: true,

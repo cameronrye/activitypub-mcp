@@ -306,8 +306,8 @@ Goal: Build a list of potential beta testers and early advocates
 Use results from one tool as input for another:
 
 ```bash
-# 1. Find instances
-discover-instances "journalism"
+# 1. Find instances (filter by software/language/size, then search for the topic)
+discover-instances --software mastodon --language en
 
 # 2. Get details for each
 get-instance-info journa.host
@@ -316,7 +316,7 @@ get-instance-info journa.host
 discover-actor @admin@journa.host
 
 # 4. Analyze their content
-fetch-timeline https://journa.host/users/admin
+fetch-timeline @admin@journa.host
 ```
 
 ### Comparative Analysis
