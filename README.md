@@ -22,9 +22,12 @@
 
 <p align="center">
   <a href="https://github.com/cameronrye/activitypub-mcp/actions"><img src="https://github.com/cameronrye/activitypub-mcp/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
-  <a href="https://glama.ai/mcp/servers/cameronrye/activitypub-mcp"><img src="https://glama.ai/mcp/servers/cameronrye/activitypub-mcp/badge" alt="Glama" /></a>
   <a href="https://www.npmjs.com/package/activitypub-mcp"><img src="https://img.shields.io/npm/dm/activitypub-mcp.svg" alt="npm downloads" /></a>
   <a href="https://github.com/cameronrye/activitypub-mcp"><img src="https://img.shields.io/github/stars/cameronrye/activitypub-mcp?style=social" alt="GitHub stars" /></a>
+</p>
+
+<p align="center">
+  <a href="https://glama.ai/mcp/servers/cameronrye/activitypub-mcp"><img src="https://glama.ai/mcp/servers/cameronrye/activitypub-mcp/badge" alt="Glama quality and maintenance score" width="200" /></a>
 </p>
 
 ---
