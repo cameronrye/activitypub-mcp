@@ -143,6 +143,20 @@ jobs:
     - name: Pack release tarball
       run: npm pack
 
+    - name: Build Claude Desktop Extension (.mcpb)
+      # The README's one-click install points at this asset on the latest
+      # release, so every release MUST carry it. Build a self-contained bundle
+      # (ESM entrypoint needs its own package.json + prod node_modules) per the
+      # steps in docs/distribution.md §3.
+      run: |
+        npm install -g @anthropic-ai/mcpb
+        stage="$(mktemp -d)"
+        cp manifest.json package.json package-lock.json "$stage"/
+        cp -R dist "$stage"/dist
+        ( cd "$stage" && npm ci --omit=dev --ignore-scripts )
+        mcpb validate manifest.json
+        mcpb pack "$stage" "activitypub-mcp-${{ steps.get_version.outputs.VERSION }}.mcpb"
+
     - name: Create Release
       uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3
       env:
@@ -154,9 +168,11 @@ jobs:
         draft: false
         prerelease: false
         # Attach the full npm tarball — individual JS files would have
-        # broken inter-module imports if anyone tried to wget+run them.
+        # broken inter-module imports if anyone tried to wget+run them — plus
+        # the .mcpb bundle the README's one-click Claude Desktop install needs.
         files: |
           activitypub-mcp-${{ steps.get_version.outputs.VERSION }}.tgz
+          activitypub-mcp-${{ steps.get_version.outputs.VERSION }}.mcpb
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

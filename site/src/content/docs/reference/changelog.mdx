@@ -9,6 +9,23 @@ order: 2
 
 All notable changes to the ActivityPub MCP Server are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### v3.1.1 - 2026-06-05
+
+**Correctness &amp; distribution patch.** Closes a media-upload exfiltration vector, fixes Misskey relationship and outbox-pagination bugs, and makes every release ship the one-click Claude Desktop bundle. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.
+
+#### Security
+
+- **`upload-media` now validates file content by magic bytes** and refuses anything that is not a recognized image/video/audio file, so a prompt-injected model can no longer name an arbitrary path (a key, the credential store, a `.env`) and exfiltrate it to a public media URL.
+
+#### Fixed
+
+- **Misskey relationship results** — `users/relation` returns a one-element array for a single user id, which the adapter read as a bare object, so follow / mute / block results came back `false`. Both shapes are handled now.
+- **Outbox pagination** no longer reports `hasMore: true` on a full final page with no `next` cursor.
+
+#### Distribution
+
+- The Claude Desktop Extension (`.mcpb`) is built and attached to **every** release, so the README's one-click install always resolves on the latest release.
+
 ### v3.1.0 - 2026-06-04
 
 **Multi-platform reads &amp; activation fixes.** Misskey/Foundkey instances now work for search, trending, and public timelines; a broken homepage install command and several docs-drift issues are fixed; and an IPv6 SSRF gap is closed. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.

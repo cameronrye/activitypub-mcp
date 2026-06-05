@@ -21,19 +21,19 @@
 
 The ActivityPub MCP Server is a Fediverse client that allows AI assistants to discover actors, fetch timelines, explore instances, and search content across the decentralized social web. It implements the complete MCP specification with resources for data access, tools for interaction, and prompts for guided exploration.
 
-### Key Features (v3.0.0)
+### Key Features
 
-- **Fediverse Integration**: Connect to any ActivityPub server (Mastodon, Pleroma, Misskey, etc.)
-- **WebFinger Discovery**: Find and resolve actors across the network (same-origin self link enforced in v2)
+- **Read-only by default**: discovery and timeline tools need no credentials; every write/mutation tool is opt-in behind `ACTIVITYPUB_ENABLE_WRITES` and is not even registered unless that flag is set
+- **Fediverse Integration**: Mastodon, Pleroma, Misskey, Foundkey, and compatible servers; Misskey-family reads are routed per instance by NodeInfo software detection and normalized into the same Mastodon-shaped results
+- **WebFinger Discovery**: Find and resolve actors across the network (same-origin self link enforced)
 - **37 MCP Tools**: 9 read-only discovery/timeline + 28 authenticated (post, follow, boost, polls, media, schedule)
 - **10 MCP Resources, 5 MCP Prompts**: `server-info` dynamic from live capability registry
-- **Multi-Account Support**: Pipe-delimited `ACTIVITYPUB_ACCOUNTS` config; per-call account selection
-- **Dual Transport**: stdio (default, for Claude Desktop / Cursor) and HTTP (Bearer-authenticated `/mcp` + `/metrics`)
+- **Multi-Account Support**: `activitypub-mcp login` (Mastodon OAuth2 / Misskey MiAuth) or pipe-delimited `ACTIVITYPUB_ACCOUNTS`; per-call account selection
+- **Dual Transport**: stdio (default, for Claude Desktop / Cursor) and HTTP (Bearer-authenticated `/mcp`)
 - **TypeScript Implementation**: Modern, strict TypeScript with ESM, topic-organized source tree
 - **Cross-Platform Support**: Works on Windows, macOS, and Linux (Node 20+ required)
-- **Security-Hardened**: SSRF guard on every outbound call, streaming response-size caps (default 10MB), HTTPS-only outbound, instance blocklist, thread cross-origin gating, audit logging on every write tool
-- **Performance Monitoring**: Comprehensive logging, metrics tool, in-memory caches
-- **Testing**: 624+ unit tests plus a daily integration workflow against the live Fediverse
+- **Security-Hardened**: SSRF guard on every outbound call (full IPv4 + IPv6 private-range blocking), streaming response-size caps (default 10MB), HTTPS-only outbound, credential stripping on cross-origin redirects, instance blocklist, thread cross-origin gating, `upload-media` content-type validation, audit logging on every write tool
+- **Testing**: 830+ unit tests plus a daily integration workflow against the live Fediverse
 
 ### Architecture
 
@@ -162,34 +162,38 @@ Create a `.env` file in your project root or set these environment variables. Au
 ```bash
 # ---- Core ----
 LOG_LEVEL=info                                  # debug | info | warning | error | fatal
-USER_AGENT=ActivityPub-MCP-Client/3.0.0
 REQUEST_TIMEOUT=15000                           # production default: 10000
 CACHE_TTL=300                                   # seconds
 RATE_LIMIT_ENABLED=true
 RATE_LIMIT_MAX=100
 RATE_LIMIT_WINDOW=900000
 
+# ---- Writes (off by default) ----
+ACTIVITYPUB_ENABLE_WRITES=false                 # master switch. While false, NO mutation tool
+                                                # (post/follow/boost/media/...) is registered, so
+                                                # prompt-injected content cannot name a tool that
+                                                # does not exist. Set true to opt in.
+
 # ---- HTTP transport (only when MCP_TRANSPORT_MODE=http) ----
 MCP_TRANSPORT_MODE=stdio                        # stdio | http
 MCP_HTTP_PORT=3000
 MCP_HTTP_HOST=127.0.0.1
 MCP_HTTP_SECRET=                                # REQUIRED for http. 32+ random chars.
-                                                # All /mcp + /metrics requests must include
+                                                # All /mcp requests must include
                                                 # `Authorization: Bearer <secret>`. /health stays open.
-MCP_HTTP_CORS_ORIGINS=                          # v2 default empty (no origins). Was "*" in v1.
+MCP_HTTP_CORS_ORIGINS=                          # default empty (no origins).
+MCP_HTTP_ALLOWED_HOSTS=                         # DNS-rebinding allowlist; required for non-localhost binds.
 
 # ---- Authenticated write tools ----
-# v2 uses PIPE (|) delimiter. v1 colon format is rejected at startup.
+# Preferred: `activitypub-mcp login` (Mastodon OAuth2 / Misskey MiAuth), which stores
+# credentials under ~/.config/activitypub-mcp/accounts.json. Or supply them inline:
+# PIPE (|) delimiter; legacy colon format is rejected at startup.
 ACTIVITYPUB_ACCOUNTS=id|instance|token|user|label,id2|instance|token|user|label
 
-# ---- Thread traversal caps (v2) ----
+# ---- Thread traversal caps ----
 MCP_THREAD_MAX_DEPTH=5
 MCP_THREAD_MAX_REPLIES=50
-MCP_THREAD_CROSS_ORIGIN_FETCH=false             # set true to restore v1 fetch-everything
-
-# ---- Health ----
-HEALTH_CHECK_EXTERNAL_PROBE=true                # gates outbound mastodon.social probe
-                                                # (replaces removed HEALTH_CHECK_ENABLED)
+MCP_THREAD_CROSS_ORIGIN_FETCH=false             # set true to fetch cross-origin replies
 ```
 
 ### Configuration Files
@@ -302,7 +306,7 @@ Use the `discover-actor` tool to find actors across the Fediverse:
 ```typescript
 // Using MCP client
 const result = await client.callTool("discover-actor", {
-  handle: "@username@instance.com"
+  identifier: "@username@instance.com"
 });
 ```
 
@@ -312,7 +316,7 @@ Retrieve an actor's public posts:
 
 ```typescript
 const timeline = await client.callTool("fetch-timeline", {
-  handle: "@username@instance.com",
+  identifier: "@username@instance.com",
   limit: 20
 });
 ```
@@ -322,9 +326,9 @@ const timeline = await client.callTool("fetch-timeline", {
 Search for posts, accounts, or hashtags:
 
 ```typescript
-const results = await client.callTool("search-fediverse", {
+const results = await client.callTool("search", {
   query: "activitypub",
-  type: "statuses",
+  type: "posts",
   limit: 10
 });
 ```
@@ -338,7 +342,7 @@ All MCP operations return structured error responses:
 ```typescript
 try {
   const result = await client.callTool("discover-actor", {
-    handle: "@invalid@nonexistent.com"
+    identifier: "@invalid@nonexistent.com"
   });
 } catch (error) {
   if (error.code === "InvalidParams") {
@@ -388,7 +392,7 @@ The server respects instance rate limits and implements exponential backoff:
 ```typescript
 // Step 1: Discover the actor
 const discovery = await client.callTool("discover-actor", {
-  handle: "@gargron@mastodon.social"
+  identifier: "@gargron@mastodon.social"
 });
 
 // Step 2: Fetch actor profile
@@ -398,7 +402,7 @@ const actor = await client.readResource(
 
 // Step 3: Fetch recent posts
 const timeline = await client.callTool("fetch-timeline", {
-  handle: "@gargron@mastodon.social",
+  identifier: "@gargron@mastodon.social",
   limit: 10
 });
 
@@ -410,21 +414,21 @@ console.log(`Posts: ${timeline.orderedItems.length}`);
 
 ```typescript
 // Search for posts about a topic
-const posts = await client.callTool("search-fediverse", {
+const posts = await client.callTool("search", {
   query: "activitypub protocol",
-  type: "statuses",
+  type: "posts",
   limit: 20
 });
 
 // Search for accounts
-const accounts = await client.callTool("search-fediverse", {
+const accounts = await client.callTool("search", {
   query: "developer",
   type: "accounts",
   limit: 10
 });
 
 // Search for hashtags
-const hashtags = await client.callTool("search-fediverse", {
+const hashtags = await client.callTool("search", {
   query: "opensource",
   type: "hashtags",
   limit: 5
@@ -443,25 +447,24 @@ console.log(`Instance: ${instance.title}`);
 console.log(`Users: ${instance.stats.user_count}`);
 console.log(`Posts: ${instance.stats.status_count}`);
 
-// Explore instance using tool
-const exploration = await client.callTool("explore-instance", {
-  domain: "mastodon.social",
-  include_stats: true
+// Get instance details using a tool
+const exploration = await client.callTool("get-instance-info", {
+  domain: "mastodon.social"
 });
 ```
 
 ### Example 4: Using Prompts
 
 ```typescript
-// Use the fediverse-discovery prompt
-const discovery = await client.getPrompt("fediverse-discovery", {
-  topic: "open source software",
-  instance: "fosstodon.org"
+// Use the explore-fediverse prompt
+const discovery = await client.getPrompt("explore-fediverse", {
+  interests: "open source software",
+  instanceType: "mastodon"
 });
 
-// Use the actor-analysis prompt
-const analysis = await client.getPrompt("actor-analysis", {
-  handle: "@gargron@mastodon.social"
+// Use the analyze-user-activity prompt
+const analysis = await client.getPrompt("analyze-user-activity", {
+  identifier: "@gargron@mastodon.social"
 });
 ```
 
@@ -471,9 +474,9 @@ Find popular open source projects on the Fediverse:
 
 ```typescript
 // 1. Search for open source content
-const results = await client.callTool("search-fediverse", {
+const results = await client.callTool("search", {
   query: "open source",
-  type: "statuses",
+  type: "posts",
   limit: 50
 });
 
@@ -489,7 +492,7 @@ for (const handle of actors) {
   );
 
   const timeline = await client.callTool("fetch-timeline", {
-    handle: `@${handle}`,
+    identifier: `@${handle}`,
     limit: 10
   });
 
@@ -501,7 +504,7 @@ for (const handle of actors) {
 
 ## Development
 
-### Project Structure (v2 — topic-organized)
+### Project Structure (topic-organized)
 
 ```
 activitypub-mcp/
@@ -515,13 +518,15 @@ activitypub-mcp/
 │   │   ├── resources.ts              # 10 resources
 │   │   ├── prompts.ts                # 5 prompts
 │   │   └── capabilities.ts           # Dynamic capability registry
-│   ├── activitypub/                  # ActivityPub client
-│   │   └── remote-client.ts
-│   ├── discovery/                    # WebFinger and instance discovery
+│   ├── discovery/                    # WebFinger, NodeInfo, instance discovery
 │   │   ├── webfinger.ts
-│   │   ├── instance-discovery.ts
+│   │   ├── nodeinfo.ts               # software detection (Mastodon vs Misskey)
+│   │   ├── software-kind.ts
 │   │   └── dynamic-instance-discovery.ts
-│   ├── auth/                         # Account management + credentials
+│   ├── activitypub/                  # ActivityPub client + read adapter
+│   │   ├── remote-client.ts
+│   │   └── read-adapter.ts           # per-instance read routing (Misskey reads)
+│   ├── auth/                         # Login (OAuth2/MiAuth), accounts, write adapters
 │   ├── policy/                       # Instance blocklist
 │   │   └── instance-blocklist.ts
 │   ├── audit/                        # Audit logging
@@ -539,7 +544,7 @@ activitypub-mcp/
 │   └── utils/                        # Errors, HTML stripping
 │       ├── errors.ts
 │       └── html.ts
-├── tests/                            # 624+ unit tests + integration suite
+├── tests/                            # 830+ unit tests + integration suite
 ├── docs/specifications/              # Protocol reference guides
 ├── scripts/
 │   ├── install.sh / install.ps1      # Installer
@@ -614,22 +619,16 @@ npm run build:site
 npm run preview:site
 ```
 
-### Performance Monitoring
+### Logging
 
-The server includes built-in performance monitoring:
+The server uses structured logging via LogTape. Set the level with `LOG_LEVEL`
+(`debug | info | warning | error | fatal`). On stdio, logs go to stderr so they
+never corrupt the MCP protocol stream on stdout. Audit logging records every
+write-tool invocation (tool name, parameters, success/failure, duration).
 
-```typescript
-// Enable performance monitoring
-ENABLE_PERFORMANCE_MONITORING=true
-PERFORMANCE_LOG_INTERVAL=60000  // Log every 60 seconds
+```bash
+LOG_LEVEL=debug   # verbose; surfaces every outbound request and cache hit/miss
 ```
-
-Metrics tracked:
-- Request latency
-- Cache hit/miss rates
-- Error rates
-- Memory usage
-- Active connections
 
 ### Security
 
@@ -639,8 +638,8 @@ Security best practices:
 2. **Input Validation**: All inputs are validated using Zod schemas
 3. **Rate Limiting**: Respects instance rate limits
 4. **Error Handling**: Comprehensive error handling and logging
-5. **HTTPS**: All external requests use HTTPS
-6. **No Credentials**: Server operates as a read-only client
+5. **HTTPS**: All external requests use HTTPS (non-https schemes are rejected)
+6. **Read-only by default**: write/mutation tools are not registered unless `ACTIVITYPUB_ENABLE_WRITES=true`
 
 ### Contributing
 
@@ -799,7 +798,7 @@ MCP is a protocol for integrating context providers with LLM applications.
 **Problem:** Server fails to start or crashes immediately.
 
 **Solutions:**
-1. Check Node.js version: `node --version` (must be 18.0.0+)
+1. Check Node.js version: `node --version` (must be 20.0.0+)
 2. Reinstall dependencies: `npm install`
 3. Clear cache: `npm cache clean --force`
 4. Check for port conflicts
@@ -917,7 +916,38 @@ Log levels:
 
 The canonical changelog lives in [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md). Highlights:
 
-### Version 3.0.1 (Current) — 2026-06-02
+### Version 3.1.1 (Current)
+
+Correctness and distribution patch.
+
+**Fixed:**
+- Misskey relationship results: `users/relation` returns the relation wrapped in an array for a single user id, which the adapter read as a bare object — so follow / mute / block relationship fields silently came back `false`. Both shapes are now handled.
+- Outbox pagination no longer reports `hasMore: true` without a cursor to follow (a full final page with no `next` link previously looked like there was more).
+
+**Security:**
+- `upload-media` validates that the file content is an actual image/video/audio file (by magic bytes, not extension) before sending. A prompt-injected model can no longer name an arbitrary path (a key, the credential store, a `.env`) and exfiltrate it to a public media URL.
+
+**Distribution:**
+- The Claude Desktop Extension (`.mcpb`) is now built and attached to every GitHub Release, so the README's one-click install always resolves on the latest release.
+
+### Version 3.1.0 — 2026-06-04
+
+**Added:**
+- Misskey / Foundkey read support: `search`, `get-trending-hashtags`, `get-trending-posts`, and `get-public-timeline` now work on Misskey-family instances, routed per instance by NodeInfo software detection and normalized into Mastodon-shaped results.
+- Authentication guide on the docs site covering the `activitypub-mcp login` (Mastodon OAuth2 / Misskey MiAuth) flow, credential storage, and multi-account usage.
+
+**Fixed:**
+- Corrected the site's "Quick install" command and added a one-line stderr hint so an interactive stdio start no longer looks hung.
+- Reconciled getting-started docs with the code (removed phantom env vars; a drift test now fails CI on documentation of an env var the code never reads).
+
+**Security:**
+- Full IPv6 private-range SSRF blocking (`fc00::/7`, `fe80::/10`, `fec0::/10`) via leading-hextet masks, replacing literal-prefix regexes that matched only canonical addresses.
+- All GitHub Actions pinned to commit SHAs.
+
+**Changed:**
+- Releases publish automatically: `release.yml` and `publish-mcp.yml` are reusable workflows called inline after tagging.
+
+### Version 3.0.1 — 2026-06-02
 
 Correctness and distribution release.
 
@@ -994,8 +1024,8 @@ Copyright (c) 2025 ActivityPub MCP Server Contributors
 
 **Built With:**
 - TypeScript
-- Model Context Protocol SDK
-- Fedify (ActivityPub framework)
+- Model Context Protocol SDK (`@modelcontextprotocol/sdk`)
+- undici (HTTP client)
 - LogTape (Logging)
 - Zod (Validation)
 

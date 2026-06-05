@@ -706,6 +706,52 @@ describe("extractNextCursor semantics (M12)", () => {
     expect(result.nextCursor).toBeUndefined();
     expect(result.hasMore).toBe(false);
   });
+
+  it("reports hasMore=false on a full page that has no `next` cursor", async () => {
+    server.use(
+      http.get("https://m12fullpage.test/.well-known/webfinger", () =>
+        HttpResponse.json({
+          subject: "acct:user@m12fullpage.test",
+          links: [
+            {
+              rel: "self",
+              type: "application/activity+json",
+              href: "https://m12fullpage.test/users/user",
+            },
+          ],
+        }),
+      ),
+      http.get("https://m12fullpage.test/users/user", () =>
+        HttpResponse.json({
+          id: "https://m12fullpage.test/users/user",
+          type: "Person",
+          preferredUsername: "user",
+          inbox: "https://m12fullpage.test/users/user/inbox",
+          outbox: "https://m12fullpage.test/users/user/outbox",
+        }),
+      ),
+      // A page returning exactly `limit` items but with NO `next` link.
+      http.get("https://m12fullpage.test/users/user/outbox/page-1", () =>
+        HttpResponse.json({
+          id: "https://m12fullpage.test/users/user/outbox/page-1",
+          type: "OrderedCollectionPage",
+          orderedItems: [
+            { type: "Note", content: "a" },
+            { type: "Note", content: "b" },
+          ],
+        }),
+      ),
+    );
+
+    const result = await client.fetchActorOutboxPaginated("user@m12fullpage.test", {
+      cursor: "https://m12fullpage.test/users/user/outbox/page-1",
+      limit: 2,
+    });
+    // A full page with no `next` cursor is the end — `hasMore` must not be true
+    // when there is no cursor to follow, or the caller loops on the same page.
+    expect(result.nextCursor).toBeUndefined();
+    expect(result.hasMore).toBe(false);
+  });
 });
 
 describe("RemoteActivityPubClient response size cap (M2)", () => {

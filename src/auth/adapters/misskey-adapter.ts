@@ -287,13 +287,17 @@ export class MisskeyWriteAdapter implements WriteAdapter {
   }
 
   private async relation(account: AccountCredentials, userId: string): Promise<Relationship> {
-    const rel = await misskeyPostJson<MisskeyRelation>(
+    // Misskey's `users/relation` returns `oneOf: [object, array]`: a single
+    // userId string is answered with the relation wrapped in a one-element array
+    // (`getRelation(...).then(it => [it])`), not a bare object. Unwrap either
+    // shape so the relationship fields aren't silently read off the array.
+    const rel = await misskeyPostJson<MisskeyRelation | MisskeyRelation[]>(
       account,
       "/api/users/relation",
       { userId },
       "get relationship",
     );
-    return relationToRelationship(userId, rel);
+    return relationToRelationship(userId, Array.isArray(rel) ? rel[0] : rel);
   }
 
   async followAccount(
