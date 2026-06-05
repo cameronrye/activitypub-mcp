@@ -6,14 +6,15 @@
 
 The ActivityPub MCP Server is a Fediverse client that allows AI assistants to discover actors, fetch timelines, explore instances, and search content across the decentralized social web. It implements the complete MCP specification with resources for data access, tools for interaction, and prompts for guided exploration.
 
-### Key Features (v3.0.0)
+### Key Features
 
-- **Fediverse Integration**: Connect to any ActivityPub server (Mastodon, Pleroma, Misskey, etc.)
+- **Read-only by default**: discovery and timeline tools work with no credentials; all write/mutation tools are opt-in behind `ACTIVITYPUB_ENABLE_WRITES`
+- **Fediverse Integration**: Mastodon, Pleroma, Misskey, Foundkey, and compatible ActivityPub servers; Misskey-family reads are routed per instance by NodeInfo software detection
 - **WebFinger Discovery**: Find and resolve actors across the network
 - **37 MCP Tools**: 9 read-only discovery/timeline + 28 authenticated (post, follow, boost, polls, media, schedule)
 - **10 MCP Resources, 5 MCP Prompts**: Including dynamic `server-info` from the live capability registry
-- **Multi-Account Support**: Pipe-delimited `ACTIVITYPUB_ACCOUNTS` config; per-call account selection
-- **Dual Transport**: stdio (Claude Desktop / Cursor) and HTTP (Bearer-authenticated `/mcp` + `/metrics`)
+- **Multi-Account Support**: `activitypub-mcp login` (Mastodon OAuth2 / Misskey MiAuth) or pipe-delimited `ACTIVITYPUB_ACCOUNTS`; per-call account selection
+- **Dual Transport**: stdio (Claude Desktop / Cursor) and HTTP (Bearer-authenticated `/mcp`)
 - **TypeScript Implementation**: Modern, type-safe codebase with strict TS and ESM
 - **Cross-Platform Support**: Works on Windows, macOS, and Linux (Node 20+)
 - **Security-Hardened**: SSRF guard on all outbound calls, streaming response-size caps, instance blocklist, thread cross-origin gating, audit logging on every write tool
@@ -116,7 +117,7 @@ Upgrading from v1.x? See [MIGRATION-v2.md](https://github.com/cameronrye/activit
 
 ---
 
-**Version:** 3.1.0
+**Version:** 3.1.1
 **License:** MIT
 **Maintainer:** Cameron Rye (https://rye.dev/)
 **Repository:** https://github.com/cameronrye/activitypub-mcp

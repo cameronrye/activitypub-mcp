@@ -2,6 +2,8 @@
  * Tests for MCP write tool handlers
  */
 
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -12,6 +14,18 @@ import { RateLimiter } from "../../src/resilience/rate-limiter.js";
 
 const THIS_FILE = fileURLToPath(import.meta.url);
 const PKG_JSON_PATH = path.resolve(path.dirname(THIS_FILE), "../../package.json");
+
+// A real 1x1 PNG written to a temp path — upload-media now validates that the
+// file content is actually a media file, so the fixture must carry valid PNG
+// magic bytes rather than just any readable path.
+const PNG_FIXTURE_PATH = path.join(os.tmpdir(), "activitypub-mcp-test-pixel.png");
+fs.writeFileSync(
+  PNG_FIXTURE_PATH,
+  Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "base64",
+  ),
+);
 
 // Force writes enabled so mutation tools are registered in this test file
 vi.mock("../../src/config.js", async (importOriginal) => {
@@ -689,6 +703,22 @@ describe("MCP Write Tools", () => {
         "Failed to upload media",
       );
     });
+
+    it("rejects a non-media file (no upload, exfiltration guard)", async () => {
+      const uploadMediaMock = authenticatedClient.uploadMedia as Mock;
+      uploadMediaMock.mockClear();
+      const tool = registeredTools.get("upload-media");
+      // package.json is JSON, not a media file — must be refused before any read
+      // leaves the process.
+      const result = await tool?.handler({ filePath: PKG_JSON_PATH });
+
+      expect((result as { isError: boolean }).isError).toBe(true);
+      expect((result as { content: { text: string }[] }).content[0].text).toMatch(
+        /not (a |an )?(recognized )?media|media file|image, video/i,
+      );
+      // The file's bytes must never be handed to the upload client.
+      expect(uploadMediaMock).not.toHaveBeenCalled();
+    });
   });
 
   describe("get-scheduled-posts tool", () => {
@@ -1007,7 +1037,7 @@ describe("MCP Write Tools", () => {
       auditLoggerMock.logToolInvocation.mockClear();
       const tool = registeredTools.get("upload-media");
       expect(tool).toBeDefined();
-      await tool?.handler({ filePath: PKG_JSON_PATH });
+      await tool?.handler({ filePath: PNG_FIXTURE_PATH });
       expect(auditLoggerMock.logToolInvocation).toHaveBeenCalledWith(
         "upload-media",
         expect.anything(),

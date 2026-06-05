@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-06-05
+
+### Security
+
+- **`upload-media` validates file content before sending.** The tool read whatever
+  `filePath` the model supplied and forwarded it to the instance with no type check, so a
+  prompt-injected model (injection arriving through the read tools that surface fediverse
+  content) could name an arbitrary path — an SSH key, the credential store, a `.env` — and
+  exfiltrate it to a public media URL. Files are now sniffed by magic bytes and rejected
+  unless they are a recognized image/video/audio type, neutralizing the exfiltration vector
+  while preserving the ability to upload media from anywhere on disk.
+
+### Fixed
+
+- **Misskey relationship results.** `users/relation` returns the relation wrapped in a
+  one-element array for a single user id (its `res` schema is `oneOf: [object, array]`); the
+  adapter read it as a bare object, so `following` / `followed_by` / `muting` / `blocking` /
+  `requested` silently came back `false` after every Misskey follow, mute, or block. Both
+  response shapes are now handled.
+- **Outbox pagination no longer reports phantom "more".** `fetchActorOutboxPaginated` set
+  `hasMore: true` whenever a page was full (`items.length === limit`), even with no `next`
+  cursor to follow — so a caller on a full final page would loop on the same page. `hasMore`
+  is now true only when there is a cursor to follow.
+
+### Distribution
+
+- **The Claude Desktop Extension (`.mcpb`) is built and attached to every release.** The
+  README's one-click install points at this asset on the latest release, but it had only
+  ever been attached to v3.0.1 by hand; `release.yml` now builds the bundle and uploads it
+  on every release, and a test fails CI if the workflow stops doing so.
+
+### Changed
+
+- **LLM-facing reference files reconciled with the code.** `public/llms.txt` and
+  `public/llms-full.txt` no longer describe removed surfaces (the `/metrics` endpoint,
+  a "metrics tool", the `HEALTH_CHECK_EXTERNAL_PROBE` / `ENABLE_PERFORMANCE_MONITORING`
+  env vars) or non-existent tool/prompt names in their examples, and now document the
+  read-only-by-default posture and the `ACTIVITYPUB_ENABLE_WRITES` master switch.
+
 ## [3.1.0] - 2026-06-04
 
 ### Added

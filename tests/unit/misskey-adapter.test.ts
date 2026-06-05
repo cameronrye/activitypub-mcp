@@ -118,13 +118,18 @@ describe("MisskeyWriteAdapter social ops", () => {
       http.post("https://misskey.test/api/following/create", () => HttpResponse.json({ id: "u2" })),
       http.post("https://misskey.test/api/users/relation", async ({ request }) => {
         relBody = (await request.json()) as Record<string, unknown>;
-        return HttpResponse.json({
-          isFollowing: true,
-          isFollowed: false,
-          isBlocking: false,
-          isMuted: false,
-          hasPendingFollowRequestFromYou: false,
-        });
+        // Misskey returns the relation wrapped in an array for a single userId
+        // string (res schema is `oneOf: [object, array]`; the string branch is
+        // `getRelation(...).then(it => [it])`).
+        return HttpResponse.json([
+          {
+            isFollowing: true,
+            isFollowed: false,
+            isBlocking: false,
+            isMuted: false,
+            hasPendingFollowRequestFromYou: false,
+          },
+        ]);
       }),
     );
     const rel = await adapter.followAccount(account, "u2");
@@ -141,7 +146,7 @@ describe("MisskeyWriteAdapter social ops", () => {
         () => new HttpResponse(null, { status: 204 }),
       ),
       http.post("https://misskey.test/api/users/relation", () =>
-        HttpResponse.json({ isMuted: true }),
+        HttpResponse.json([{ isMuted: true }]),
       ),
     );
     const rel = await adapter.muteAccount(account, "u2");

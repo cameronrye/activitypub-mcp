@@ -47,7 +47,7 @@ npx -y activitypub-mcp
 
 ### Claude Desktop
 
-**One-click:** download `activitypub-mcp.mcpb` from the [latest release](https://github.com/cameronrye/activitypub-mcp/releases/latest) and open it in Claude Desktop.
+**One-click:** download the `.mcpb` bundle (`activitypub-mcp-<version>.mcpb`) from the [latest release](https://github.com/cameronrye/activitypub-mcp/releases/latest) and open it in Claude Desktop.
 
 **Manual:** edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 

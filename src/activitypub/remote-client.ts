@@ -365,7 +365,10 @@ export class RemoteActivityPubClient {
     return {
       items,
       totalItems: collection.totalItems,
-      hasMore: !!nextCursor || items.length === limit,
+      // Only "more" if there is a cursor to follow. A full page (`items.length
+      // === limit`) with no `next`/`first` link is the end — reporting hasMore
+      // without a cursor makes callers loop on the same page forever.
+      hasMore: !!nextCursor,
       nextCursor,
       prevCursor,
       collectionId: collection.id,

@@ -14,6 +14,7 @@ import { accountManager, authenticatedClient } from "../auth/index.js";
 import { ENABLE_WRITES } from "../config.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
 import { formatErrorWithSuggestion, getErrorMessage } from "../utils/errors.js";
+import { sniffMediaType } from "../utils/media-type.js";
 import { sanitizeInline, wrapUntrusted } from "../utils/untrusted.js";
 import { trackedMcpServer } from "./capabilities.js";
 
@@ -1856,6 +1857,19 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
         const path = await import("node:path");
 
         const fileBuffer = await fs.readFile(filePath);
+
+        // Validate by content, not extension: only forward actual media. A
+        // model coaxed by prompt-injected fediverse content could otherwise
+        // name any path (~/.ssh/id_rsa, the credential store, a .env file) and
+        // exfiltrate it to a public media URL. A non-media file is refused
+        // before its bytes are handed to the instance.
+        const mediaType = sniffMediaType(fileBuffer);
+        if (!mediaType) {
+          throw new Error(
+            `File is not a recognized media file (image, video, or audio): ${path.basename(filePath)}. upload-media only accepts media files.`,
+          );
+        }
+
         const filename = path.basename(filePath);
 
         const focus =
