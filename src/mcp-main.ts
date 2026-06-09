@@ -35,7 +35,7 @@ ENVIRONMENT VARIABLES:
   MCP_TRANSPORT_MODE     Transport mode: 'stdio' (default) or 'http'
   MCP_HTTP_PORT          HTTP server port (default: 3000)
   MCP_HTTP_HOST          HTTP server host (default: 127.0.0.1)
-  LOG_LEVEL              Log level: debug, info, warn, error (default: info)
+  LOG_LEVEL              Log level: debug, info, warning, error, fatal (default: info; 'warn' accepted)
   REQUEST_TIMEOUT        Request timeout in ms (default: 10000)
   CACHE_TTL              Cache TTL in ms (default: 300000)
   RATE_LIMIT_ENABLED     Enable rate limiting (default: true)

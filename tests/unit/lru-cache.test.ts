@@ -204,4 +204,24 @@ describe("LRUCache", () => {
       expect(cache.stats().ttl).toBe(0);
     });
   });
+
+  describe("invalid maxSize", () => {
+    // A non-positive maxSize makes set()'s eviction loop spin forever: it can
+    // never shrink an already-empty cache below the threshold. CACHE_MAX_SIZE=0
+    // reaches the constructor unvalidated, so clamp to at least 1.
+    it("clamps a non-positive maxSize to at least 1", () => {
+      expect(new LRUCache<string, number>({ maxSize: 0 }).stats().maxSize).toBe(1);
+      expect(new LRUCache<string, number>({ maxSize: -5 }).stats().maxSize).toBe(1);
+    });
+
+    it("clamps a non-finite maxSize to 1", () => {
+      expect(new LRUCache<string, number>({ maxSize: Number.NaN }).stats().maxSize).toBe(1);
+    });
+
+    it("set() stores and returns rather than hanging when maxSize was clamped", () => {
+      const cache = new LRUCache<string, number>({ maxSize: 0 });
+      cache.set("a", 1);
+      expect(cache.get("a")).toBe(1);
+    });
+  });
 });

@@ -17,6 +17,7 @@ import { wrapUntrustedBlock } from "../utils/untrusted.js";
 import { DomainSchema } from "../validation/schemas.js";
 import { extractSingleValue, validateActorIdentifier } from "../validation/validators.js";
 import { capabilitiesRegistry, trackedMcpServer } from "./capabilities.js";
+import { checkRateLimit } from "./rate-limit-guard.js";
 
 const logger = getLogger("activitypub-mcp:resources");
 
@@ -63,15 +64,6 @@ export function registerResources(
 
   // Content resources
   registerPostThreadResource(mcpServer, rateLimiter);
-}
-
-/**
- * Helper to check rate limit and throw if exceeded.
- */
-function checkRateLimit(rateLimiter: RateLimiter, identifier: string): void {
-  if (!rateLimiter.checkLimit(identifier)) {
-    throw new McpError(ErrorCode.InternalError, "Rate limit exceeded. Please try again later.");
-  }
 }
 
 /**

@@ -7,7 +7,7 @@
 
 import { getLogger } from "@logtape/logtape";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { type CallToolResult, ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
+import { type CallToolResult, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { remoteClient } from "../activitypub/remote-client.js";
 import { dynamicInstanceDiscovery } from "../discovery/dynamic-instance-discovery.js";
@@ -21,6 +21,7 @@ import {
   validateQuery,
 } from "../validation/validators.js";
 import { trackedMcpServer } from "./capabilities.js";
+import { checkRateLimit } from "./rate-limit-guard.js";
 import { registerWriteTools } from "./tools-write.js";
 
 const logger = getLogger("activitypub-mcp:tools");
@@ -53,15 +54,6 @@ export function registerTools(mcpServer: McpServer, rateLimiter: RateLimiter): v
 
   // Write operation tools (authenticated)
   registerWriteTools(mcpServer, rateLimiter);
-}
-
-/**
- * Helper to check rate limit and throw if exceeded.
- */
-function checkRateLimit(rateLimiter: RateLimiter, identifier: string): void {
-  if (!rateLimiter.checkLimit(identifier)) {
-    throw new McpError(ErrorCode.InternalError, "Rate limit exceeded. Please try again later.");
-  }
 }
 
 /**

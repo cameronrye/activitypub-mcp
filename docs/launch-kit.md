@@ -116,5 +116,6 @@ workflow should I add next?"
 - [ ] GitHub repo: set About tagline to the one-liner; fix topics
       (drop `fedify`; add `mastodon`, `misskey`, `claude`, `llm`, `model-context-protocol`)
 - [ ] GitHub repo: upload `public/og-image.png` as the social preview
-- [ ] Enable GitHub Discussions (or remove the footer `/discussions` links)
+- [x] Dead `/discussions` links removed (Discussions is disabled; links now point to Issues).
+      Re-add them only if Discussions is enabled.
 - [ ] Cut a patch release so the new npm description/tagline goes live

@@ -96,8 +96,7 @@ Add to your Claude Desktop configuration:
 ### Troubleshooting & Support
 
 - [Troubleshooting Guide](https://cameronrye.github.io/activitypub-mcp/docs/reference/troubleshooting/): Common issues and solutions
-- [GitHub Issues](https://github.com/cameronrye/activitypub-mcp/issues): Report bugs and request features
-- [GitHub Discussions](https://github.com/cameronrye/activitypub-mcp/discussions): Community support
+- [GitHub Issues](https://github.com/cameronrye/activitypub-mcp/issues): Report bugs, request features, and ask for help
 
 ### External Documentation
 
@@ -117,7 +116,7 @@ Upgrading from v1.x? See [MIGRATION-v2.md](https://github.com/cameronrye/activit
 
 ---
 
-**Version:** 3.1.1
+**Version:** 3.1.2
 **License:** MIT
 **Maintainer:** Cameron Rye (https://rye.dev/)
 **Repository:** https://github.com/cameronrye/activitypub-mcp

@@ -85,3 +85,44 @@ describe("MastodonWriteAdapter.createPost", () => {
     expect(result.scheduled.scheduled_at).toBe("2099-01-01T15:00:00.000Z");
   });
 });
+
+describe("MastodonWriteAdapter.createPost idempotency", () => {
+  function captureKeys(keys: (string | null)[]) {
+    server.use(
+      http.post("https://mastodon.test/api/v1/statuses", ({ request }) => {
+        keys.push(request.headers.get("Idempotency-Key"));
+        return HttpResponse.json(sampleStatus);
+      }),
+    );
+  }
+
+  it("sends a content-derived Idempotency-Key so a retried identical post can't duplicate", async () => {
+    const keys: (string | null)[] = [];
+    captureKeys(keys);
+
+    await adapter.createPost(account, { content: "hello world" });
+    await adapter.createPost(account, { content: "hello world" }); // a retry of the same post
+
+    expect(keys[0]).toBeTruthy();
+    expect(keys[0]).toBe(keys[1]); // identical content => same key => Mastodon dedupes
+  });
+
+  it("derives a different key for different post content", async () => {
+    const keys: (string | null)[] = [];
+    captureKeys(keys);
+
+    await adapter.createPost(account, { content: "first" });
+    await adapter.createPost(account, { content: "second" });
+
+    expect(keys[0]).not.toBe(keys[1]);
+  });
+
+  it("uses an explicit idempotencyKey when the caller supplies one", async () => {
+    const keys: (string | null)[] = [];
+    captureKeys(keys);
+
+    await adapter.createPost(account, { content: "x", idempotencyKey: "explicit-key" });
+
+    expect(keys[0]).toBe("explicit-key");
+  });
+});
