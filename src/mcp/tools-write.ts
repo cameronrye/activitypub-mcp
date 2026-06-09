@@ -17,6 +17,7 @@ import { formatRemoteError, getErrorMessage } from "../utils/errors.js";
 import { sniffMediaType } from "../utils/media-type.js";
 import { sanitizeInline, wrapUntrusted } from "../utils/untrusted.js";
 import { trackedMcpServer } from "./capabilities.js";
+import { checkRateLimit } from "./rate-limit-guard.js";
 
 const logger = getLogger("activitypub-mcp:tools-write");
 
@@ -63,15 +64,6 @@ export function registerWriteTools(mcpServer: McpServer, rateLimiter: RateLimite
   registerGetScheduledPostsTool(mcpServer, rateLimiter);
   registerCancelScheduledPostTool(mcpServer, rateLimiter);
   registerUpdateScheduledPostTool(mcpServer, rateLimiter);
-}
-
-/**
- * Helper to check rate limit.
- */
-function checkRateLimit(rateLimiter: RateLimiter, identifier: string): void {
-  if (!rateLimiter.checkLimit(identifier)) {
-    throw new McpError(ErrorCode.InternalError, "Rate limit exceeded. Please try again later.");
-  }
 }
 
 /**

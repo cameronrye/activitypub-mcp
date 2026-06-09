@@ -8,9 +8,10 @@
  */
 
 import type { Agent } from "undici";
+import { auditLogger } from "../audit/logger.js";
 import { MAX_RESPONSE_SIZE, REQUEST_TIMEOUT, USER_AGENT } from "../config.js";
 import { instanceBlocklist } from "../policy/instance-blocklist.js";
-import { resolveAndPin } from "../validation/url.js";
+import { resolveAndPin, SsrfBlockedError } from "../validation/url.js";
 
 /** RequestInit augmented with the undici `dispatcher` (not in the DOM types). */
 export type DispatchInit = RequestInit & { dispatcher?: Agent };
@@ -146,13 +147,23 @@ export async function pinnedFetch(
   init: DispatchInit,
   onHop?: (target: string) => Promise<void> | void,
 ): Promise<Response> {
-  const { dispatcher } = await resolveAndPin(url);
-  if (onHop) await onHop(url);
-  return fetchWithRedirectGuard(url, { ...init, dispatcher }, async (target) => {
-    const pinned = await resolveAndPin(target);
-    if (onHop) await onHop(target);
-    return pinned.dispatcher;
-  });
+  try {
+    const { dispatcher } = await resolveAndPin(url);
+    if (onHop) await onHop(url);
+    return await fetchWithRedirectGuard(url, { ...init, dispatcher }, async (target) => {
+      const pinned = await resolveAndPin(target);
+      if (onHop) await onHop(target);
+      return pinned.dispatcher;
+    });
+  } catch (error) {
+    // Record SSRF rejections (on the initial URL or any redirect hop) to the
+    // audit trail before propagating. Operator-blocklist rejections are audited
+    // separately in the policy layer, so only SSRF blocks are logged here.
+    if (error instanceof SsrfBlockedError) {
+      auditLogger.logSsrfBlocked(url, error.message);
+    }
+    throw error;
+  }
 }
 
 export class ResponseTooLargeError extends Error {
