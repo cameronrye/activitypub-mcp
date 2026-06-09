@@ -220,6 +220,167 @@ describe("MisskeyWriteAdapter account ops", () => {
   });
 });
 
+describe("MisskeyWriteAdapter mutations", () => {
+  it("deletePost posts the noteId to notes/delete", async () => {
+    let body: Record<string, unknown> | undefined;
+    server.use(
+      http.post("https://misskey.test/api/notes/delete", async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    await expect(adapter.deletePost(account, "note1")).resolves.toBeUndefined();
+    expect(body?.noteId).toBe("note1");
+  });
+
+  it("deletePost surfaces a Misskey error body", async () => {
+    server.use(
+      http.post("https://misskey.test/api/notes/delete", () =>
+        HttpResponse.json({ error: { message: "No such note." } }, { status: 400 }),
+      ),
+    );
+    await expect(adapter.deletePost(account, "missing")).rejects.toThrow(/delete post/i);
+  });
+
+  it("unfollowAccount deletes the follow then reports following:false", async () => {
+    let followBody: Record<string, unknown> | undefined;
+    server.use(
+      http.post("https://misskey.test/api/following/delete", async ({ request }) => {
+        followBody = (await request.json()) as Record<string, unknown>;
+        return new HttpResponse(null, { status: 204 });
+      }),
+      http.post("https://misskey.test/api/users/relation", () =>
+        HttpResponse.json([{ isFollowing: false }]),
+      ),
+    );
+    const rel = await adapter.unfollowAccount(account, "u2");
+    expect(followBody?.userId).toBe("u2");
+    expect(rel.following).toBe(false);
+  });
+
+  it("blockAccount blocks then reports blocking:true", async () => {
+    let blockBody: Record<string, unknown> | undefined;
+    server.use(
+      http.post("https://misskey.test/api/blocking/create", async ({ request }) => {
+        blockBody = (await request.json()) as Record<string, unknown>;
+        return new HttpResponse(null, { status: 204 });
+      }),
+      http.post("https://misskey.test/api/users/relation", () =>
+        HttpResponse.json([{ isBlocking: true }]),
+      ),
+    );
+    const rel = await adapter.blockAccount(account, "u2");
+    expect(blockBody?.userId).toBe("u2");
+    expect(rel.blocking).toBe(true);
+  });
+
+  it("unblockAccount unblocks then reports blocking:false", async () => {
+    server.use(
+      http.post(
+        "https://misskey.test/api/blocking/delete",
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+      http.post("https://misskey.test/api/users/relation", () =>
+        HttpResponse.json([{ isBlocking: false }]),
+      ),
+    );
+    const rel = await adapter.unblockAccount(account, "u2");
+    expect(rel.blocking).toBe(false);
+  });
+});
+
+describe("MisskeyWriteAdapter.getNotifications", () => {
+  it("normalizes notifications and maps pagination to untilId/sinceId", async () => {
+    let body: Record<string, unknown> | undefined;
+    server.use(
+      http.post("https://misskey.test/api/i/notifications", async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json([
+          {
+            id: "n1",
+            type: "mention",
+            createdAt: "2026-01-01T00:00:00Z",
+            user: { id: "u1", username: "alice", host: null, name: "Alice" },
+            note: sampleNote,
+          },
+          // A notification with no user/note (e.g. an achievement) still normalizes.
+          { id: "n2", type: "achievementEarned", createdAt: "2026-01-01T00:01:00Z" },
+        ]);
+      }),
+    );
+    const items = await adapter.getNotifications(account, { maxId: "older", minId: "newer" });
+    expect(body?.untilId).toBe("older");
+    expect(body?.sinceId).toBe("newer");
+    expect(items).toHaveLength(2);
+    expect(items[0].type).toBe("mention");
+    expect(items[0].account.username).toBe("alice");
+    expect(items[0].status?.id).toBe("note1");
+    expect(items[1].account.username).toBe("");
+    expect(items[1].status).toBeUndefined();
+  });
+});
+
+describe("MisskeyWriteAdapter.uploadMedia", () => {
+  it("posts multipart to drive/files/create and maps the drive file to a MediaAttachment", async () => {
+    let contentType: string | null = null;
+    let filename: string | undefined;
+    let comment: string | undefined;
+    server.use(
+      http.post("https://misskey.test/api/drive/files/create", async ({ request }) => {
+        contentType = request.headers.get("content-type");
+        const form = await request.formData();
+        filename = form.get("name") as string | undefined;
+        comment = form.get("comment") as string | undefined;
+        return HttpResponse.json({
+          id: "file1",
+          type: "image/png",
+          url: "https://misskey.test/files/file1.png",
+          thumbnailUrl: "https://misskey.test/files/file1-thumb.png",
+          comment: "alt text",
+          blurhash: "LKO2",
+        });
+      }),
+    );
+
+    const media = await adapter.uploadMedia(account, Buffer.from([0x89, 0x50, 0x4e, 0x47]), {
+      filename: "pic.png",
+      description: "alt text",
+    });
+
+    expect(contentType).toContain("multipart/form-data");
+    expect(filename).toBe("pic.png");
+    expect(comment).toBe("alt text");
+    expect(media).toMatchObject({
+      id: "file1",
+      type: "image",
+      url: "https://misskey.test/files/file1.png",
+      preview_url: "https://misskey.test/files/file1-thumb.png",
+      description: "alt text",
+    });
+  });
+
+  it("maps an unrecognized drive file type to 'unknown'", async () => {
+    server.use(
+      http.post("https://misskey.test/api/drive/files/create", () =>
+        HttpResponse.json({ id: "f2", type: "application/pdf", url: "https://misskey.test/f2" }),
+      ),
+    );
+    const media = await adapter.uploadMedia(account, Buffer.from([0x25, 0x50]), {});
+    expect(media.type).toBe("unknown");
+  });
+
+  it("throws with the HTTP status when the drive upload fails", async () => {
+    server.use(
+      http.post("https://misskey.test/api/drive/files/create", () =>
+        HttpResponse.json({ error: { message: "too big" } }, { status: 413 }),
+      ),
+    );
+    await expect(adapter.uploadMedia(account, Buffer.from([0x00]), {})).rejects.toThrow(
+      /Failed to upload media: HTTP 413/,
+    );
+  });
+});
+
 describe("MisskeyWriteAdapter timeline", () => {
   it("getHomeTimeline normalizes notes", async () => {
     server.use(
