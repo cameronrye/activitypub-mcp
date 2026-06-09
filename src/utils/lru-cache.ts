@@ -21,7 +21,11 @@ export class LRUCache<K, V> {
    * @param options.ttl - Time-to-live in milliseconds (default: 0 = no expiration)
    */
   constructor(options: { maxSize?: number; ttl?: number } = {}) {
-    this.maxSize = options.maxSize ?? 1000;
+    // A non-positive (or non-finite) maxSize would make set()'s eviction loop
+    // spin forever — it can never shrink an already-empty cache below the
+    // threshold. CACHE_MAX_SIZE reaches here unvalidated, so clamp to >= 1.
+    const requested = Math.floor(options.maxSize ?? 1000);
+    this.maxSize = Number.isFinite(requested) && requested >= 1 ? requested : 1;
     this.ttl = options.ttl ?? 0;
   }
 
