@@ -4,6 +4,7 @@
  * the fail-safe default when software detection is unavailable.
  */
 
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { MAX_RESPONSE_SIZE, USER_AGENT } from "../../config.js";
 import {
@@ -64,6 +65,29 @@ async function postAndParseRelationship(
   return RelationshipSchema.parse(await readJsonWithLimit(response, MAX_RESPONSE_SIZE));
 }
 
+/**
+ * Mastodon dedupes posts that arrive with a repeated `Idempotency-Key` (scoped
+ * per access token), returning the original status instead of creating a second
+ * one. Callers rarely set the key, so a transient error that triggers a retry —
+ * by the model or an internal layer — would double-post. Derive a stable key
+ * from the post's meaningful fields so an identical retry collapses to the
+ * original, while genuinely different posts get distinct keys.
+ */
+function deriveIdempotencyKey(options: CreatePostOptions): string {
+  const canonical = JSON.stringify([
+    options.content ?? "",
+    options.spoilerText ?? "",
+    options.visibility ?? "",
+    options.inReplyToId ?? "",
+    options.language ?? "",
+    options.sensitive ?? null,
+    options.mediaIds ?? [],
+    options.poll ?? null,
+    options.scheduledAt ?? "",
+  ]);
+  return createHash("sha256").update(canonical).digest("hex");
+}
+
 export class MastodonWriteAdapter implements WriteAdapter {
   async createPost(
     account: AccountCredentials,
@@ -79,8 +103,9 @@ export class MastodonWriteAdapter implements WriteAdapter {
     if (options.poll) body.poll = options.poll;
     if (options.scheduledAt) body.scheduled_at = options.scheduledAt;
 
-    const headers: Record<string, string> = {};
-    if (options.idempotencyKey) headers["Idempotency-Key"] = options.idempotencyKey;
+    const headers: Record<string, string> = {
+      "Idempotency-Key": options.idempotencyKey ?? deriveIdempotencyKey(options),
+    };
 
     const response = await authenticatedFetch(account, "/api/v1/statuses", {
       method: "POST",
