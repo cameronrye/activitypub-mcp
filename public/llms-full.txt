@@ -877,7 +877,6 @@ Log levels:
 
 - **Documentation**: https://cameronrye.github.io/activitypub-mcp/
 - **GitHub Issues**: https://github.com/cameronrye/activitypub-mcp/issues
-- **GitHub Discussions**: https://github.com/cameronrye/activitypub-mcp/discussions
 - **npm Package**: https://www.npmjs.com/package/activitypub-mcp
 
 ---

@@ -1,9 +1,28 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { configure, getConsoleSink } from "@logtape/logtape";
 
-// Get log level from environment variable, default to 'info' for production
-const logLevel =
-  (process.env.LOG_LEVEL as "debug" | "info" | "warning" | "error" | "fatal") || "info";
+export type LogLevel = "debug" | "info" | "warning" | "error" | "fatal";
+
+const LOG_LEVEL_ALIASES: Record<string, LogLevel> = {
+  debug: "debug",
+  info: "info",
+  warn: "warning", // the CLI help documents `warn`; logtape's level is `warning`
+  warning: "warning",
+  error: "error",
+  fatal: "fatal",
+};
+
+/**
+ * Map a LOG_LEVEL env value to a logtape level. Accepts the documented `warn`
+ * alias, is case-insensitive, and falls back to `info` for anything
+ * unrecognized so a typo can't silently disable logging.
+ */
+export function normalizeLogLevel(raw: string | undefined): LogLevel {
+  if (!raw) return "info";
+  return LOG_LEVEL_ALIASES[raw.trim().toLowerCase()] ?? "info";
+}
+
+const logLevel = normalizeLogLevel(process.env.LOG_LEVEL);
 
 // logtape's console sink maps info/debug to console.info/console.debug, which
 // Node writes to stdout. Under the stdio transport stdout carries the MCP

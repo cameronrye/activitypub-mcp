@@ -96,8 +96,7 @@ Add to your Claude Desktop configuration:
 ### Troubleshooting & Support
 
 - [Troubleshooting Guide](https://cameronrye.github.io/activitypub-mcp/docs/reference/troubleshooting/): Common issues and solutions
-- [GitHub Issues](https://github.com/cameronrye/activitypub-mcp/issues): Report bugs and request features
-- [GitHub Discussions](https://github.com/cameronrye/activitypub-mcp/discussions): Community support
+- [GitHub Issues](https://github.com/cameronrye/activitypub-mcp/issues): Report bugs, request features, and ask for help
 
 ### External Documentation
 
