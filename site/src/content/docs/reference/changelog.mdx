@@ -9,6 +9,25 @@ order: 2
 
 All notable changes to the ActivityPub MCP Server are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### v3.1.2 - 2026-06-09
+
+**Correctness, logging, and audit patch.** Fixes a logging bug that polluted the stdio JSON-RPC stream, a cache misconfiguration that could hang startup, and a missing post idempotency key; records SSRF and rate-limit denials in the audit trail; and removes dead support links. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.
+
+#### Fixed
+
+- **Logs no longer corrupt the stdio JSON-RPC stream** — logtape's console sink routed `info`/`debug` to stdout, the channel the stdio transport uses for MCP frames; all log levels now go to stderr.
+- **`CACHE_MAX_SIZE=0` no longer hangs the server** — a non-positive cache size made the LRU eviction loop spin forever on the first write; it is now clamped to 1.
+- **Mastodon posts send an `Idempotency-Key`** derived from the post content, so a retried post can't duplicate.
+- **`LOG_LEVEL=warn` works as documented** — the value is normalized to logtape's `warning`, with unknown values falling back to `info`.
+
+#### Security
+
+- **SSRF blocks and rate-limit denials are now recorded in the audit trail** — the two audit methods existed but had no callers, so the most security-relevant events were invisible.
+
+#### Changed
+
+- **Dead GitHub Discussions links removed** — Discussions is disabled, so the footer, troubleshooting, and `llms.txt` links now point at GitHub Issues.
+
 ### v3.1.1 - 2026-06-05
 
 **Correctness &amp; distribution patch.** Closes a media-upload exfiltration vector, fixes Misskey relationship and outbox-pagination bugs, and makes every release ship the one-click Claude Desktop bundle. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.

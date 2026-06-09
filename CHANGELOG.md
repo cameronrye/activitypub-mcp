@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.2] - 2026-06-09
+
+### Fixed
+
+- **Logs no longer corrupt the stdio JSON-RPC stream.** logtape's console sink maps
+  `info`/`debug` to `console.info`/`console.debug`, which Node writes to **stdout** — the
+  same channel the stdio transport uses for MCP JSON-RPC. At the default `LOG_LEVEL=info`
+  the startup line and every per-request "Fetching …" log were emitted onto that stream,
+  so a strict client could see malformed frames. All log levels now go to stderr, and a
+  test drives the real server and asserts stdout carries only JSON-RPC.
+- **`CACHE_MAX_SIZE=0` no longer hangs the server.** The value reached the LRU cache
+  unvalidated, and a non-positive `maxSize` made the eviction loop spin forever on the
+  first cache write — the server hung on its first request. A non-positive or non-finite
+  `maxSize` is now clamped to 1.
+- **Mastodon posts send an `Idempotency-Key`.** The adapter read the option but no caller
+  set it, so a retried post (model- or transport-driven) could duplicate. A key derived
+  from the post's content is now sent, so an identical retry collapses to the original
+  status server-side.
+- **`LOG_LEVEL=warn` works as documented.** The CLI documents `warn`, but logtape's level
+  is `warning`. The env value is now normalized (`warn` → `warning`, unknown values →
+  `info`) so a documented or mistyped level can't misconfigure logging.
+
+### Security
+
+- **SSRF blocks and rate-limit denials are now recorded in the audit trail.** The
+  `logSsrfBlocked` and `logRateLimitExceeded` audit methods existed but had no callers, so
+  the two most security-relevant events never appeared in the log. SSRF rejections are now
+  audited at the central pinned-fetch path (initial URL and every redirect hop), and the
+  three duplicated rate-limit guards are unified into one helper that audits before
+  rejecting.
+
+### Changed
+
+- **Dead GitHub Discussions links removed.** Discussions is disabled on the repository, so
+  the `/discussions` links in the site footer, the troubleshooting page, and both
+  `llms.txt` artifacts 404'd. They now point at GitHub Issues (the real support channel),
+  with a test guarding against reintroducing them.
+
 ## [3.1.1] - 2026-06-05
 
 ### Security
