@@ -183,7 +183,27 @@ interface MisskeyTrendTag {
   usersCount?: number;
 }
 
-function misskeyAccount(user: MisskeyUser, domain: string): NormalizedPost["account"] {
+/**
+ * Coerce an untrusted remote count to a finite, non-negative integer. Remote
+ * JSON is typed `number` but a hostile/buggy instance can send a string, null,
+ * or object; without this, summing reaction counts can string-concatenate
+ * ("0"+"5"->"05") or produce NaN, and that value is shown to the model as a
+ * numeric count.
+ */
+function toCount(v: unknown): number {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : 0;
+}
+
+function misskeyAccount(
+  user: MisskeyUser | null | undefined,
+  domain: string,
+): NormalizedPost["account"] {
+  // A hostile/non-conformant instance can omit user; don't let that throw and
+  // poison the whole batch.
+  if (!user || typeof user.username !== "string") {
+    return { username: "unknown", acct: "unknown", url: `https://${domain}` };
+  }
   const acct = user.host ? `${user.username}@${user.host}` : user.username;
   const base = user.host ? `https://${user.host}` : `https://${domain}`;
   return {
@@ -195,21 +215,49 @@ function misskeyAccount(user: MisskeyUser, domain: string): NormalizedPost["acco
 }
 
 function misskeyNoteToPost(note: MisskeyNote, domain: string): NormalizedPost {
-  const reactionsTotal = note.reactions
-    ? Object.values(note.reactions).reduce((a, b) => a + b, 0)
-    : 0;
+  const reactionsTotal =
+    note.reactions && typeof note.reactions === "object"
+      ? Object.values(note.reactions).reduce((a: number, b) => a + toCount(b), 0)
+      : 0;
   const fallbackUrl = `https://${domain}/notes/${note.id}`;
   return {
     id: note.id,
     content: note.text ?? "",
     account: misskeyAccount(note.user, domain),
     created_at: note.createdAt,
-    reblogs_count: note.renoteCount ?? 0,
+    reblogs_count: toCount(note.renoteCount),
     favourites_count: reactionsTotal,
-    replies_count: note.repliesCount ?? 0,
+    replies_count: toCount(note.repliesCount),
     url: note.url ?? note.uri ?? fallbackUrl,
     spoiler_text: note.cw ?? undefined,
   };
+}
+
+/**
+ * Normalize a batch of remote notes, dropping (rather than throwing on) any
+ * single malformed item so one bad record can't fail the entire timeline/
+ * trending/search read.
+ */
+function normalizeNotes(notes: MisskeyNote[], domain: string): NormalizedPost[] {
+  const out: NormalizedPost[] = [];
+  for (const note of notes) {
+    try {
+      // Drop structurally-malformed records (no id, or no attributable author)
+      // rather than surfacing authorless attacker content to the model.
+      if (
+        !note ||
+        typeof note.id !== "string" ||
+        !note.user ||
+        typeof note.user.username !== "string"
+      ) {
+        continue;
+      }
+      out.push(misskeyNoteToPost(note, domain));
+    } catch {
+      // skip any other malformed item rather than poisoning the whole batch
+    }
+  }
+  return out;
 }
 
 export const misskeyReadAdapter: ReadAdapter = {
@@ -235,7 +283,9 @@ export const misskeyReadAdapter: ReadAdapter = {
     const notes = asArray<MisskeyNote>(
       await postJson(`https://${domain}/api/notes/featured`, { limit }),
     );
-    return { posts: notes.map((n) => misskeyNoteToPost(n, domain)) };
+    // Enforce the cap defensively: a server that ignores `limit` can't flood the
+    // model with attacker-influenced notes.
+    return { posts: normalizeNotes(notes, domain).slice(0, limit) };
   },
 
   async fetchPublicTimeline(domain, scope, { limit = 20, maxId, sinceId, minId }) {
@@ -248,10 +298,12 @@ export const misskeyReadAdapter: ReadAdapter = {
     const notes = asArray<MisskeyNote>(
       await postJson(`https://${domain}/api/notes/${endpoint}`, body),
     );
-    const posts = notes.map((n) => misskeyNoteToPost(n, domain));
+    const posts = normalizeNotes(notes, domain).slice(0, limit);
     return {
       posts,
-      hasMore: posts.length === limit,
+      // "more" reflects whether the server returned a full page, not how many
+      // survived normalization.
+      hasMore: notes.length >= limit,
       nextMaxId: notes.length > 0 ? notes[notes.length - 1]?.id : undefined,
     };
   },
@@ -279,7 +331,7 @@ export const misskeyReadAdapter: ReadAdapter = {
       const notes = asArray<MisskeyNote>(
         await postJson(`https://${domain}/api/notes/search`, { query, limit: 20 }),
       );
-      return { statuses: notes.map((n) => misskeyNoteToPost(n, domain)) };
+      return { statuses: normalizeNotes(notes, domain) };
     }
     // hashtags: Misskey returns an array of tag-name strings.
     const tags = asArray<string>(

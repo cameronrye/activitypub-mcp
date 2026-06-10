@@ -231,4 +231,42 @@ describe("read PlatformAdapter — NodeInfo routing", () => {
       expect(res.hashtags?.map((h) => h.name)).toEqual(["art", "music"]);
     });
   });
+
+  describe("Misskey read adapter is resilient to hostile/malformed payloads", () => {
+    beforeEach(() => server.use(...nodeinfo(MISSKEY, "misskey")));
+
+    it("drops a malformed note (missing user) instead of failing the whole batch", async () => {
+      server.use(
+        http.post(`https://${MISSKEY}/api/notes/featured`, () =>
+          HttpResponse.json([
+            misskeyNote,
+            { id: "bad", createdAt: "2026-01-01T00:00:00Z", text: "no user", reactions: {} },
+          ]),
+        ),
+      );
+      const res = await client.fetchTrendingPosts(MISSKEY, { limit: 5 });
+      expect(res.posts).toHaveLength(1);
+      expect(res.posts[0].id).toBe("note1");
+    });
+
+    it("coerces non-numeric reaction counts instead of string-concatenating", async () => {
+      server.use(
+        http.post(`https://${MISSKEY}/api/notes/featured`, () =>
+          HttpResponse.json([{ ...misskeyNote, reactions: { "👍": "3", "🎉": 2 } }]),
+        ),
+      );
+      const res = await client.fetchTrendingPosts(MISSKEY, { limit: 5 });
+      expect(res.posts[0].favourites_count).toBe(5);
+      expect(typeof res.posts[0].favourites_count).toBe("number");
+    });
+
+    it("caps returned posts at the requested limit even if the server returns more", async () => {
+      const many = Array.from({ length: 10 }, (_, i) => ({ ...misskeyNote, id: `n${i}` }));
+      server.use(
+        http.post(`https://${MISSKEY}/api/notes/local-timeline`, () => HttpResponse.json(many)),
+      );
+      const res = await client.fetchLocalTimeline(MISSKEY, { limit: 3 });
+      expect(res.posts).toHaveLength(3);
+    });
+  });
 });

@@ -36,4 +36,15 @@ describe("tool annotations", () => {
     expect(ann.get("delete-post")?.destructiveHint).toBe(true);
     expect(ann.get("post-status")?.readOnlyHint).toBe(false);
   });
+
+  it("marks authenticated read tools readOnly, not destructive", async () => {
+    const ann = await collectAnnotations();
+    // get-scheduled-posts only fetches scheduled posts (a GET) — it must not be
+    // annotated as a destructive mutation like delete-post.
+    expect(ann.get("get-scheduled-posts")?.readOnlyHint).toBe(true);
+    expect(ann.get("get-scheduled-posts")?.destructiveHint).not.toBe(true);
+    // Siblings that are already correct, asserted to lock the convention.
+    expect(ann.get("get-home-timeline")?.readOnlyHint).toBe(true);
+    expect(ann.get("get-relationship")?.readOnlyHint).toBe(true);
+  });
 });

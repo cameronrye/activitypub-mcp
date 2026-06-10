@@ -9,6 +9,9 @@ set -e
 PACKAGE_NAME="activitypub-mcp"
 SERVER_NAME="activitypub"
 
+# Directory of this script (for locating sibling helpers)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -219,22 +222,15 @@ EOF
         return
     fi
     
-    # Read existing config or create empty one
-    local existing_config="{}"
-    if [[ -f "$config_path" ]]; then
-        existing_config=$(cat "$config_path")
-    fi
-    
-    # Use Node.js to update JSON (more reliable than jq for complex operations)
-    node -e "
-        const fs = require('fs');
-        const config = $existing_config;
-        if (!config.mcpServers) config.mcpServers = {};
-        config.mcpServers['$SERVER_NAME'] = $server_config;
-        fs.writeFileSync('$config_path', JSON.stringify(config, null, 2));
-    "
-    
-    log_info "Configuration updated successfully!"
+    # Merge via a standalone Node helper. All values are passed through the
+    # ENVIRONMENT (never interpolated into program text), and the existing file is
+    # parsed with JSON.parse as data — not eval'd as JS — so a non-canonical or
+    # hostile existing config can neither execute code nor silently break the install.
+    AP_MCP_CONFIG_PATH="$config_path" \
+    AP_MCP_SERVER_NAME="$SERVER_NAME" \
+    AP_MCP_PACKAGE_NAME="$PACKAGE_NAME" \
+    AP_MCP_ACTION="add" \
+        node "$SCRIPT_DIR/merge-mcp-config.mjs"
 }
 
 # Install package
@@ -281,22 +277,11 @@ uninstall() {
         if $DRY_RUN; then
             log_info "[DRY RUN] Would remove $SERVER_NAME from $config_path"
         else
-            # Remove server from config using Node.js
-            node -e "
-                const fs = require('fs');
-                try {
-                    const config = JSON.parse(fs.readFileSync('$config_path', 'utf8'));
-                    if (config.mcpServers && config.mcpServers['$SERVER_NAME']) {
-                        delete config.mcpServers['$SERVER_NAME'];
-                        fs.writeFileSync('$config_path', JSON.stringify(config, null, 2));
-                        console.log('Removed $SERVER_NAME from configuration');
-                    } else {
-                        console.log('$SERVER_NAME not found in configuration');
-                    }
-                } catch (error) {
-                    console.error('Failed to update configuration:', error.message);
-                }
-            "
+            # Remove server from config via the same safe, env-driven helper.
+            AP_MCP_CONFIG_PATH="$config_path" \
+            AP_MCP_SERVER_NAME="$SERVER_NAME" \
+            AP_MCP_ACTION="remove" \
+                node "$SCRIPT_DIR/merge-mcp-config.mjs"
         fi
     else
         log_info "Configuration file not found: $config_path"

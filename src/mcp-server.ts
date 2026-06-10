@@ -172,6 +172,18 @@ class ActivityPubMCPServer {
   async stop(): Promise<void> {
     logger.info("Stopping ActivityPub MCP Server...");
 
+    // Close the MCP transport. For stdio this removes the StdioServerTransport's
+    // stdin 'data' listener and pauses stdin; without it that listener keeps the
+    // event loop alive and the process hangs after SIGINT (the shutdown handler
+    // deliberately doesn't call process.exit, so the loop must be able to drain).
+    try {
+      await this.mcpServer.close();
+    } catch (error) {
+      logger.warn("Error closing MCP transport", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
     // Stop HTTP server if running
     if (this.httpServer) {
       await this.httpServer.stop();

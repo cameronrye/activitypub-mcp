@@ -62,4 +62,26 @@ describe("getting-started docs env-var drift guard", () => {
       expect(phantom, `phantom/removed env vars documented in ${file}`).toEqual([]);
     });
   }
+
+  // Reverse direction (security subset): an operator can't harden what they don't
+  // know is configurable, so the security/forensics knobs must stay documented.
+  it("documents the security-relevant env vars in configuration.mdx", () => {
+    const SECURITY_VARS = [
+      "INSTANCE_BLOCKING_ENABLED",
+      "BLOCKED_INSTANCES",
+      "MAX_RESPONSE_SIZE",
+      "MAX_UPLOAD_SIZE",
+      "AUDIT_LOG_ENABLED",
+      "AUDIT_LOG_MAX_ENTRIES",
+      "ACTIVITYPUB_ENABLE_WRITES",
+      "MCP_THREAD_CROSS_ORIGIN_FETCH",
+    ];
+    // Sanity: each is actually read by the code (catches a rename in src).
+    const notRead = SECURITY_VARS.filter((v) => !real.has(v));
+    expect(notRead, "security vars listed here but not read by src").toEqual([]);
+
+    const documented = new Set(documentedEnvVars("configuration.mdx"));
+    const undocumented = SECURITY_VARS.filter((v) => !documented.has(v));
+    expect(undocumented, "security-relevant env vars missing from configuration.mdx").toEqual([]);
+  });
 });

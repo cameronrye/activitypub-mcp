@@ -256,7 +256,7 @@ Unified search across accounts, posts, and hashtags in a single query. Combines 
 | `domain` | string | No | Instance domain to search. Defaults to `mastodon.social`. |
 | `query` | string | Yes | Search query |
 | `type` | enum | No | Filter results: "all", "accounts", "posts", "hashtags" (default: "all") |
-| `limit` | number | No | Results per type (default: 20, max: 40) |
+| `limit` | number | No | Results per type (default: 10, max: 40) |
 | `resolve` | boolean | No | Attempt WebFinger lookup for remote accounts |
 
 #### Examples
@@ -321,13 +321,19 @@ discover-instances --maxUsers 5000 --sortBy users
 
 </div>
 
-## Write Tools
+## Authenticated Tools
 
-Write tools are **disabled by default** and only registered when `ACTIVITYPUB_ENABLE_WRITES=true` is set in the server environment.
-They also require an authenticated account. The recommended way to authenticate is the CLI flow — `activitypub-mcp login <instance>` (Mastodon OAuth2 / Misskey MiAuth), which stores credentials in the on-disk credential store; alternatively set `ACTIVITYPUB_ACCOUNTS` (or `ACTIVITYPUB_DEFAULT_INSTANCE` + `ACTIVITYPUB_DEFAULT_TOKEN`).
+These tools require an authenticated account. The recommended way to authenticate is the CLI flow — `activitypub-mcp login <instance>` (Mastodon OAuth2 / Misskey MiAuth), which stores credentials in the on-disk credential store; alternatively set `ACTIVITYPUB_ACCOUNTS` (or `ACTIVITYPUB_DEFAULT_INSTANCE` + `ACTIVITYPUB_DEFAULT_TOKEN`).
 See the [Authentication](/activitypub-mcp/docs/getting-started/authentication/) and [Configuration Options](/activitypub-mcp/docs/getting-started/configuration/) pages for setup instructions.
 
-### Account Management
+They split into two tiers:
+
+- **Authenticated reads — always available with an account, no `ACTIVITYPUB_ENABLE_WRITES` needed:** `list-accounts`, `switch-account`, `verify-account`, `get-home-timeline`, `get-notifications`, `get-bookmarks`, `get-favourites`, `get-relationship`, and `get-scheduled-posts`. (Reading your own home timeline or notifications does **not** require enabling writes.)
+- **Write/mutation tools — disabled by default**, registered only when `ACTIVITYPUB_ENABLE_WRITES=true` is set in the server environment: `post-status`, `reply-to-post`, `delete-post`, the boost/favourite/bookmark pairs, `follow-account`/`mute-account`/`block-account` (and their inverses), `vote-on-poll`, `upload-media`, `update-scheduled-post`, and `cancel-scheduled-post`.
+
+> Some authenticated tools are Mastodon-family only and return an "unsupported on platform" error on Misskey/Foundkey accounts: `get-bookmarks`, `get-favourites`, `vote-on-poll`, and the scheduled-post tools. `get-home-timeline`, `get-notifications`, and `get-relationship` work across both.
+
+### Account Management (authenticated read — no `ENABLE_WRITES` required)
 
 <div class="tool-reference">
 
@@ -691,7 +697,7 @@ unblock-account --acct "user@mastodon.social"
 
 </div>
 
-### Authenticated Timelines
+### Authenticated Timelines (authenticated reads — no `ENABLE_WRITES` required)
 
 <div class="tool-reference">
 

@@ -953,6 +953,21 @@ export class RemoteActivityPubClient {
     const maxAncestors = 10;
 
     while (currentInReplyTo && ancestorDepth < maxAncestors) {
+      // Apply the same cross-origin gate the replies branch uses. The root post
+      // is attacker-controlled, so its inReplyTo chain can point at ANY host;
+      // without this, with THREAD_CROSS_ORIGIN_FETCH off (the default), the
+      // ancestor walk still fired up to maxAncestors attacker-directed
+      // cross-origin fetches per call — defeating the documented privacy control
+      // and turning one thread read into a fetch-amplification primitive.
+      let ancestorOrigin = "";
+      try {
+        ancestorOrigin = new URL(currentInReplyTo).origin;
+      } catch {
+        break; // unparseable URL — stop walking
+      }
+      if (ancestorOrigin !== rootOrigin && !THREAD_CROSS_ORIGIN_FETCH) {
+        break; // stop at the first off-origin ancestor instead of fetching it
+      }
       try {
         const ancestor = await this.fetchObject(currentInReplyTo);
         ancestors.unshift(ancestor); // Add to beginning to maintain chronological order

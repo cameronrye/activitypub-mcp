@@ -87,6 +87,25 @@ describe("MisskeyWriteAdapter.createPost", () => {
     expect(createCalled).toBe(false);
   });
 
+  it("rejects a 'direct' DM instead of silently posting to nobody", async () => {
+    let createCalled = false;
+    server.use(
+      http.post("https://misskey.test/api/notes/create", () => {
+        createCalled = true;
+        return HttpResponse.json({ createdNote: sampleNote });
+      }),
+    );
+
+    // Misskey 'specified' notes need explicit visibleUserIds; mapping 'direct'
+    // to 'specified' with no recipients makes the note visible to the author
+    // only — the intended recipient never gets the DM. Fail loud instead.
+    await expect(
+      adapter.createPost(account, { content: "secret", visibility: "direct" }),
+    ).rejects.toThrow(/not supported on Misskey/i);
+
+    expect(createCalled).toBe(false);
+  });
+
   it("extracts Misskey error messages", async () => {
     server.use(
       http.post("https://misskey.test/api/notes/create", () =>

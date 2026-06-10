@@ -87,6 +87,21 @@ By default, the server registers only read-only tools. Write tools (posting, fol
 |----------|---------|-------------|
 | `ACTIVITYPUB_ENABLE_WRITES` | `false` | Set to `true` to register write tools (post-status, reply-to-post, follow-account, boost-post, etc.). Also requires at least one authenticated account — from `ACTIVITYPUB_ACCOUNTS`, the `ACTIVITYPUB_DEFAULT_INSTANCE`/`ACTIVITYPUB_DEFAULT_TOKEN` pair, or `activitypub-mcp login`. |
 
+### Security & Limits
+
+Hardening knobs for the SSRF/abuse and prompt-injection threat model (see the
+[Security Model](/activitypub-mcp/docs/development/security/)). Defaults are safe; tune only if you
+understand the tradeoff. Out-of-range numeric values are clamped to a safe floor at startup.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `INSTANCE_BLOCKING_ENABLED` | `true` | Enforce the operator instance blocklist on every fetch (and redirect hop). |
+| `BLOCKED_INSTANCES` | _empty_ | Comma-separated domains to refuse. Exact match or `*.example.com` wildcard. An apex entry does **not** cover its subdomains — use the wildcard for a whole instance family. |
+| `MAX_RESPONSE_SIZE` | `10485760` | Max bytes read from any remote response, to prevent memory exhaustion (10 MB). |
+| `MAX_UPLOAD_SIZE` | `104857600` | Max bytes `upload-media` will read from a local file before sniffing/forwarding it (100 MB). Files over the cap are refused before being read. Raise it if your instance accepts larger media. |
+| `AUDIT_LOG_ENABLED` | `true` | Record tool invocations (writes/uploads, SSRF blocks, rate-limit denials) in the in-memory audit trail. |
+| `AUDIT_LOG_MAX_ENTRIES` | `10000` | Max audit entries kept in memory (oldest evicted). Floored at 1. |
+
 ## Logging Configuration
 
 ### Log Levels

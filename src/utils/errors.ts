@@ -162,6 +162,22 @@ export function formatRemoteError(error: unknown, source = "remote instance erro
 }
 
 /**
+ * Thrown for problems reading a local media file in upload-media (missing,
+ * unreadable, not a regular file, too large). The message is pre-sanitized to a
+ * file BASENAME only — never an absolute path and never a distinguishable errno —
+ * so a prompt-injected model cannot use upload-media's error output as a
+ * filesystem-enumeration oracle (ENOENT vs EACCES) or to recover absolute paths.
+ * Rendered to the model verbatim (NOT through formatRemoteError, which is for
+ * attacker-controlled REMOTE bodies, not locally-originated fs errors).
+ */
+export class LocalMediaError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "LocalMediaError";
+  }
+}
+
+/**
  * Thrown when an operation has no equivalent on the target fediverse software
  * (e.g. poll voting or scheduled posts on Misskey). Surfaced to the LLM as a
  * clear, actionable error instead of an opaque HTTP failure.

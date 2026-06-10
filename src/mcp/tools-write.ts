@@ -11,9 +11,9 @@ import { type CallToolResult, ErrorCode, McpError } from "@modelcontextprotocol/
 import { z } from "zod";
 import { auditLogger } from "../audit/logger.js";
 import { accountManager, authenticatedClient } from "../auth/index.js";
-import { ENABLE_WRITES } from "../config.js";
+import { ENABLE_WRITES, MAX_UPLOAD_SIZE } from "../config.js";
 import type { RateLimiter } from "../resilience/rate-limiter.js";
-import { formatRemoteError, getErrorMessage } from "../utils/errors.js";
+import { formatRemoteError, getErrorMessage, LocalMediaError } from "../utils/errors.js";
 import { sniffMediaType } from "../utils/media-type.js";
 import { sanitizeInline, wrapUntrusted } from "../utils/untrusted.js";
 import { trackedMcpServer } from "./capabilities.js";
@@ -1847,7 +1847,12 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
     async ({ filePath, description, focusX, focusY, accountId }) => {
       requireWriteEnabled();
       const startTime = Date.now();
-      const auditParams = { filePath, description, focusX, focusY, accountId };
+      const path = await import("node:path");
+      const baseName = path.basename(filePath);
+      // Record only the basename: the absolute path the model was asked to read
+      // is sensitive (it leaks the OS user/home and lets a prompt-injected model
+      // probe the filesystem). The basename is the security-relevant fact.
+      const auditParams = { filePath: baseName, description, focusX, focusY, accountId };
 
       const account = accountId
         ? accountManager.getAccount(accountId)
@@ -1868,11 +1873,32 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
       checkRateLimit(rateLimiter, account.instance);
 
       try {
-        // Read the file
         const fs = await import("node:fs/promises");
-        const path = await import("node:path");
 
-        const fileBuffer = await fs.readFile(filePath);
+        // Stat before reading: reject anything over the cap (or not a regular
+        // file) so a coerced/oversized path can't OOM the process by being
+        // buffered whole into memory. Local fs errors are converted to a
+        // LocalMediaError carrying only the basename — never an absolute path
+        // or a distinguishable errno (which would be a filesystem-enumeration
+        // oracle for a prompt-injected model).
+        let fileBuffer: Buffer;
+        try {
+          const stats = await fs.stat(filePath);
+          if (!stats.isFile()) {
+            throw new LocalMediaError(`could not read media file ${baseName}: not a regular file`);
+          }
+          if (stats.size > MAX_UPLOAD_SIZE) {
+            throw new LocalMediaError(
+              `media file ${baseName} is too large (${stats.size} bytes; maximum is ${MAX_UPLOAD_SIZE}). ` +
+                "Set MAX_UPLOAD_SIZE to raise the cap if your instance accepts larger media.",
+            );
+          }
+          fileBuffer = await fs.readFile(filePath);
+        } catch (fsError) {
+          if (fsError instanceof LocalMediaError) throw fsError;
+          // A genuine fs error (ENOENT/EACCES/EISDIR/…): sanitize to basename.
+          throw new LocalMediaError(`could not read media file ${baseName}`);
+        }
 
         // Validate by content, not extension: only forward actual media. A
         // model coaxed by prompt-injected fediverse content could otherwise
@@ -1881,12 +1907,12 @@ function registerUploadMediaTool(mcpServer: McpServer, rateLimiter: RateLimiter)
         // before its bytes are handed to the instance.
         const mediaType = sniffMediaType(fileBuffer);
         if (!mediaType) {
-          throw new Error(
-            `File is not a recognized media file (image, video, or audio): ${path.basename(filePath)}. upload-media only accepts media files.`,
+          throw new LocalMediaError(
+            `File is not a recognized media file (image, video, or audio): ${baseName}. upload-media only accepts media files.`,
           );
         }
 
-        const filename = path.basename(filePath);
+        const filename = baseName;
 
         const focus =
           focusX !== undefined && focusY !== undefined ? { x: focusX, y: focusY } : undefined;
@@ -1930,13 +1956,16 @@ post-status content="Your post" mediaIds=["${media.id}"]
           duration: Date.now() - startTime,
           error: message,
         });
+        // LocalMediaError messages are locally-originated and pre-sanitized
+        // (basename only) — render them verbatim. formatRemoteError is reserved
+        // for attacker-controlled REMOTE bodies; passing a local fs error
+        // through it would leak the absolute path it embeds.
+        const text =
+          error instanceof LocalMediaError
+            ? `❌ Failed to upload media: ${message}`
+            : `❌ Failed to upload media: ${formatRemoteError(error)}`;
         return {
-          content: [
-            {
-              type: "text",
-              text: `❌ Failed to upload media: ${formatRemoteError(error)}`,
-            },
-          ],
+          content: [{ type: "text", text }],
           isError: true,
         };
       }
@@ -1958,7 +1987,10 @@ function registerGetScheduledPostsTool(mcpServer: McpServer, rateLimiter: RateLi
         limit: z.number().min(1).max(40).optional().describe("Number of posts (default: 20)"),
         accountId: z.string().optional().describe("Account ID"),
       },
-      annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
+      // Read-only: this tool only fetches scheduled posts (a GET). It must not
+      // carry the destructive annotation the actual mutators use, or clients
+      // that gate destructive tools behind confirmation will friction a read.
+      annotations: { readOnlyHint: true },
     },
     async ({ limit = 20, accountId }) => {
       requireAuthEnabled();

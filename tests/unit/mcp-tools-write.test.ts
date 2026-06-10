@@ -755,6 +755,57 @@ describe("MCP Write Tools", () => {
       // The file's bytes must never be handed to the upload client.
       expect(uploadMediaMock).not.toHaveBeenCalled();
     });
+
+    it("rejects a file larger than the upload cap without reading or uploading it", async () => {
+      const uploadMediaMock = authenticatedClient.uploadMedia as Mock;
+      uploadMediaMock.mockClear();
+      // A sparse file just over the 100MB default cap: ftruncate reserves the
+      // size without allocating real bytes, so this is instant and cheap.
+      const bigPath = path.join(os.tmpdir(), "activitypub-mcp-test-big.bin");
+      const fd = fs.openSync(bigPath, "w");
+      fs.ftruncateSync(fd, 100 * 1024 * 1024 + 1);
+      fs.closeSync(fd);
+      try {
+        const tool = registeredTools.get("upload-media");
+        const result = await tool?.handler({ filePath: bigPath });
+
+        expect((result as { isError: boolean }).isError).toBe(true);
+        expect((result as { content: { text: string }[] }).content[0].text).toMatch(
+          /too large|exceeds|over the .*limit|maximum/i,
+        );
+        expect(uploadMediaMock).not.toHaveBeenCalled();
+      } finally {
+        fs.rmSync(bigPath, { force: true });
+      }
+    });
+
+    it("does not leak the absolute path or errno when a file can't be read", async () => {
+      const tool = registeredTools.get("upload-media");
+      const secretDir = path.join(os.tmpdir(), "activitypub-mcp-secret-dir-xyz");
+      const missing = path.join(secretDir, "id_rsa.png");
+
+      const result = await tool?.handler({ filePath: missing });
+      const text = (result as { content: { text: string }[] }).content[0].text;
+
+      expect((result as { isError: boolean }).isError).toBe(true);
+      expect(text).toContain("id_rsa.png"); // basename is fine to echo back
+      expect(text).not.toContain(secretDir); // but never the absolute directory
+      expect(text).not.toMatch(/ENOENT|EACCES|no such file|permission denied/i); // no errno oracle
+    });
+
+    it("records only the basename (not the absolute path) in the audit log", async () => {
+      auditLoggerMock.logToolInvocation.mockClear();
+      const tool = registeredTools.get("upload-media");
+      await tool?.handler({ filePath: PNG_FIXTURE_PATH });
+
+      const call = auditLoggerMock.logToolInvocation.mock.calls.find(
+        (c) => c[0] === "upload-media",
+      );
+      expect(call).toBeDefined();
+      const params = call?.[1] as { filePath?: string };
+      expect(params.filePath).toBe(path.basename(PNG_FIXTURE_PATH));
+      expect(params.filePath).not.toContain(path.sep);
+    });
   });
 
   describe("get-scheduled-posts tool", () => {

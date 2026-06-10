@@ -223,6 +223,13 @@ export class MisskeyWriteAdapter implements WriteAdapter {
     if (options.scheduledAt) {
       throw new UnsupportedOnPlatformError("Scheduled posts", "Misskey");
     }
+    // A Misskey 'specified' note needs explicit visibleUserIds; mapping
+    // Mastodon 'direct' to 'specified' with no recipients makes the note visible
+    // to the author ONLY, so the intended DM silently goes nowhere. We can't
+    // reliably derive recipients here, so fail loud rather than drop the message.
+    if (options.visibility === "direct") {
+      throw new UnsupportedOnPlatformError("Direct messages (visibility: direct)", "Misskey");
+    }
     const body: Record<string, unknown> = {
       text: options.content,
       visibility: mastodonToMisskeyVisibility(options.visibility),

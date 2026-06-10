@@ -276,6 +276,14 @@ export class HttpTransportServer {
         // The SDK options are marked @deprecated in favour of external middleware,
         // but they are still fully functional and provide defence-in-depth against
         // DNS-rebinding attacks at the SDK layer.
+        //
+        // KNOWN LIMITATION (tracked for a follow-up): a single stateful transport
+        // is shared for the process, so the HTTP server handles ONE MCP session at
+        // a time — a second concurrent client gets "already initialized", and a new
+        // session can't start until the process restarts. The default (and
+        // recommended) transport is stdio; HTTP is opt-in and bearer-gated. Proper
+        // multi-session support needs a per-session transport map + a per-session
+        // McpServer, which is an isolated change to this security-sensitive surface.
         this.transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => crypto.randomUUID(),
           enableDnsRebindingProtection: true,
