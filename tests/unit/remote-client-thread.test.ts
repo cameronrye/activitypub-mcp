@@ -102,6 +102,40 @@ describe("fetchPostThread cross-origin guard (M3)", () => {
     expect((stub as { fetched?: boolean }).fetched).toBe(false);
   });
 
+  it("does not fetch a cross-origin ancestor (inReplyTo) when the gate is off", async () => {
+    process.env.MCP_THREAD_CROSS_ORIGIN_FETCH = "false";
+    server.use(
+      // Root post on a.test replies to a post on b.test — an attacker-controlled
+      // root can point its inReplyTo chain at any host.
+      http.get("https://a.test/post/1", () =>
+        HttpResponse.json({
+          id: "https://a.test/post/1",
+          type: "Note",
+          inReplyTo: "https://b.test/post/parent",
+        }),
+      ),
+    );
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const { RemoteActivityPubClient } = await import("../../src/activitypub/remote-client.js");
+    const client = new RemoteActivityPubClient();
+    const thread = await client.fetchPostThread("https://a.test/post/1", {
+      depth: 1,
+      maxReplies: 10,
+    });
+
+    // b.test must never be contacted, and the off-origin ancestor must not appear.
+    const bTestCalls = fetchSpy.mock.calls.filter((args) => {
+      try {
+        return new URL(String(args[0])).hostname === "b.test";
+      } catch {
+        return false;
+      }
+    });
+    expect(bTestCalls).toHaveLength(0);
+    expect(thread.ancestors.some((a) => a.id === "https://b.test/post/parent")).toBe(false);
+  });
+
   it("caps total replies to THREAD_MAX_REPLIES", async () => {
     process.env.MCP_THREAD_MAX_REPLIES = "3";
     const ids = Array.from({ length: 10 }, (_, i) => `https://a.test/post/r${i}`);

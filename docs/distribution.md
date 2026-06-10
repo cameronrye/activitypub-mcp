@@ -32,9 +32,11 @@ The two in-repo artifacts already exist:
 
 **Hard ordering constraint — the registry validates the _live_ npm tarball.**
 The registry checks that the published npm package's `package.json` contains a
-matching `mcpName`. 3.x has shipped to npm (`latest` is `3.1.0`); `3.0.1` was
-the first tarball to carry `mcpName`. **It must be live on npm before you
-register** — the registry has nothing to validate against otherwise.
+matching `mcpName`. 3.x has shipped to npm and the registry serves the current
+release as `isLatest`; `3.0.1` was the first tarball to carry `mcpName`, and the
+auto-publish path (npm → registry) has been validated end to end. **The matching
+npm version must be live before you register** — the registry has nothing to
+validate against otherwise.
 
 So the sequence is:
 

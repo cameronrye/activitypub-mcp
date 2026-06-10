@@ -9,6 +9,29 @@ order: 2
 
 All notable changes to the ActivityPub MCP Server are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### v3.1.3 - 2026-06-09
+
+**Security & correctness hardening patch** from an end-to-end review. Fixes a stdio shutdown hang, hardens `upload-media` (size cap + path-leak fix), gates cross-origin thread fetches, hardens the Misskey read path, and tightens the install/release supply chain. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.
+
+#### Fixed
+
+- **`Ctrl+C` now exits the stdio server** — graceful shutdown never closed the MCP transport, so the stdin listener kept the process alive and SIGINT/SIGTERM hung. The transport is now closed on shutdown.
+- **Misskey `direct` messages fail loud** instead of silently posting to no one (a `specified` note with no recipients is author-only); the tool now reports that DMs aren't wired up for Misskey.
+- **Malformed remote items no longer fail a whole read** — the Misskey read adapter drops a bad note/coerces non-numeric reaction counts and enforces the requested `limit`, instead of throwing on one record.
+- **Numeric env vars are validated and clamped** — `AUDIT_LOG_MAX_ENTRIES=0` no longer silently disables the audit trail, `MAX_RESPONSE_SIZE=10MB` no longer parses to 10 bytes, and negative timeouts are rejected.
+
+#### Security
+
+- **`upload-media` caps file size before reading** (`MAX_UPLOAD_SIZE`, default 100 MB), so a coerced/oversized path can't exhaust memory.
+- **`upload-media` errors no longer leak absolute filesystem paths or errno** — a prompt-injected model can't use them as a filesystem-enumeration oracle; the audit log records only the file basename.
+- **Cross-origin thread fetches are gated for ancestors too** — the `inReplyTo` walk now honors `MCP_THREAD_CROSS_ORIGIN_FETCH=false` like the reply branch, closing a fetch-amplification/privacy-control bypass.
+- **`get-scheduled-posts` is annotated read-only** (was mislabeled destructive).
+- **Supply chain:** the install script parses existing config with `JSON.parse` (no more `node -e` interpolation), the registry publish job pins and checksum-verifies `mcp-publisher` and drops `secrets: inherit`, and the token-holding release jobs run `npm ci --ignore-scripts`.
+
+#### Known limitations
+
+- The HTTP transport still serves one MCP session per process; proper multi-session support is tracked for a follow-up. The default stdio transport is unaffected.
+
 ### v3.1.2 - 2026-06-09
 
 **Correctness, logging, and audit patch.** Fixes a logging bug that polluted the stdio JSON-RPC stream, a cache misconfiguration that could hang startup, and a missing post idempotency key; records SSRF and rate-limit denials in the audit trail; and removes dead support links. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.

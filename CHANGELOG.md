@@ -7,6 +7,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.3] - 2026-06-09
+
+Security & correctness hardening patch from an end-to-end review.
+
+### Fixed
+
+- **`Ctrl+C`/SIGTERM now actually exits the stdio server.** Graceful shutdown
+  stopped the HTTP server and rate limiter but never closed the MCP transport, so
+  the `StdioServerTransport`'s stdin listener kept the event loop alive and the
+  process hung after the first Ctrl+C (the startup hint even says "Press Ctrl+C to
+  exit"). `stop()` now closes the transport so the loop drains and the process exits.
+- **Misskey `direct` messages fail loud instead of vanishing.** Mapping Mastodon
+  `direct` to Misskey `specified` with no `visibleUserIds` produced an author-only
+  note, so the intended DM silently went nowhere. The adapter now rejects `direct`
+  with a clear "not supported on Misskey" error.
+- **One malformed remote item no longer fails an entire read.** The Misskey read
+  adapter drops a structurally-invalid note (rather than throwing), coerces
+  non-numeric reaction counts (no more string-concatenated `favourites_count`), and
+  enforces the requested `limit` even when a server ignores it.
+- **Numeric env vars are validated and clamped.** `AUDIT_LOG_MAX_ENTRIES=0` no
+  longer silently disables the audit trail, `MAX_RESPONSE_SIZE=10MB` no longer
+  parses to a 10-byte cap (non-integer values fall back to the default), and
+  negative/zero values for size/timeout knobs are floored. Out-of-range values are
+  reported as startup warnings, and enabling writes (or writes over HTTP) now warns.
+
+### Security
+
+- **`upload-media` enforces a size cap before reading a file.** It `stat`s the path
+  and refuses anything over `MAX_UPLOAD_SIZE` (default 100 MB) — and non-regular
+  files — before buffering it into memory, so a coerced/oversized path can't OOM the
+  process. The target instance still enforces its own real media limit.
+- **`upload-media` no longer leaks absolute paths or errno on failure.** Local
+  filesystem errors are rendered with the file basename only (never the absolute
+  path, never an ENOENT-vs-EACCES distinction), removing a filesystem-enumeration
+  oracle for a prompt-injected model. `formatRemoteError` stays reserved for remote
+  HTTP bodies. The audit log also records only the basename, not the full path.
+- **Cross-origin thread fetches are gated for ancestors, not just replies.** The
+  `inReplyTo` ancestor walk now honors `MCP_THREAD_CROSS_ORIGIN_FETCH=false` (the
+  default) like the reply branch, closing a privacy-control bypass / cross-origin
+  fetch-amplification primitive driven by an attacker-controlled root post.
+- **`get-scheduled-posts` is annotated read-only** (it was mislabeled
+  `destructiveHint: true` despite only performing a GET).
+- **Install/release supply-chain hardening.** `install.sh` now merges client config
+  via a standalone helper that parses the existing file with `JSON.parse` (the old
+  `node -e "const config = $existing_config"` treated the file as executable JS, a
+  code-injection vector); the registry publish job pins `mcp-publisher` to a tagged
+  release and verifies its SHA-256 before running it, and no longer inherits
+  `NPM_TOKEN`; and the token-holding npm publish/release jobs run
+  `npm ci --ignore-scripts`.
+
+### Changed
+
+- **Docs accuracy.** The site API reference no longer files the always-on
+  authenticated read tools (home timeline, notifications, bookmarks, favourites,
+  relationship, scheduled-posts) under "Write Tools / disabled by default"; the
+  on-site Security page now describes the real threat model (prompt injection, SSRF,
+  the untrusted-content envelope, read-only default) instead of generic compliance
+  boilerplate; the security/limits env vars are documented; and the `search` default
+  is corrected (10, not 20).
+
+### Known limitations
+
+- The HTTP transport still serves a single MCP session per process; proper
+  multi-session support is tracked for a focused follow-up. The default stdio
+  transport is unaffected.
+
 ## [3.1.2] - 2026-06-09
 
 ### Fixed

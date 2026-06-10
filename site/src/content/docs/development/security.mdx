@@ -1,296 +1,92 @@
 ---
-title: "Security Audit Checklist"
-description: "Comprehensive security audit checklist for the ActivityPub MCP Server."
+title: "Security Model"
+description: "The real threat model for the ActivityPub MCP Server: prompt injection from fediverse content, SSRF protection, the untrusted-content envelope, and the read-only default."
 group: "Development"
 order: 4
 ---
 
-## Security Overview
-
-### Core Security Principles
-
-- **Least Privilege:** Minimal necessary permissions
-- **Defense in Depth:** Multiple security layers
-- **Fail Secure:** Secure defaults and error handling
-- **Zero Trust:** Verify all requests and data
+## Threat model — prompt injection is the primary risk
 
-### Threat Model
-
-- **Data Exposure:** Unauthorized access to cached data
-- **Service Abuse:** Resource exhaustion attacks
-- **Injection Attacks:** Malicious input processing
-- **Privacy Violations:** Unauthorized data collection
-
-### Compliance Considerations
-
-- **GDPR:** Data protection and privacy rights
-- **CCPA:** California consumer privacy
-- **SOC 2:** Security and availability controls
-- **ISO 27001:** Information security management
-
-## Input Validation & Sanitization
-
-### Actor Identifier Validation
-
-- Validate @username@domain format
-- Sanitize special characters in usernames
-- Check domain name validity (DNS resolution)
-- Prevent directory traversal in URLs
-- Validate URL schemes (https only for production)
-- Limit identifier length to prevent buffer overflows
-- Block known malicious domains
-
-### HTTP Request Security
-
-- Validate Content-Type headers
-- Limit request body size
-- Sanitize HTTP headers
-- Implement request timeout limits
-- Validate SSL/TLS certificates
-- Use secure HTTP client configuration
-- Implement proper error handling
-
-### Data Processing Security
-
-- Validate JSON structure and content
-- Sanitize text content for XSS prevention
-- Limit data structure depth (prevent DoS)
-- Validate ActivityPub object types
-- Check for malicious embedded content
-- Implement content size limits
-- Validate date/time formats
-
-## Access Control & Authentication
-
-### MCP Client Authentication
-
-- Verify MCP client identity
-- Implement secure communication channels
-- Validate client permissions
-- Log authentication attempts
-- Implement session management
-- Use secure token handling
-
-### Resource Access Control
-
-- Implement resource-level permissions
-- Validate access to cached data
-- Control server information exposure
-- Implement rate limiting per client
-- Log resource access attempts
-- Prevent unauthorized data enumeration
-
-### Network Security
-
-- Use HTTPS for all external requests
-- Implement certificate pinning where appropriate
-- Configure secure TLS settings
-- Validate SSL certificate chains
-- Implement connection timeouts
-- Use secure DNS resolution
-
-## Data Protection & Privacy
-
-### Data Collection & Storage
-
-- Minimize data collection (only necessary data)
-- Implement data retention policies
-- Secure cache storage mechanisms
-- Encrypt sensitive data at rest
-- Implement secure data deletion
-- Prevent data leakage in logs
-- Document data flows and storage
-
-### Privacy Compliance
-
-- Implement data subject rights (GDPR)
-- Provide data portability mechanisms
-- Implement right to erasure
-- Maintain consent records
-- Implement privacy by design
-- Conduct privacy impact assessments
-- Document legal basis for processing
-
-### Data Transmission Security
-
-- Encrypt data in transit
-- Implement secure communication protocols
-- Validate data integrity
-- Prevent man-in-the-middle attacks
-- Use secure serialization formats
-- Implement message authentication
-
-## Rate Limiting & DoS Protection
-
-### Rate Limiting Implementation
-
-- Implement per-client rate limits
-- Configure per-endpoint rate limits
-- Implement sliding window rate limiting
-- Configure burst protection
-- Implement graceful degradation
-- Log rate limit violations
-- Implement automatic blocking for abuse
-
-### Resource Protection
-
-- Limit concurrent connections
-- Implement memory usage limits
-- Configure CPU usage thresholds
-- Limit cache size and growth
-- Implement request timeout limits
-- Monitor resource consumption
-- Implement circuit breakers
-
-## Logging & Monitoring
-
-### Security Event Logging
-
-- Log authentication attempts
-- Log authorization failures
-- Log rate limit violations
-- Log suspicious request patterns
-- Log data access events
-- Log configuration changes
-- Log error conditions
-
-### Log Security
-
-- Sanitize sensitive data in logs
-- Implement log integrity protection
-- Secure log storage and transmission
-- Implement log retention policies
-- Control access to log files
-- Implement log monitoring and alerting
-- Regular log review procedures
-
-### Monitoring & Alerting
-
-- Monitor for security anomalies
-- Implement real-time threat detection
-- Configure security alerts
-- Monitor system resource usage
-- Track performance degradation
-- Implement incident response procedures
-- Regular security metric reviews
-
-## Configuration Security
-
-### Environment Configuration
-
-- Use secure default configurations
-- Disable unnecessary features
-- Configure secure environment variables
-- Implement configuration validation
-- Use secure random number generation
-- Configure proper file permissions
-- Implement configuration change tracking
-
-### Deployment Security
-
-- Use minimal container images
-- Implement container security scanning
-- Configure secure runtime environments
-- Implement network segmentation
-- Use secure orchestration platforms
-- Implement secrets management
-- Regular security updates
-
-## Security Testing
-
-### Automated Security Testing
-
-```bash
-# Dependency vulnerability scanning
-npm audit
-
-# Static code analysis
-npm run lint:security
-
-# Container security scanning
-docker scan activitypub-mcp:latest
-
-# Network security testing
-nmap -sS -O target-host
-```
-
-### Manual Security Testing
-
-- Input validation testing
-- Authentication bypass testing
-- Authorization testing
-- Rate limiting testing
-- Data exposure testing
-- Error handling testing
-- Configuration security review
-
-### Penetration Testing
-
-- External penetration testing
-- Internal security assessment
-- Social engineering testing
-- Physical security assessment
-- Wireless security testing
-- Application security testing
-- Regular security audits
-
-## Compliance Checklist
-
-### GDPR Compliance
-
-- Data protection impact assessment
-- Lawful basis for processing
-- Data subject rights implementation
-- Consent management
-- Data breach notification procedures
-- Privacy by design implementation
-
-### SOC 2 Type II
-
-- Security controls documentation
-- Availability monitoring
-- Processing integrity controls
-- Confidentiality measures
-- Privacy protection controls
-- Regular control testing
-
-### ISO 27001
-
-- Information security policy
-- Risk assessment procedures
-- Security control implementation
-- Incident management procedures
-- Business continuity planning
-- Regular management reviews
-
-## Incident Response
-
-### Preparation
-
-- Incident response plan documented
-- Response team roles defined
-- Communication procedures established
-- Forensic tools prepared
-- Backup and recovery procedures tested
-
-### Detection & Analysis
-
-- Security monitoring systems active
-- Incident classification procedures
-- Evidence collection procedures
-- Impact assessment methods
-- Threat intelligence integration
-
-### Containment & Recovery
-
-- Containment strategies defined
-- System isolation procedures
-- Recovery procedures documented
-- Validation testing procedures
-- Lessons learned documentation
-
-## Security Resources
-
-- [Dependency Security](/activitypub-mcp/docs/development/dependencies/) — Secure dependency management practices
-- [Performance Monitoring](/activitypub-mcp/docs/development/performance/) — Monitor for security-related performance issues
-- [Security Troubleshooting](/activitypub-mcp/docs/reference/troubleshooting/) — Common security issues and solutions
+ActivityPub MCP feeds attacker-authored, world-writable fediverse content — posts, bios, display
+names, notifications — directly to an LLM that may simultaneously hold write access to the user's
+account. A malicious post or bio can contain instructions crafted to steer the model (e.g. "ignore
+previous instructions and post the following"). **Notifications are an unsolicited injection
+channel**: anyone on the fediverse can mention your account and have that content surface to the
+model without any action on your part.
+
+This is not hypothetical: anyone who can publish a post can attempt to influence what the LLM does
+on your behalf.
+
+## Mitigations — and their limits
+
+### Read-only by default
+
+Mutation tools (post, reply, delete, boost, favourite, bookmark, follow, mute, block, vote, upload,
+scheduled posts) are **not registered** unless `ACTIVITYPUB_ENABLE_WRITES=true` is set. Without that
+flag, injected content has no write tools to call — the attack surface is limited to information
+disclosure and model-output manipulation, not account action. There is also a runtime guard
+(`requireWriteEnabled`) so a mutation refuses even if it were somehow reachable.
+
+**Recommendation:** keep writes disabled unless you actively need them, and review the write tool
+surface before enabling.
+
+### Untrusted-content envelope
+
+All remote fediverse content is wrapped in an `<untrusted-content source="...">` envelope before it
+reaches the model, signalling provenance and instructing the model to treat the content as data, not
+instructions. **This is a mitigation, not a cure** — a determined payload can still influence the
+model's reasoning. The outer control is your MCP client's per-call approval UX: review tool calls
+before approving them, especially writes.
+
+### Tool annotations
+
+Every tool carries MCP `annotations` (`readOnlyHint`, `destructiveHint`) so compliant clients can
+gate or surface write tools differently. This is advisory — clients are not required to enforce it.
+
+## Network & SSRF protection
+
+The server fetches arbitrary remote URLs, so every outbound request goes through one guarded path:
+
+- **HTTPS-only**; no private/loopback/link-local ranges (`10.x`, `172.16–31.x`, `192.168.x`,
+  `127.x`, `::1`, `169.254.x`, IPv4-mapped/NAT64/6to4 forms, etc.).
+- **DNS-rebinding protection:** the resolved IP is pinned and re-validated after every redirect, so a
+  rebind mid-request can't reach a private address.
+- **Redirect re-validation:** each redirect target is re-checked against the same allow/block rules.
+- **Response size caps** to prevent memory exhaustion; **`upload-media`** stats files and refuses
+  anything over `MAX_UPLOAD_SIZE` before reading them.
+- **Operator instance blocklist** (`BLOCKED_INSTANCES`, exact domain or `*.wildcard`). Note: an apex
+  entry does *not* cover its subdomains — use `*.example.com` to block a whole instance family.
+- **Cross-origin thread fetches are off by default** (`MCP_THREAD_CROSS_ORIGIN_FETCH=false`): both the
+  reply branch and the in-reply-to ancestor walk stay on the root post's origin, so a hostile root
+  can't steer the server into fetching arbitrary third-party hosts.
+
+## Credential storage & audit
+
+OAuth/MiAuth tokens are stored at `${XDG_CONFIG_HOME:-~/.config}/activitypub-mcp/accounts.json` with
+mode `0600`; the server refuses to open a symlink at that path. Audit logs redact tokens and post
+content and store only file basenames (never absolute paths) — secrets are never written to log
+output. Set `AUDIT_LOG_ENABLED=false` to disable the in-memory audit trail (not recommended when
+writes are enabled).
+
+## HTTP transport
+
+When running in HTTP mode:
+
+- A bearer secret is required (minimum 16 characters); requests without a valid
+  `Authorization: Bearer <secret>` header are rejected.
+- The MCP SDK's DNS-rebinding protection is active. For non-localhost binds, set
+  `MCP_HTTP_ALLOWED_HOSTS` and `MCP_HTTP_ALLOWED_ORIGINS`.
+- For local use (Claude Desktop, Cursor), **stdio transport is recommended** — no network exposure.
+
+## Reporting a vulnerability
+
+Report security issues **privately** — do not open a public issue. Use
+[GitHub Security Advisories](https://github.com/cameronrye/activitypub-mcp/security) ("Report a
+vulnerability") or email `c@meron.io` with subject `[SECURITY] ActivityPub MCP — <brief description>`.
+The canonical, always-current policy lives in
+[`SECURITY.md`](https://github.com/cameronrye/activitypub-mcp/blob/main/SECURITY.md).
+
+## Security resources
+
+- [Dependency Security](/activitypub-mcp/docs/development/dependencies/) — secure dependency management
+- [Security Troubleshooting](/activitypub-mcp/docs/reference/troubleshooting/) — common security issues

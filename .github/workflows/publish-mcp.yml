@@ -27,8 +27,20 @@ jobs:
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
     - name: Install mcp-publisher
+      # Pinned to a specific release and checksum-verified before execution. This
+      # job holds the repo's OIDC identity authorized to publish to the official
+      # registry namespace, so a moving `latest` URL piped straight into tar would
+      # be a supply-chain RCE vector if that upstream release were ever hijacked.
+      env:
+        MCP_PUBLISHER_VERSION: v1.7.9
+        MCP_PUBLISHER_SHA256: ab128162b0616090b47cf245afe0a23f3ef08936fdce19074f5ba0a4469281ac
       run: |
-        curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar -xz mcp-publisher
+        set -euo pipefail
+        url="https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz"
+        curl -fsSL "$url" -o mcp-publisher.tar.gz
+        echo "${MCP_PUBLISHER_SHA256}  mcp-publisher.tar.gz" | sha256sum -c -
+        tar -xzf mcp-publisher.tar.gz mcp-publisher
+        rm -f mcp-publisher.tar.gz
 
     - name: Authenticate via GitHub OIDC
       run: ./mcp-publisher login github-oidc

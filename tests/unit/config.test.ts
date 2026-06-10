@@ -80,6 +80,50 @@ describe("config", () => {
   });
 });
 
+describe("numeric env validation & clamping", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("falls back to the default for a non-integer value like '10MB' instead of parsing the '10' prefix", async () => {
+    process.env.MAX_RESPONSE_SIZE = "10MB";
+    const mod = await import("../../src/config.js");
+    expect(mod.MAX_RESPONSE_SIZE).toBe(10 * 1024 * 1024);
+  });
+
+  it("clamps AUDIT_LOG_MAX_ENTRIES to at least 1 so 0 cannot silently disable the audit trail", async () => {
+    process.env.AUDIT_LOG_MAX_ENTRIES = "0";
+    const mod = await import("../../src/config.js");
+    expect(mod.AUDIT_LOG_MAX_ENTRIES).toBeGreaterThanOrEqual(1);
+  });
+
+  it("clamps a non-positive MAX_RESPONSE_SIZE up to a safe floor (0 would reject every body)", async () => {
+    process.env.MAX_RESPONSE_SIZE = "0";
+    const mod = await import("../../src/config.js");
+    expect(mod.MAX_RESPONSE_SIZE).toBeGreaterThan(0);
+  });
+
+  it("clamps a negative REQUEST_TIMEOUT up to at least 1ms (negative aborts every request immediately)", async () => {
+    process.env.REQUEST_TIMEOUT = "-5";
+    const mod = await import("../../src/config.js");
+    expect(mod.REQUEST_TIMEOUT).toBeGreaterThanOrEqual(1);
+  });
+
+  it("MAX_UPLOAD_SIZE defaults to a finite positive cap", async () => {
+    delete process.env.MAX_UPLOAD_SIZE;
+    const mod = await import("../../src/config.js");
+    expect(mod.MAX_UPLOAD_SIZE).toBeGreaterThan(0);
+    expect(Number.isFinite(mod.MAX_UPLOAD_SIZE)).toBe(true);
+  });
+});
+
 describe("Thread traversal config (M3)", () => {
   const originalEnv = process.env;
 
