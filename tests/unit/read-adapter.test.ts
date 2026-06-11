@@ -232,6 +232,55 @@ describe("read PlatformAdapter — NodeInfo routing", () => {
     });
   });
 
+  describe("Mastodon read adapter is resilient to hostile/malformed payloads", () => {
+    beforeEach(() => server.use(...nodeinfo(MASTO, "mastodon")));
+
+    const goodPost = (id: string) => ({
+      id,
+      content: `post ${id}`,
+      account: { username: "bob", acct: "bob", url: `https://${MASTO}/@bob` },
+      created_at: "2026-01-01T00:00:00Z",
+      reblogs_count: 1,
+      favourites_count: 2,
+      replies_count: 0,
+      url: `https://${MASTO}/@bob/${id}`,
+    });
+
+    it("drops a malformed status (missing account) instead of surfacing it", async () => {
+      server.use(
+        http.get(`https://${MASTO}/api/v1/trends/statuses`, () =>
+          HttpResponse.json([
+            goodPost("1"),
+            { id: "2", content: "authorless attacker content" }, // no account
+          ]),
+        ),
+      );
+      const res = await client.fetchTrendingPosts(MASTO, { limit: 5 });
+      expect(res.posts).toHaveLength(1);
+      expect(res.posts[0].id).toBe("1");
+    });
+
+    it("caps returned posts at the requested limit even if the server returns more", async () => {
+      const many = Array.from({ length: 10 }, (_, i) => goodPost(`n${i}`));
+      server.use(
+        http.get(`https://${MASTO}/api/v1/timelines/public`, () => HttpResponse.json(many)),
+      );
+      const res = await client.fetchLocalTimeline(MASTO, { limit: 3 });
+      expect(res.posts).toHaveLength(3);
+    });
+
+    it("coerces a hostile non-numeric count to a finite number", async () => {
+      server.use(
+        http.get(`https://${MASTO}/api/v1/trends/statuses`, () =>
+          HttpResponse.json([{ ...goodPost("1"), favourites_count: "not-a-number" }]),
+        ),
+      );
+      const res = await client.fetchTrendingPosts(MASTO, { limit: 5 });
+      expect(typeof res.posts[0].favourites_count).toBe("number");
+      expect(Number.isFinite(res.posts[0].favourites_count)).toBe(true);
+    });
+  });
+
   describe("Misskey read adapter is resilient to hostile/malformed payloads", () => {
     beforeEach(() => server.use(...nodeinfo(MISSKEY, "misskey")));
 

@@ -27,7 +27,16 @@ import {
   resolveReadAdapter,
 } from "./read-adapter.js";
 
-const logger = getLogger("activitypub-mcp");
+const logger = getLogger(["activitypub-mcp", "remote-client"]);
+
+// Minimal Mastodon-compatible REST status shape: we only need the canonical
+// ActivityPub identifier (`uri`) and the web `url` to resolve a thread.
+const StatusUriSchema = z
+  .object({
+    uri: z.string().optional(),
+    url: z.string().optional(),
+  })
+  .passthrough();
 
 // ActivityPub Collection schema
 const ActivityPubCollectionSchema = z.object({
@@ -529,21 +538,27 @@ export class RemoteActivityPubClient {
 
     // Fetch from all endpoints in parallel
     const results = await Promise.allSettled(
-      endpoints.map(async (endpoint) => {
-        const response = await this.fetchWithTimeout(endpoint, {
-          headers: {
-            Accept: "application/json",
-            "User-Agent": USER_AGENT,
+      endpoints.map((endpoint) =>
+        this.fetchWithTimeout(
+          endpoint,
+          {
+            headers: {
+              Accept: "application/json",
+              "User-Agent": USER_AGENT,
+            },
           },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const data = await readJsonWithLimit<Record<string, unknown>>(response, MAX_RESPONSE_SIZE);
-        return { endpoint, data };
-      }),
+          async (response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+            const data = await readJsonWithLimit<Record<string, unknown>>(
+              response,
+              MAX_RESPONSE_SIZE,
+            );
+            return { endpoint, data };
+          },
+        ),
+      ),
     );
 
     // Find the first successful result
@@ -563,6 +578,40 @@ export class RemoteActivityPubClient {
     }
 
     throw new Error(`Failed to fetch instance information for ${domain}`);
+  }
+
+  /**
+   * Resolve a {domain, statusId} pair to the status's canonical ActivityPub URI
+   * via the Mastodon-compatible REST API (GET /api/v1/statuses/{id}).
+   *
+   * The old `/web/statuses/{id}` SPA route is NOT an ActivityPub endpoint — it
+   * 302-redirects to an HTML page, so fetching it as AP timed out and retried.
+   * Resolving the real `uri` (falling back to `url`) here makes the post-thread
+   * resource work against the Mastodon-compatible instances it documents.
+   *
+   * @param domain - The instance domain (already validated by the caller)
+   * @param statusId - The status id (already validated by the caller)
+   * @returns The canonical ActivityPub URI for the status
+   */
+  async resolveStatusUri(domain: string, statusId: string): Promise<string> {
+    const url = `https://${domain}/api/v1/statuses/${encodeURIComponent(statusId)}`;
+    const status = await this.fetchWithRetry(
+      url,
+      {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": USER_AGENT,
+        },
+      },
+      StatusUriSchema,
+    );
+    const resolved = status.uri || status.url;
+    if (!resolved) {
+      throw new Error(
+        `Status ${statusId} on ${domain} did not return a resolvable ActivityPub URI`,
+      );
+    }
+    return resolved;
   }
 
   /**
@@ -718,39 +767,41 @@ export class RemoteActivityPubClient {
 
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
-        const response = await this.fetchWithTimeout(url, fetchOptions);
-
-        // Handle 304 Not Modified
-        if (response.status === 304) {
-          if (cached) {
-            logger.debug("Using cached response (304 Not Modified)", { url });
-            return cached.data;
-          }
-          // 304 with no cache entry — server insists it's unchanged but we have nothing.
-          // Re-fetch once without If-None-Match.
-          logger.debug("304 received but no cache entry; re-fetching", { url });
-          const freshHeaders = new Headers(options.headers);
-          freshHeaders.delete("If-None-Match");
-          const freshResponse = await this.fetchWithTimeout(url, {
-            ...options,
-            headers: freshHeaders,
-          });
-          if (freshResponse.status === 304) {
-            throw new Error(
-              `Server returned 304 on unconditional re-fetch for ${url}; server is misconfigured`,
+        return await this.fetchWithTimeout(url, fetchOptions, async (response) => {
+          // Handle 304 Not Modified
+          if (response.status === 304) {
+            if (cached) {
+              logger.debug("Using cached response (304 Not Modified)", { url });
+              return cached.data;
+            }
+            // 304 with no cache entry — server insists it's unchanged but we have nothing.
+            // Re-fetch once without If-None-Match.
+            logger.debug("304 received but no cache entry; re-fetching", { url });
+            const freshHeaders = new Headers(options.headers);
+            freshHeaders.delete("If-None-Match");
+            return await this.fetchWithTimeout(
+              url,
+              { ...options, headers: freshHeaders },
+              async (freshResponse) => {
+                if (freshResponse.status === 304) {
+                  throw new Error(
+                    `Server returned 304 on unconditional re-fetch for ${url}; server is misconfigured`,
+                  );
+                }
+                if (!freshResponse.ok) {
+                  this.throwForHttpStatus(freshResponse);
+                }
+                return await this.processResponse(freshResponse, url, schema);
+              },
             );
           }
-          if (!freshResponse.ok) {
-            this.throwForHttpStatus(freshResponse);
+
+          if (!response.ok) {
+            this.throwForHttpStatus(response);
           }
-          return await this.processResponse(freshResponse, url, schema);
-        }
 
-        if (!response.ok) {
-          this.throwForHttpStatus(response);
-        }
-
-        return await this.processResponse(response, url, schema);
+          return await this.processResponse(response, url, schema);
+        });
       } catch (error) {
         // A definitively non-retryable HTTP status (404/401/403/410, …) fails
         // fast — retrying it only wastes the budget.
@@ -769,16 +820,26 @@ export class RemoteActivityPubClient {
   }
 
   /**
-   * Fetch with timeout and response size limit.
-   * Includes SSRF protection to block requests to private/internal addresses.
-   * Uses async DNS resolution to detect DNS rebinding attacks.
-   * Validates against instance blocklist.
+   * Fetch with a timeout that spans the ENTIRE exchange — connection, headers,
+   * AND the body read performed inside `consume`. Clearing the timer when only
+   * the headers have arrived (the previous behavior) let a hostile instance send
+   * headers promptly and then trickle the body forever, evading REQUEST_TIMEOUT
+   * and pinning the tool call. Keeping the AbortController armed until `consume`
+   * resolves makes readJsonWithLimit's body read subject to the same deadline.
+   *
+   * Includes SSRF protection (DNS-pinned, redirect-revalidated) and the operator
+   * blocklist via pinnedFetch.
    *
    * @param url - The URL to fetch
    * @param options - Fetch options
-   * @returns The fetch Response
+   * @param consume - Reads/validates the response within the timeout window
+   * @returns Whatever `consume` returns
    */
-  private async fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
+  private async fetchWithTimeout<T>(
+    url: string,
+    options: RequestInit,
+    consume: (response: Response) => Promise<T>,
+  ): Promise<T> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
 
@@ -791,15 +852,16 @@ export class RemoteActivityPubClient {
         { ...options, signal: controller.signal },
         INSTANCE_BLOCKING_ENABLED ? blocklistHop : undefined,
       );
-      clearTimeout(timeoutId);
-
-      return response;
+      // Read the body under the same timeout: a stalled/trickled body aborts the
+      // signal, which surfaces as an AbortError below.
+      return await consume(response);
     } catch (error) {
-      clearTimeout(timeoutId);
       if (error instanceof Error && error.name === "AbortError") {
         throw new Error(`Request timed out: ${url}`);
       }
       throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -987,7 +1049,23 @@ export class RemoteActivityPubClient {
       try {
         const repliesUrl =
           typeof post.replies === "string" ? post.replies : (post.replies as { id?: string }).id;
+
+        // The replies-collection URL comes from the attacker-controlled root post
+        // and can point at any host. Apply the same cross-origin gate as the
+        // ancestor walk and the reply items: with THREAD_CROSS_ORIGIN_FETCH off
+        // (the default), do NOT fetch an off-origin collection — otherwise reading
+        // any thread leaks a beacon to an attacker-chosen host and provides a
+        // fetch-amplification primitive.
+        let repliesSameOrigin = false;
         if (repliesUrl) {
+          try {
+            repliesSameOrigin = new URL(repliesUrl).origin === rootOrigin;
+          } catch {
+            repliesSameOrigin = false; // unparseable — treat as off-origin
+          }
+        }
+
+        if (repliesUrl && (repliesSameOrigin || THREAD_CROSS_ORIGIN_FETCH)) {
           const repliesCollection = await this.fetchWithRetry(
             repliesUrl,
             {
@@ -1352,24 +1430,31 @@ export class RemoteActivityPubClient {
 
     // Try fetching the URL directly with ActivityPub headers
     try {
-      const response = await this.fetchWithTimeout(webUrl, {
-        headers: {
-          Accept:
-            'application/activity+json, application/ld+json; profile="https://www.w3.org/ns/activitystreams"',
-          "User-Agent": USER_AGENT,
+      const resolved = await this.fetchWithTimeout(
+        webUrl,
+        {
+          headers: {
+            Accept:
+              'application/activity+json, application/ld+json; profile="https://www.w3.org/ns/activitystreams"',
+            "User-Agent": USER_AGENT,
+          },
         },
-      });
-
-      if (response.ok) {
-        const data = await readJsonWithLimit<{ id?: string; type?: string }>(
-          response,
-          MAX_RESPONSE_SIZE,
-        );
-        if (data.id) {
-          const type = data.type?.toLowerCase().includes("person") ? "actor" : "post";
-          return { activityPubUri: data.id, type, domain };
-        }
-      }
+        async (response) => {
+          if (!response.ok) return undefined;
+          const data = await readJsonWithLimit<{ id?: string; type?: string }>(
+            response,
+            MAX_RESPONSE_SIZE,
+          );
+          if (data.id) {
+            const type: "actor" | "post" = data.type?.toLowerCase().includes("person")
+              ? "actor"
+              : "post";
+            return { activityPubUri: data.id, type, domain };
+          }
+          return undefined;
+        },
+      );
+      if (resolved) return resolved;
     } catch {
       // Fall through to unknown
     }

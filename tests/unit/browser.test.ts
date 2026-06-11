@@ -52,15 +52,23 @@ describe("openBrowser", () => {
     expect(spawnMock.mock.calls[0][0]).toBe("xdg-open");
   });
 
-  it("uses cmd /c start on win32 with the URL as a discrete arg", async () => {
+  it("opens on win32 without routing the URL through cmd's parser", async () => {
     vi.stubGlobal("process", { ...process, platform: "win32" });
     const { openBrowser } = await import(
       /* @vite-ignore */ `../../src/auth/login/browser.js?ts=${Date.now()}`
     );
-    await openBrowser("https://x.test/?a=1&b=2");
+    // An OAuth authorize URL always contains '&' separators. `cmd /c start`
+    // treats every unquoted '&' as a command separator, truncating the URL at
+    // the first one and breaking login on every Windows machine.
+    const url = "https://x.test/oauth/authorize?response_type=code&client_id=abc&state=xyz";
+    await openBrowser(url);
     const [cmd, args] = spawnMock.mock.calls[0];
-    expect(cmd).toBe("cmd");
-    expect(args).toEqual(["/c", "start", "", "https://x.test/?a=1&b=2"]);
+    // Must NOT shell out to cmd, where '&' is a metacharacter.
+    expect(cmd).not.toBe("cmd");
+    expect(cmd).toBe("rundll32");
+    // The full URL (every '&' intact) must reach the opener as one discrete arg.
+    expect(args).toContain(url);
+    expect(args).toEqual(["url.dll,FileProtocolHandler", url]);
   });
 
   it("rejects when the opener cannot be spawned (so the caller can fall back)", async () => {

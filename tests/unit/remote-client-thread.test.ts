@@ -136,6 +136,41 @@ describe("fetchPostThread cross-origin guard (M3)", () => {
     expect(thread.ancestors.some((a) => a.id === "https://b.test/post/parent")).toBe(false);
   });
 
+  it("does not fetch a cross-origin replies-collection URL when the gate is off", async () => {
+    process.env.MCP_THREAD_CROSS_ORIGIN_FETCH = "false";
+    server.use(
+      // The root post's `replies` is attacker-controlled and can point at any
+      // host. With the gate off, the replies-collection itself must not be
+      // fetched cross-origin — otherwise reading any thread leaks a beacon to an
+      // attacker-chosen host and yields a fetch-amplification primitive.
+      http.get("https://a.test/post/1", () =>
+        HttpResponse.json({
+          id: "https://a.test/post/1",
+          type: "Note",
+          replies: "https://evil.test/collection",
+        }),
+      ),
+    );
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const { RemoteActivityPubClient } = await import("../../src/activitypub/remote-client.js");
+    const client = new RemoteActivityPubClient();
+    const thread = await client.fetchPostThread("https://a.test/post/1", {
+      depth: 2,
+      maxReplies: 10,
+    });
+
+    const evilCalls = fetchSpy.mock.calls.filter((args) => {
+      try {
+        return new URL(String(args[0])).hostname === "evil.test";
+      } catch {
+        return false;
+      }
+    });
+    expect(evilCalls).toHaveLength(0);
+    expect(thread.replies).toHaveLength(0);
+  });
+
   it("caps total replies to THREAD_MAX_REPLIES", async () => {
     process.env.MCP_THREAD_MAX_REPLIES = "3";
     const ids = Array.from({ length: 10 }, (_, i) => `https://a.test/post/r${i}`);

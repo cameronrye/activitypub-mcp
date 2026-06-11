@@ -42,7 +42,7 @@ export type {
   Status,
 } from "./adapters/write-adapter.js";
 
-const logger = getLogger("activitypub-mcp:authenticated-client");
+const logger = getLogger(["activitypub-mcp", "authenticated-client"]);
 
 // Poll + scheduled-status schemas stay here — they back Mastodon-only ops.
 const PollSchema = z.object({

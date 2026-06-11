@@ -1,6 +1,10 @@
 /**
  * Opens the system browser to a URL using an argv-array spawn (never a shell
- * string), so query values containing &, %, ^ cannot be interpreted by a shell.
+ * string). On win32 it uses rundll32's FileProtocolHandler rather than
+ * `cmd /c start`: cmd treats every unquoted `&` (always present in OAuth
+ * authorize URLs) as a command separator, which truncated the URL at the first
+ * `&` and broke login on every Windows machine. rundll32 receives the URL as a
+ * single argv argument with no shell parsing, so `&`/`%`/`^` survive intact.
  * On failure the caller falls back to printing the URL.
  */
 
@@ -16,9 +20,10 @@ export function openBrowser(url: string): Promise<void> {
         args = [url];
         break;
       case "win32":
-        // `start` is a cmd builtin; "" is the (empty) window title, url is a discrete arg.
-        command = "cmd";
-        args = ["/c", "start", "", url];
+        // rundll32 url.dll,FileProtocolHandler opens the default browser without
+        // a shell, so '&' in the OAuth URL is not parsed as a command separator.
+        command = "rundll32";
+        args = ["url.dll,FileProtocolHandler", url];
         break;
       default:
         command = "xdg-open";

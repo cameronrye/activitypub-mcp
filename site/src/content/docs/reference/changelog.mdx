@@ -9,6 +9,32 @@ order: 2
 
 All notable changes to the ActivityPub MCP Server are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### v3.1.4 - 2026-06-10
+
+**Security, correctness, and distribution patch** from a second end-to-end review. Restores real `fetch-timeline` content, un-breaks subsystem logging and Windows login, hardens read timeouts, the thread privacy gate, the Mastodon read path, SSRF range coverage, the Windows installer, and the release supply chain. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.
+
+#### Fixed
+
+- **`fetch-timeline` renders real content again** — outbox items are `Create`/`Announce` activities, so reading `content` off the wrapper showed every post as `[Create] (empty)`; the nested object is now unwrapped.
+- **Subsystem logs are no longer silently dropped** — logtape categories are array-based, so `getLogger("activitypub-mcp:http")` had no sink; ~13 subsystems (including security/audit warnings) now log via the array-child form.
+- **Read timeouts cover the response body, not just headers** — a hostile instance could send headers then trickle the body forever to pin a tool call; the deadline now spans the body read.
+- **`get-scheduled-posts` works without `ACTIVITYPUB_ENABLE_WRITES`** — it is an authenticated read but was registered inside the write-gated block.
+- **`post-thread` resource resolves the canonical ActivityPub URI** via the REST API instead of the dead `/web/statuses/` SPA route, and validates `{statusId}` against path-segment injection.
+- **Windows `login` opens the browser correctly** — `cmd /c start` split the OAuth URL at its `&` separators; it now uses rundll32's FileProtocolHandler (no shell parsing).
+
+#### Security
+
+- **Thread reads don't beacon to attacker-chosen hosts** — the cross-origin gate now also covers the root post's `replies`-collection URL (default-off).
+- **SSRF private-range coverage corrected** — IPv4 `224.0.0.0/4` & `240.0.0.0/4` and IPv6 `ff00::/8` & Teredo `2001::/32` now match their full ranges.
+- **Mastodon read adapter hardened to parity with Misskey** — timeline/trending/search results are structurally validated, count-coerced, and capped at the requested limit.
+- **`install.ps1` no longer wipes other MCP servers on Windows PowerShell 5.1** — it delegates to the shared Node merge helper, which preserves existing servers and refuses to clobber unparseable configs.
+- **Release supply chain tightened** — the `.mcpb` builder is version-pinned and installed with `--ignore-scripts`; release jobs drop to least-privilege permissions and check out with `persist-credentials: false`.
+
+#### Changed
+
+- CI enforces the per-directory coverage thresholds via a dedicated coverage job.
+- The README "Add to Cursor" button uses Cursor's `https://cursor.com/install-mcp` wrapper (GitHub strips raw `cursor://` hrefs).
+
 ### v3.1.3 - 2026-06-09
 
 **Security & correctness hardening patch** from an end-to-end review. Fixes a stdio shutdown hang, hardens `upload-media` (size cap + path-leak fix), gates cross-origin thread fetches, hardens the Misskey read path, and tightens the install/release supply chain. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.

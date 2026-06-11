@@ -55,7 +55,7 @@ export type InstanceSoftwareInfo = {
   reason?: string;
 };
 
-const logger = getLogger("activitypub-mcp:nodeinfo");
+const logger = getLogger(["activitypub-mcp", "nodeinfo"]);
 
 // Only NodeInfo 2.0 and 2.1 are in scope. Match these rels exactly — a prefix
 // match would also accept bogus rels like ".../2.1-evil" or ".../2.x", and a

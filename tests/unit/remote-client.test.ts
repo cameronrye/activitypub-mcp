@@ -134,6 +134,32 @@ describe("RemoteActivityPubClient", () => {
     });
   });
 
+  describe("resolveStatusUri", () => {
+    it("resolves a {domain, statusId} to the canonical AP uri via the REST API", async () => {
+      server.use(
+        http.get("https://masto.example/api/v1/statuses/123", () =>
+          HttpResponse.json({
+            id: "123",
+            uri: "https://masto.example/users/alice/statuses/123",
+            url: "https://masto.example/@alice/123",
+          }),
+        ),
+      );
+      const uri = await client.resolveStatusUri("masto.example", "123");
+      expect(uri).toBe("https://masto.example/users/alice/statuses/123");
+    });
+
+    it("falls back to `url` when `uri` is absent", async () => {
+      server.use(
+        http.get("https://masto.example/api/v1/statuses/9", () =>
+          HttpResponse.json({ id: "9", url: "https://masto.example/@bob/9" }),
+        ),
+      );
+      const uri = await client.resolveStatusUri("masto.example", "9");
+      expect(uri).toBe("https://masto.example/@bob/9");
+    });
+  });
+
   describe("fetchActorOutboxPaginated", () => {
     it("should fetch paginated outbox with default options", async () => {
       const result = await client.fetchActorOutboxPaginated("testuser@example.social");

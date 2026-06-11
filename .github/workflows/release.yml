@@ -17,21 +17,25 @@ on:
   # Manual fallback: run against the vX.Y.Z tag to publish without a re-push.
   workflow_dispatch:
 
-# id-token: write is required for OIDC-based npm provenance attestations.
+# Least privilege at the workflow level; individual jobs elevate only what they
+# need. The token-bearing publish/release jobs get their grants per-job below.
 permissions:
-  contents: write
-  packages: write
-  pull-requests: read
-  id-token: write
+  contents: read
 
 jobs:
   test:
     name: Test before release
     runs-on: ubuntu-latest
+    # The test job runs the full dev dependency tree with lifecycle scripts; it
+    # must never hold a write token a compromised dependency could read.
+    permissions:
+      contents: read
 
     steps:
     - name: Checkout code
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
 
     - name: Setup Node.js
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
@@ -75,6 +79,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      with:
+        persist-credentials: false
 
     - name: Setup Node.js
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
@@ -101,12 +107,19 @@ jobs:
     name: Create GitHub Release
     needs: [test, publish-npm]
     runs-on: ubuntu-latest
+    # Only the release-creation needs write; npm publish + provenance live in the
+    # separate publish-npm job, so no id-token/packages here.
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout code
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       with:
         fetch-depth: 0
+        # The release upload authenticates via the env GITHUB_TOKEN, not git, so
+        # don't persist a write credential while npm ci / the mcpb build run.
+        persist-credentials: false
 
     - name: Setup Node.js
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
@@ -155,7 +168,11 @@ jobs:
       # (ESM entrypoint needs its own package.json + prod node_modules) per the
       # steps in docs/distribution.md §3.
       run: |
-        npm install -g @anthropic-ai/mcpb
+        # Pin the exact version and skip lifecycle scripts: this job holds a
+        # contents:write token and produces the one-click .mcpb users install, so
+        # an unpinned/script-running mcpb would be a supply-chain RCE/tamper vector
+        # (publish-mcp.yml pins mcp-publisher for the same reason).
+        npm install -g @anthropic-ai/mcpb@2.1.2 --ignore-scripts
         stage="$(mktemp -d)"
         cp manifest.json package.json package-lock.json "$stage"/
         cp -R dist "$stage"/dist

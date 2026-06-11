@@ -22,6 +22,7 @@ vi.mock("../../src/activitypub/remote-client.js", () => ({
     fetchLocalTimeline: vi.fn(),
     fetchFederatedTimeline: vi.fn(),
     fetchPostThread: vi.fn(),
+    resolveStatusUri: vi.fn(),
   },
 }));
 
@@ -433,6 +434,9 @@ describe("MCP Resources", () => {
 
   describe("post-thread resource", () => {
     it("should fetch and return post thread", async () => {
+      (remoteClient.resolveStatusUri as Mock).mockResolvedValue(
+        "https://mastodon.social/users/alice/statuses/123",
+      );
       (remoteClient.fetchPostThread as Mock).mockResolvedValue({
         post: { content: "Original post", id: "1" },
         ancestors: [],
@@ -450,7 +454,10 @@ describe("MCP Resources", () => {
       expect((thread.replies as unknown[]).length).toBe(1);
     });
 
-    it("should construct the correct Mastodon URL from {domain}/{statusId}", async () => {
+    it("resolves the canonical AP uri via the REST API instead of the dead /web/ route", async () => {
+      (remoteClient.resolveStatusUri as Mock).mockResolvedValue(
+        "https://mastodon.social/users/alice/statuses/123",
+      );
       (remoteClient.fetchPostThread as Mock).mockResolvedValue({
         post: { content: "Test" },
         ancestors: [],
@@ -462,8 +469,11 @@ describe("MCP Resources", () => {
       const uri = new URL("activitypub://post-thread/mastodon.social/123");
       await resource?.handler(uri, { domain: "mastodon.social", statusId: "123" });
 
+      expect(remoteClient.resolveStatusUri).toHaveBeenCalledWith("mastodon.social", "123");
+      // The thread is fetched with the resolved canonical URI, never the old
+      // /web/statuses/ SPA route.
       expect(remoteClient.fetchPostThread).toHaveBeenCalledWith(
-        "https://mastodon.social/web/statuses/123",
+        "https://mastodon.social/users/alice/statuses/123",
         { depth: 2, maxReplies: 50 },
       );
     });
@@ -476,10 +486,23 @@ describe("MCP Resources", () => {
         "post-thread requires {domain} and {statusId}",
       );
     });
+
+    it("rejects a statusId that could inject extra path segments", async () => {
+      const resource = registeredResources.get("post-thread");
+      const uri = new URL("activitypub://post-thread/mastodon.social/x");
+
+      await expect(
+        resource?.handler(uri, { domain: "mastodon.social", statusId: "123/../../admin" }),
+      ).rejects.toThrow(/alphanumeric id/);
+      expect(remoteClient.resolveStatusUri).not.toHaveBeenCalled();
+    });
   });
 
   describe("post-thread URI template (L10)", () => {
     it("accepts the new {domain}/{statusId} form", async () => {
+      (remoteClient.resolveStatusUri as Mock).mockResolvedValue(
+        "https://mastodon.social/users/alice/statuses/123456",
+      );
       (remoteClient.fetchPostThread as Mock).mockResolvedValue({
         post: { content: "Hello from mastodon" },
         ancestors: [],
@@ -497,7 +520,7 @@ describe("MCP Resources", () => {
       expect(result).toBeDefined();
       const contents = (result as { contents: { text: string }[] }).contents;
       const thread = parseWrapped(contents[0].text) as Record<string, unknown>;
-      expect(thread.postUrl).toBe("https://mastodon.social/web/statuses/123456");
+      expect(thread.postUrl).toBe("https://mastodon.social/users/alice/statuses/123456");
     });
 
     it("rejects the legacy encoded-URL form with an InvalidParams error", async () => {

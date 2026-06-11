@@ -6,7 +6,7 @@ import { SERVER_NAME, SERVER_VERSION, validateConfiguration } from "./config.js"
 import ActivityPubMCPServer from "./mcp-server.js";
 import "./telemetry/logging.js";
 
-const logger = getLogger("activitypub-mcp");
+const logger = getLogger(["activitypub-mcp"]);
 
 /**
  * Print version information and exit

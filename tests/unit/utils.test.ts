@@ -98,6 +98,25 @@ describe("isPrivateIPv4", () => {
   it("should detect the 192.88.99.0/24 6to4-relay anycast range", () => {
     expect(isPrivateIPv4("192.88.99.1")).toBe(true);
   });
+
+  it("blocks the entire multicast 224.0.0.0/4 range, not just 224/8", () => {
+    for (const ip of ["224.0.0.1", "225.1.1.1", "233.252.0.1", "239.255.255.250"]) {
+      expect(isPrivateIPv4(ip), ip).toBe(true);
+    }
+    expect(isPrivateIPv4("223.255.255.255")).toBe(false);
+  });
+
+  it("blocks the entire reserved 240.0.0.0/4 range, not just 240/8", () => {
+    for (const ip of [
+      "240.0.0.1",
+      "241.1.1.1",
+      "250.0.0.1",
+      "254.254.254.254",
+      "255.255.255.254",
+    ]) {
+      expect(isPrivateIPv4(ip), ip).toBe(true);
+    }
+  });
 });
 
 describe("isPrivateIPv6", () => {

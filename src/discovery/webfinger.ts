@@ -11,7 +11,7 @@ import { blocklistHop, pinnedFetch, readJsonWithLimit } from "../utils/fetch-hel
 import { LRUCache } from "../utils/lru-cache.js";
 import { ActorIdentifierSchema } from "../validation/schemas.js";
 
-const logger = getLogger("activitypub-mcp");
+const logger = getLogger(["activitypub-mcp", "webfinger"]);
 
 // WebFinger response schema
 const WebFingerResponseSchema = z.object({

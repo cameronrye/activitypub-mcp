@@ -19,7 +19,7 @@ import { extractSingleValue, validateActorIdentifier } from "../validation/valid
 import { capabilitiesRegistry, trackedMcpServer } from "./capabilities.js";
 import { checkRateLimit } from "./rate-limit-guard.js";
 
-const logger = getLogger("activitypub-mcp:resources");
+const logger = getLogger(["activitypub-mcp", "resources"]);
 
 /**
  * Configuration for MCP resources.
@@ -672,19 +672,33 @@ function registerPostThreadResource(mcpServer: McpServer, rateLimiter: RateLimit
           );
         }
 
-        const postUrl = `https://${domain}/web/statuses/${statusId}`;
-        const parsedUrl = new URL(postUrl);
-        checkRateLimit(rateLimiter, parsedUrl.hostname);
+        // Validate both path params. The domain goes through the shared schema;
+        // the statusId must be an opaque id (Mastodon snowflake / Pleroma FlakeID)
+        // — reject anything that could inject extra path segments or a scheme.
+        const validDomain = DomainSchema.parse(domain);
+        if (!/^[A-Za-z0-9_-]{1,64}$/.test(statusId)) {
+          throw new McpError(
+            ErrorCode.InvalidParams,
+            "post-thread {statusId} must be an alphanumeric id (letters, digits, '-' or '_').",
+          );
+        }
+
+        checkRateLimit(rateLimiter, validDomain);
+
+        // Resolve the canonical ActivityPub URI via the REST API. The old
+        // /web/statuses/{id} SPA route is not an AP endpoint (it 302s to HTML),
+        // so it timed out and retried instead of returning the thread.
+        const postUrl = await remoteClient.resolveStatusUri(validDomain, statusId);
 
         logger.info("Fetching post thread", { postUrl });
 
-        const threadData = await remoteClient.fetchPostThread(parsedUrl.href, {
+        const threadData = await remoteClient.fetchPostThread(postUrl, {
           depth: 2,
           maxReplies: 50,
         });
 
         const resourceData = {
-          postUrl: parsedUrl.href,
+          postUrl,
           timestamp: new Date().toISOString(),
           post: threadData.post,
           ancestors: threadData.ancestors,
@@ -699,7 +713,7 @@ function registerPostThreadResource(mcpServer: McpServer, rateLimiter: RateLimit
               mimeType: "application/json",
               text: wrapUntrustedBlock(
                 JSON.stringify(resourceData, null, 2),
-                `post-thread/${parsedUrl.hostname}`,
+                `post-thread/${validDomain}`,
               ),
             },
           ],

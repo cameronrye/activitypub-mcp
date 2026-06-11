@@ -3,6 +3,16 @@ import { configure, getConsoleSink } from "@logtape/logtape";
 
 export type LogLevel = "debug" | "info" | "warning" | "error" | "fatal";
 
+/**
+ * Root logger category. logtape's hierarchy is ARRAY-based: only this category
+ * and its array children (e.g. ["activitypub-mcp", "http"]) inherit the sink
+ * configured below. A colon string like "activitypub-mcp:http" is a single-
+ * segment SIBLING category with NO sink — its records are silently dropped.
+ * Subsystem loggers must therefore use the array form getLogger([LOG_ROOT_CATEGORY,
+ * "<scope>"]), never getLogger("activitypub-mcp:<scope>").
+ */
+export const LOG_ROOT_CATEGORY = "activitypub-mcp";
+
 const LOG_LEVEL_ALIASES: Record<string, LogLevel> = {
   debug: "debug",
   info: "info",
@@ -44,7 +54,9 @@ await configure({
   filters: {},
   loggers: [
     {
-      category: "activitypub-mcp",
+      // The root category. Array-child loggers (["activitypub-mcp", "<scope>"])
+      // inherit this sink; "activitypub-mcp:<scope>" colon strings do NOT.
+      category: LOG_ROOT_CATEGORY,
       lowestLevel: logLevel,
       sinks: ["console"],
     },
