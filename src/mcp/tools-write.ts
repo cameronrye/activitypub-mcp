@@ -19,7 +19,7 @@ import { sanitizeInline, wrapUntrusted } from "../utils/untrusted.js";
 import { trackedMcpServer } from "./capabilities.js";
 import { checkRateLimit } from "./rate-limit-guard.js";
 
-const logger = getLogger("activitypub-mcp:tools-write");
+const logger = getLogger(["activitypub-mcp", "tools-write"]);
 
 /**
  * Registers all write operation tools.
@@ -36,6 +36,10 @@ export function registerWriteTools(mcpServer: McpServer, rateLimiter: RateLimite
   registerGetBookmarksTool(mcpServer, rateLimiter);
   registerGetFavouritesTool(mcpServer, rateLimiter);
   registerGetRelationshipTool(mcpServer, rateLimiter);
+  // Authenticated READ (readOnlyHint, gated by requireAuthEnabled): listing
+  // scheduled posts is a GET, so it ships without ENABLE_WRITES — only the
+  // scheduled-post mutators below are write-gated.
+  registerGetScheduledPostsTool(mcpServer, rateLimiter);
 
   if (!ENABLE_WRITES) {
     logger.info("Write tools disabled (set ACTIVITYPUB_ENABLE_WRITES=true to enable)");
@@ -61,7 +65,6 @@ export function registerWriteTools(mcpServer: McpServer, rateLimiter: RateLimite
   registerUnblockAccountTool(mcpServer, rateLimiter);
   registerVoteOnPollTool(mcpServer, rateLimiter);
   registerUploadMediaTool(mcpServer, rateLimiter);
-  registerGetScheduledPostsTool(mcpServer, rateLimiter);
   registerCancelScheduledPostTool(mcpServer, rateLimiter);
   registerUpdateScheduledPostTool(mcpServer, rateLimiter);
 }

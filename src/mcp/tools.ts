@@ -24,7 +24,46 @@ import { trackedMcpServer } from "./capabilities.js";
 import { checkRateLimit } from "./rate-limit-guard.js";
 import { registerWriteTools } from "./tools-write.js";
 
-const logger = getLogger("activitypub-mcp:tools");
+const logger = getLogger(["activitypub-mcp", "tools"]);
+
+/**
+ * Reduce an outbox item to a display type + content string.
+ *
+ * Real Mastodon/Pleroma/Misskey outboxes return ACTIVITIES, not bare Notes:
+ *   - `Create`/`Update` wrap the object inline → content lives at object.content
+ *   - `Announce` (boost) carries the boosted object's URL (a string) or object
+ *   - some servers/fixtures put a bare Note directly in the collection
+ * Reading content straight off the activity wrapper renders every post as
+ * "(empty)". This unwraps the nested object so real content surfaces.
+ */
+export function summarizeOutboxItem(item: unknown): { type: string; content: string } {
+  const it = (item ?? {}) as Record<string, unknown>;
+  const activityType = typeof it.type === "string" ? it.type : "";
+  const obj = it.object;
+
+  // Activity wrapping an inlined object (Create/Update of a Note, etc.)
+  if (obj && typeof obj === "object") {
+    const o = obj as Record<string, unknown>;
+    const content =
+      (typeof o.content === "string" && o.content) ||
+      (typeof o.summary === "string" && o.summary) ||
+      "";
+    const objType = typeof o.type === "string" ? o.type : "";
+    return { type: objType || activityType || "Post", content };
+  }
+
+  // Announce (boost) of a remote object referenced by URL.
+  if (typeof obj === "string" && obj) {
+    return { type: activityType || "Announce", content: `🔁 ${obj}` };
+  }
+
+  // Bare object (Note) directly in the collection.
+  const content =
+    (typeof it.content === "string" && it.content) ||
+    (typeof it.summary === "string" && it.summary) ||
+    "";
+  return { type: activityType || "Post", content };
+}
 
 /**
  * Registers all MCP tools on the server.
@@ -221,16 +260,15 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
         const paginationSection =
           paginationInfo.length > 0 ? `**Pagination:**\n${paginationInfo.join("\n")}\n` : "";
 
-        // Format posts section
+        // Format posts section. Outbox items are activities (Create/Announce/…)
+        // so unwrap the nested object before rendering — otherwise every post
+        // shows as "(empty)".
         const postsSection = posts
           .map((post: unknown, index: number) => {
-            const p = post as { type?: string; content?: string; summary?: string; id?: string };
-            const content = wrapUntrusted(
-              p.content || p.summary || "",
-              `post by ${validIdentifier}`,
-            );
-            const postType = sanitizeInline(p.type || "") || "Post";
-            return `${index + 1}. [${postType}] ${content}`;
+            const { type, content } = summarizeOutboxItem(post);
+            const wrapped = wrapUntrusted(content, `post by ${validIdentifier}`);
+            const postType = sanitizeInline(type) || "Post";
+            return `${index + 1}. [${postType}] ${wrapped}`;
           })
           .join("\n\n");
 

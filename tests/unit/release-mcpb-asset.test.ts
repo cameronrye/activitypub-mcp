@@ -29,4 +29,20 @@ describe("release workflow ships the .mcpb bundle", () => {
       /activitypub-mcp-\$\{\{\s*steps\.get_version\.outputs\.VERSION\s*\}\}\.tgz/,
     );
   });
+
+  it("installs the mcpb builder version-pinned and with --ignore-scripts (no supply-chain RCE)", () => {
+    // The .mcpb is one-click-installed into Claude Desktop, and this job holds a
+    // contents:write token, so an unpinned mcpb (or its install scripts) is an
+    // RCE/tamper vector — exactly what publish-mcp.yml already pins against.
+    const installLine = releaseYml
+      .split("\n")
+      .find((l) => l.includes("npm install -g @anthropic-ai/mcpb"));
+    expect(installLine, "mcpb install line").toBeDefined();
+    expect(installLine).toMatch(/@anthropic-ai\/mcpb@\d+\.\d+\.\d+/); // exact version pin
+    expect(installLine).toContain("--ignore-scripts");
+  });
+
+  it("does not grant the unused packages:write permission", () => {
+    expect(releaseYml).not.toMatch(/packages:\s*write/);
+  });
 });

@@ -2,7 +2,7 @@
   "manifest_version": "0.2",
   "name": "activitypub-mcp",
   "display_name": "ActivityPub MCP",
-  "version": "3.1.3",
+  "version": "3.1.4",
   "description": "Read-only-by-default MCP server: let LLMs explore the Fediverse — Mastodon, Misskey, Pleroma.",
   "long_description": "Lets an LLM explore and interact with the existing Fediverse — Mastodon, Misskey, Foundkey, Pleroma, and compatible servers. Read-only by default; write tools are opt-in. Untrusted fediverse content is wrapped in an <untrusted-content> envelope before it reaches the model.",
   "author": {

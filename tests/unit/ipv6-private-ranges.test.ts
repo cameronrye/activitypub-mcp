@@ -47,4 +47,18 @@ describe("isPrivateIPv6 — full CIDR coverage", () => {
   it("rejects a URL whose host is in the previously-reachable ULA hole", () => {
     expect(() => validateExternalUrlSync("https://[fc12:3456::1]/internal")).toThrow();
   });
+
+  it("blocks the entire multicast ff00::/8 range, not just ff00::/12", () => {
+    for (const ip of ["ff02::1", "ff12::1", "ff15::101", "ff32::8000:1", "ffff::1"]) {
+      expect(isPrivateIPv6(ip), ip).toBe(true);
+    }
+  });
+
+  it("blocks Teredo 2001::/32 in both canonical text forms", () => {
+    for (const ip of ["2001::1", "2001:0:4136:e378:8000:63bf:3fff:fdd2"]) {
+      expect(isPrivateIPv6(ip), ip).toBe(true);
+    }
+    // 2001:4860::/32 is Google — only the zero second hextet is Teredo.
+    expect(isPrivateIPv6("2001:4860:4860::8888")).toBe(false);
+  });
 });

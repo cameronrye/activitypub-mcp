@@ -11,7 +11,7 @@ import { resolveWriteAdapter } from "./adapters/resolve.js";
 import type { AccountInfo } from "./adapters/write-adapter.js";
 import type { CredentialStore } from "./credential-store.js";
 
-const logger = getLogger("activitypub-mcp:account-manager");
+const logger = getLogger(["activitypub-mcp", "account-manager"]);
 
 // Re-export so existing importers (auth/index.ts) keep working; the canonical
 // definition lives in the adapter layer alongside the other normalized types.

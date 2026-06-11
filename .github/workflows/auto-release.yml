@@ -5,14 +5,21 @@ on:
     branches: [ main, v2 ]
     paths: [ 'package.json' ]
 
-# Add permissions for GitHub token
+# Least privilege at the workflow level; the one job that pushes a tag elevates
+# to contents:write itself, and the reusable-workflow calls declare their own.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   check-version:
     name: Check Version and Create Tag
     runs-on: ubuntu-latest
+    # Needs write to push the tag — but the token is NOT persisted into .git/config
+    # (persist-credentials: false below), so the full `npm ci` + test/lint/build
+    # that run in this job can't be read by a compromised dev dependency. The tag
+    # push authenticates inline, in its own step only.
+    permissions:
+      contents: write
     outputs:
       should_release: ${{ steps.decide.outputs.should_release }}
       version: ${{ steps.current_version.outputs.version }}
@@ -23,7 +30,7 @@ jobs:
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       with:
         fetch-depth: 0  # Fetch all history for version comparison
-        token: ${{ secrets.GITHUB_TOKEN }}
+        persist-credentials: false
     
     - name: Setup Node.js
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
@@ -115,20 +122,23 @@ jobs:
     
     - name: Create and push tag
       if: steps.check_tag.outputs.exists == 'false' && steps.version_changed.outputs.changed == 'true' && steps.validate_version.outputs.valid == 'true'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         TAG_NAME="${{ steps.check_tag.outputs.tag_name }}"
         VERSION="${{ steps.current_version.outputs.version }}"
-        
+
         # Configure git
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        
+
         # Create annotated tag
         git tag -a "$TAG_NAME" -m "Release version $VERSION"
-        
-        # Push tag
-        git push origin "$TAG_NAME"
-        
+
+        # Push using a token supplied ONLY for this step — the checkout did not
+        # persist credentials, so the earlier npm ci / tests never had push access.
+        git push "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" "$TAG_NAME"
+
         echo "Created and pushed tag: $TAG_NAME"
     
     - name: Decide whether to release
@@ -165,10 +175,10 @@ jobs:
     name: Publish release
     needs: check-version
     if: needs.check-version.outputs.should_release == 'true'
+    # Only what release.yml actually uses: contents:write for the GitHub release,
+    # id-token:write for npm provenance. (No packages:write / pull-requests:read.)
     permissions:
       contents: write
-      packages: write
-      pull-requests: read
       id-token: write
     uses: ./.github/workflows/release.yml
     with:

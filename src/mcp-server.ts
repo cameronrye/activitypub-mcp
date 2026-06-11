@@ -27,7 +27,7 @@ import { registerPrompts, registerResources, registerTools } from "./mcp/index.j
 import { RateLimiter } from "./resilience/rate-limiter.js";
 import { HttpTransportServer } from "./transport/http.js";
 
-const logger = getLogger("activitypub-mcp");
+const logger = getLogger(["activitypub-mcp"]);
 
 /**
  * Configuration for the MCP server, loaded from environment variables.

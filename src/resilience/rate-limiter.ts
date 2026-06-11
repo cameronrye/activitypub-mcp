@@ -6,7 +6,7 @@
 import { getLogger } from "@logtape/logtape";
 import { RATE_LIMIT_CLEANUP_INTERVAL } from "../config.js";
 
-const logger = getLogger("activitypub-mcp:rate-limiter");
+const logger = getLogger(["activitypub-mcp", "rate-limiter"]);
 
 export interface RateLimitConfig {
   enabled: boolean;

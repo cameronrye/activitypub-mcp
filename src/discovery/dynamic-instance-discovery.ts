@@ -19,7 +19,7 @@ import {
 import { blocklistHop, pinnedFetch, readJsonWithLimit } from "../utils/fetch-helpers.js";
 import { LRUCache } from "../utils/lru-cache.js";
 
-const logger = getLogger("activitypub-mcp:discovery");
+const logger = getLogger(["activitypub-mcp", "discovery"]);
 
 /**
  * Instance information from dynamic discovery

@@ -10,7 +10,7 @@ import { z } from "zod";
 import { auditLogger } from "../audit/logger.js";
 import { BLOCKED_INSTANCES } from "../config.js";
 
-const logger = getLogger("activitypub-mcp:blocklist");
+const logger = getLogger(["activitypub-mcp", "blocklist"]);
 
 /**
  * Zod schema for validating BlockedInstance entries during import.

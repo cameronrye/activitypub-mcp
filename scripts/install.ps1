@@ -140,50 +140,35 @@ function Ensure-Directory {
 # Update configuration file
 function Update-Config {
     param([string]$ConfigPath)
-    
+
     $configDir = Split-Path $ConfigPath -Parent
-    
+
     Write-Step "Updating configuration: $ConfigPath"
-    
+
     Ensure-Directory $configDir
-    
-    # Create server configuration
-    $serverConfig = @{
-        command = "npx"
-        args = @("-y", $PACKAGE_NAME)
-        env = @{
-            LOG_LEVEL = "info"
-        }
-    }
-    
+
     if ($DryRun) {
-        Write-Info "[DRY RUN] Would update config at: $ConfigPath"
-        Write-Info "[DRY RUN] Server config: $($serverConfig | ConvertTo-Json -Depth 3)"
+        Write-Info "[DRY RUN] Would add '$SERVER_NAME' to MCP config at: $ConfigPath (preserving existing servers)"
         return
     }
-    
-    # Read existing config or create empty one
-    $existingConfig = @{}
-    if (Test-Path $ConfigPath) {
-        try {
-            $existingConfig = Get-Content $ConfigPath -Raw | ConvertFrom-Json -AsHashtable
-        } catch {
-            Write-Warn "Could not parse existing config, creating new one"
-            $existingConfig = @{}
-        }
+
+    # Delegate the JSON merge to the shared, env-driven Node helper (Node is a
+    # prerequisite). It preserves every existing mcpServers entry and REFUSES to
+    # overwrite a config it can't parse. The old `ConvertFrom-Json -AsHashtable`
+    # path is PowerShell 6+ only — on stock Windows PowerShell 5.1 it threw, the
+    # catch reset the config to empty, and the script then wiped every other MCP
+    # server the user had configured. This is the same helper install.sh uses.
+    $merge = Join-Path $PSScriptRoot "merge-mcp-config.mjs"
+    $env:AP_MCP_CONFIG_PATH = $ConfigPath
+    $env:AP_MCP_SERVER_NAME = $SERVER_NAME
+    $env:AP_MCP_PACKAGE_NAME = $PACKAGE_NAME
+    $env:AP_MCP_ACTION = "add"
+    node $merge
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to update configuration (existing config left untouched)."
+        exit 1
     }
-    
-    # Initialize mcpServers if it doesn't exist
-    if (-not $existingConfig.ContainsKey("mcpServers")) {
-        $existingConfig["mcpServers"] = @{}
-    }
-    
-    # Add or update the ActivityPub server configuration
-    $existingConfig["mcpServers"][$SERVER_NAME] = $serverConfig
-    
-    # Write updated configuration
-    $existingConfig | ConvertTo-Json -Depth 4 | Set-Content $ConfigPath -Encoding UTF8
-    
+
     Write-Info "Configuration updated successfully!"
 }
 
@@ -242,23 +227,22 @@ function Uninstall-Server {
     }
     
     if (Test-Path $configPath) {
-        try {
-            $config = Get-Content $configPath -Raw | ConvertFrom-Json -AsHashtable
-            if ($config.ContainsKey("mcpServers") -and $config["mcpServers"].ContainsKey($SERVER_NAME)) {
-                $config["mcpServers"].Remove($SERVER_NAME)
-                $config | ConvertTo-Json -Depth 4 | Set-Content $configPath -Encoding UTF8
-                Write-Info "Server configuration removed successfully!"
-            } else {
-                Write-Warn "Server configuration not found in config file"
-            }
-        } catch {
-            Write-Error "Failed to update config file: $_"
+        # Delegate to the same Node helper as the add path: it removes only our
+        # entry, preserves the rest, and refuses to clobber unparseable JSON —
+        # avoiding the PowerShell 5.1 -AsHashtable failure that wiped configs.
+        $merge = Join-Path $PSScriptRoot "merge-mcp-config.mjs"
+        $env:AP_MCP_CONFIG_PATH = $configPath
+        $env:AP_MCP_SERVER_NAME = $SERVER_NAME
+        $env:AP_MCP_ACTION = "remove"
+        node $merge
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to update config file (existing config left untouched)."
             exit 1
         }
     } else {
         Write-Warn "Config file not found: $configPath"
     }
-    
+
     Write-Info "Uninstallation completed!"
 }
 

@@ -56,6 +56,17 @@ describe("write gating", () => {
     expect(names.has("discover-actor")).toBe(true);
   });
 
+  it("registers get-scheduled-posts as an authenticated read, even with writes disabled", async () => {
+    // It only GETs scheduled posts (readOnlyHint: true, gated by requireAuthEnabled,
+    // not requireWriteEnabled), so it must be available without ENABLE_WRITES —
+    // matching the docs and its own read-only posture.
+    const names = await registeredToolNames(false);
+    expect(names.has("get-scheduled-posts")).toBe(true);
+    // The actual scheduled-post MUTATORS stay write-gated.
+    expect(names.has("cancel-scheduled-post")).toBe(false);
+    expect(names.has("update-scheduled-post")).toBe(false);
+  });
+
   it("includes mutation tools when writes are enabled", async () => {
     const names = await registeredToolNames(true);
     expect(names.has("post-status")).toBe(true);

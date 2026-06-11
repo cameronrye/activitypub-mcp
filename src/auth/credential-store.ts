@@ -15,7 +15,7 @@ import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import { CONFIG_DIR } from "../config.js";
 
-const logger = getLogger("activitypub-mcp:credential-store");
+const logger = getLogger(["activitypub-mcp", "credential-store"]);
 
 export const StoredAccountSchema = z.object({
   id: z.string(),

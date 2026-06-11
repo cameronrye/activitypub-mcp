@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.4] - 2026-06-10
+
+Security, correctness, and distribution patch from a second end-to-end review.
+
+### Fixed
+
+- **`fetch-timeline` shows real post content again.** Outbox items are activities
+  (`Create`/`Announce`), so reading `content` straight off the wrapper rendered every
+  post as `[Create] (empty)` against real Mastodon/Pleroma/Misskey servers. The
+  formatter now unwraps the nested object (and renders boosts by their URL).
+- **Subsystem logs are no longer silently dropped.** logtape categories are
+  array-based, so `getLogger("activitypub-mcp:http")` was a sibling of the configured
+  logger with no sink — about 13 subsystems (including the operator security and audit
+  warnings) emitted nothing. All call sites now use the array-child form, with a
+  regression test guarding against the colon form returning.
+- **Read timeouts now cover the response body, not just the headers.** A hostile
+  instance could send headers promptly then trickle the body forever, evading
+  `REQUEST_TIMEOUT` and pinning the tool call. The request deadline now spans the
+  body read across every AP-native read.
+- **`get-scheduled-posts` works without `ACTIVITYPUB_ENABLE_WRITES`.** It is an
+  authenticated read (`readOnlyHint`), but was registered inside the write-gated block,
+  contradicting the docs. It now ships with the other authenticated reads.
+- **`post-thread` resource resolves the real ActivityPub URI.** It built a
+  `/web/statuses/{id}` SPA URL that modern Mastodon does not serve as ActivityPub (it
+  302s to HTML), so the resource timed out and retried. It now resolves the canonical
+  `uri` via the REST API and validates `{statusId}` against path-segment injection.
+- **Windows `login` opens the browser correctly.** `cmd /c start` treated the OAuth
+  URL's `&` separators as command separators, truncating the URL and breaking login on
+  every Windows machine. It now uses rundll32's FileProtocolHandler (no shell parsing).
+
+### Security
+
+- **Thread reads no longer beacon to attacker-chosen hosts.** The cross-origin gate
+  added in 3.1.3 covered ancestors and reply items but not the root post's
+  `replies`-collection URL; with `THREAD_CROSS_ORIGIN_FETCH` off (the default) that URL
+  is now skipped when off-origin.
+- **SSRF private-range coverage corrected.** The IPv4 multicast (`224.0.0.0/4`) and
+  reserved (`240.0.0.0/4`) blocks, and the IPv6 multicast (`ff00::/8`) and Teredo
+  (`2001::/32`) blocks, matched only a fraction of each CIDR; they now cover the full
+  ranges.
+- **Mastodon read adapter hardened to parity with Misskey.** Public timeline, trending,
+  and search results from a (default-adapter) hostile server are now structurally
+  validated, count-coerced, and capped at the requested limit instead of passed through
+  unbounded.
+- **`install.ps1` no longer wipes other MCP servers on Windows PowerShell 5.1.** The
+  `ConvertFrom-Json -AsHashtable` path is PowerShell 6+ only; on 5.1 it threw and the
+  fallback overwrote the user's config with only our entry. Install/uninstall now
+  delegate to the shared Node merge helper, which preserves existing servers and
+  refuses to clobber unparseable configs.
+- **Release supply chain tightened.** The `.mcpb` builder (`@anthropic-ai/mcpb`) is now
+  version-pinned and installed with `--ignore-scripts`; the release/auto-release jobs
+  drop workflow-level write permissions to least privilege and check out with
+  `persist-credentials: false`, so the full dependency tree and tests never run with a
+  push-capable token.
+
+### Changed
+
+- CI now enforces the per-directory coverage thresholds (a dedicated coverage job runs
+  `vitest --coverage`); previously the matrix ran tests without coverage so the floors
+  were never checked.
+- The README "Add to Cursor" one-click button uses Cursor's `https://cursor.com/install-mcp`
+  wrapper; GitHub strips the raw `cursor://` href, leaving a dead button.
+
 ## [3.1.3] - 2026-06-09
 
 Security & correctness hardening patch from an end-to-end review.

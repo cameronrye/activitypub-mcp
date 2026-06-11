@@ -642,5 +642,44 @@ describe("MCP Tools", () => {
       // All 1000 x's must be present inside the envelope
       expect(text).toMatch(/x{900,}/);
     });
+
+    it("unwraps Create/Announce activities so real outbox content renders", async () => {
+      // Real Mastodon/Pleroma/Misskey outboxes return ACTIVITIES, not bare Notes:
+      // a Create wraps the Note at object.content; an Announce (boost) carries the
+      // boosted object's URL. Reading content off the activity wrapper yields
+      // "(empty)" for every post — the flagship read tool's headline bug.
+      (remoteClient.fetchActorOutboxPaginated as Mock).mockResolvedValue({
+        items: [
+          {
+            type: "Create",
+            id: "https://example.social/activities/1",
+            object: {
+              type: "Note",
+              id: "https://example.social/notes/1",
+              content: "hello from the nested note",
+            },
+          },
+          {
+            type: "Announce",
+            id: "https://example.social/activities/2",
+            object: "https://other.example/notes/99",
+          },
+        ],
+        totalItems: 2,
+        collectionId: "https://example.social/users/testuser/outbox",
+        hasMore: false,
+      });
+
+      const tool = registeredTools.get("fetch-timeline");
+      const result = await tool?.handler({ identifier: "user@example.social", limit: 20 });
+      const text = ((result as { content: { text: string }[] }).content[0].text ?? "") as string;
+
+      // The Create's nested content must surface, not an empty placeholder.
+      expect(text).toContain("hello from the nested note");
+      // The Announce's boosted URL must be referenced.
+      expect(text).toContain("https://other.example/notes/99");
+      // The activity wrapper must not render as bare empty content.
+      expect(text).not.toMatch(/\[Create\]\s*<untrusted-content[^>]*>\s*<\/untrusted-content>/);
+    });
   });
 });

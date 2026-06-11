@@ -81,20 +81,46 @@ jobs:
         retention-days: 7
         if-no-files-found: error
 
-  lint:
-    name: Lint and Format Check
+  coverage:
+    name: Coverage thresholds
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 30
+
     steps:
     - name: Checkout code
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
       with:
         node-version: '20.x'
         cache: 'npm'
-    
+
+    - name: Install dependencies
+      run: npm ci
+
+    # The matrix `test` job runs vitest without coverage, so the per-directory
+    # thresholds in vitest.config.ts were never actually enforced. This job fails
+    # CI when coverage drops below those floors.
+    - name: Run tests with coverage enforcement
+      run: npm run test:coverage
+      env:
+        NODE_OPTIONS: --max-old-space-size=4096
+
+  lint:
+    name: Lint and Format Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+    - name: Setup Node.js
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
     - name: Install dependencies
       run: npm ci
 

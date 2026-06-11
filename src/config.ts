@@ -90,7 +90,7 @@ function parseBoolEnv(value: string | undefined, defaultValue: boolean): boolean
 export const SERVER_NAME = process.env.MCP_SERVER_NAME || "activitypub-mcp";
 
 /** MCP Server version */
-export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "3.1.3";
+export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "3.1.4";
 
 /**
  * Directory for the persisted credential store (accounts.json).
@@ -431,7 +431,7 @@ export function validateConfiguration(): void {
     // Lazy import to avoid pulling logtape into config-only consumers
     // (the build is ESM/tsc, so this stays tree-shakable in dist).
     void import("@logtape/logtape").then(({ getLogger }) => {
-      const logger = getLogger("activitypub-mcp:config");
+      const logger = getLogger(["activitypub-mcp", "config"]);
       for (const warning of warnings) {
         logger.warn(warning);
       }

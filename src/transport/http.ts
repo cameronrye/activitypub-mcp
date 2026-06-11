@@ -25,7 +25,7 @@ import {
 import { isLoopbackIPv4 } from "../validation/url.js";
 import { checkBearerAuth } from "./auth-middleware.js";
 
-const logger = getLogger("activitypub-mcp:http");
+const logger = getLogger(["activitypub-mcp", "http"]);
 
 const LOOPBACK_HOSTS = new Set(["::1", "[::1]", "localhost"]);
 

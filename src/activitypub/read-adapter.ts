@@ -112,19 +112,91 @@ function asArray<T>(data: unknown): T[] {
   return Array.isArray(data) ? (data as T[]) : [];
 }
 
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === "object";
+}
+
 // =============================================================================
 // Mastodon read adapter (existing REST behaviour, lifted into the adapter)
 // =============================================================================
 
+const SEARCH_LIMIT = 20;
+
+/**
+ * Validate + normalize ONE untrusted Mastodon status. A hostile or non-conformant
+ * server (the default adapter for ALL detection failures) controls this JSON, so
+ * we drop records lacking a string id or an attributable author rather than
+ * surfacing authorless attacker content, and coerce every count through toCount.
+ * Returns null for a record that should be dropped.
+ */
+function normalizeMastodonPost(raw: unknown, domain: string): NormalizedPost | null {
+  if (!isRecord(raw) || typeof raw.id !== "string") return null;
+  const account = isRecord(raw.account) ? raw.account : undefined;
+  if (!account || typeof account.username !== "string") return null;
+  return {
+    id: raw.id,
+    content: typeof raw.content === "string" ? raw.content : "",
+    account: {
+      username: account.username,
+      acct: typeof account.acct === "string" ? account.acct : account.username,
+      display_name: typeof account.display_name === "string" ? account.display_name : undefined,
+      url: typeof account.url === "string" ? account.url : `https://${domain}`,
+    },
+    created_at: typeof raw.created_at === "string" ? raw.created_at : "",
+    reblogs_count: toCount(raw.reblogs_count),
+    favourites_count: toCount(raw.favourites_count),
+    replies_count: toCount(raw.replies_count),
+    url: typeof raw.url === "string" ? raw.url : `https://${domain}/@${account.username}/${raw.id}`,
+    spoiler_text: typeof raw.spoiler_text === "string" ? raw.spoiler_text : undefined,
+  };
+}
+
+/** Normalize a batch of untrusted statuses, dropping malformed records and
+ * capping the result so a server that ignores `limit` can't flood the model. */
+function normalizeMastodonPosts(data: unknown, domain: string, limit: number): NormalizedPost[] {
+  const out: NormalizedPost[] = [];
+  for (const raw of asArray<unknown>(data)) {
+    const post = normalizeMastodonPost(raw, domain);
+    if (post) out.push(post);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+/** Validate + normalize untrusted Mastodon trend tags, dropping malformed
+ * records and capping the result. */
+function normalizeMastodonHashtags(
+  data: unknown,
+  domain: string,
+  limit: number,
+): NormalizedHashtag[] {
+  const out: NormalizedHashtag[] = [];
+  for (const raw of asArray<unknown>(data)) {
+    if (!isRecord(raw) || typeof raw.name !== "string") continue;
+    out.push({
+      name: raw.name,
+      url:
+        typeof raw.url === "string"
+          ? raw.url
+          : `https://${domain}/tags/${encodeURIComponent(raw.name)}`,
+      history: Array.isArray(raw.history)
+        ? (raw.history as NormalizedHashtag["history"])
+        : undefined,
+    });
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 export const mastodonReadAdapter: ReadAdapter = {
   async fetchTrendingHashtags(domain, { limit = 20, offset = 0 }) {
     const url = `https://${domain}/api/v1/trends/tags?limit=${limit}&offset=${offset}`;
-    return { hashtags: asArray<NormalizedHashtag>(await getJson(url)) };
+    return { hashtags: normalizeMastodonHashtags(await getJson(url), domain, limit) };
   },
 
   async fetchTrendingPosts(domain, { limit = 20, offset = 0 }) {
     const url = `https://${domain}/api/v1/trends/statuses?limit=${limit}&offset=${offset}`;
-    return { posts: asArray<NormalizedPost>(await getJson(url)) };
+    return { posts: normalizeMastodonPosts(await getJson(url), domain, limit) };
   },
 
   async fetchPublicTimeline(domain, scope, { limit = 20, maxId, sinceId, minId }) {
@@ -134,17 +206,43 @@ export const mastodonReadAdapter: ReadAdapter = {
     if (sinceId) params.set("since_id", sinceId);
     if (minId) params.set("min_id", minId);
     const url = `https://${domain}/api/v1/timelines/public?${params.toString()}`;
-    const posts = asArray<NormalizedPost>(await getJson(url));
+    const raw = asArray<unknown>(await getJson(url));
+    const posts = normalizeMastodonPosts(raw, domain, limit);
     return {
       posts,
-      hasMore: posts.length === limit,
+      // "more" reflects whether the server returned a full page, not how many
+      // survived normalization.
+      hasMore: raw.length >= limit,
       nextMaxId: posts.length > 0 ? posts[posts.length - 1]?.id : undefined,
     };
   },
 
   async searchInstance(domain, query, type) {
-    const url = `https://${domain}/api/v2/search?q=${encodeURIComponent(query)}&type=${type}&limit=20`;
-    return (await getJson<SearchResult>(url)) ?? {};
+    const url = `https://${domain}/api/v2/search?q=${encodeURIComponent(query)}&type=${type}&limit=${SEARCH_LIMIT}`;
+    const raw = await getJson<unknown>(url);
+    if (!isRecord(raw)) return {};
+    const result: SearchResult = {};
+    if (Array.isArray(raw.accounts)) {
+      result.accounts = raw.accounts
+        .filter(isRecord)
+        .filter((a) => typeof a.username === "string")
+        .slice(0, SEARCH_LIMIT)
+        .map((a) => ({
+          username: a.username as string,
+          acct: typeof a.acct === "string" ? a.acct : (a.username as string),
+          display_name: typeof a.display_name === "string" ? a.display_name : undefined,
+          note: typeof a.note === "string" ? a.note : undefined,
+          followers_count: typeof a.followers_count === "number" ? a.followers_count : undefined,
+          statuses_count: typeof a.statuses_count === "number" ? a.statuses_count : undefined,
+        }));
+    }
+    if (Array.isArray(raw.statuses)) {
+      result.statuses = normalizeMastodonPosts(raw.statuses, domain, SEARCH_LIMIT);
+    }
+    if (Array.isArray(raw.hashtags)) {
+      result.hashtags = normalizeMastodonHashtags(raw.hashtags, domain, SEARCH_LIMIT);
+    }
+    return result;
   },
 };
 

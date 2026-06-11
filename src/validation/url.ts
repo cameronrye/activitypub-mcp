@@ -50,9 +50,8 @@ const PRIVATE_IPV4_RANGES = [
   /^198\.1[89]\./, // Benchmarking (198.18.0.0/15, RFC 2544)
   /^198\.51\.100\./, // Documentation (TEST-NET-2)
   /^203\.0\.113\./, // Documentation (TEST-NET-3)
-  /^224\./, // Multicast (224.0.0.0/4)
-  /^240\./, // Reserved for future use (240.0.0.0/4)
-  /^255\.255\.255\.255$/, // Broadcast
+  /^2(2[4-9]|3\d)\./, // Multicast (224.0.0.0/4 — first octet 224-239)
+  /^2(4\d|5[0-5])\./, // Reserved + broadcast (240.0.0.0/4 — first octet 240-255)
 ];
 
 /**
@@ -67,9 +66,9 @@ const PRIVATE_IPV6_RANGES = [
   /^::1$/i, // Loopback
   /^::$/i, // Unspecified address
   /^::ffff:/i, // IPv4-mapped IPv6 addresses (check the mapped IPv4)
-  /^ff0[\da-f]:/i, // Multicast (ff00::/8)
+  /^ff[\da-f]{2}:/i, // Multicast (ff00::/8 — any flag/scope nibbles)
   /^2001:db8:/i, // Documentation (2001:db8::/32)
-  /^2001::/i, // Teredo tunneling (2001::/32) - could be abused
+  /^2001:(:|0{1,4}:)/i, // Teredo tunneling (2001::/32) - both "2001::" and "2001:0:" text forms
   /^64:ff9b:/i, // NAT64 (64:ff9b::/96)
   /^100::/i, // Discard prefix (100::/64)
   /^2002:/i, // 6to4 (2002::/16) - deprecated, could be abused
