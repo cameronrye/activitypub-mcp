@@ -113,5 +113,8 @@
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist",
     "prepublishOnly": "run-s clean validate:version typecheck lint build"
+  },
+  "overrides": {
+    "esbuild": "^0.28.1"
   }
 }
