@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.5] - 2026-06-15
+
+Maintenance release: dependency, toolchain, and CI/security hardening. No runtime
+behavior changes — the published server is functionally identical to 3.1.4.
+
+### Changed
+
+- Migrated the build to **TypeScript 6** and refreshed the dev/test/build dependency
+  groups (vitest, msw, biome, astro, and others via Dependabot).
+- Cleaned up `tsconfig.json` for TypeScript 6: explicit `rootDir`, dropped the
+  deprecated `baseUrl` and an unused path alias.
+
+### Security
+
+- Deduplicated **esbuild** to the patched `0.28.1`, clearing two dev-toolchain
+  advisories (GHSA-gv7w-rqvm-qjhr, GHSA-g7r4-m6w7-qqqr). esbuild is build-time only and
+  never shipped, but the dependency tree is now clean.
+- Scoped the blocking CI `npm audit` gate to **production** dependencies (what ships in
+  `dist/`), so dev-only docs-site advisories no longer block releases. The strict
+  production audit remains required and is clean.
+
 ## [3.1.4] - 2026-06-10
 
 Security, correctness, and distribution patch from a second end-to-end review.

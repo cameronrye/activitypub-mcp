@@ -90,7 +90,7 @@ function parseBoolEnv(value: string | undefined, defaultValue: boolean): boolean
 export const SERVER_NAME = process.env.MCP_SERVER_NAME || "activitypub-mcp";
 
 /** MCP Server version */
-export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "3.1.4";
+export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "3.1.5";
 
 /**
  * Directory for the persisted credential store (accounts.json).
