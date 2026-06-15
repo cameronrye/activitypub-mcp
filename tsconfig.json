@@ -22,10 +22,7 @@
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
+    "rootDir": "./src",
     "outDir": "./dist"
   },
   "include": ["src/**/*"],
