@@ -75,8 +75,10 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
-    - name: Run npm audit
-      run: npm audit --audit-level=high
+    # Gate on production deps (what ships in dist/**). Dev-only docs-site
+    # tooling advisories (esbuild/yaml via astro) are tracked by Dependabot.
+    - name: Run npm audit (production deps)
+      run: npm audit --omit=dev --audit-level=high
 
     - name: Audit production dependencies (must be clean)
       run: npm run audit:prod
