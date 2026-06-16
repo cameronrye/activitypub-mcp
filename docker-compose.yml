@@ -1,0 +1,44 @@
+# Self-host the ActivityPub MCP server over HTTP.
+#
+# The repo Dockerfile defaults to the stdio transport; this compose file reuses
+# that same image and flips it to HTTP mode via environment variables. The HTTP
+# server refuses to start without MCP_HTTP_SECRET.
+#
+#   MCP_HTTP_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))") \
+#     docker compose up --build
+#
+#   curl http://localhost:8080/health        # -> {"status":"ok"}
+#   curl -H "Authorization: Bearer $MCP_HTTP_SECRET" http://localhost:8080/mcp
+#
+# Read-only by default. See SECURITY.md before enabling writes on a shared host.
+services:
+  activitypub-mcp:
+    build: .
+    image: activitypub-mcp:local
+    restart: unless-stopped
+    environment:
+      MCP_TRANSPORT_MODE: http
+      MCP_HTTP_HOST: "0.0.0.0"
+      MCP_HTTP_PORT: "8080"
+      NODE_ENV: production
+      # REQUIRED — bearer secret for /mcp (32+ random chars). Provide it from the
+      # host environment; compose errors out if it is unset.
+      MCP_HTTP_SECRET: ${MCP_HTTP_SECRET:?set MCP_HTTP_SECRET to a 32+ char random string}
+      # Recommended for any non-localhost deployment (DNS-rebinding defense):
+      # MCP_HTTP_ALLOWED_HOSTS: "mcp.example.com"
+      # MCP_HTTP_ALLOWED_ORIGINS: "https://app.example.com"
+      # Writes are OFF by default; enabling them on a shared HTTP host is strongly
+      # discouraged (no per-session credential isolation). See SECURITY.md.
+      # ACTIVITYPUB_ENABLE_WRITES: "true"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

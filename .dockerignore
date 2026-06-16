@@ -8,6 +8,8 @@ coverage
 site
 tests
 docs
+examples
+docker-compose.yml
 public
 scripts
 *.mcpb

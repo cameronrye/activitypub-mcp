@@ -155,7 +155,16 @@ See **[examples/](examples/)** for copy-pasteable recipes — Fediverse research
 
 ## HTTP transport
 
-In addition to stdio (default), the server supports HTTP mode with a bearer-gated `/mcp` endpoint and `/health` liveness check. Set `MCP_HTTP_SECRET` (min 16 chars) to enable. See the [docs](https://cameronrye.github.io/activitypub-mcp/docs/) for full configuration.
+In addition to stdio (default), the server supports HTTP mode with a bearer-gated `/mcp` endpoint and `/health` liveness check. Set `MCP_HTTP_SECRET` (min 16 chars) to enable.
+
+To self-host it as a service, the repo includes a `Dockerfile` and a `docker-compose.yml` (HTTP mode):
+
+```bash
+export MCP_HTTP_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+docker compose up --build   # then: curl http://localhost:8080/health
+```
+
+See the [docs](https://cameronrye.github.io/activitypub-mcp/docs/getting-started/configuration/) for full configuration.
 
 ---
 

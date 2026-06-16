@@ -60,6 +60,40 @@ In v3, the HTTP server exposes two endpoints: `/mcp` (Bearer-auth required) and 
 | `MCP_HTTP_CORS_ENABLED` | `false` | Enable CORS for the HTTP transport. |
 | `MCP_HTTP_CORS_ORIGINS` | _empty_ | Comma-separated CORS allowed origins. Setting `*` logs a startup warning. |
 
+#### Self-host over HTTP with Docker
+
+The repository ships a `Dockerfile` (stdio by default) and a `docker-compose.yml`
+that flips the same image to HTTP mode. Generate a secret and bring it up:
+
+```bash
+export MCP_HTTP_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+docker compose up --build
+```
+
+Then probe it:
+
+```bash
+curl http://localhost:8080/health
+# {"status":"ok"}
+
+curl -H "Authorization: Bearer $MCP_HTTP_SECRET" http://localhost:8080/mcp
+```
+
+Or without compose, overriding the stdio default at `docker run` time:
+
+```bash
+docker build -t activitypub-mcp .
+docker run --rm -p 8080:8080 \
+  -e MCP_TRANSPORT_MODE=http -e MCP_HTTP_HOST=0.0.0.0 -e MCP_HTTP_PORT=8080 \
+  -e MCP_HTTP_SECRET="$MCP_HTTP_SECRET" \
+  activitypub-mcp
+```
+
+For any non-localhost deployment, set `MCP_HTTP_ALLOWED_HOSTS` and
+`MCP_HTTP_ALLOWED_ORIGINS` (DNS-rebinding defense), terminate TLS at a reverse
+proxy, and keep writes disabled — a shared HTTP endpoint has no per-session
+credential isolation. See [SECURITY.md](https://github.com/cameronrye/activitypub-mcp/blob/main/SECURITY.md).
+
 ### Thread Traversal Caps (v2)
 
 Controls applied to the `get-post-thread` tool and `activitypub://post-thread/…` resource.
