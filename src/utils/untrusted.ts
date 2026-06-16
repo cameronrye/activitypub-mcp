@@ -39,8 +39,14 @@ function defang(text: string): string {
 
 /** Make a one-line, quote-free source label. */
 function safeLabel(source: string): string {
+  // The label is interpolated into `<untrusted-content source="...">`. Beyond
+  // stripping HTML and quotes, escape any remaining angle brackets: a lone '>'
+  // (or unpaired '<') from an unvalidated remote string would otherwise close
+  // the opening delimiter early and let attacker text escape the envelope.
   return stripHtmlTags(source ?? "")
     .replaceAll('"', "'")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 120); // keep the attribute value bounded

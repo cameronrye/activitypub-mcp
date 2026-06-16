@@ -104,6 +104,14 @@ describe("numeric env validation & clamping", () => {
     expect(mod.AUDIT_LOG_MAX_ENTRIES).toBeGreaterThanOrEqual(1);
   });
 
+  it("clamps MAX_RETRIES to at least 1 so 0 cannot silently disable every request", async () => {
+    // The retry loop runs `for (attempt = 1; attempt <= MAX_RETRIES; ...)`, so a
+    // value of 0 means the body never executes and no fetch is ever issued.
+    process.env.MAX_RETRIES = "0";
+    const mod = await import("../../src/config.js");
+    expect(mod.MAX_RETRIES).toBeGreaterThanOrEqual(1);
+  });
+
   it("clamps a non-positive MAX_RESPONSE_SIZE up to a safe floor (0 would reject every body)", async () => {
     process.env.MAX_RESPONSE_SIZE = "0";
     const mod = await import("../../src/config.js");

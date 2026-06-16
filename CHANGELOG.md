@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.6] - 2026-06-15
+
+Correctness, hardening, and docs patch from a third end-to-end review. Fixes a
+silent read-path data loss, several remote-input edge cases, and a cluster of
+tool-reference documentation drift. No breaking changes.
+
+### Fixed
+
+- **`get-public-timeline` silent data loss** — the handler fetched up to `limit`
+  posts (default 20, max 40) but rendered only the first 15, while advertising a
+  pagination cursor derived from the last *fetched* post. Following the cursor
+  skipped the unshown tail, which was then unreachable. It now renders all fetched
+  posts, so the cursor never jumps over unseen content.
+- **`fetch-timeline` strips content warnings no more** — a Mastodon CW post
+  (`summary` = warning, `content` = body) was rendered with the sensitive body and
+  no warning, unlike every other read tool. `summarizeOutboxItem` now returns the
+  CW separately and the renderer prefixes a `⚠️ CW:` marker.
+- **Mastodon timeline cursor off-by-one** — `nextMaxId` was taken from the last
+  *surviving* post after normalization dropped malformed records, so a dropped
+  trailing record made the next page re-fetch and duplicate posts. The cursor is
+  now derived from the last *raw* item the server returned.
+- **Misskey account search missing-username guard** — a hostile instance returning
+  a user with no `username` produced an `undefined@host` handle; such records are
+  now dropped, mirroring the Mastodon accounts path.
+- **`instances.social` `hasMore` under-report** — `hasMore` was computed from the
+  post-filter array length, so dropping a row with an empty domain on a full page
+  falsely reported no more results. It now uses the raw page row count.
+- **NodeInfo positive cache ignored later blocks** — a positive software-detection
+  entry (24h TTL) kept serving pre-block metadata after an operator blocked the
+  instance. Cache hits now re-check the blocklist and go `unavailable` if blocked.
+
+### Security
+
+- **Untrusted-content envelope label not fully defanged** — `safeLabel()` left a
+  lone `>` (or unpaired `<`) intact, so an unvalidated remote domain rendered into
+  the `<untrusted-content source="…">` opening tag could close the delimiter early.
+  The label now escapes `<`/`>`.
+- **Malformed `Host` header dropped the connection** — the HTTP transport built the
+  request URL from `req.headers.host` before routing/auth, which threw on an
+  empty/malformed Host and left the client with no response. The path is now parsed
+  against a fixed base; the real Host is still validated by the SDK's DNS-rebinding
+  protection.
+- **Malformed OAuth `iss` threw instead of failing closed** — a non-URL issuer from
+  a hostile authorization server raised an uncaught `TypeError`; it now produces the
+  intended "issuer mismatch (possible mix-up attack)" error.
+
+### Changed
+
+- **`MAX_RETRIES` floored at 1** — the retry loop runs `attempt <= MAX_RETRIES`, so
+  the previously-allowed `0` made the body never execute, silently issuing no request
+  and bricking every remote read/write.
+- **Tool reference (`tools.mdx`) reconciled with the validators** — removed inputs
+  the tools reject (`discover-actor` profile URLs, `search --resolve`,
+  `get-notifications --excludeTypes`, `maxId` on `get-bookmarks`/`get-favourites`/
+  `get-scheduled-posts`, `upload-media` URL), corrected the `get-public-timeline`
+  `scope` default to `federated`, relaxed the overstated one-hour `scheduledAt` rule
+  to "must be in the future," and added the `status`/`update` notification types.
+
 ## [3.1.5] - 2026-06-15
 
 Maintenance release: dependency, toolchain, and CI/security hardening. No runtime

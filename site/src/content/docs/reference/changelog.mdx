@@ -9,6 +9,30 @@ order: 2
 
 All notable changes to the ActivityPub MCP Server are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### v3.1.6 - 2026-06-15
+
+**Correctness, hardening, and docs patch** from a third end-to-end review. Fixes a silent read-path data loss, several remote-input edge cases, and a cluster of tool-reference documentation drift. No breaking changes. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.
+
+#### Fixed
+
+- **`get-public-timeline` no longer silently drops posts** — it rendered only the first 15 of up to 40 fetched posts while advertising a cursor derived from the last *fetched* post, so the unshown tail was skipped and unreachable on the next page. All fetched posts are now rendered.
+- **`fetch-timeline` surfaces content warnings** — a CW'd post (`summary` + `content`) showed the sensitive body with no warning marker, unlike every other read tool; the `⚠️ CW:` marker is now emitted.
+- **Mastodon timeline cursor is taken from the last raw item**, not the last surviving post, so dropping a malformed trailing record no longer causes the next page to re-fetch and duplicate posts.
+- **Misskey account search drops records without a username**, mirroring the Mastodon path, instead of surfacing a garbage `undefined@host` handle.
+- **`instances.social` pagination no longer under-reports `hasMore`** when a row with an empty domain is filtered out of a full page.
+- **NodeInfo software cache re-checks the operator blocklist on a hit**, so blocking an instance takes effect immediately instead of after the 24h TTL.
+
+#### Security
+
+- **Prompt-injection envelope label is angle-bracket-escaped** — a lone `>` from an unvalidated remote domain could close the `<untrusted-content source="…">` opening tag early; the label now escapes `<`/`>`.
+- **HTTP transport tolerates a malformed/empty `Host` header** — it previously threw before routing/auth, dropping the connection with no response; the path/query are now parsed against a fixed base (the real Host is still validated by the SDK's rebinding protection).
+- **OAuth `iss` mix-up check fails closed on a malformed issuer** — a non-URL `iss` from a hostile authorization server now produces the intended mix-up error instead of an uncaught `TypeError`.
+
+#### Changed
+
+- **`MAX_RETRIES` is floored at 1** — `0` previously made the retry loop body never execute, silently issuing no request and bricking every remote read/write.
+- **Tool reference (`tools.mdx`) reconciled with the validators** — removed documented inputs the tools reject (`discover-actor` profile URLs, `search --resolve`, `get-notifications --excludeTypes`, `maxId` on bookmarks/favourites/scheduled-posts, `upload-media` URL), corrected the `get-public-timeline` scope default to `federated`, relaxed the overstated one-hour `scheduledAt` rule to "must be in the future," and added the `status`/`update` notification types.
+
 ### v3.1.5 - 2026-06-15
 
 **Maintenance release** — dependency, toolchain, and CI/security hardening with no runtime behavior changes; the published server is functionally identical to v3.1.4. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.

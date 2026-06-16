@@ -4,7 +4,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
-import { registerTools } from "../../src/mcp/tools.js";
+import { registerTools, summarizeOutboxItem } from "../../src/mcp/tools.js";
 import { RateLimiter } from "../../src/resilience/rate-limiter.js";
 
 // Mock dependencies
@@ -417,6 +417,23 @@ describe("MCP Tools", () => {
     });
   });
 
+  describe("summarizeOutboxItem", () => {
+    it("returns the CW separately from the body when a Note has both", () => {
+      const r = summarizeOutboxItem({
+        type: "Create",
+        object: { type: "Note", content: "sensitive body", summary: "content warning text" },
+      });
+      expect(r.content).toBe("sensitive body");
+      expect(r.cw).toBe("content warning text");
+    });
+
+    it("does not set cw when there is no separate summary", () => {
+      const r = summarizeOutboxItem({ type: "Note", content: "just a post" });
+      expect(r.content).toBe("just a post");
+      expect(r.cw).toBeUndefined();
+    });
+  });
+
   describe("get-public-timeline tool", () => {
     it("should fetch local timeline when scope is local", async () => {
       (remoteClient.fetchLocalTimeline as Mock).mockResolvedValue({
@@ -484,6 +501,35 @@ describe("MCP Tools", () => {
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "Federated Timeline",
       );
+    });
+
+    it("renders every fetched post and does not paginate past unshown ones", async () => {
+      // The advertised nextMaxId is derived from the LAST FETCHED post, so any
+      // post fetched-but-not-rendered is silently skipped on the next page.
+      // Render all fetched posts so the cursor never jumps over unseen content.
+      const posts = Array.from({ length: 20 }, (_, i) => ({
+        content: `<p>post ${i + 1}</p>`,
+        spoiler_text: "",
+        account: { username: `user${i + 1}` },
+        favourites_count: 0,
+        reblogs_count: 0,
+        replies_count: 0,
+      }));
+      (remoteClient.fetchFederatedTimeline as Mock).mockResolvedValue({
+        posts,
+        hasMore: true,
+        nextMaxId: "cursor-from-post-20",
+      });
+
+      const tool = registeredTools.get("get-public-timeline");
+      const result = await tool?.handler({ domain: "mastodon.social", limit: 20 });
+      const text = (result as { content: { text: string }[] }).content[0].text;
+
+      const numbered = text.match(/^\d+\. /gm) || [];
+      expect(numbered.length).toBe(20);
+      // The previously-dropped tail (posts 16-20) must be present.
+      expect(text).toContain("user16");
+      expect(text).toContain("user20");
     });
   });
 
@@ -641,6 +687,37 @@ describe("MCP Tools", () => {
       expect(text).toContain("</untrusted-content>");
       // All 1000 x's must be present inside the envelope
       expect(text).toMatch(/x{900,}/);
+    });
+
+    it("surfaces a content warning marker instead of silently showing the body", async () => {
+      // A Mastodon CW post sets summary=<CW text> and content=<sensitive body>.
+      // Every other read tool prefixes a CW marker; fetch-timeline must too,
+      // rather than rendering the sensitive body with no warning.
+      (remoteClient.fetchActorOutboxPaginated as Mock).mockResolvedValue({
+        items: [
+          {
+            type: "Create",
+            id: "https://example.social/activities/1",
+            object: {
+              type: "Note",
+              id: "https://example.social/notes/1",
+              content: "the sensitive body",
+              summary: "eye contact, food",
+            },
+          },
+        ],
+        totalItems: 1,
+        collectionId: "https://example.social/users/testuser/outbox",
+        hasMore: false,
+      });
+
+      const tool = registeredTools.get("fetch-timeline");
+      const result = await tool?.handler({ identifier: "user@example.social", limit: 1 });
+      const text = ((result as { content: { text: string }[] }).content[0].text ?? "") as string;
+
+      expect(text).toContain("CW:");
+      expect(text).toContain("eye contact, food");
+      expect(text).toContain("the sensitive body");
     });
 
     it("unwraps Create/Announce activities so real outbox content renders", async () => {

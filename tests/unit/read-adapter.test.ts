@@ -279,6 +279,25 @@ describe("read PlatformAdapter — NodeInfo routing", () => {
       expect(typeof res.posts[0].favourites_count).toBe("number");
       expect(Number.isFinite(res.posts[0].favourites_count)).toBe(true);
     });
+
+    it("derives the timeline cursor from the last raw item so a dropped trailing post is not re-fetched", async () => {
+      // Full page of `limit` raw posts where the OLDEST (last) one is malformed
+      // and dropped by normalization. The cursor must advance past the dropped
+      // item (its id), not stop at the last surviving post — otherwise the next
+      // page (max_id = surviving id) re-includes the dropped item's range.
+      server.use(
+        http.get(`https://${MASTO}/api/v1/timelines/public`, () =>
+          HttpResponse.json([
+            goodPost("100"),
+            goodPost("99"),
+            { id: "98", content: "malformed trailing (no account)" },
+          ]),
+        ),
+      );
+      const res = await client.fetchLocalTimeline(MASTO, { limit: 3 });
+      expect(res.posts).toHaveLength(2);
+      expect(res.nextMaxId).toBe("98");
+    });
   });
 
   describe("Misskey read adapter is resilient to hostile/malformed payloads", () => {
@@ -316,6 +335,25 @@ describe("read PlatformAdapter — NodeInfo routing", () => {
       );
       const res = await client.fetchLocalTimeline(MISSKEY, { limit: 3 });
       expect(res.posts).toHaveLength(3);
+    });
+
+    it("drops a Misskey account-search result with no username instead of emitting 'undefined@host'", async () => {
+      server.use(
+        http.post(`https://${MISSKEY}/api/users/search`, () =>
+          HttpResponse.json([
+            { id: "u1", username: "alice", host: null, name: "Alice" },
+            { id: "bad", host: "evil.test", name: "no username" }, // malformed: no username
+          ]),
+        ),
+      );
+      const res = (await client.searchInstance(MISSKEY, "alice", "accounts")) as {
+        accounts?: Array<{ acct: string }>;
+      };
+      expect(res.accounts).toHaveLength(1);
+      expect(res.accounts?.[0].acct).toBe("alice");
+      for (const a of res.accounts ?? []) {
+        expect(a.acct).not.toContain("undefined");
+      }
     });
   });
 });

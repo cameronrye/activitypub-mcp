@@ -291,18 +291,23 @@ export class DynamicInstanceDiscoveryService {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await readJsonWithLimit<{ pagination?: { total?: number } }>(
-        response,
-        MAX_RESPONSE_SIZE,
-      );
+      const data = await readJsonWithLimit<{
+        instances?: unknown[];
+        pagination?: { total?: number };
+      }>(response, MAX_RESPONSE_SIZE);
 
       // Transform API response to our format
       const instances = this.transformInstancesSocialResponse(data);
 
+      // Base hasMore on the RAW page size the API returned, not the post-filter
+      // count: dropping a row with an empty domain would otherwise make a full
+      // page look short and falsely report that there are no more results.
+      const rawPageCount = Array.isArray(data.instances) ? data.instances.length : instances.length;
+
       return {
         instances,
         total: data.pagination?.total || instances.length,
-        hasMore: instances.length === limit,
+        hasMore: rawPageCount === limit,
         source: "api",
         timestamp: new Date().toISOString(),
       };

@@ -90,7 +90,7 @@ function parseBoolEnv(value: string | undefined, defaultValue: boolean): boolean
 export const SERVER_NAME = process.env.MCP_SERVER_NAME || "activitypub-mcp";
 
 /** MCP Server version */
-export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "3.1.5";
+export const SERVER_VERSION = process.env.MCP_SERVER_VERSION || "3.1.6";
 
 /**
  * Directory for the persisted credential store (accounts.json).
@@ -139,8 +139,12 @@ export const MAX_UPLOAD_SIZE = parseIntEnv(
   { min: 1 },
 );
 
-/** Maximum number of retry attempts for failed requests */
-export const MAX_RETRIES = parseIntEnv("MAX_RETRIES", process.env.MAX_RETRIES, 3, { min: 0 });
+/**
+ * Total request attempts (the retry loop runs `attempt <= MAX_RETRIES`). Floored
+ * at 1: a value of 0 would make the loop body never execute, silently issuing no
+ * request at all and bricking every remote read/write.
+ */
+export const MAX_RETRIES = parseIntEnv("MAX_RETRIES", process.env.MAX_RETRIES, 3, { min: 1 });
 
 /** Base delay for retry backoff in milliseconds */
 export const RETRY_BASE_DELAY = parseIntEnv(

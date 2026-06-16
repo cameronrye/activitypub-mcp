@@ -90,7 +90,26 @@ export async function getInstanceSoftware(domain: string): Promise<InstanceSoftw
   const normalizedDomain = domain.toLowerCase();
 
   const positive = cache.get(normalizedDomain);
-  if (positive) return positive;
+  if (positive) {
+    // Re-check the operator blocklist on a cache hit. The positive entry has a
+    // 24h TTL, so without this an instance blocked AFTER it was cached would keep
+    // serving pre-block software/protocol metadata until the entry expired.
+    try {
+      instanceBlocklist.validateNotBlocked(normalizedDomain);
+      return positive;
+    } catch (error) {
+      cache.delete(normalizedDomain);
+      const reason = error instanceof Error ? error.message : String(error);
+      return {
+        domain: normalizedDomain,
+        detection: "unavailable",
+        software: null,
+        protocols: null,
+        openRegistrations: null,
+        reason,
+      };
+    }
+  }
   const negative = negativeCache.get(normalizedDomain);
   if (negative) return negative;
 
