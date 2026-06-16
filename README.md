@@ -133,6 +133,14 @@ Alternatively, set `ACTIVITYPUB_DEFAULT_INSTANCE` and `ACTIVITYPUB_DEFAULT_TOKEN
 
 ---
 
+## Platform support
+
+`discover-actor` and `fetch-timeline` speak plain ActivityPub (WebFinger → actor → outbox), so they read **any** conformant ActivityPub server — Mastodon, Misskey, Foundkey, Pleroma/Akkoma, **Lemmy** (communities and users), **PeerTube** (channels and accounts), **GoToSocial**, and **Pixelfed**.
+
+The instance-API read tools (`search`, `get-trending-hashtags`, `get-trending-posts`, `get-public-timeline`) and every write tool require a **Mastodon- or Misskey-API** instance, since they call those platforms' REST APIs. Login uses OAuth (Mastodon-family) or MiAuth (Misskey).
+
+---
+
 ## Example
 
 After adding the server to your MCP client, try:
