@@ -149,6 +149,8 @@ After adding the server to your MCP client, try:
 
 The model will call `discover-actor` to fetch the profile, then `fetch-timeline` to read recent posts.
 
+See **[examples/](examples/)** for copy-pasteable recipes — Fediverse research digests, scheduled threads, notification triage, image posts with alt text, and topic curation.
+
 ---
 
 ## HTTP transport
