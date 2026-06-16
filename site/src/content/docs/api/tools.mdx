@@ -25,19 +25,16 @@ Discover and get detailed information about fediverse actors (users).
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `identifier` | string | Yes | Actor identifier in WebFinger format (@user@domain) or ActivityPub URL |
+| `identifier` | string | Yes | Actor handle in WebFinger format (@user@domain or user@domain). A profile URL is **not** a valid identifier. |
 
 #### Examples
 
 ```bash
-# WebFinger format
+# WebFinger handle (the only accepted form)
 discover-actor @mastodon@mastodon.social
 
-# ActivityPub URL
-discover-actor https://mastodon.social/users/mastodon
-
-# Profile URL
-discover-actor https://mastodon.social/@mastodon
+# The leading @ is optional
+discover-actor mastodon@mastodon.social
 ```
 
 #### Response
@@ -147,17 +144,17 @@ Get the public timeline from a fediverse instance — local posts only, or the f
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | `domain` | string | Yes | Instance domain (e.g., "mastodon.social") |
-| `scope` | enum | No | Timeline scope: "local" (posts from the instance only) or "federated" (posts from all connected instances). Default: "local" |
+| `scope` | enum | No | Timeline scope: "local" (posts from the instance only) or "federated" (posts from all connected instances). Default: "federated" |
 | `limit` | number | No | Number of posts to fetch (default: 20, max: 40) |
 | `maxId` | string | No | Return results older than this ID (for pagination) |
 
 #### Examples
 
 ```bash
-# Get local timeline
-get-public-timeline fosstodon.org
+# Get local timeline (that instance's own posts) — scope must be set explicitly
+get-public-timeline fosstodon.org --scope local
 
-# Get federated timeline
+# Get federated timeline (the default)
 get-public-timeline mastodon.social --scope federated
 
 # Paginate results
@@ -257,7 +254,6 @@ Unified search across accounts, posts, and hashtags in a single query. Combines 
 | `query` | string | Yes | Search query |
 | `type` | enum | No | Filter results: "all", "accounts", "posts", "hashtags" (default: "all") |
 | `limit` | number | No | Results per type (default: 10, max: 40) |
-| `resolve` | boolean | No | Attempt WebFinger lookup for remote accounts |
 
 #### Examples
 
@@ -268,8 +264,8 @@ search mastodon.social "programming"
 # Search only accounts
 search mastodon.social "developer" --type accounts
 
-# Search with remote lookup
-search fosstodon.org "@user@mastodon.social" --resolve true
+# Search a specific instance
+search fosstodon.org "@user@mastodon.social"
 ```
 
 #### Response
@@ -432,7 +428,7 @@ Create a new post/status on the fediverse.
 | `sensitive` | boolean | No | Mark media as sensitive |
 | `language` | string | No | ISO 639-1 language code (e.g., "en") |
 | `mediaIds` | string[] | No | Media attachment IDs from `upload-media` (max 4 per post, Mastodon limit) |
-| `scheduledAt` | string (ISO 8601) | No | Schedule the post for a future time (must be at least one hour in the future). Returns a scheduled post — manage with `get-scheduled-posts` / `update-scheduled-post` / `cancel-scheduled-post`. |
+| `scheduledAt` | string (ISO 8601) | No | Schedule the post for a future time (must be in the future; the target instance enforces its own minimum lead time, typically ~5 minutes). Returns a scheduled post — manage with `get-scheduled-posts` / `update-scheduled-post` / `cancel-scheduled-post`. |
 | `accountId` | string | No | Account ID to post from (defaults to the active account from `switch-account`) |
 
 #### Examples
@@ -736,8 +732,7 @@ Get your notifications (mentions, follows, boosts, favourites).
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | `limit` | number | No | Number of notifications (default: 20, max: 40) |
-| `types` | array | No | Filter by type: "mention", "reblog", "favourite", "follow", "poll", "follow_request" |
-| `excludeTypes` | array | No | Exclude specific notification types |
+| `types` | array | No | Filter by type: "mention", "status", "reblog", "follow", "follow_request", "favourite", "poll", "update" |
 
 #### Examples
 
@@ -748,8 +743,8 @@ get-notifications
 # Get only mentions
 get-notifications --types ["mention"]
 
-# Exclude follow notifications
-get-notifications --excludeTypes ["follow", "follow_request"]
+# Filter to mentions and favourites
+get-notifications --types ["mention", "favourite"]
 ```
 
 </div>
@@ -765,7 +760,6 @@ Get your bookmarked posts.
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | `limit` | number | No | Number of bookmarks (default: 20, max: 40) |
-| `maxId` | string | No | Return results older than this ID |
 
 #### Examples
 
@@ -787,7 +781,6 @@ Get posts you have favourited.
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | `limit` | number | No | Number of favourites (default: 20, max: 40) |
-| `maxId` | string | No | Return results older than this ID |
 
 #### Examples
 
@@ -846,7 +839,7 @@ Upload media files (images, videos, audio) to use in posts. Supports alt text fo
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `filePath` | string | Yes | Local file path or URL of the media to upload |
+| `filePath` | string | Yes | Absolute path to the file **on the machine running the MCP server** (not a URL, and not the user's machine) |
 | `description` | string | No | Alt text description for accessibility (highly recommended) |
 | `focusX` | number | No | Horizontal focal point, -1.0 to 1.0 (determines crop center). Must be provided together with `focusY`. |
 | `focusY` | number | No | Vertical focal point, -1.0 to 1.0 (determines crop center). Must be provided together with `focusX`. |
@@ -859,9 +852,6 @@ upload-media --filePath "/path/to/image.jpg" --description "A sunset over mounta
 
 # Upload with focal point for cropping
 upload-media --filePath "/path/to/photo.png" --description "Portrait photo" --focusX 0.0 --focusY 0.5
-
-# Upload from URL
-upload-media --filePath "https://example.com/image.jpg" --description "External image"
 ```
 
 #### Response
@@ -888,7 +878,6 @@ List all your pending scheduled posts.
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | `limit` | number | No | Number of scheduled posts to fetch (default: 20, max: 40) |
-| `maxId` | string | No | Return results older than this ID (pagination) |
 
 #### Examples
 
@@ -922,13 +911,13 @@ Reschedule a pending post to a new time.
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | `scheduledPostId` | string | Yes | ID of the scheduled post to update |
-| `scheduledAt` | string | Yes | New scheduled time in ISO 8601 format. Must be at least one hour in the future. |
+| `scheduledAt` | string | Yes | New scheduled time in ISO 8601 format. Must be in the future (the target instance enforces its own minimum lead time). |
 
 #### Examples
 
 ```bash
 # Reschedule a post
-update-scheduled-post --scheduledPostId "123" --scheduledAt "<ISO 8601 timestamp at least one hour in the future>"
+update-scheduled-post --scheduledPostId "123" --scheduledAt "<ISO 8601 timestamp in the future>"
 ```
 
 </div>

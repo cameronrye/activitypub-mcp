@@ -3,6 +3,7 @@
  */
 
 import { request as httpRequest } from "node:http";
+import { connect as netConnect } from "node:net";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { HttpTransportServer, httpRebindingWarnings } from "../../src/transport/http.js";
 
@@ -140,6 +141,35 @@ describe("HttpTransportServer", () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.status).toBe("ok");
+    });
+
+    it("responds to a request with an empty Host header instead of dropping the connection", async () => {
+      // `http://${req.headers.host}` becomes `http://` for an empty Host, which
+      // throws in new URL() before any routing/auth — leaving an unauthenticated
+      // client with no HTTP response. Parse against a fixed base so this can't
+      // happen. fetch() forbids setting Host, so craft the request over a socket.
+      server = new HttpTransportServer({ port: 0 });
+      await server.start();
+      const address = server.getAddress();
+
+      const raw = await new Promise<string>((resolve, reject) => {
+        const socket = netConnect(address?.port ?? 0, address?.host ?? "127.0.0.1", () => {
+          socket.write("GET /health HTTP/1.1\r\nHost:\r\nConnection: close\r\n\r\n");
+        });
+        let data = "";
+        socket.setTimeout(3000, () => {
+          socket.destroy();
+          reject(new Error("connection hung — no HTTP response to an empty Host header"));
+        });
+        socket.on("data", (chunk) => {
+          data += chunk.toString();
+        });
+        socket.on("end", () => resolve(data));
+        socket.on("error", reject);
+      });
+
+      expect(raw).toMatch(/^HTTP\/1\.1 200/);
+      expect(raw).toContain("ok");
     });
 
     it("should return 404 for /metrics (removed)", async () => {

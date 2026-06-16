@@ -79,8 +79,18 @@ export class MastodonOAuthStrategy implements LoginStrategy {
     // must be our instance. Compare hostnames (not URL.host) so a non-443
     // instance whose iss carries a port isn't falsely rejected.
     const iss = params.get("iss");
-    if (iss && new URL(iss).hostname !== new URL(`https://${ctx.instance}`).hostname) {
-      throw new Error("Authorization issuer mismatch (possible mix-up attack)");
+    if (iss) {
+      let issHostname: string | null = null;
+      try {
+        issHostname = new URL(iss).hostname;
+      } catch {
+        // A malformed/non-URL iss is itself a mix-up signal — fail closed with
+        // the intended error rather than letting new URL()'s TypeError escape.
+        issHostname = null;
+      }
+      if (issHostname === null || issHostname !== new URL(`https://${ctx.instance}`).hostname) {
+        throw new Error("Authorization issuer mismatch (possible mix-up attack)");
+      }
     }
     const code = params.get("code");
     if (!code) throw new Error("Authorization callback returned no code");

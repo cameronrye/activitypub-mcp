@@ -109,6 +109,30 @@ describe("MastodonOAuthStrategy.authorize", () => {
     ).rejects.toThrow(/issuer mismatch|mix-up/i);
   });
 
+  it("rejects a malformed (non-URL) issuer with the mix-up error, not a raw TypeError", async () => {
+    // A malicious/non-compliant AS can echo a non-URL `iss` (e.g. "foo"). The
+    // mix-up parse must fail closed with the intended error rather than letting
+    // new URL()'s TypeError propagate uncaught.
+    server.use(
+      http.post("https://mastodon.test/api/v1/apps", () =>
+        HttpResponse.json({ client_id: "cid", client_secret: "csecret" }),
+      ),
+    );
+    await expect(
+      strategy.authorize(
+        ctx({
+          waitForCallback: vi.fn(async (exp: { state?: string }) => {
+            const p = new URLSearchParams();
+            p.set("code", "auth-code");
+            if (exp.state) p.set("state", exp.state);
+            p.set("iss", "not-a-valid-url"); // malformed: new URL() would throw
+            return p;
+          }),
+        }),
+      ),
+    ).rejects.toThrow(/issuer mismatch|mix-up/i);
+  });
+
   it("accepts a matching issuer whose iss carries a non-default port", async () => {
     // Regression guard for the host→hostname fix: instance on :8443 with an iss
     // that includes the port must NOT be rejected as a mix-up.

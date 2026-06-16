@@ -208,12 +208,18 @@ export const mastodonReadAdapter: ReadAdapter = {
     const url = `https://${domain}/api/v1/timelines/public?${params.toString()}`;
     const raw = asArray<unknown>(await getJson(url));
     const posts = normalizeMastodonPosts(raw, domain, limit);
+    // Derive the cursor from the last RAW item (the true oldest item the server
+    // returned), not the last surviving post. If a trailing record was dropped
+    // by normalization, a cursor taken from the last survivor would be newer
+    // than the page boundary and re-fetch the dropped item's range next page.
+    const lastRaw = raw[raw.length - 1];
+    const lastRawId = isRecord(lastRaw) && typeof lastRaw.id === "string" ? lastRaw.id : undefined;
     return {
       posts,
       // "more" reflects whether the server returned a full page, not how many
       // survived normalization.
       hasMore: raw.length >= limit,
-      nextMaxId: posts.length > 0 ? posts[posts.length - 1]?.id : undefined,
+      nextMaxId: lastRawId ?? (posts.length > 0 ? posts[posts.length - 1]?.id : undefined),
     };
   },
 
@@ -412,17 +418,22 @@ export const misskeyReadAdapter: ReadAdapter = {
         await postJson(`https://${domain}/api/users/search`, { query, limit: 20 }),
       );
       return {
-        accounts: users.map((u) => {
-          const acct = u.host ? `${u.username}@${u.host}` : u.username;
-          return {
-            username: u.username,
-            acct,
-            display_name: u.name ?? undefined,
-            note: u.description ?? undefined,
-            followers_count: u.followersCount,
-            statuses_count: u.notesCount,
-          };
-        }),
+        // Drop records without a usable username (mirrors the Mastodon accounts
+        // path and normalizeNotes) so a hostile instance can't surface an
+        // authorless "undefined@host" handle to the model.
+        accounts: users
+          .filter((u) => typeof u.username === "string")
+          .map((u) => {
+            const acct = u.host ? `${u.username}@${u.host}` : u.username;
+            return {
+              username: u.username,
+              acct,
+              display_name: u.name ?? undefined,
+              note: u.description ?? undefined,
+              followers_count: u.followersCount,
+              statuses_count: u.notesCount,
+            };
+          }),
       };
     }
     if (type === "statuses") {

@@ -36,20 +36,34 @@ const logger = getLogger(["activitypub-mcp", "tools"]);
  * Reading content straight off the activity wrapper renders every post as
  * "(empty)". This unwraps the nested object so real content surfaces.
  */
-export function summarizeOutboxItem(item: unknown): { type: string; content: string } {
+export function summarizeOutboxItem(item: unknown): {
+  type: string;
+  content: string;
+  cw?: string;
+} {
   const it = (item ?? {}) as Record<string, unknown>;
   const activityType = typeof it.type === "string" ? it.type : "";
   const obj = it.object;
 
+  // When a Note carries both `summary` (the content warning) and `content`
+  // (the sensitive body), surface the CW separately so the renderer can prefix
+  // a warning marker instead of silently showing the body. A summary alone
+  // (no body) stays as the content.
+  const splitCw = (rec: Record<string, unknown>) => {
+    const body = typeof rec.content === "string" ? rec.content : "";
+    const summary = typeof rec.summary === "string" ? rec.summary : "";
+    return {
+      content: body || summary,
+      cw: body && summary ? summary : undefined,
+    };
+  };
+
   // Activity wrapping an inlined object (Create/Update of a Note, etc.)
   if (obj && typeof obj === "object") {
     const o = obj as Record<string, unknown>;
-    const content =
-      (typeof o.content === "string" && o.content) ||
-      (typeof o.summary === "string" && o.summary) ||
-      "";
     const objType = typeof o.type === "string" ? o.type : "";
-    return { type: objType || activityType || "Post", content };
+    const { content, cw } = splitCw(o);
+    return { type: objType || activityType || "Post", content, cw };
   }
 
   // Announce (boost) of a remote object referenced by URL.
@@ -58,11 +72,8 @@ export function summarizeOutboxItem(item: unknown): { type: string; content: str
   }
 
   // Bare object (Note) directly in the collection.
-  const content =
-    (typeof it.content === "string" && it.content) ||
-    (typeof it.summary === "string" && it.summary) ||
-    "";
-  return { type: activityType || "Post", content };
+  const { content, cw } = splitCw(it);
+  return { type: activityType || "Post", content, cw };
 }
 
 /**
@@ -265,10 +276,13 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
         // shows as "(empty)".
         const postsSection = posts
           .map((post: unknown, index: number) => {
-            const { type, content } = summarizeOutboxItem(post);
+            const { type, content, cw } = summarizeOutboxItem(post);
             const wrapped = wrapUntrusted(content, `post by ${validIdentifier}`);
+            const cwMarker = cw
+              ? `⚠️ CW: ${wrapUntrusted(cw, `content warning by ${validIdentifier}`)}\n   `
+              : "";
             const postType = sanitizeInline(type) || "Post";
-            return `${index + 1}. [${postType}] ${wrapped}`;
+            return `${index + 1}. [${postType}] ${cwMarker}${wrapped}`;
           })
           .join("\n\n");
 
@@ -834,8 +848,10 @@ function registerGetPublicTimelineTool(mcpServer: McpServer, rateLimiter: RateLi
             ? await remoteClient.fetchLocalTimeline(validDomain, { limit, maxId })
             : await remoteClient.fetchFederatedTimeline(validDomain, { limit, maxId });
 
+        // Render every fetched post. The advertised nextMaxId is derived from the
+        // LAST fetched post, so truncating the rendered list would silently skip
+        // the un-rendered tail when the model follows the cursor (data loss).
         const postsList = result.posts
-          .slice(0, 15)
           .map((post, i) => {
             const content = wrapUntrusted(post.content || "", `post on ${validDomain}`);
             const cw = post.spoiler_text

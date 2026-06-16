@@ -146,6 +146,28 @@ describe("DynamicInstanceDiscoveryService", () => {
       expect(result.instances[0].registrations).toBe(true);
       expect(result.instances[0].language).toBe("en");
     });
+
+    it("derives hasMore from the raw row count so a dropped row does not under-report pagination", async () => {
+      // The API returns a full page (count === limit), but one row has no usable
+      // domain and is filtered out. hasMore must reflect the raw page being full
+      // (more pages exist), not the shorter post-filter array.
+      server.use(
+        http.get("https://instances.social/api/1.0/instances/list", () =>
+          HttpResponse.json({
+            instances: [
+              { name: "good.social", users: 100, software: "mastodon", info: {} },
+              { name: "", users: 50, software: "mastodon", info: {} }, // empty domain → dropped
+            ],
+            pagination: { total: 999 },
+          }),
+        ),
+      );
+
+      const result = await service.searchInstances({ limit: 2 });
+      expect(result.source).toBe("api");
+      expect(result.instances).toHaveLength(1);
+      expect(result.hasMore).toBe(true);
+    });
   });
 
   describe("getRandomInstances", () => {

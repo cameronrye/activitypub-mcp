@@ -187,7 +187,12 @@ export class HttpTransportServer {
           return;
         }
 
-        const url = new URL(req.url || "/", `http://${req.headers.host}`);
+        // Parse only the path/query against a fixed base. Interpolating an
+        // attacker-controlled Host (`http://${req.headers.host}`) throws on an
+        // empty/malformed Host — before any routing or auth — leaving the client
+        // with no response. The real Host is validated downstream by the SDK's
+        // DNS-rebinding protection, so we don't need it here.
+        const url = new URL(req.url || "/", "http://localhost");
         const pathname = url.pathname;
 
         // Route requests

@@ -386,6 +386,46 @@ describe("getInstanceSoftware — SSRF + blocklist", () => {
     expect(info.reason).toMatch(/block/i);
   });
 
+  it("re-checks the blocklist on a cached positive hit and goes unavailable once blocked", async () => {
+    server.use(
+      http.get("https://laterblocked.social/.well-known/nodeinfo", () =>
+        HttpResponse.json({
+          links: [
+            {
+              rel: "http://nodeinfo.diaspora.software/ns/schema/2.0",
+              href: "https://laterblocked.social/nodeinfo/2.0",
+            },
+          ],
+        }),
+      ),
+      http.get("https://laterblocked.social/nodeinfo/2.0", () =>
+        HttpResponse.json({
+          version: "2.0",
+          software: { name: "mastodon", version: "1.0.0" },
+          protocols: ["activitypub"],
+        }),
+      ),
+    );
+
+    // Populate the positive cache.
+    const first = await getInstanceSoftware("laterblocked.social");
+    expect(first.detection).toBe("success");
+    expect(first.software).toEqual({ name: "mastodon", version: "1.0.0" });
+
+    // Operator blocks the instance AFTER it was cached. A positive cache hit
+    // must not keep serving pre-block metadata until the 24h TTL expires.
+    instanceBlocklist.addBlock({
+      domain: "laterblocked.social",
+      reason: "policy",
+      description: "blocked after cache populate",
+      addedAt: new Date().toISOString(),
+    });
+
+    const second = await getInstanceSoftware("laterblocked.social");
+    expect(second.detection).toBe("unavailable");
+    expect(second.reason).toMatch(/block/i);
+  });
+
   it("returns unavailable when the NodeInfo link uses a non-https scheme", async () => {
     // Same-host link (passes the subdomain guard) but on a forbidden scheme, so
     // the https-only SSRF guard inside guardedFetch is the thing that rejects.
