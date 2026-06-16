@@ -1,0 +1,36 @@
+# Smithery configuration (https://smithery.ai/docs).
+# Runs the npm-published stdio server via npx. Read-only by default — the same
+# posture as the MCP registry entry (server.json) and the Claude Desktop bundle
+# (manifest.json). Writes additionally require a logged-in account, which is not
+# available in Smithery's ephemeral runtime, so the practical Smithery profile is
+# read-only Fediverse exploration.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required: []
+    properties:
+      enableWrites:
+        type: boolean
+        default: false
+        description: >-
+          Register write/mutation tools (post, reply, follow, boost, block). Off
+          by default — read-only unless enabled. Writes also require a logged-in
+          account (npx activitypub-mcp login). See SECURITY.md.
+      logLevel:
+        type: string
+        enum: [debug, info, warn, error]
+        default: info
+        description: Logging verbosity (logs are written to stderr).
+  commandFunction: |-
+    (config) => ({
+      command: 'npx',
+      args: ['-y', 'activitypub-mcp'],
+      env: {
+        ...(config.enableWrites ? { ACTIVITYPUB_ENABLE_WRITES: 'true' } : {}),
+        ...(config.logLevel ? { LOG_LEVEL: config.logLevel } : {})
+      }
+    })
+exampleConfig:
+  enableWrites: false
+  logLevel: info
