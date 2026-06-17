@@ -38,6 +38,7 @@
 
 <p align="center">
   <a href="https://glama.ai/mcp/servers/cameronrye/activitypub-mcp"><img src="https://glama.ai/mcp/servers/cameronrye/activitypub-mcp/badge" alt="Glama quality and maintenance score" width="200" /></a>
+  <a href="https://smithery.ai/servers/rye/activitypub-mcp"><img src="https://smithery.ai/badge/rye/activitypub-mcp" alt="Smithery" /></a>
 </p>
 
 ---
