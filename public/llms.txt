@@ -116,7 +116,7 @@ Upgrading from v1.x? See [MIGRATION-v2.md](https://github.com/cameronrye/activit
 
 ---
 
-**Version:** 3.1.6
+**Version:** 3.2.0
 **License:** MIT
 **Maintainer:** Cameron Rye (https://rye.dev/)
 **Repository:** https://github.com/cameronrye/activitypub-mcp

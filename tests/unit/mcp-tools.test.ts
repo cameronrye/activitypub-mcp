@@ -136,6 +136,12 @@ describe("MCP Tools", () => {
         "Successfully discovered actor",
       );
       expect(remoteClient.fetchRemoteActor).toHaveBeenCalledWith("testuser@example.social");
+      // Dual-emit: structured output mirrors the prose, and the config declares an outputSchema.
+      expect(
+        (result as { structuredContent: { actor: { preferredUsername: string } } })
+          .structuredContent.actor.preferredUsername,
+      ).toBe("testuser");
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
 
     it("should handle errors gracefully", async () => {
@@ -233,6 +239,11 @@ describe("MCP Tools", () => {
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "Next page cursor",
       );
+      expect(
+        (result as { structuredContent: { posts: { content: string }[]; nextCursor?: string } })
+          .structuredContent.posts[0].content,
+      ).toContain("Hello world");
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
 
     it("should handle empty timeline", async () => {
@@ -249,6 +260,10 @@ describe("MCP Tools", () => {
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "Posts retrieved: 0",
       );
+      // Empty edge branch must still emit a valid structuredContent.
+      expect(
+        (result as { structuredContent: { posts: unknown[] } }).structuredContent.posts,
+      ).toEqual([]);
     });
   });
 
@@ -282,6 +297,11 @@ describe("MCP Tools", () => {
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "mastodon.social",
       );
+      expect(
+        (result as { structuredContent: { domain: string; software?: string } }).structuredContent
+          .domain,
+      ).toBe("mastodon.social");
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
   });
 
@@ -294,6 +314,11 @@ describe("MCP Tools", () => {
         "Live Instance Discovery",
       );
       expect(dynamicInstanceDiscovery.searchInstances).toHaveBeenCalled();
+      expect(
+        (result as { structuredContent: { instances: { domain: string }[] } }).structuredContent
+          .instances[0].domain,
+      ).toBe("test.social");
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
 
     it("neutralizes a newline+markdown injection in a remote instance software/domain field", async () => {
@@ -336,6 +361,11 @@ describe("MCP Tools", () => {
 
       expect((result as { content: { text: string }[] }).content[0].text).toContain("Post Thread");
       expect(remoteClient.fetchPostThread).toHaveBeenCalled();
+      expect(
+        (result as { structuredContent: { post: { content: string } } }).structuredContent.post
+          .content,
+      ).toContain("Original post");
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
 
     it("neutralizes a prompt-injection payload in the post URL field", async () => {
@@ -378,6 +408,11 @@ describe("MCP Tools", () => {
         "Trending Hashtags",
       );
       expect((result as { content: { text: string }[] }).content[0].text).toContain("#test");
+      expect(
+        (result as { structuredContent: { hashtags: { name: string; uses?: number }[] } })
+          .structuredContent.hashtags[0],
+      ).toMatchObject({ name: "test", uses: 100 });
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
 
     it("coerces injected hashtag use/account counts to numbers", async () => {
@@ -414,6 +449,11 @@ describe("MCP Tools", () => {
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "Trending Posts",
       );
+      expect(
+        (result as { structuredContent: { posts: { content: string }[] } }).structuredContent
+          .posts[0].content,
+      ).toContain("Trending post");
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
   });
 
@@ -459,6 +499,14 @@ describe("MCP Tools", () => {
       );
       expect((result as { content: { text: string }[] }).content[0].text).toContain("localuser");
       expect((result as { content: { text: string }[] }).content[0].text).toContain("123");
+      expect(
+        (result as { structuredContent: { posts: { author?: string }[]; nextCursor?: string } })
+          .structuredContent.posts[0].author,
+      ).toBe("localuser");
+      expect(
+        (result as { structuredContent: { nextCursor?: string } }).structuredContent.nextCursor,
+      ).toBe("123");
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
 
     it("should fetch federated timeline when scope is federated", async () => {
@@ -547,6 +595,11 @@ describe("MCP Tools", () => {
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "Search Results",
       );
+      expect(
+        (result as { structuredContent: { accounts?: { id: string }[] } }).structuredContent
+          .accounts?.[0].id,
+      ).toBe("user");
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
   });
 

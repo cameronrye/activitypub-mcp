@@ -21,6 +21,15 @@ import {
   validateQuery,
 } from "../validation/validators.js";
 import { trackedMcpServer } from "./capabilities.js";
+import {
+  discoverActorOutput,
+  instanceInfoOutput,
+  instanceListOutput,
+  postListOutput,
+  searchOutput,
+  threadOutput,
+  trendingHashtagsOutput,
+} from "./output-schemas.js";
 import { checkRateLimit } from "./rate-limit-guard.js";
 import { registerWriteTools } from "./tools-write.js";
 
@@ -132,6 +141,40 @@ async function withReadTool(
 }
 
 /**
+ * Map a Mastodon-shaped status (trending/public timelines) to the structured
+ * PostItem shape. Mirrors the prose render: counts are coerced to numbers and
+ * the spoiler_text becomes the contentWarning. Used so structuredContent draws
+ * from the exact same data already formatted into content[0].text.
+ */
+function mastodonStatusToPostItem(post: {
+  id?: string;
+  url?: string;
+  content?: string;
+  spoiler_text?: string;
+  created_at?: string;
+  account?: { acct?: string; username?: string; display_name?: string };
+  favourites_count?: number | string;
+  reblogs_count?: number | string;
+  replies_count?: number | string;
+}) {
+  const num = (v: number | string | undefined) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : undefined;
+  };
+  return {
+    id: typeof post.id === "string" ? post.id : "",
+    url: post.url,
+    author: post.account?.acct || post.account?.username,
+    content: post.content || "",
+    contentWarning: post.spoiler_text || undefined,
+    createdAt: post.created_at,
+    favourites: num(post.favourites_count),
+    reblogs: num(post.reblogs_count),
+    replies: num(post.replies_count),
+  };
+}
+
+/**
  * Discover actor tool - find actors across the fediverse.
  */
 function registerDiscoverActorTool(mcpServer: McpServer, rateLimiter: RateLimiter): void {
@@ -148,6 +191,7 @@ function registerDiscoverActorTool(mcpServer: McpServer, rateLimiter: RateLimite
           "Actor handle in 'user@domain' or '@user@domain' form (e.g., 'alice@mastodon.social')",
         ),
       },
+      outputSchema: discoverActorOutput,
       annotations: { readOnlyHint: true },
     },
     async ({ identifier }) => {
@@ -176,6 +220,19 @@ function registerDiscoverActorTool(mcpServer: McpServer, rateLimiter: RateLimite
 👤 Following: ${sanitizeInline(actor.following || "") || "Not available"}`,
             },
           ],
+          structuredContent: {
+            actor: {
+              id: actor.id,
+              preferredUsername: actor.preferredUsername,
+              name: actor.name,
+              summary: actor.summary,
+              url: actor.url || actor.id,
+              inbox: actor.inbox,
+              outbox: actor.outbox,
+              followers: actor.followers,
+              following: actor.following,
+            },
+          },
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
@@ -230,6 +287,7 @@ function registerFetchTimelineTool(mcpServer: McpServer, rateLimiter: RateLimite
         maxId: z.string().optional().describe("Return posts older than this post ID (pagination)"),
         sinceId: z.string().optional().describe("Return posts more recent than this post ID"),
       },
+      outputSchema: postListOutput,
       annotations: { readOnlyHint: true },
     },
     async ({ identifier, limit = 20, cursor, minId, maxId, sinceId }) => {
@@ -302,6 +360,21 @@ ${paginationSection}
 ${postsSection}`,
             },
           ],
+          structuredContent: {
+            posts: posts.map((post: unknown) => {
+              const { type, content, cw } = summarizeOutboxItem(post);
+              const p = (post ?? {}) as Record<string, unknown>;
+              return {
+                id: typeof p.id === "string" ? p.id : "",
+                type,
+                content,
+                contentWarning: cw,
+              };
+            }),
+            nextCursor: timeline.hasMore ? timeline.nextCursor : undefined,
+            hasMore: timeline.hasMore,
+            source: validIdentifier,
+          },
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
@@ -344,6 +417,7 @@ function registerGetInstanceInfoTool(mcpServer: McpServer, rateLimiter: RateLimi
       inputSchema: {
         domain: DomainSchema.describe("Instance domain (e.g., example.social)"),
       },
+      outputSchema: instanceInfoOutput,
       annotations: { readOnlyHint: true },
     },
     async ({ domain }) => {
@@ -355,6 +429,7 @@ function registerGetInstanceInfoTool(mcpServer: McpServer, rateLimiter: RateLimi
         logger.info("Getting instance info", { domain: validDomain });
 
         const instanceInfo = await remoteClient.getInstanceInfo(validDomain);
+        const userCount = Number(instanceInfo.stats?.user_count);
 
         return {
           content: [
@@ -382,6 +457,14 @@ ${
 ${instanceInfo.contact_account ? `📞 Contact: @${sanitizeInline(instanceInfo.contact_account.username || "")} (${sanitizeInline(instanceInfo.contact_account.display_name || "") || "No display name"})` : ""}`,
             },
           ],
+          structuredContent: {
+            domain: instanceInfo.domain,
+            description: instanceInfo.description,
+            version: instanceInfo.version,
+            software: instanceInfo.software,
+            users: Number.isFinite(userCount) ? userCount : undefined,
+            registrationsOpen: instanceInfo.registrations,
+          },
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
@@ -444,6 +527,7 @@ function registerDiscoverInstancesLiveTool(mcpServer: McpServer, rateLimiter: Ra
         sortOrder: z.enum(["asc", "desc"]).optional().describe("Sort order (default: desc)"),
         limit: z.number().min(1).max(50).optional().describe("Number of results (default: 20)"),
       },
+      outputSchema: instanceListOutput,
       annotations: { readOnlyHint: true },
     },
     async ({
@@ -551,6 +635,15 @@ ${instanceList}${hasMoreText}
 - Filter by \`software\`, \`language\`, or \`minUsers\` for more specific results`,
             },
           ],
+          structuredContent: {
+            instances: instances.map((instance) => ({
+              domain: instance.domain || "",
+              software: instance.software,
+              users: instance.users,
+              description: instance.description,
+            })),
+            hasMore: result.hasMore,
+          },
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
@@ -596,6 +689,7 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
           .optional()
           .describe("Maximum number of replies to fetch (default: 50)"),
       },
+      outputSchema: threadOutput,
       annotations: { readOnlyHint: true },
     },
     async ({ postUrl, depth = 2, maxReplies = 50 }) => {
@@ -650,6 +744,23 @@ function registerGetPostThreadTool(mcpServer: McpServer, rateLimiter: RateLimite
                 )}${thread.replies.length > 10 ? `\n... and ${thread.replies.length - 10} more replies` : ""}`
             : "**No replies yet**";
 
+        // Map a thread post-like object to the PostItem shape. Mirrors the prose:
+        // content falls back to summary, and the CW is surfaced separately when a
+        // post carries both a summary and a body.
+        const toPostItem = (p: {
+          id: string;
+          url?: string;
+          content?: string;
+          summary?: string;
+          published?: string;
+        }) => ({
+          id: p.id,
+          url: p.url,
+          content: p.content || p.summary || "",
+          contentWarning: p.summary && p.content ? p.summary : undefined,
+          createdAt: p.published,
+        });
+
         return {
           content: [
             {
@@ -669,6 +780,11 @@ ${repliesSection}
 - Use \`fetch-timeline\` to see more posts from this user`,
             },
           ],
+          structuredContent: {
+            ancestors: thread.ancestors.map(toPostItem),
+            post: toPostItem(thread.post),
+            replies: thread.replies.map(toPostItem),
+          },
         };
       });
     },
@@ -695,6 +811,7 @@ function registerGetTrendingHashtagsTool(mcpServer: McpServer, rateLimiter: Rate
           .optional()
           .describe("Number of hashtags to fetch (default: 20)"),
       },
+      outputSchema: trendingHashtagsOutput,
       annotations: { readOnlyHint: true },
     },
     async ({ domain, limit = 20 }) => {
@@ -734,6 +851,20 @@ ${hashtagsList || "No trending hashtags found"}
 - Use \`get-public-timeline\` to see recent posts from this instance`,
               },
             ],
+            structuredContent: {
+              hashtags: result.hashtags.map((tag) => {
+                // uses/accounts are unvalidated remote strings — coerce to numbers
+                // (matching the prose), dropping the field when it isn't numeric.
+                const history = tag.history?.[0];
+                const uses = Number.parseInt(history?.uses ?? "", 10);
+                const accounts = Number.parseInt(history?.accounts ?? "", 10);
+                return {
+                  name: tag.name || "",
+                  uses: Number.isFinite(uses) ? uses : undefined,
+                  accounts: Number.isFinite(accounts) ? accounts : undefined,
+                };
+              }),
+            },
           };
         },
       );
@@ -761,6 +892,7 @@ function registerGetTrendingPostsTool(mcpServer: McpServer, rateLimiter: RateLim
           .optional()
           .describe("Number of posts to fetch (default: 20)"),
       },
+      outputSchema: postListOutput,
       annotations: { readOnlyHint: true },
     },
     async ({ domain, limit = 20 }) => {
@@ -804,6 +936,10 @@ ${postsList || "No trending posts found"}${moreText}
 - Use \`discover-actor\` to learn more about a post author`,
             },
           ],
+          structuredContent: {
+            posts: result.posts.map(mastodonStatusToPostItem),
+            source: validDomain,
+          },
         };
       });
     },
@@ -833,6 +969,7 @@ function registerGetPublicTimelineTool(mcpServer: McpServer, rateLimiter: RateLi
           .describe("Number of posts to fetch (default: 20)"),
         maxId: z.string().optional().describe("Return results older than this ID (for pagination)"),
       },
+      outputSchema: postListOutput,
       annotations: { readOnlyHint: true },
     },
     async ({ domain, scope = "federated", limit = 20, maxId }) => {
@@ -887,6 +1024,12 @@ ${postsList || "No posts found"}${paginationInfo}
 - Use \`get-trending-posts\` to see what's popular`,
             },
           ],
+          structuredContent: {
+            posts: result.posts.map(mastodonStatusToPostItem),
+            nextCursor: result.hasMore ? result.nextMaxId : undefined,
+            hasMore: result.hasMore,
+            source: validDomain,
+          },
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);
@@ -937,6 +1080,7 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
           .optional()
           .describe("Number of results per type (default: 10)"),
       },
+      outputSchema: searchOutput,
       annotations: { readOnlyHint: true },
     },
     async ({ query, domain = "mastodon.social", type = "all", limit = 10 }) => {
@@ -949,6 +1093,12 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
         logger.info("Unified search", { domain: validDomain, query: validQuery, type, limit });
 
         const sections: string[] = [];
+        // Structured mirror of the prose sections, built from the same arrays.
+        const structured: {
+          accounts?: Array<{ id: string }>;
+          statuses?: Array<{ id: string; content: string }>;
+          hashtags?: Array<{ name: string; url?: string }>;
+        } = {};
 
         // Search accounts if requested
         if (type === "all" || type === "accounts") {
@@ -969,6 +1119,12 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
 
           const accounts = accountResults.accounts?.slice(0, limit) || [];
           if (accounts.length > 0) {
+            structured.accounts = accounts.map((acc) => ({
+              id: acc.acct || acc.username || "",
+              preferredUsername: acc.username,
+              name: acc.display_name,
+              summary: acc.note,
+            }));
             const accountsList = accounts
               .map((acc, i) => {
                 const note = wrapUntrusted(acc.note || "", `bio on ${validDomain}`);
@@ -1001,6 +1157,12 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
 
           const posts = postResults.statuses?.slice(0, limit) || [];
           if (posts.length > 0) {
+            structured.statuses = posts.map((post) => ({
+              id: "",
+              author: post.account.acct,
+              content: post.content || "",
+              contentWarning: post.spoiler_text || undefined,
+            }));
             const postsList = posts
               .map((post, i) => {
                 const content = wrapUntrusted(post.content || "", `post on ${validDomain}`);
@@ -1033,6 +1195,7 @@ function registerUnifiedSearchTool(mcpServer: McpServer, rateLimiter: RateLimite
 
           const hashtags = hashtagResults.hashtags?.slice(0, limit) || [];
           if (hashtags.length > 0) {
+            structured.hashtags = hashtags.map((tag) => ({ name: tag.name || "" }));
             const hashtagsList = hashtags
               .map((tag, i) => {
                 const recentUses =
@@ -1066,6 +1229,7 @@ ${resultsText}
 - Use \`fetch-timeline\` to see an account's recent posts`,
             },
           ],
+          structuredContent: structured,
         };
       } catch (error) {
         const errorMessage = getErrorMessage(error);

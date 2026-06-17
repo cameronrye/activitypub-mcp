@@ -61,6 +61,14 @@ jobs:
     - name: Build project (clean first)
       run: npm run clean && npm run build
 
+    - name: Verify .mcpb tools manifest injects exactly 18 default tools
+      # Catch a tool-registration regression here too, before the release job
+      # builds the bundle Smithery ingests.
+      run: |
+        cp manifest.json "${RUNNER_TEMP:-/tmp}/manifest-release-check.json"
+        node scripts/inject-tools-manifest.js "${RUNNER_TEMP:-/tmp}/manifest-release-check.json" dist/mcp-main.js
+        node -e "const m=require('${RUNNER_TEMP:-/tmp}/manifest-release-check.json'); if(m.tools.length!==18) throw new Error('expected 18 tools, got '+m.tools.length)"
+
     - name: Check tarball contents
       run: node scripts/check-tarball-contents.js
 
@@ -162,23 +170,33 @@ jobs:
     - name: Pack release tarball
       run: npm pack
 
-    - name: Build Claude Desktop Extension (.mcpb)
+    - name: Build .mcpb with durable tools manifest
       # The README's one-click install points at this asset on the latest
       # release, so every release MUST carry it. Build a self-contained bundle
       # (ESM entrypoint needs its own package.json + prod node_modules) per the
       # steps in docs/distribution.md §3.
+      #
+      # We do NOT use `mcpb pack` here: `mcpb validate`/`pack` reject the
+      # `inputSchema`/`outputSchema` keys Smithery scores and strip them from the
+      # bundle. A .mcpb IS a zip with manifest.json at root, so a plain `zip`
+      # preserves the rich schemas. We pin nothing supply-chain-risky: no global
+      # mcpb install (the `node -e` JSON gate replaces `mcpb validate`), and the
+      # inject script + npm ci run with --ignore-scripts.
       run: |
-        # Pin the exact version and skip lifecycle scripts: this job holds a
-        # contents:write token and produces the one-click .mcpb users install, so
-        # an unpinned/script-running mcpb would be a supply-chain RCE/tamper vector
-        # (publish-mcp.yml pins mcp-publisher for the same reason).
-        npm install -g @anthropic-ai/mcpb@2.1.2 --ignore-scripts
         stage="$(mktemp -d)"
         cp manifest.json package.json package-lock.json "$stage"/
         cp -R dist "$stage"/dist
         ( cd "$stage" && npm ci --omit=dev --ignore-scripts )
-        mcpb validate manifest.json
-        mcpb pack "$stage" "activitypub-mcp-${{ steps.get_version.outputs.VERSION }}.mcpb"
+        # Capture live tool schemas (inputSchema + outputSchema) from the built
+        # server and write them into the staged manifest.json.
+        node scripts/inject-tools-manifest.js "$stage/manifest.json" "$stage/dist/mcp-main.js"
+        # JSON sanity + tools-present gate (replaces mcpb validate, which rejects
+        # inputSchema). Fails loudly if the tools array is missing/short.
+        node -e "const m=require('$stage/manifest.json'); if(!Array.isArray(m.tools)||m.tools.length<18) throw new Error('manifest tools missing/short: '+(m.tools?.length))"
+        # Bundle the prod node_modules too — the ESM entrypoint needs its deps at
+        # runtime (Claude Desktop one-click install + Smithery's local run), so the
+        # zip MUST include node_modules, not just dist.
+        ( cd "$stage" && zip -r -q -X "$OLDPWD/activitypub-mcp-${{ steps.get_version.outputs.VERSION }}.mcpb" manifest.json package.json node_modules dist -x '*.map' )
 
     - name: Create Release
       uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3

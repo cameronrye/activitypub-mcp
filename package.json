@@ -1,6 +1,6 @@
 {
   "name": "activitypub-mcp",
-  "version": "3.1.6",
+  "version": "3.2.0",
   "description": "Model Context Protocol (MCP) server for the Fediverse — let Claude and other LLMs explore and post to Mastodon, Misskey, and Pleroma. Read-only by default.",
   "mcpName": "io.github.cameronrye/activitypub-mcp",
   "main": "dist/mcp-main.js",
@@ -104,6 +104,7 @@
     "install:shell:windows": "powershell -ExecutionPolicy Bypass -File scripts/install.ps1",
     "uninstall": "node scripts/install.js uninstall",
     "build": "tsc",
+    "build:mcpb": "node scripts/inject-tools-manifest.js manifest.json dist/mcp-main.js",
     "build:site": "node scripts/generate-registry-manifest.js && astro build && npx pagefind --site dist-site && node scripts/generate-search-data.js",
     "dev:site": "astro dev",
     "preview:site": "astro preview",

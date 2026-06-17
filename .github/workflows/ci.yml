@@ -58,6 +58,16 @@ jobs:
     - name: Build project (clean first)
       run: npm run clean && npm run build
 
+    - name: Verify .mcpb tools manifest injects exactly 18 default tools
+      # Runs the inject script against a throwaway manifest copy so a tool
+      # registration regression (count != 18, or a tool dropping its schema)
+      # fails the PR early — not only at release-tag time.
+      if: matrix.os != 'windows-latest'
+      run: |
+        cp manifest.json "${RUNNER_TEMP:-/tmp}/manifest-ci-check.json"
+        node scripts/inject-tools-manifest.js "${RUNNER_TEMP:-/tmp}/manifest-ci-check.json" dist/mcp-main.js
+        node -e "const m=require('${RUNNER_TEMP:-/tmp}/manifest-ci-check.json'); if(m.tools.length!==18) throw new Error('expected 18 tools, got '+m.tools.length)"
+
     - name: Check tarball contents
       if: matrix.node-version == '20.x' && matrix.os == 'ubuntu-latest'
       run: node scripts/check-tarball-contents.js
