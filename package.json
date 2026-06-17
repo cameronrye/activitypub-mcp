@@ -1,6 +1,6 @@
 {
   "name": "activitypub-mcp",
-  "version": "3.1.6",
+  "version": "3.2.0",
   "description": "Model Context Protocol (MCP) server for the Fediverse — let Claude and other LLMs explore and post to Mastodon, Misskey, and Pleroma. Read-only by default.",
   "mcpName": "io.github.cameronrye/activitypub-mcp",
   "main": "dist/mcp-main.js",

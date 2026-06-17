@@ -9,6 +9,23 @@ order: 2
 
 All notable changes to the ActivityPub MCP Server are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### v3.2.0 - 2026-06-16
+
+**Structured tool output and Smithery listing improvements.** No breaking changes — tool names and human-readable responses are unchanged; structured output is purely additive. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.
+
+#### Added
+
+- **Structured tool results** — every read/default tool now declares an `outputSchema` and returns `structuredContent` alongside the existing text, so MCP clients can type-check responses. The prose output is unchanged.
+- **Smithery listing** — homepage ownership verification and a backlink from the README and docs site.
+
+#### Changed
+
+- **`.mcpb` release pipeline** embeds the live tool schemas (inputSchema/outputSchema) in the bundle manifest, captured from the running server and packaged via a plain zip — the metadata Smithery's capability score reads.
+
+#### Fixed
+
+- **`get-relationship`** — the `accountIds` rejection-guard parameter now carries a description, completing parameter-description coverage.
+
 ### v3.1.6 - 2026-06-15
 
 **Correctness, hardening, and docs patch** from a third end-to-end review. Fixes a silent read-path data loss, several remote-input edge cases, and a cluster of tool-reference documentation drift. No breaking changes. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.

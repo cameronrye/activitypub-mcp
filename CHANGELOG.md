@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-06-16
+
+Structured tool output and Smithery listing improvements. No breaking changes —
+tool names and the human-readable text responses are unchanged; structured output
+is purely additive.
+
+### Added
+
+- **Structured tool results** — every read/default tool now declares an
+  `outputSchema` and returns `structuredContent` alongside the existing text, so
+  MCP clients can type-check responses. The prose `content[0].text` is byte-for-byte
+  unchanged for back-compat.
+- **Smithery listing** — homepage ownership verification (a `smithery-verification`
+  meta tag in the docs site, since `github.io` cannot host DNS TXT records) and a
+  backlink to the Smithery server page from the README badges and homepage footer.
+
+### Changed
+
+- **`.mcpb` release pipeline** — the bundle manifest now embeds the live tool
+  schemas (name/description/inputSchema/outputSchema), captured from the running
+  server and packaged via a plain zip (`mcpb pack` strips these keys). This is the
+  metadata Smithery's capability score reads. The bundle still ships its production
+  `node_modules` so it runs standalone.
+
+### Fixed
+
+- **`get-relationship`** — the `accountIds` rejection-guard parameter now carries a
+  description, completing parameter-description coverage across all tools.
+
 ## [3.1.6] - 2026-06-15
 
 Correctness, hardening, and docs patch from a third end-to-end review. Fixes a
