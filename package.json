@@ -104,6 +104,7 @@
     "install:shell:windows": "powershell -ExecutionPolicy Bypass -File scripts/install.ps1",
     "uninstall": "node scripts/install.js uninstall",
     "build": "tsc",
+    "build:mcpb": "node scripts/inject-tools-manifest.js manifest.json dist/mcp-main.js",
     "build:site": "node scripts/generate-registry-manifest.js && astro build && npx pagefind --site dist-site && node scripts/generate-search-data.js",
     "dev:site": "astro dev",
     "preview:site": "astro preview",

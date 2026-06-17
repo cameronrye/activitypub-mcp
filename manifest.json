@@ -17,6 +17,7 @@
   },
   "license": "MIT",
   "keywords": ["activitypub", "mcp", "fediverse", "mastodon", "misskey"],
+  "tools": [],
   "server": {
     "type": "node",
     "entry_point": "dist/mcp-main.js",
