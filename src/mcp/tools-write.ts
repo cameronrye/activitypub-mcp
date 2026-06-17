@@ -17,6 +17,14 @@ import { formatRemoteError, getErrorMessage, LocalMediaError } from "../utils/er
 import { sniffMediaType } from "../utils/media-type.js";
 import { sanitizeInline, wrapUntrusted } from "../utils/untrusted.js";
 import { trackedMcpServer } from "./capabilities.js";
+import {
+  accountListOutput,
+  accountStatusOutput,
+  notificationsOutput,
+  postListOutput,
+  relationshipOutput,
+  scheduledPostsOutput,
+} from "./output-schemas.js";
 import { checkRateLimit } from "./rate-limit-guard.js";
 
 const logger = getLogger(["activitypub-mcp", "tools-write"]);
@@ -123,6 +131,39 @@ function requireAuthEnabled(): void {
   }
 }
 
+/**
+ * Map a Mastodon-shaped status (home timeline, bookmarks, favourites) to the
+ * structured PostItem shape. Mirrors the prose render so structuredContent draws
+ * from the exact same data already formatted into content[0].text.
+ */
+function statusToPostItem(post: {
+  id?: string | null;
+  url?: string | null;
+  content?: string | null;
+  spoiler_text?: string | null;
+  created_at?: string | null;
+  account?: { acct?: string | null; username?: string | null } | null;
+  favourites_count?: number | string | null;
+  reblogs_count?: number | string | null;
+  replies_count?: number | string | null;
+}) {
+  const num = (v: number | string | null | undefined) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : undefined;
+  };
+  return {
+    id: typeof post.id === "string" ? post.id : "",
+    url: post.url ?? undefined,
+    author: post.account?.acct || post.account?.username || undefined,
+    content: post.content || "",
+    contentWarning: post.spoiler_text || undefined,
+    createdAt: post.created_at ?? undefined,
+    favourites: num(post.favourites_count),
+    reblogs: num(post.reblogs_count),
+    replies: num(post.replies_count),
+  };
+}
+
 /** A resolved (non-null) account, as returned by the account manager. */
 type ResolvedAccount = NonNullable<ReturnType<typeof accountManager.getActiveAccount>>;
 
@@ -220,6 +261,7 @@ function registerListAccountsTool(mcpServer: McpServer): void {
       title: "List Configured Accounts",
       description: "List all configured authenticated accounts for write operations",
       inputSchema: {},
+      outputSchema: accountListOutput,
       annotations: { readOnlyHint: true },
     },
     async () => {
@@ -248,6 +290,7 @@ Write operations are currently disabled. To enable write operations, configure a
 💡 For multiple accounts, use \`ACTIVITYPUB_ACCOUNTS=id1|instance1|token1|username1|label1,id2|instance2|token2|username2|label2\` (pipe-delimited; v2 changed from colon to avoid conflict with colons in tokens).`,
             },
           ],
+          structuredContent: { accounts: [], writeEnabled: false },
         };
       }
 
@@ -273,6 +316,18 @@ ${writeStatus.activeAccount ? `**Active Account**: @${writeStatus.activeAccount.
 💡 Use \`switch-account\` to change the active account for write operations.`,
           },
         ],
+        structuredContent: {
+          accounts: accounts.map((acc) => ({
+            id: acc.id,
+            username: acc.username,
+            instance: acc.instance,
+            label: acc.label,
+            isActive: acc.isActive,
+            scopes: acc.scopes,
+          })),
+          writeEnabled: writeStatus.enabled,
+          activeAccountId: writeStatus.activeAccount?.id,
+        },
       };
     },
   );
@@ -289,6 +344,7 @@ function registerSwitchAccountTool(mcpServer: McpServer): void {
           .string()
           .describe("The account ID to switch to (use list-accounts to see IDs)"),
       },
+      outputSchema: accountStatusOutput,
       annotations: { readOnlyHint: false },
     },
     async ({ accountId }) => {
@@ -337,6 +393,12 @@ Now using: **@${account?.username}@${account?.instance}**
 All write operations will use this account until switched.`,
           },
         ],
+        structuredContent: {
+          accountId,
+          username: account?.username,
+          instance: account?.instance,
+          active: true,
+        },
       };
     },
   );
@@ -354,6 +416,7 @@ function registerVerifyAccountTool(mcpServer: McpServer, rateLimiter: RateLimite
           .optional()
           .describe("The account ID to verify (defaults to active account)"),
       },
+      outputSchema: accountStatusOutput,
       annotations: { readOnlyHint: true },
     },
     async ({ accountId }) => {
@@ -441,6 +504,12 @@ Run \`activitypub-mcp login ${account.instance}\` to re-authorize.`,
 ✅ Credentials are valid and working.`,
             },
           ],
+          structuredContent: {
+            accountId: targetId,
+            username: info.username || account.username,
+            instance: account.instance,
+            verified: true,
+          },
         };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -1219,6 +1288,7 @@ function registerGetHomeTimelineTool(mcpServer: McpServer, rateLimiter: RateLimi
         sinceId: z.string().optional().describe("Return posts newer than this ID"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      outputSchema: postListOutput,
       annotations: { readOnlyHint: true },
     },
     async ({ limit = 20, maxId, sinceId, accountId }) => {
@@ -1279,6 +1349,11 @@ ${postsList || "No posts found"}
 ${posts.length > 0 ? `📄 Use maxId: "${posts[posts.length - 1].id}" for next page` : ""}`,
             },
           ],
+          structuredContent: {
+            posts: posts.map(statusToPostItem),
+            nextCursor: posts.length > 0 ? posts[posts.length - 1].id : undefined,
+            source: account.instance,
+          },
         };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -1331,6 +1406,7 @@ function registerGetNotificationsTool(mcpServer: McpServer, rateLimiter: RateLim
           .describe("Filter by notification types"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      outputSchema: notificationsOutput,
       annotations: { readOnlyHint: true },
     },
     async ({ limit = 20, types, accountId }) => {
@@ -1398,6 +1474,18 @@ function registerGetNotificationsTool(mcpServer: McpServer, rateLimiter: RateLim
 ${notificationList || "No notifications"}`,
             },
           ],
+          structuredContent: {
+            notifications: notifications.map((n) => {
+              const rec = n as { id?: string; created_at?: string };
+              return {
+                id: typeof rec.id === "string" ? rec.id : "",
+                type: n.type,
+                account: n.account?.acct,
+                status: n.status ? { id: "", content: n.status.content || "" } : undefined,
+                createdAt: rec.created_at,
+              };
+            }),
+          },
         };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -1430,6 +1518,7 @@ function registerGetBookmarksTool(mcpServer: McpServer, rateLimiter: RateLimiter
         limit: z.number().min(1).max(40).optional().describe("Number of posts (default: 20)"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      outputSchema: postListOutput,
       annotations: { readOnlyHint: true },
     },
     async ({ limit = 20, accountId }) => {
@@ -1481,6 +1570,10 @@ function registerGetBookmarksTool(mcpServer: McpServer, rateLimiter: RateLimiter
 ${bookmarkList || "No bookmarks found"}`,
             },
           ],
+          structuredContent: {
+            posts: bookmarks.map(statusToPostItem),
+            source: account.instance,
+          },
         };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -1513,6 +1606,7 @@ function registerGetFavouritesTool(mcpServer: McpServer, rateLimiter: RateLimite
         limit: z.number().min(1).max(40).optional().describe("Number of posts (default: 20)"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      outputSchema: postListOutput,
       annotations: { readOnlyHint: true },
     },
     async ({ limit = 20, accountId }) => {
@@ -1564,6 +1658,10 @@ function registerGetFavouritesTool(mcpServer: McpServer, rateLimiter: RateLimite
 ${favouriteList || "No favourites found"}`,
             },
           ],
+          structuredContent: {
+            posts: favourites.map(statusToPostItem),
+            source: account.instance,
+          },
         };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -1610,8 +1708,12 @@ function registerGetRelationshipTool(mcpServer: McpServer, rateLimiter: RateLimi
             message:
               "get-relationship takes 'acct' (a single username@instance string), not 'accountIds'. Call this tool once per account.",
           })
-          .optional(),
+          .optional()
+          .describe(
+            "Deprecated / not supported. Use 'acct' (a single username@instance string) and call this tool once per account.",
+          ),
       },
+      outputSchema: relationshipOutput,
       annotations: { readOnlyHint: true },
     },
     async ({ acct, accountId }) => {
@@ -1676,6 +1778,14 @@ ${relationship.note ? `\n📝 **Note**: ${wrapUntrusted(relationship.note, `rela
 - Use \`mute-account\` or \`block-account\` to manage interactions`,
             },
           ],
+          structuredContent: {
+            acct,
+            following: relationship.following,
+            followedBy: relationship.followed_by,
+            blocking: relationship.blocking,
+            muting: relationship.muting,
+            requested: relationship.requested,
+          },
         };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -1990,6 +2100,7 @@ function registerGetScheduledPostsTool(mcpServer: McpServer, rateLimiter: RateLi
         limit: z.number().min(1).max(40).optional().describe("Number of posts (default: 20)"),
         accountId: z.string().optional().describe("Account ID"),
       },
+      outputSchema: scheduledPostsOutput,
       // Read-only: this tool only fetches scheduled posts (a GET). It must not
       // carry the destructive annotation the actual mutators use, or clients
       // that gate destructive tools behind confirmation will friction a read.
@@ -2038,6 +2149,7 @@ No scheduled posts found.
 💡 **Tip:** Use \`post-status\` with the \`scheduledAt\` parameter to schedule a post for later.`,
               },
             ],
+            structuredContent: { scheduledPosts: [] },
           };
         }
 
@@ -2074,6 +2186,14 @@ ${postsList}
 - Use \`update-scheduled-post\` to change the scheduled time`,
             },
           ],
+          structuredContent: {
+            scheduledPosts: scheduled.map((post) => ({
+              id: post.id,
+              scheduledAt: post.scheduled_at,
+              text: post.params.text || undefined,
+              visibility: post.params.visibility || undefined,
+            })),
+          },
         };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

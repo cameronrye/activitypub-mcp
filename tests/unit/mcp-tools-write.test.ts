@@ -287,6 +287,14 @@ describe("MCP Write Tools", () => {
         "Configured Accounts",
       );
       expect(accountManager.listAccounts).toHaveBeenCalled();
+      expect(
+        (
+          result as {
+            structuredContent: { accounts: { username: string }[]; writeEnabled: boolean };
+          }
+        ).structuredContent.accounts[0].username,
+      ).toBe("testuser");
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
 
     it("should show no accounts message when empty", async () => {
@@ -298,6 +306,11 @@ describe("MCP Write Tools", () => {
       expect((result as { content: { text: string }[] }).content[0].text).toContain(
         "No Accounts Configured",
       );
+      // Empty edge branch must still emit a valid structuredContent.
+      expect(
+        (result as { structuredContent: { accounts: unknown[]; writeEnabled: boolean } })
+          .structuredContent,
+      ).toEqual({ accounts: [], writeEnabled: false });
     });
   });
 
@@ -310,6 +323,11 @@ describe("MCP Write Tools", () => {
         "Account Switched",
       );
       expect(accountManager.setActiveAccount).toHaveBeenCalledWith("1");
+      expect(
+        (result as { structuredContent: { accountId: string; active?: boolean } })
+          .structuredContent,
+      ).toMatchObject({ accountId: "1", active: true });
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
 
     it("should handle account not found", async () => {
@@ -345,6 +363,11 @@ describe("MCP Write Tools", () => {
         "Account Verified",
       );
       expect(accountManager.verifyAccount).toHaveBeenCalled();
+      expect(
+        (result as { structuredContent: { verified?: boolean; username?: string } })
+          .structuredContent,
+      ).toMatchObject({ verified: true, username: "testuser" });
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
 
     it("should handle write not enabled", async () => {
@@ -617,6 +640,11 @@ describe("MCP Write Tools", () => {
         "Home Timeline",
       );
       expect(authenticatedClient.getHomeTimeline).toHaveBeenCalled();
+      expect(
+        (result as { structuredContent: { posts: { id: string; author?: string }[] } })
+          .structuredContent.posts[0],
+      ).toMatchObject({ id: "post-1", author: "user@example.social" });
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
   });
 
@@ -629,6 +657,11 @@ describe("MCP Write Tools", () => {
         "Notifications",
       );
       expect(authenticatedClient.getNotifications).toHaveBeenCalled();
+      expect(
+        (result as { structuredContent: { notifications: { type: string }[] } }).structuredContent
+          .notifications[0].type,
+      ).toBe("mention");
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
   });
 
@@ -639,6 +672,11 @@ describe("MCP Write Tools", () => {
 
       expect((result as { content: { text: string }[] }).content[0].text).toContain("Bookmarks");
       expect(authenticatedClient.getBookmarks).toHaveBeenCalled();
+      expect(
+        (result as { structuredContent: { posts: { id: string }[] } }).structuredContent.posts[0]
+          .id,
+      ).toBe("bookmark-1");
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
   });
 
@@ -649,6 +687,11 @@ describe("MCP Write Tools", () => {
 
       expect((result as { content: { text: string }[] }).content[0].text).toContain("Favourites");
       expect(authenticatedClient.getFavourites).toHaveBeenCalled();
+      expect(
+        (result as { structuredContent: { posts: { id: string }[] } }).structuredContent.posts[0]
+          .id,
+      ).toBe("fav-1");
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
   });
 
@@ -660,6 +703,10 @@ describe("MCP Write Tools", () => {
       expect((result as { content: { text: string }[] }).content[0].text).toContain("Relationship");
       expect(authenticatedClient.lookupAccount).toHaveBeenCalled();
       expect(authenticatedClient.getRelationship).toHaveBeenCalled();
+      expect(
+        (result as { structuredContent: { acct: string; following?: boolean } }).structuredContent,
+      ).toMatchObject({ acct: "targetuser@example.social", following: true });
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
   });
 
@@ -817,6 +864,12 @@ describe("MCP Write Tools", () => {
         "Scheduled Posts",
       );
       expect(authenticatedClient.getScheduledPosts).toHaveBeenCalled();
+      // Empty edge branch must still emit a valid structuredContent.
+      expect(
+        (result as { structuredContent: { scheduledPosts: unknown[] } }).structuredContent
+          .scheduledPosts,
+      ).toEqual([]);
+      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
     });
 
     it("should list scheduled posts when present", async () => {
@@ -836,6 +889,10 @@ describe("MCP Write Tools", () => {
         "Scheduled Posts",
       );
       expect((result as { content: { text: string }[] }).content[0].text).toContain("scheduled-1");
+      expect(
+        (result as { structuredContent: { scheduledPosts: { id: string; text?: string }[] } })
+          .structuredContent.scheduledPosts[0],
+      ).toMatchObject({ id: "scheduled-1", text: "Scheduled post content" });
     });
   });
 
@@ -1334,6 +1391,20 @@ describe("MCP Write Tools", () => {
       const tool = registeredTools.get("get-relationship");
       const result = await tool?.handler({ acct: "user@example.social" });
       expect(result).toBeDefined();
+    });
+
+    it("describes the deprecated accountIds decoy param (param coverage)", () => {
+      // Smithery scores parameter-description coverage; the accountIds decoy is
+      // the sole param that was missing a .describe(). Its JSON-Schema must now
+      // surface a description keyword.
+      const tool = registeredTools.get("get-relationship");
+      const inputSchemaShape = (
+        tool?.config as { inputSchema: Record<string, import("zod").ZodTypeAny> }
+      ).inputSchema;
+      const jsonSchema = z.toJSONSchema(z.object(inputSchemaShape), { io: "input" }) as {
+        properties?: Record<string, { description?: string }>;
+      };
+      expect(jsonSchema.properties?.accountIds?.description).toMatch(/deprecated|not supported/i);
     });
   });
 
