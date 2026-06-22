@@ -197,3 +197,20 @@ jobs:
     # No `secrets: inherit`: this job authenticates via OIDC (id-token) only and
     # references no named secret, so it must not receive NPM_TOKEN/other secrets —
     # that keeps them out of the blast radius of the downloaded mcp-publisher.
+
+  # Refresh the Smithery listing from the same .mcpb the release attached. Runs
+  # in parallel with publish-mcp (both only need the release). Smithery has no
+  # OIDC path, so this is the one publish that takes a stored secret — passed
+  # EXPLICITLY (not `secrets: inherit`) so only SMITHERY_API_KEY, and nothing
+  # like NPM_TOKEN, reaches the third-party CLI. No-ops if the secret is unset.
+  publish-smithery:
+    name: Publish to Smithery
+    needs: [check-version, release]
+    if: needs.check-version.outputs.should_release == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/publish-smithery.yml
+    with:
+      version: ${{ needs.check-version.outputs.version }}
+    secrets:
+      SMITHERY_API_KEY: ${{ secrets.SMITHERY_API_KEY }}

@@ -161,18 +161,52 @@ earned by the tool/parameter descriptions we already control, not by hosting.
 > activitypub-mcp . && docker run --rm -i activitypub-mcp` runs the stdio server
 > for anyone wiring it into their own container stack.
 
-### Smithery — defer (highest effort, lowest marginal reach)
+### Smithery — live and auto-published
 
-Raw stdio hosting was deprecated (Sep 2025) and Smithery does not import from the
-official registry. The two viable routes are both heavy for this server:
+Listed as [`rye/activitypub-mcp`](https://smithery.ai/server/rye/activitypub-mcp).
+Smithery ingests the same self-contained `.mcpb` bundle built in §3 (it carries
+the rich `inputSchema`/`outputSchema` that drive the capability score), published
+with the CLI: `smithery mcp publish <bundle>.mcpb -n rye/activitypub-mcp`.
 
-- **MCPB bundle** — reuse the `.mcpb` from §3 and publish via `smithery.ai/new`.
-  Lowest-friction Smithery path, but depends on the bundle existing first.
-- **`runtime: typescript` + `target: local`** (Beta) — requires the entrypoint
-  to **export a Smithery-SDK config schema**, which `dist/mcp-main.js` does not.
-  Confirm `target: local` still exists before investing.
+This is now **automated** as part of every release. After a version bump merges,
+[`auto-release.yml`](../.github/workflows/auto-release.yml) creates the GitHub
+release (with the `.mcpb` asset), then runs
+[`publish-smithery.yml`](../.github/workflows/publish-smithery.yml) — which
+downloads that asset and publishes it to Smithery.
 
-Do this last, if at all.
+**One-time setup — add the `SMITHERY_API_KEY` repo secret.** Smithery is the only
+channel without an OIDC / trusted-publishing path (npm and the MCP registry both
+publish keyless via OIDC), so its CLI authenticates with a bearer token read from
+`$SMITHERY_API_KEY`. Mint a **scoped, TTL-limited service token** (not the raw
+account key) and store it:
+
+```bash
+# 1. Get a key from https://smithery.ai/account/api-keys
+#    (or mint a narrower service token: `smithery auth token`).
+# 2. Add it as a GitHub Actions secret:
+gh secret set SMITHERY_API_KEY --repo cameronrye/activitypub-mcp
+```
+
+Until the secret is set, the `publish-smithery` job logs a notice and no-ops
+(forks and secret-less runs stay green). To publish a past version on its own
+after setting the key, run the workflow manually:
+
+```bash
+gh workflow run publish-smithery.yml -f version=3.2.1
+```
+
+To do it entirely by hand instead (e.g. before the secret is in place):
+
+```bash
+gh release download v3.2.1 --pattern '*.mcpb' --dir /tmp
+SMITHERY_API_KEY=<key> npx -y @smithery/cli@4.11.1 \
+  mcp publish /tmp/activitypub-mcp-3.2.1.mcpb -n rye/activitypub-mcp
+```
+
+> Supply-chain note: the publish job runs the third-party `@smithery/cli` while
+> holding the token, so the CLI version is **pinned** and the job holds **only**
+> `SMITHERY_API_KEY` (no `NPM_TOKEN`, no write/`id-token` grants). A scoped
+> service token bounds the blast radius further.
 
 ---
 

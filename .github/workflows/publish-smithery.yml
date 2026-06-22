@@ -1,0 +1,100 @@
+name: Publish to Smithery
+
+# Publishes the release's .mcpb bundle to the Smithery listing
+# (smithery.ai/server/rye/activitypub-mcp).
+#
+# Why a stored secret here (when npm + the MCP registry use OIDC): the
+# @smithery/cli has NO OIDC / trusted-publishing path — auth is a bearer token
+# read from $SMITHERY_API_KEY (there is not even a --key flag). So Smithery is
+# the one channel that needs a secret. Mint a SCOPED, TTL-limited service token
+# (smithery.ai/account/api-keys, or `smithery auth token`), NOT the raw account
+# key, and add it as the repo Actions secret SMITHERY_API_KEY.
+#
+# Without the secret this job logs a notice and no-ops — forks and secret-less
+# runs stay green rather than hanging on the CLI's interactive key prompt.
+#
+# auto-release.yml calls this after the GitHub release exists (the .mcpb is a
+# release asset). It is also workflow_dispatch-able to re-publish a version.
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Version to publish (no leading v). Omit to use the latest release."
+        required: false
+        type: string
+    secrets:
+      SMITHERY_API_KEY:
+        required: false
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish (no leading v). Omit to use the latest release."
+        required: false
+        type: string
+
+# Read-only: the job needs the GITHUB_TOKEN only to download the release asset.
+# Smithery auth is the env bearer token, not OIDC — so NO id-token here.
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish .mcpb to Smithery
+    runs-on: ubuntu-latest
+    env:
+      # The ONLY privileged credential this job holds. No NPM_TOKEN, no write
+      # token, no id-token — so the third-party `npx @smithery/cli` it runs can
+      # reach nothing but the (ideally scoped) Smithery publish token.
+      SMITHERY_API_KEY: ${{ secrets.SMITHERY_API_KEY }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+
+    steps:
+      - name: Check for Smithery credentials
+        id: guard
+        run: |
+          if [ -z "${SMITHERY_API_KEY}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Smithery publish skipped::SMITHERY_API_KEY is not configured. Add the repo secret to enable automatic Smithery publishing."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve version and tag
+        if: steps.guard.outputs.configured == 'true'
+        id: ver
+        run: |
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION="$(gh release view --json tagName --jq '.tagName')"
+          fi
+          VERSION="${VERSION#v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Publishing activitypub-mcp $VERSION to Smithery (rye/activitypub-mcp)"
+
+      - name: Download the release .mcpb bundle
+        if: steps.guard.outputs.configured == 'true'
+        run: |
+          gh release download "v${{ steps.ver.outputs.VERSION }}" --pattern '*.mcpb' --dir .
+          ls -la ./*.mcpb
+
+      - name: Publish to Smithery
+        if: steps.guard.outputs.configured == 'true'
+        # The CLI is PINNED to an exact version: this step runs third-party code
+        # while holding the Smithery token, so a moving @latest would be a
+        # supply-chain risk. Bump deliberately. (npx can't checksum-pin like the
+        # mcp-publisher binary does, so the scoped/TTL service token is the real
+        # blast-radius control.)
+        run: |
+          file="activitypub-mcp-${{ steps.ver.outputs.VERSION }}.mcpb"
+          test -f "$file" || { echo "::error::$file not found among release assets"; exit 1; }
+          for attempt in 1 2; do
+            if npx -y @smithery/cli@4.11.1 mcp publish "$file" -n rye/activitypub-mcp; then
+              echo "Published $file to Smithery (rye/activitypub-mcp)"
+              exit 0
+            fi
+            echo "::warning::Smithery publish attempt $attempt failed; retrying in 10s..."
+            sleep 10
+          done
+          echo "::error::Smithery publish failed after 2 attempts"
+          exit 1
