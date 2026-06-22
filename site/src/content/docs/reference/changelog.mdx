@@ -9,6 +9,18 @@ order: 2
 
 All notable changes to the ActivityPub MCP Server are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### v3.2.1 - 2026-06-22
+
+**Dependency maintenance and security patch.** No source or API changes — tool names, schemas, and responses are identical to 3.2.0. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.
+
+#### Security
+
+- **undici 7.26.0 → 7.28.0** — clears a HIGH-severity advisory chain affecting undici `<= 7.27.2` (the HTTP client behind every Fediverse fetch): TLS certificate-validation bypass, shared-cache information disclosure, `Set-Cookie` header injection, WebSocket denial of service, and SOCKS5 proxy-routing issues. Stayed on the 7.x line because undici 8 requires Node ≥ 22.19 while this server supports Node ≥ 20.
+
+#### Changed
+
+- **Dependency maintenance** — refreshed transitive and dev/build dependencies and pinned CI actions (`actions/checkout` 7, `softprops/action-gh-release`) to their latest patches.
+
 ### v3.2.0 - 2026-06-16
 
 **Structured tool output and Smithery listing improvements.** No breaking changes — tool names and human-readable responses are unchanged; structured output is purely additive. See [CHANGELOG.md](https://github.com/cameronrye/activitypub-mcp/blob/main/CHANGELOG.md) for the complete entry.

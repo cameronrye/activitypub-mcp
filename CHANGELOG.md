@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.1] - 2026-06-22
+
+Dependency maintenance and security patch release. No source or API changes —
+tool names, schemas, and human-readable responses are identical to 3.2.0.
+
+### Security
+
+- **undici 7.26.0 → 7.28.0** — clears a HIGH-severity advisory chain affecting
+  undici `<= 7.27.2`, the HTTP client behind every Fediverse fetch: TLS
+  certificate-validation bypass via dropped `requestTls` in the SOCKS5
+  ProxyAgent (GHSA-vmh5-mc38-953g), shared-cache cross-user information
+  disclosure (GHSA-pr7r-676h-xcf6), `Set-Cookie` percent-decoding header
+  injection (GHSA-p88m-4jfj-68fv), WebSocket fragment-count denial of service
+  (GHSA-vxpw-j846-p89q), SOCKS5 proxy-pool cross-origin routing
+  (GHSA-hm92-r4w5-c3mj), keep-alive response-queue poisoning
+  (GHSA-35p6-xmwp-9g52), and `SameSite` attribute downgrade (GHSA-g8m3-5g58-fq7m).
+  Stayed on the 7.x line because undici 8 requires Node ≥ 22.19, while this
+  package still supports Node ≥ 20.
+
+### Changed
+
+- **Dependency maintenance** — refreshed transitive and dev/build dependencies
+  (`content-disposition`, `hasown`, `astro`, `tldts-core`, `@clack/prompts`,
+  `@emnapi/runtime`, and the `@csstools/*` tooling) and pinned CI actions
+  (`actions/checkout` 7, `softprops/action-gh-release`) to their latest patches.
+
 ## [3.2.0] - 2026-06-16
 
 Structured tool output and Smithery listing improvements. No breaking changes —
