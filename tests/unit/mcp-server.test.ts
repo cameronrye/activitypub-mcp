@@ -5,9 +5,14 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const { mcpServerCtorArgs } = vi.hoisted(() => ({ mcpServerCtorArgs: [] as unknown[][] }));
+
 // Mock all dependencies before importing the module
 vi.mock("@modelcontextprotocol/sdk/server/mcp.js", () => ({
   McpServer: class MockMcpServer {
+    constructor(...args: unknown[]) {
+      mcpServerCtorArgs.push(args);
+    }
     connect = vi.fn().mockResolvedValue(undefined);
     registerTool = vi.fn();
     registerResource = vi.fn();
@@ -87,6 +92,14 @@ describe("ActivityPubMCPServer", () => {
     const { default: ActivityPubMCPServer } = await import("../../src/mcp-server.js");
     const server = new ActivityPubMCPServer();
     expect(server).toBeDefined();
+  });
+
+  it("caps tools/call argument elements (the GHSA-46jr-4wx8-v453 fix is opt-in)", async () => {
+    const { default: ActivityPubMCPServer } = await import("../../src/mcp-server.js");
+    mcpServerCtorArgs.length = 0;
+    new ActivityPubMCPServer();
+    const options = mcpServerCtorArgs[0]?.[1] as { maxToolInputElements?: number } | undefined;
+    expect(options?.maxToolInputElements).toBe(1000);
   });
 
   it("should have start method", async () => {

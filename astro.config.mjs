@@ -8,6 +8,9 @@ export default defineConfig({
   base: "/activitypub-mcp",
   srcDir: "./site",
   integrations: [mdx(), sitemap()],
+  // Astro 7 defaults to "jsx", which drops whitespace between elements and
+  // glues adjacent words together in the Pagefind index and search.json.
+  compressHTML: true,
   markdown: {
     shikiConfig: {
       themes: { light: "github-light", dark: "github-dark" },

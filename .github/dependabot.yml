@@ -62,7 +62,6 @@ updates:
       build-tools:
         patterns:
           - "*build*"
-          - "rimraf"
           - "cross-env"
           - "npm-run-all"
         update-types:

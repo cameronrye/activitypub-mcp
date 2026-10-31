@@ -359,6 +359,68 @@ describe("HttpTransportServer", () => {
       expect(response.status).not.toBe(404);
     });
 
+    // Declares `contentLength` but only writes `body`, so an over-cap request is
+    // judged on its declared size without uploading megabytes into a socket the
+    // server has stopped reading (whether that stalls depends on OS buffering).
+    const postMcpDeclaring = (contentLength: number, body: string) =>
+      new Promise<number>((resolve, reject) => {
+        const address = server?.getAddress();
+        const req = httpRequest(
+          {
+            host: address?.host,
+            port: address?.port,
+            path: "/mcp",
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json, text/event-stream",
+              Authorization: `Bearer ${TEST_SECRET}`,
+              "Content-Length": contentLength,
+              Connection: "close",
+            },
+          },
+          (res) => {
+            res.resume();
+            resolve(res.statusCode ?? 0);
+            req.destroy();
+          },
+        );
+        req.setTimeout(3000, () => {
+          req.destroy();
+          reject(new Error("no HTTP response to the /mcp POST"));
+        });
+        req.on("error", (err) => {
+          if (!req.destroyed || !("code" in err) || err.code !== "ECONNRESET") reject(err);
+        });
+        req.write(body);
+        if (Buffer.byteLength(body) === contentLength) req.end();
+      });
+
+    const mcpBody = (padBytes: number) =>
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/list",
+        params: { pad: "a".repeat(padBytes) },
+      });
+
+    it("rejects request bodies over 1 MiB with 413 (SDK default is 4 MiB)", async () => {
+      server = new HttpTransportServer({ port: 0 });
+      await server.start();
+
+      const status = await postMcpDeclaring(1.5 * 1024 * 1024, mcpBody(1024));
+      expect(status).toBe(413);
+    });
+
+    it("still parses request bodies under the 1 MiB cap", async () => {
+      server = new HttpTransportServer({ port: 0 });
+      await server.start();
+
+      const body = mcpBody(512 * 1024);
+      const status = await postMcpDeclaring(Buffer.byteLength(body), body);
+      expect(status).not.toBe(413);
+    });
+
     it("should reject /mcp requests with a disallowed Host header (DNS-rebinding protection)", async () => {
       server = new HttpTransportServer({ port: 0 });
       await server.start();

@@ -141,7 +141,7 @@ describe("MCP Tools", () => {
         (result as { structuredContent: { actor: { preferredUsername: string } } })
           .structuredContent.actor.preferredUsername,
       ).toBe("testuser");
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
 
     it("should handle errors gracefully", async () => {
@@ -243,7 +243,7 @@ describe("MCP Tools", () => {
         (result as { structuredContent: { posts: { content: string }[]; nextCursor?: string } })
           .structuredContent.posts[0].content,
       ).toContain("Hello world");
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
 
     it("should handle empty timeline", async () => {
@@ -301,7 +301,7 @@ describe("MCP Tools", () => {
         (result as { structuredContent: { domain: string; software?: string } }).structuredContent
           .domain,
       ).toBe("mastodon.social");
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
   });
 
@@ -318,7 +318,7 @@ describe("MCP Tools", () => {
         (result as { structuredContent: { instances: { domain: string }[] } }).structuredContent
           .instances[0].domain,
       ).toBe("test.social");
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
 
     it("neutralizes a newline+markdown injection in a remote instance software/domain field", async () => {
@@ -365,7 +365,7 @@ describe("MCP Tools", () => {
         (result as { structuredContent: { post: { content: string } } }).structuredContent.post
           .content,
       ).toContain("Original post");
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
 
     it("neutralizes a prompt-injection payload in the post URL field", async () => {
@@ -412,7 +412,7 @@ describe("MCP Tools", () => {
         (result as { structuredContent: { hashtags: { name: string; uses?: number }[] } })
           .structuredContent.hashtags[0],
       ).toMatchObject({ name: "test", uses: 100 });
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
 
     it("coerces injected hashtag use/account counts to numbers", async () => {
@@ -453,7 +453,7 @@ describe("MCP Tools", () => {
         (result as { structuredContent: { posts: { content: string }[] } }).structuredContent
           .posts[0].content,
       ).toContain("Trending post");
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
   });
 
@@ -506,7 +506,7 @@ describe("MCP Tools", () => {
       expect(
         (result as { structuredContent: { nextCursor?: string } }).structuredContent.nextCursor,
       ).toBe("123");
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
 
     it("should fetch federated timeline when scope is federated", async () => {
@@ -599,7 +599,7 @@ describe("MCP Tools", () => {
         (result as { structuredContent: { accounts?: { id: string }[] } }).structuredContent
           .accounts?.[0].id,
       ).toBe("user");
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
   });
 

@@ -294,7 +294,7 @@ describe("MCP Write Tools", () => {
           }
         ).structuredContent.accounts[0].username,
       ).toBe("testuser");
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
 
     it("should show no accounts message when empty", async () => {
@@ -327,7 +327,7 @@ describe("MCP Write Tools", () => {
         (result as { structuredContent: { accountId: string; active?: boolean } })
           .structuredContent,
       ).toMatchObject({ accountId: "1", active: true });
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
 
     it("should handle account not found", async () => {
@@ -367,7 +367,7 @@ describe("MCP Write Tools", () => {
         (result as { structuredContent: { verified?: boolean; username?: string } })
           .structuredContent,
       ).toMatchObject({ verified: true, username: "testuser" });
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
 
     it("should handle write not enabled", async () => {
@@ -644,7 +644,7 @@ describe("MCP Write Tools", () => {
         (result as { structuredContent: { posts: { id: string; author?: string }[] } })
           .structuredContent.posts[0],
       ).toMatchObject({ id: "post-1", author: "user@example.social" });
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
   });
 
@@ -661,7 +661,7 @@ describe("MCP Write Tools", () => {
         (result as { structuredContent: { notifications: { type: string }[] } }).structuredContent
           .notifications[0].type,
       ).toBe("mention");
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
   });
 
@@ -676,7 +676,7 @@ describe("MCP Write Tools", () => {
         (result as { structuredContent: { posts: { id: string }[] } }).structuredContent.posts[0]
           .id,
       ).toBe("bookmark-1");
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
   });
 
@@ -691,7 +691,7 @@ describe("MCP Write Tools", () => {
         (result as { structuredContent: { posts: { id: string }[] } }).structuredContent.posts[0]
           .id,
       ).toBe("fav-1");
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
   });
 
@@ -706,7 +706,7 @@ describe("MCP Write Tools", () => {
       expect(
         (result as { structuredContent: { acct: string; following?: boolean } }).structuredContent,
       ).toMatchObject({ acct: "targetuser@example.social", following: true });
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
   });
 
@@ -869,7 +869,7 @@ describe("MCP Write Tools", () => {
         (result as { structuredContent: { scheduledPosts: unknown[] } }).structuredContent
           .scheduledPosts,
       ).toEqual([]);
-      expect((tool?.config as { outputSchema?: unknown }).outputSchema).toBeDefined();
+      expect((tool?.config as { outputSchema?: unknown } | undefined)?.outputSchema).toBeDefined();
     });
 
     it("should list scheduled posts when present", async () => {
@@ -1350,9 +1350,9 @@ describe("MCP Write Tools", () => {
       // The handler is invoked directly, bypassing the SDK's Zod wrapper.
       // We exercise the schema explicitly to prove bad input is rejected.
       const tool = registeredTools.get("post-status");
-      const inputSchemaShape = (
-        tool?.config as { inputSchema: Record<string, import("zod").ZodTypeAny> }
-      ).inputSchema;
+      const inputSchemaShape =
+        (tool?.config as { inputSchema: Record<string, import("zod").ZodTypeAny> } | undefined)
+          ?.inputSchema ?? {};
       const schema = z.object(inputSchemaShape);
       const past = "2020-01-01T00:00:00Z";
       expect(() => schema.parse({ content: "no time machine", scheduledAt: past })).toThrow(
@@ -1363,9 +1363,9 @@ describe("MCP Write Tools", () => {
     it("rejects more than 4 mediaIds via Zod max(4)", () => {
       // Same approach: validate directly against the schema shape.
       const tool = registeredTools.get("post-status");
-      const inputSchemaShape = (
-        tool?.config as { inputSchema: Record<string, import("zod").ZodTypeAny> }
-      ).inputSchema;
+      const inputSchemaShape =
+        (tool?.config as { inputSchema: Record<string, import("zod").ZodTypeAny> } | undefined)
+          ?.inputSchema ?? {};
       const schema = z.object(inputSchemaShape);
       expect(() =>
         schema.parse({ content: "too much", mediaIds: ["a", "b", "c", "d", "e"] }),
@@ -1377,9 +1377,9 @@ describe("MCP Write Tools", () => {
     it("rejects accountIds with a helpful error even when acct is supplied", () => {
       const tool = registeredTools.get("get-relationship");
       expect(tool).toBeDefined();
-      const inputSchemaShape = (
-        tool?.config as { inputSchema: Record<string, import("zod").ZodTypeAny> }
-      ).inputSchema;
+      const inputSchemaShape =
+        (tool?.config as { inputSchema: Record<string, import("zod").ZodTypeAny> } | undefined)
+          ?.inputSchema ?? {};
       const schema = z.object(inputSchemaShape);
       // accountIds is the wrong field name — schema should reject it even when acct is present
       expect(() => schema.parse({ acct: "alice@example.social", accountIds: ["1", "2"] })).toThrow(
@@ -1398,9 +1398,9 @@ describe("MCP Write Tools", () => {
       // the sole param that was missing a .describe(). Its JSON-Schema must now
       // surface a description keyword.
       const tool = registeredTools.get("get-relationship");
-      const inputSchemaShape = (
-        tool?.config as { inputSchema: Record<string, import("zod").ZodTypeAny> }
-      ).inputSchema;
+      const inputSchemaShape =
+        (tool?.config as { inputSchema: Record<string, import("zod").ZodTypeAny> } | undefined)
+          ?.inputSchema ?? {};
       const jsonSchema = z.toJSONSchema(z.object(inputSchemaShape), { io: "input" }) as {
         properties?: Record<string, { description?: string }>;
       };
