@@ -29,6 +29,13 @@ const logger = getLogger(["activitypub-mcp", "http"]);
 
 const LOOPBACK_HOSTS = new Set(["::1", "[::1]", "localhost"]);
 
+/**
+ * POST bodies over this are answered 413 before parsing. Real MCP requests
+ * here are a few KB; the SDK's 4 MiB default leaves room for validation-time
+ * memory exhaustion (GHSA-46jr-4wx8-v453).
+ */
+const MAX_REQUEST_BODY_BYTES = 1024 * 1024;
+
 /** True for any loopback bind: 127.0.0.0/8, ::1, [::1], or localhost. */
 function isLoopbackHost(host: string): boolean {
   const h = host.toLowerCase();
@@ -294,6 +301,7 @@ export class HttpTransportServer {
           enableDnsRebindingProtection: true,
           allowedHosts,
           allowedOrigins,
+          maxRequestBodySize: MAX_REQUEST_BODY_BYTES,
         });
 
         logger.info("HTTP transport server started", {

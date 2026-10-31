@@ -359,6 +359,40 @@ describe("HttpTransportServer", () => {
       expect(response.status).not.toBe(404);
     });
 
+    const postMcpWithPadding = async (padBytes: number) => {
+      const address = server?.getAddress();
+      return fetch(`http://${address?.host}:${address?.port}/mcp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json, text/event-stream",
+          Authorization: `Bearer ${TEST_SECRET}`,
+        },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "tools/list",
+          params: { pad: "a".repeat(padBytes) },
+        }),
+      });
+    };
+
+    it("rejects request bodies over 1 MiB with 413 (SDK default is 4 MiB)", async () => {
+      server = new HttpTransportServer({ port: 0 });
+      await server.start();
+
+      const response = await postMcpWithPadding(1.5 * 1024 * 1024);
+      expect(response.status).toBe(413);
+    });
+
+    it("still parses request bodies under the 1 MiB cap", async () => {
+      server = new HttpTransportServer({ port: 0 });
+      await server.start();
+
+      const response = await postMcpWithPadding(512 * 1024);
+      expect(response.status).not.toBe(413);
+    });
+
     it("should reject /mcp requests with a disallowed Host header (DNS-rebinding protection)", async () => {
       server = new HttpTransportServer({ port: 0 });
       await server.start();

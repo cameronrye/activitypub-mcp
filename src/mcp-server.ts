@@ -45,6 +45,13 @@ const CONFIG = {
 };
 
 /**
+ * Cap on array elements + object members in one tools/call `arguments`
+ * payload. The SDK leaves this unbounded unless set (GHSA-46jr-4wx8-v453);
+ * the largest real input here is a handful of bounded arrays.
+ */
+const MAX_TOOL_INPUT_ELEMENTS = 1000;
+
+/**
  * Build the stderr hint shown when the stdio server is started from an
  * interactive terminal. A real MCP client attaches over piped stdio, so a TTY
  * on stdin means a human ran the bin directly — without this hint the process
@@ -98,10 +105,13 @@ class ActivityPubMCPServer {
    * Creates a new ActivityPubMCPServer instance.
    */
   constructor() {
-    this.mcpServer = new McpServer({
-      name: CONFIG.serverName,
-      version: CONFIG.serverVersion,
-    });
+    this.mcpServer = new McpServer(
+      {
+        name: CONFIG.serverName,
+        version: CONFIG.serverVersion,
+      },
+      { maxToolInputElements: MAX_TOOL_INPUT_ELEMENTS },
+    );
 
     this.rateLimiter = new RateLimiter({
       enabled: CONFIG.rateLimitEnabled,

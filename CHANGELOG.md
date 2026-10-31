@@ -7,21 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Dependency security sweep. No source or API changes — tool names, schemas, and
-responses are identical to 3.2.1.
+Dependency security sweep plus two opt-in SDK hardening limits. Tool names and
+the read-only tool schemas are unchanged; the behavior changes are listed under
+Changed.
 
 ### Security
 
+- **Bounded tool-call input size** — the MCP SDK's fix for GHSA-46jr-4wx8-v453
+  (memory exhaustion while validating one large request) only applies when the
+  server opts in. The server now caps `tools/call` arguments at 1000 array
+  elements plus object members, and the HTTP transport rejects request bodies
+  over 1 MiB with 413 (the SDK default is 4 MiB). Real inputs are a few KB.
 - **Runtime dependency floors raised** so fresh installs can no longer resolve
   a vulnerable version: `undici` ^7.30.1 (from 7.28.0 — TLS validation bypass in
-  `BalancedPool`, WebSocket/decompression denial of service, shared-cache
+  `BalancedPool`, WebSocket and decompression denial of service, shared-cache
   cross-user disclosure, CRLF and cookie-attribute injection),
-  `@modelcontextprotocol/sdk` ^1.32.2 (from 1.29.0 — request-validation memory
-  exhaustion, experimental tasks not bound to their session, bearer tokens for
-  another audience accepted, OAuth credentials sent to a server-chosen
-  authorization server), and `zod` ^4.6.7 (from 4.3.6 — memory exhaustion on
-  oversized constrained collections). Still on undici 7.x: undici 8 requires
-  Node ≥ 22.19 and this package supports Node ≥ 20.
+  `@modelcontextprotocol/sdk` ^1.32.2 (from 1.29.0), `zod` ^4.6.7 (from 4.3.6 —
+  memory exhaustion on oversized constrained collections), and
+  `@logtape/logtape` ^2.4.2 (from 2.0.2 — control characters and ANSI escapes in
+  log messages are now escaped, GHSA-hp6w-c2ch-g44w). The SDK's other
+  advisories (task/session binding, bearer-token audience, OAuth client
+  redirects) cover features this server does not use. Still on undici 7.x:
+  undici 8 requires Node ≥ 22.19 and this package supports Node ≥ 20.
 - **Transitive runtime dependencies** pulled in by the MCP SDK refreshed to
   patched versions: `hono` 4.13.14, `@hono/node-server` 2.1.5, `express` 5.3.0,
   `body-parser` 2.4.0, `fast-uri` 3.1.9, `ip-address` 10.7.5, `qs` 6.17.1, and
@@ -29,19 +36,28 @@ responses are identical to 3.2.1.
 
 ### Changed
 
+- **`scheduledAt` now requires seconds** (`post-status`,
+  `update-scheduled-post`) — zod 4.5 made ISO datetimes follow RFC 3339, so
+  `2026-06-01T15:00Z` is rejected; use `2026-06-01T15:00:00Z`. The advertised
+  `pattern` for those two write tools changed to match.
+- **Input-validation errors read `<message> at <path>`** (MCP SDK 1.32) instead
+  of a JSON dump of zod issues.
+- **String length limits count Unicode code points** (zod 4.5), so posts and
+  queries with emoji are no longer rejected early for exceeding their limit.
+- **HTTP transport** (SDK 1.30–1.32): batches over 100 messages get 400,
+  requests on a deleted session get an immediate 404 instead of hanging, and SSE
+  streams send a keep-alive frame every 15 s.
 - **Docs site moved to Astro 7** (`astro` 7.3.8, `@astrojs/mdx` 8.0.3, Vite 8) —
   clears the dev-only Astro, Vite, `sharp`, `devalue`, `svgo`, `postcss`,
   `smol-toml`, and `js-yaml` advisories. Astro 7.3 keeps the Node ≥ 22.12
-  requirement for site builds; the published server is unaffected.
+  requirement for site builds, and `compressHTML: true` keeps Astro 6's
+  whitespace handling so search results don't run words together.
 - **Dropped `rimraf`** — `npm run clean` now uses Node's built-in
   `fs.rmSync`, removing the vulnerable `glob`/`minimatch` chain.
-- **`@logtape/logtape` 2.0.2 → 2.4.2** (lockfile refresh, no advisory) —
-  verified logs still go to stderr only, so the stdio JSON-RPC stream stays clean.
 - **Dev tooling refreshed** — `vitest` 4.1.12, `@biomejs/biome` 2.6.4 (its new
   `noUnsafeOptionalChaining` check flagged 13 test casts, now fixed), and CI
-  actions (`actions/checkout` 7.0.1,
-  `actions/deploy-pages` 5.0.1, `softprops/action-gh-release` 3.0.3,
-  `github/codeql-action` 4.37.9).
+  actions (`actions/checkout` 7.0.1, `actions/deploy-pages` 5.0.1,
+  `softprops/action-gh-release` 3.0.3, `github/codeql-action` 4.37.9).
 
 ## [3.2.1] - 2026-06-22
 
