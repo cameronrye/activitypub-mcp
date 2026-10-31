@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Dependency security sweep. No source or API changes — tool names, schemas, and
+responses are identical to 3.2.1.
+
+### Security
+
+- **Runtime dependency floors raised** so fresh installs can no longer resolve
+  a vulnerable version: `undici` ^7.30.1 (from 7.28.0 — TLS validation bypass in
+  `BalancedPool`, WebSocket/decompression denial of service, shared-cache
+  cross-user disclosure, CRLF and cookie-attribute injection),
+  `@modelcontextprotocol/sdk` ^1.32.2 (from 1.29.0 — request-validation memory
+  exhaustion, experimental tasks not bound to their session, bearer tokens for
+  another audience accepted, OAuth credentials sent to a server-chosen
+  authorization server), and `zod` ^4.6.7 (from 4.3.6 — memory exhaustion on
+  oversized constrained collections). Still on undici 7.x: undici 8 requires
+  Node ≥ 22.19 and this package supports Node ≥ 20.
+- **Transitive runtime dependencies** pulled in by the MCP SDK refreshed to
+  patched versions: `hono` 4.13.14, `@hono/node-server` 2.1.5, `express` 5.3.0,
+  `body-parser` 2.4.0, `fast-uri` 3.1.9, `ip-address` 10.7.5, `qs` 6.17.1, and
+  `proxy-addr` 2.0.8.
+
+### Changed
+
+- **Docs site moved to Astro 7** (`astro` 7.3.8, `@astrojs/mdx` 8.0.3, Vite 8) —
+  clears the dev-only Astro, Vite, `sharp`, `devalue`, `svgo`, `postcss`,
+  `smol-toml`, and `js-yaml` advisories. Astro 7.3 keeps the Node ≥ 22.12
+  requirement for site builds; the published server is unaffected.
+- **Dropped `rimraf`** — `npm run clean` now uses Node's built-in
+  `fs.rmSync`, removing the vulnerable `glob`/`minimatch` chain.
+- **`@logtape/logtape` 2.0.2 → 2.4.2** (lockfile refresh, no advisory) —
+  verified logs still go to stderr only, so the stdio JSON-RPC stream stays clean.
+- **Dev tooling refreshed** — `vitest` 4.1.12, `@biomejs/biome` 2.6.4 (its new
+  `noUnsafeOptionalChaining` check flagged 13 test casts, now fixed), and CI
+  actions (`actions/checkout` 7.0.1,
+  `actions/deploy-pages` 5.0.1, `softprops/action-gh-release` 3.0.3,
+  `github/codeql-action` 4.37.9).
+
 ## [3.2.1] - 2026-06-22
 
 Dependency maintenance and security patch release. No source or API changes —
